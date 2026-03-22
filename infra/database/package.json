@@ -8,7 +8,9 @@
     "build": "tsc",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "dev": "tsc --watch"
+    "dev": "tsc --watch",
+    "migrate": "ts-node src/migrate.ts",
+    "migrate:prod": "node dist/migrate.js"
   },
   "dependencies": {
     "@trulyimagined/types": "workspace:*",
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^20.11.0",
     "@types/pg": "^8.11.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
 }

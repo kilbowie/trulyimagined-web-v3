@@ -38,9 +38,10 @@ cp apps/web/.env.example apps/web/.env.local
 Edit `.env.local` with your actual values:
 
 **Required for local development:**
+
 - `DATABASE_URL` — Your PostgreSQL connection string
 - `AUTH0_DOMAIN` — From Auth0 dashboard
-- `AUTH0_CLIENT_ID` — From Auth0 dashboard  
+- `AUTH0_CLIENT_ID` — From Auth0 dashboard
 - `AUTH0_CLIENT_SECRET` — From Auth0 dashboard
 - `AUTH0_SECRET` — Generate with: `openssl rand -base64 32`
 
@@ -58,6 +59,7 @@ docker run --name trulyimagined-db \
 ```
 
 Your `DATABASE_URL` will be:
+
 ```
 postgresql://postgres:password@localhost:5432/trulyimagined_v3
 ```
@@ -108,6 +110,7 @@ pnpm dev
 ```
 
 Visit:
+
 - **Frontend**: http://localhost:3000
 - **API** (when running): http://localhost:3001
 
@@ -116,19 +119,24 @@ Visit:
 ## Troubleshooting
 
 ### `pnpm` command not found
+
 Install pnpm globally: `npm install -g pnpm`
 
 ### Port 3000 already in use
+
 Stop other processes on port 3000 or change the port:
+
 ```bash
 PORT=3001 pnpm dev
 ```
 
 ### TypeScript errors in IDE
+
 1. Ensure VS Code is using the workspace TypeScript version
 2. Press `Ctrl+Shift+P` → "TypeScript: Select TypeScript Version" → "Use Workspace Version"
 
 ### Database connection errors
+
 - Verify PostgreSQL is running: `docker ps` or check local service
 - Test connection: `psql $DATABASE_URL`
 - Check `DATABASE_URL` format in `.env.local`

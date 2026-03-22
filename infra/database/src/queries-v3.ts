@@ -1,0 +1,233 @@
+/**
+ * Database SQL Queries for Truly Imagined v3
+ * Phase 1: Identity Registry + Consent Ledger
+ *
+ * Raw SQL queries to be used with the database client
+ */
+
+// ===========================================
+// ACTORS (Identity Registry)
+// ===========================================
+
+export const queries = {
+  actors: {
+    create: `
+      INSERT INTO actors (
+        auth0_user_id, email, first_name, last_name, stage_name, bio, location
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+      RETURNING *;
+    `,
+
+    getById: `
+      SELECT * FROM actors WHERE id = $1 AND deleted_at IS NULL;
+    `,
+
+    getByAuth0Id: `
+      SELECT * FROM actors WHERE auth0_user_id = $1 AND deleted_at IS NULL;
+    `,
+
+    getByEmail: `
+      SELECT * FROM actors WHERE email = $1 AND deleted_at IS NULL;
+    `,
+
+    update: `
+      UPDATE actors 
+      SET first_name = COALESCE($2, first_name),
+          last_name = COALESCE($3, last_name),
+          stage_name = COALESCE($4, stage_name),
+          bio = COALESCE($5, bio),
+          location = COALESCE($6, location),
+          profile_image_url = COALESCE($7, profile_image_url)
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *;
+    `,
+
+    verify: `
+      UPDATE actors 
+      SET verification_status = 'verified',
+          verified_at = NOW(),
+          verified_by = $2
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *;
+    `,
+
+    list: `
+      SELECT id, auth0_user_id, email, first_name, last_name, stage_name, 
+             verification_status, is_founding_member, registry_id, created_at
+      FROM actors 
+      WHERE deleted_at IS NULL
+      ORDER BY created_at DESC
+      LIMIT $1 OFFSET $2;
+    `,
+  },
+
+  // ===========================================
+  // CONSENT LOG (Consent Ledger - CRITICAL)
+  // ===========================================
+
+  consent: {
+    log: `
+      INSERT INTO consent_log (
+        actor_id, action, consent_type, consent_scope, 
+        project_name, project_description, requester_id, requester_type,
+        ip_address, user_agent, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *;
+    `,
+
+    getHistory: `
+      SELECT * FROM consent_log 
+      WHERE actor_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+
+    getLatest: `
+      SELECT * FROM consent_log 
+      WHERE actor_id = $1 AND consent_type = $2
+      ORDER BY created_at DESC
+      LIMIT 1;
+    `,
+
+    getAllByActor: `
+      SELECT 
+        cl.*,
+        a.first_name as actor_first_name,
+        a.last_name as actor_last_name
+      FROM consent_log cl
+      JOIN actors a ON cl.actor_id = a.id
+      WHERE cl.actor_id = $1
+      ORDER BY cl.created_at DESC;
+    `,
+  },
+
+  // ===========================================
+  // LICENSING REQUESTS
+  // ===========================================
+
+  licensing: {
+    create: `
+      INSERT INTO licensing_requests (
+        actor_id, requester_name, requester_email, requester_organization,
+        project_name, project_description, usage_type, intended_use,
+        duration_start, duration_end, compensation_offered, compensation_currency
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *;
+    `,
+
+    getById: `
+      SELECT lr.*, a.first_name, a.last_name, a.email as actor_email
+      FROM licensing_requests lr
+      JOIN actors a ON lr.actor_id = a.id
+      WHERE lr.id = $1;
+    `,
+
+    getByActor: `
+      SELECT * FROM licensing_requests 
+      WHERE actor_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+
+    approve: `
+      UPDATE licensing_requests 
+      SET status = 'approved', approved_at = NOW()
+      WHERE id = $1
+      RETURNING *;
+    `,
+
+    reject: `
+      UPDATE licensing_requests 
+      SET status = 'rejected', rejected_at = NOW(), rejection_reason = $2
+      WHERE id = $1
+      RETURNING *;
+    `,
+
+    listPending: `
+      SELECT lr.*, a.first_name, a.last_name
+      FROM licensing_requests lr
+      JOIN actors a ON lr.actor_id = a.id
+      WHERE lr.status = 'pending'
+      ORDER BY lr.created_at DESC
+      LIMIT $1 OFFSET $2;
+    `,
+  },
+
+  // ===========================================
+  // USAGE TRACKING
+  // ===========================================
+
+  usage: {
+    log: `
+      INSERT INTO usage_tracking (
+        actor_id, licensing_request_id, usage_type, quantity, unit,
+        project_name, generated_by, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *;
+    `,
+
+    getByActor: `
+      SELECT * FROM usage_tracking 
+      WHERE actor_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+
+    getStats: `
+      SELECT 
+        usage_type,
+        unit,
+        SUM(quantity) as total_quantity,
+        COUNT(*) as total_records,
+        MIN(created_at) as first_usage,
+        MAX(created_at) as last_usage
+      FROM usage_tracking
+      WHERE actor_id = $1
+      GROUP BY usage_type, unit;
+    `,
+
+    getTotalMinutes: `
+      SELECT 
+        SUM(quantity) as total_minutes
+      FROM usage_tracking
+      WHERE actor_id = $1 AND usage_type = 'voice_minutes' AND unit = 'minutes';
+    `,
+  },
+
+  // ===========================================
+  // AUDIT LOG
+  // ===========================================
+
+  audit: {
+    log: `
+      INSERT INTO audit_log (
+        user_id, user_type, action, resource_type, resource_id,
+        changes, ip_address, user_agent
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING *;
+    `,
+
+    getByResource: `
+      SELECT * FROM audit_log
+      WHERE resource_type = $1 AND resource_id = $2
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4;
+    `,
+
+    getByUser: `
+      SELECT * FROM audit_log
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+
+    search: `
+      SELECT * FROM audit_log
+      WHERE action = $1 OR resource_type = $2
+      ORDER BY created_at DESC
+      LIMIT $3 OFFSET $4;
+    `,
+  },
+};
+
+export default queries;

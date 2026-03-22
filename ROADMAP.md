@@ -27,9 +27,11 @@ By Day 90, we must have:
 ---
 
 # 🏗️ PHASE 1 (Days 1–30)
+
 ## Trust Layer + Registry Foundation
 
 ### 🎯 Goal:
+
 Establish Truly Imagined as a **credible identity registry**, not an AI tool.
 
 ---
@@ -37,18 +39,20 @@ Establish Truly Imagined as a **credible identity registry**, not an AI tool.
 ## 🔹 Step 1 — Repositioning (Week 1–2)
 
 ### Objective:
+
 Shift all messaging to infrastructure + compliance.
 
 ### Deliverables:
 
-- [ ] Rewrite homepage copy:
+- [x] Rewrite homepage copy:
   - Focus on identity, consent, licensing
-- [ ] Update README.md with new vision
-- [ ] Create 1-page explainer for actors/agencies
-- [ ] Define core value proposition:
+- [x] Update README.md with new vision
+- [x] Create 1-page explainer for actors/agencies
+- [x] Define core value proposition:
   - “Control and license your digital identity in AI”
 
 ### Output:
+
 Clear positioning as **rights infrastructure**
 
 ---
@@ -56,40 +60,43 @@ Clear positioning as **rights infrastructure**
 ## 🔹 Step 2 — Repository + Environment Setup
 
 ### Objective:
+
 Create clean v3 monorepo
 
 ### Tasks:
 
-- [ ] Initialise new repo (`truly-imagined-v3`)
-- [ ] Setup monorepo structure (`/v2`)
-- [ ] Configure:
+- [x] Initialise new repo (`truly-imagined-v3`)
+- [x] Setup monorepo structure (`/v2`)
+- [x] Configure:
   - TypeScript
   - ESLint
   - Prettier
-- [ ] Setup Next.js app (App Router)
-- [ ] Install Tailwind (basic only)
-- [ ] Setup environment variables
+- [x] Setup Next.js app (App Router)
+- [x] Install Tailwind (basic only)
+- [x] Setup environment variables
 
 ---
 
 ## 🔹 Step 3 — Core Backend Infrastructure
 
 ### Objective:
+
 Lay technical foundation
 
 ### Tasks:
 
-- [ ] Setup PostgreSQL (AWS RDS)
-- [ ] Setup DB connection layer (`pg`)
-- [ ] Setup AWS SAM
-- [ ] Configure API Gateway
-- [ ] Create initial Lambda handlers
+- [x] Setup PostgreSQL (AWS RDS)
+- [x] Setup DB connection layer (`pg`)
+- [x] Setup AWS SAM
+- [x] Configure API Gateway
+- [x] Create initial Lambda handlers
 
 ---
 
 ## 🔹 Step 4 — Auth Layer (Auth0)
 
 ### Objective:
+
 Secure system with role-based access
 
 ### Roles:
@@ -111,6 +118,7 @@ Secure system with role-based access
 ## 🔹 Step 5 — Identity Registry (MVP)
 
 ### Objective:
+
 Enable actors to register identity
 
 ### Features:
@@ -133,6 +141,7 @@ Enable actors to register identity
 ## 🔹 Step 6 — Consent Ledger (CRITICAL)
 
 ### Objective:
+
 Track all permissions and usage
 
 ### Requirements:
@@ -154,6 +163,7 @@ Track all permissions and usage
 ## 🔹 Step 7 — Basic Frontend
 
 ### Objective:
+
 Minimal functional UI (no design focus)
 
 ### Pages:
@@ -181,9 +191,11 @@ Minimal functional UI (no design focus)
 ---
 
 # ⚙️ PHASE 2 (Days 31–60)
+
 ## Supply Acquisition + Usage Enablement
 
 ### 🎯 Goal:
+
 Scale actor onboarding + enable first licensing
 
 ---
@@ -191,6 +203,7 @@ Scale actor onboarding + enable first licensing
 ## 🔹 Step 8 — Founding Actor Program
 
 ### Objective:
+
 Rapidly onboard high-quality actors
 
 ### Tasks:
@@ -205,6 +218,7 @@ Rapidly onboard high-quality actors
 ## 🔹 Step 9 — Agency Outreach
 
 ### Objective:
+
 Secure early credibility
 
 ### Tasks:
@@ -218,6 +232,7 @@ Secure early credibility
 ## 🔹 Step 10 — Licensing Service (MVP)
 
 ### Objective:
+
 Enable basic licensing flow
 
 ### Features:
@@ -238,6 +253,7 @@ Enable basic licensing flow
 ## 🔹 Step 11 — Synthetic Audition Tool (Basic)
 
 ### Objective:
+
 Generate first usage
 
 ### Features:
@@ -257,6 +273,7 @@ Generate first usage
 ## 🔹 Step 12 — Usage Tracking
 
 ### Objective:
+
 Measure platform activity
 
 ### Tasks:
@@ -277,9 +294,11 @@ Measure platform activity
 ---
 
 # 🌐 PHASE 3 (Days 61–90)
+
 ## Usage + Revenue Signals
 
 ### 🎯 Goal:
+
 Prove real-world demand
 
 ---
@@ -287,6 +306,7 @@ Prove real-world demand
 ## 🔹 Step 13 — First Customers
 
 ### Objective:
+
 Get real usage
 
 ### Targets:
@@ -306,6 +326,7 @@ Get real usage
 ## 🔹 Step 14 — Close First Deals
 
 ### Objective:
+
 Validate monetisation
 
 ### Tasks:
@@ -319,6 +340,7 @@ Validate monetisation
 ## 🔹 Step 15 — Improve Core Flows
 
 ### Objective:
+
 Stabilise system
 
 ### Tasks:
@@ -332,6 +354,7 @@ Stabilise system
 ## 🔹 Step 16 — Basic Analytics
 
 ### Objective:
+
 Track growth
 
 ### Metrics:

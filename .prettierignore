@@ -1,20 +1,25 @@
 # Dependencies
+
 node_modules/
 
 # Build outputs
+
 dist/
 build/
 .next/
 out/
-*.tsbuildinfo
+\*.tsbuildinfo
 
 # Auto-generated files
+
 pnpm-lock.yaml
 package-lock.json
 yarn.lock
 
 # AWS
+
 .aws-sam/
 
 # OS
+
 .DS_Store

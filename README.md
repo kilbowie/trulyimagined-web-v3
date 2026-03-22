@@ -17,6 +17,7 @@ By establishing the world's first **Identity Registry** and **Consent Ledger** f
 **"Control and license your digital identity in AI"**
 
 We enable actors to:
+
 - **Register** their digital identity in a verified, global registry
 - **Define** clear consent boundaries for AI usage
 - **License** their likeness on their own terms
@@ -27,12 +28,15 @@ We enable actors to:
 ## 🏛️ Core Infrastructure Components
 
 ### 1. Identity Registry
+
 Secure registration and verification of actor identities. This is the foundational layer that establishes trust and prevents unauthorized AI usage.
 
 ### 2. Consent Ledger (CRITICAL)
+
 An append-only, timestamped log of all permissions and usage decisions. Future audit-ready and designed for regulatory compliance.
 
 ### 3. Licensing Control
+
 Actor-owned preferences system that determines how, when, and where their digital identity can be licensed and monetized.
 
 ---
@@ -40,8 +44,9 @@ Actor-owned preferences system that determines how, when, and where their digita
 ## 💡 Why This Matters
 
 Truly Imagined prioritizes:
+
 - **Trust over features**
-- **Usage over scale**  
+- **Usage over scale**
 - **Infrastructure over tools**
 - **Compliance over convenience**
 
@@ -82,18 +87,21 @@ trulyimagined-web-v3/
 ### Technology Stack
 
 **Frontend:**
+
 - Next.js 14 (App Router)
 - React 18
 - Tailwind CSS
 - TypeScript
 
 **Backend:**
+
 - AWS Lambda (Node.js 18)
 - API Gateway
 - PostgreSQL (AWS RDS)
 - Auth0 (Authentication)
 
 **Infrastructure:**
+
 - AWS SAM (Serverless Application Model)
 - pnpm (Monorepo management)
 - TypeScript (End-to-end type safety)
@@ -317,6 +325,7 @@ shared/
 See `infra/database/migrations/` for schema definitions.
 
 Key tables:
+
 - `performers` - Performer identities
 - `consent_boundaries` - AI usage consent (versioned)
 - `licensing_preferences` - Licensing rules (versioned)
@@ -329,6 +338,7 @@ Key tables:
 **See [ROADMAP.md](ROADMAP.md) for the complete 90-day execution plan.**
 
 ### Day 90 Success Metrics:
+
 - 300–1,000 verified actors onboarded
 - 3–5 agency relationships started
 - Identity Registry + Consent Ledger live
@@ -338,17 +348,20 @@ Key tables:
 ### Current Phase: **Phase 1 — Trust Layer + Registry Foundation** (Days 1–30)
 
 **Step 1: Repositioning** ✅ COMPLETE
+
 - Infrastructure and compliance messaging
 - Clear value proposition
 - Actor/agency explainers
 
 **Step 2: Repository + Environment Setup** ✅ COMPLETE
+
 - Monorepo structure configured
 - TypeScript, ESLint, Prettier setup
 - Environment variables templates
 - Development environment verified
 
 **Next Steps:**
+
 - Step 3: Core Backend Infrastructure (PostgreSQL, AWS SAM, API Gateway)
 - Step 4: Auth Layer (Auth0)
 - Step 5: Identity Registry (MVP)
@@ -381,6 +394,7 @@ Proprietary - All rights reserved © 2026 Truly Imagined
 ## 🆘 Support
 
 For issues or questions:
+
 - Check existing documentation
 - Review error logs
 - Contact: support@trulyimagined.com
