@@ -1,0 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Auto-generated files
+*.config.js
+next.config.js
+postcss.config.js
+tailwind.config.js
+
+# AWS
+.aws-sam/
