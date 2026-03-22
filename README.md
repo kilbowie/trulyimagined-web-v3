@@ -1,15 +1,60 @@
 # Truly Imagined v3 🎭
 
-**Global Performer Digital Identity Registry**
+## The Global Registry and Compliance Infrastructure for Human Digital Identity in AI
 
-A microservices-based platform empowering performers with control over their digital identity, consent boundaries, and licensing preferences.
+**We are not an AI tool. We are rights infrastructure.**
 
-## Core Principles
+Truly Imagined provides the foundational registry and compliance layer that enables actors to register their digital identity, define consent boundaries, and license their likeness for AI-generated content.
 
-- **Identity:** Secure performer identity management
-- **Consent:** Granular consent boundaries for AI usage
-- **Control:** Performer-owned licensing preferences
-- **Auditability:** Complete audit trail of all actions
+---
+
+## 🎯 Vision
+
+By establishing the world's first **Identity Registry** and **Consent Ledger** for AI usage, we create the trust infrastructure that the industry needs to operate ethically and legally at scale.
+
+### Core Value Proposition
+
+**"Control and license your digital identity in AI"**
+
+We enable actors to:
+- **Register** their digital identity in a verified, global registry
+- **Define** clear consent boundaries for AI usage
+- **License** their likeness on their own terms
+- **Audit** every usage decision through an immutable ledger
+
+---
+
+## 🏛️ Core Infrastructure Components
+
+### 1. Identity Registry
+Secure registration and verification of actor identities. This is the foundational layer that establishes trust and prevents unauthorized AI usage.
+
+### 2. Consent Ledger (CRITICAL)
+An append-only, timestamped log of all permissions and usage decisions. Future audit-ready and designed for regulatory compliance.
+
+### 3. Licensing Control
+Actor-owned preferences system that determines how, when, and where their digital identity can be licensed and monetized.
+
+---
+
+## 💡 Why This Matters
+
+Truly Imagined prioritizes:
+- **Trust over features**
+- **Usage over scale**  
+- **Infrastructure over tools**
+- **Compliance over convenience**
+
+The goal is to **prove that human digital identity can be registered, controlled, and licensed in AI — and that people will use it.**
+
+---
+
+## 🧭 Guiding Principles
+
+- **Identity:** Secure, verified actor identity management
+- **Consent:** Immutable audit trail of all permissions
+- **Control:** Actor-owned licensing decisions
+- **Auditability:** Complete transparency and compliance-ready logging
 
 ---
 
@@ -279,44 +324,31 @@ Key tables:
 
 ---
 
-## 🎯 Development Roadmap
+## 🎯 90-Day Execution Roadmap
 
-### ✅ STEP 0: Infrastructure (COMPLETE)
+**See [ROADMAP.md](ROADMAP.md) for the complete 90-day execution plan.**
 
-- [x] Monorepo structure
-- [x] TypeScript configuration
-- [x] Next.js frontend scaffold
-- [x] Lambda service scaffolds
-- [x] Database connection layer
-- [x] AWS SAM template
-- [x] Auth0 middleware
+### Day 90 Success Metrics:
+- 300–1,000 verified actors onboarded
+- 3–5 agency relationships started
+- Identity Registry + Consent Ledger live
+- First licensed usage (minutes generated)
+- First revenue signals
 
-### 🚧 STEP 1: Identity Service (Next)
+### Current Phase: **Phase 1 — Trust Layer + Registry Foundation** (Days 1–30)
 
-- [ ] Implement identity CRUD operations
-- [ ] Connect to database
-- [ ] Add Auth0 integration
-- [ ] Add validation (Zod schemas)
+**Step 1: Repositioning** ✅ (Current)
+- Infrastructure and compliance messaging
+- Clear value proposition
+- Actor/agency explainers
 
-### 🚧 STEP 2: Consent Service
-
-- [ ] Implement consent recording
-- [ ] Versioning system
-- [ ] Audit trail
-- [ ] GDPR compliance
-
-### 🚧 STEP 3: Licensing Service
-
-- [ ] Implement licensing preferences
-- [ ] Approval workflows
-- [ ] Fee calculations
-
-### 🚧 STEP 4: Frontend Implementation
-
-- [ ] Dashboard
-- [ ] Identity form
-- [ ] Consent boundaries UI
-- [ ] Licensing preferences UI
+**Next Steps:**
+- Step 2: Repository + Environment Setup
+- Step 3: Core Backend Infrastructure
+- Step 4: Auth Layer (Auth0)
+- Step 5: Identity Registry (MVP)
+- Step 6: Consent Ledger (CRITICAL)
+- Step 7: Basic Frontend
 
 ---
 
