@@ -1,0 +1,19 @@
+# AWS SAM Configuration for Local Development
+
+version = 0.1
+
+[default.deploy.parameters]
+stack_name = "trulyimagined-v3"
+region = "eu-west-2"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+  "DatabaseURL=\"postgresql://user:pass@localhost:5432/trulyimagined\"",
+  "Auth0Domain=\"your-tenant.auth0.com\"",
+  "Auth0Audience=\"https://api.trulyimagined.com\""
+]
+
+[default.local_start_api.parameters]
+warm_containers = "EAGER"
+
+[default.local_start_lambda.parameters]
+warm_containers = "EAGER"

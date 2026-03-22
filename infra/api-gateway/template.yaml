@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Truly Imagined v3 - API Gateway + Lambda Services
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs18.x
+    Environment:
+      Variables:
+        DATABASE_URL: !Ref DatabaseURL
+        NODE_ENV: production
+        AUTH0_DOMAIN: !Ref Auth0Domain
+        AUTH0_AUDIENCE: !Ref Auth0Audience
+
+Parameters:
+  DatabaseURL:
+    Type: String
+    Description: PostgreSQL connection string
+    NoEcho: true
+
+  Auth0Domain:
+    Type: String
+    Description: Auth0 domain (e.g., your-tenant.auth0.com)
+
+  Auth0Audience:
+    Type: String
+    Description: Auth0 API audience/identifier
+
+Resources:
+  # ========================================
+  # API Gateway
+  # ========================================
+  
+  TrulyImaginedApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: trulyimagined-api-v3
+      StageName: prod
+      Cors:
+        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+        AllowHeaders: "'Content-Type,Authorization'"
+        AllowOrigin: "'*'"  # Update with your domain in production
+      Auth:
+        DefaultAuthorizer: NONE  # We'll handle Auth0 in functions
+
+  # ========================================
+  # Identity Service Lambda
+  # ========================================
+  
+  IdentityFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: trulyimagined-identity-service
+      CodeUri: ../../services/identity-service/dist
+      Handler: index.handler
+      Events:
+        CreateIdentity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /identity
+            Method: POST
+        GetIdentity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /identity/{id}
+            Method: GET
+        UpdateIdentity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /identity/{id}
+            Method: PUT
+        DeleteIdentity:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /identity/{id}
+            Method: DELETE
+
+  # ========================================
+  # Consent Service Lambda
+  # ========================================
+  
+  ConsentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: trulyimagined-consent-service
+      CodeUri: ../../services/consent-service/dist
+      Handler: index.handler
+      Events:
+        RecordConsent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /consent
+            Method: POST
+        GetConsent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /consent/{performerId}
+            Method: GET
+        UpdateConsent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /consent/{performerId}
+            Method: PUT
+
+  # ========================================
+  # Licensing Service Lambda
+  # ========================================
+  
+  LicensingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: trulyimagined-licensing-service
+      CodeUri: ../../services/licensing-service/dist
+      Handler: index.handler
+      Events:
+        SetLicensing:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /licensing
+            Method: POST
+        GetLicensing:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /licensing/{performerId}
+            Method: GET
+        UpdateLicensing:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /licensing/{performerId}
+            Method: PUT
+
+# ========================================
+# Outputs
+# ========================================
+
+Outputs:
+  ApiGatewayUrl:
+    Description: URL of the API Gateway
+    Value: !Sub "https://${TrulyImaginedApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+    Export:
+      Name: TrulyImaginedApiUrl
+
+  IdentityFunctionArn:
+    Description: ARN of Identity Service Lambda
+    Value: !GetAtt IdentityFunction.Arn
+
+  ConsentFunctionArn:
+    Description: ARN of Consent Service Lambda
+    Value: !GetAtt ConsentFunction.Arn
+
+  LicensingFunctionArn:
+    Description: ARN of Licensing Service Lambda
+    Value: !GetAtt LicensingFunction.Arn
