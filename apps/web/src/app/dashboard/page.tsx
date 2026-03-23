@@ -11,7 +11,7 @@ export default async function DashboardPage() {
   
   // Redirect to login if not authenticated
   if (!user) {
-    redirect('/api/auth/login');
+    redirect('/auth/login');
   }
   
   const roles = await getUserRoles();

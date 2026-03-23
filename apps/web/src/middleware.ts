@@ -1,43 +1,30 @@
-import { NextResponse } from 'next/server';
+import { auth0 } from './lib/auth0';
 import type { NextRequest } from 'next/server';
 
 /**
- * Middleware to protect routes that require authentication
+ * Official Auth0 Next.js SDK middleware/proxy layer.
  * 
- * Protected routes:
- * - /dashboard/*
- * - /identity/*
- * - /consent/*
- * - /licenses/*
- * 
- * Note: For edge runtime compatibility, we redirect to login instead of using Auth0 middleware
+ * This intercepts requests and handles the OAuth flow automatically.
+ * It mounts these authentication routes:
+ * - /auth/login - Redirects to Auth0 login page
+ * - /auth/logout - Logs out the user
+ * - /auth/callback - Handles the OAuth callback
+ * - /auth/profile - Returns the user profile as JSON
+ * - /auth/access-token - Returns the access token
+ * - /auth/backchannel-logout - Receives logout_token for Back-Channel Logout
  */
 
-export async function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+export async function middleware(request: NextRequest) {
+  const authResponse = await auth0.middleware(request);
 
-  // Define protected routes
-  const protectedPaths = ['/dashboard', '/identity', '/consent', '/licenses'];
-
-  // Check if current path requires authentication
-  const isProtectedPath = protectedPaths.some((path) => pathname.startsWith(path));
-
-  if (isProtectedPath) {
-    // Check for Auth0 session cookie
-    const sessionCookie = req.cookies.get('appSession');
-    
-    if (!sessionCookie) {
-      // Redirect to login
-      const loginUrl = new URL('/api/auth/login', req.url);
-      loginUrl.searchParams.set('returnTo', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  return NextResponse.next();
+  // Always return the auth response.
+  //
+  // Note: The auth response forwards requests to your app routes by default.
+  // If you need to block requests, do it before calling auth0.middleware() or
+  // copy the authResponse headers except for x-middleware-next to your blocking response.
+  return authResponse;
 }
 
-// Configure which routes this middleware runs on
 export const config = {
   matcher: [
     /*
@@ -45,9 +32,8 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico (favicon file)
-     * - public folder
-     * - api/auth (Auth0 routes)
+     * - sitemap.xml, robots.txt (public files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|public|api/auth).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 };
