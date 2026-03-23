@@ -171,7 +171,12 @@ export default function CredentialDetailPage() {
         throw new Error(responseData.error || 'Failed to revoke credential');
       }
 
-      alert('✅ Credential revoked successfully!');
+      // Show appropriate success message
+      const message = responseData.legacy 
+        ? '✅ Legacy credential revoked successfully!\n\nNote: This credential was created before W3C Status List implementation, so revocation is recorded in the database only.'
+        : '✅ Credential revoked successfully!\n\nThe W3C Bitstring Status List has been updated.';
+      
+      alert(message);
       await fetchCredential(); // Refresh to show revoked status
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke credential');
@@ -238,14 +243,12 @@ export default function CredentialDetailPage() {
           isActive
             ? 'bg-green-50 border-green-200'
             : metadata.isRevoked
-            ? 'bg-red-50 border-red-200'
-            : 'bg-orange-50 border-orange-200'
+              ? 'bg-red-50 border-red-200'
+              : 'bg-orange-50 border-orange-200'
         }`}
       >
         <div className="flex items-center gap-3">
-          <span className="text-3xl">
-            {isActive ? '✅' : metadata.isRevoked ? '🚫' : '⚠️'}
-          </span>
+          <span className="text-3xl">{isActive ? '✅' : metadata.isRevoked ? '🚫' : '⚠️'}</span>
           <div>
             <h2 className="font-bold text-lg">
               {isActive ? 'Active Credential' : metadata.isRevoked ? 'Revoked' : 'Expired'}
@@ -254,10 +257,10 @@ export default function CredentialDetailPage() {
               {isActive
                 ? 'This credential is valid and can be used for verification'
                 : metadata.isRevoked
-                ? `Revoked on ${new Date(metadata.revokedAt!).toLocaleString()}${
-                    metadata.revocationReason ? `: ${metadata.revocationReason}` : ''
-                  }`
-                : `Expired on ${new Date(metadata.expiresAt!).toLocaleString()}`}
+                  ? `Revoked on ${new Date(metadata.revokedAt!).toLocaleString()}${
+                      metadata.revocationReason ? `: ${metadata.revocationReason}` : ''
+                    }`
+                  : `Expired on ${new Date(metadata.expiresAt!).toLocaleString()}`}
             </p>
           </div>
         </div>
@@ -293,9 +296,7 @@ export default function CredentialDetailPage() {
       {verification && (
         <div
           className={`mb-6 p-4 rounded-lg border ${
-            verification.verified
-              ? 'bg-green-50 border-green-200'
-              : 'bg-red-50 border-red-200'
+            verification.verified ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
           }`}
         >
           <h3 className="font-semibold mb-1">
@@ -401,6 +402,20 @@ export default function CredentialDetailPage() {
               </dd>
             </div>
           </dl>
+        </div>
+      )}
+
+      {!credential.credentialStatus && (
+        <div className="bg-yellow-50 rounded-lg shadow border border-yellow-200 p-6 mb-6">
+          <h2 className="text-xl font-bold mb-2 text-yellow-900">
+            ⚠️ Legacy Credential (No Status List)
+          </h2>
+          <p className="text-sm text-yellow-800">
+            This credential was issued before the W3C Bitstring Status List implementation was
+            added. It does not include verifiable revocation status information, but can still be
+            revoked in the database. Revocation status will only be reflected in our system and not
+            verifiable by external parties through a status list.
+          </p>
         </div>
       )}
 

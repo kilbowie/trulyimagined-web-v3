@@ -124,14 +124,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Revoke credential (update bitstring status list)
-    await updateCredentialStatus(pool, {
-      credentialId,
-      statusPurpose: 'revocation',
-      statusValue: 1, // 1 = revoked
-    });
+    // 7. Check if credential has status list entry (new credentials)
+    const statusEntryResult = await pool.query(
+      `SELECT id FROM credential_status_entries WHERE credential_id = $1 AND status_purpose = 'revocation'`,
+      [credentialId]
+    );
 
-    // 8. Update revocation reason if provided
+    const hasStatusEntry = statusEntryResult.rows.length > 0;
+
+    // 8. Revoke credential
+    if (hasStatusEntry) {
+      // New credential with W3C Bitstring Status List
+      await updateCredentialStatus(pool, {
+        credentialId,
+        statusPurpose: 'revocation',
+        statusValue: 1, // 1 = revoked
+      });
+    } else {
+      // Legacy credential without status list - just update database
+      console.log(`Legacy credential ${credentialId} does not have status list entry. Marking as revoked in database only.`);
+      await pool.query(
+        `UPDATE verifiable_credentials 
+         SET is_revoked = true, revoked_at = NOW(), updated_at = NOW() 
+         WHERE id = $1`,
+        [credentialId]
+      );
+    }
+
+    // 9. Update revocation reason if provided
     if (reason) {
       await pool.query(
         `UPDATE verifiable_credentials 
@@ -141,7 +161,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 9. Get updated credential info
+    // 10. Get updated credential info
     const updatedResult = await pool.query(
       `SELECT revoked_at FROM verifiable_credentials WHERE id = $1`,
       [credentialId]
@@ -149,13 +169,16 @@ export async function POST(request: NextRequest) {
 
     const revokedAt = updatedResult.rows[0].revoked_at;
 
-    // 10. Return success response
+    // 11. Return success response
     return NextResponse.json({
       success: true,
-      message: 'Credential revoked successfully',
+      message: hasStatusEntry 
+        ? 'Credential revoked successfully (W3C Bitstring Status List updated)'
+        : 'Legacy credential revoked successfully (database-only revocation)',
       credentialId,
       revokedAt,
       reason: reason || null,
+      legacy: !hasStatusEntry,
     });
   } catch (error) {
     console.error('Error revoking credential:', error);
