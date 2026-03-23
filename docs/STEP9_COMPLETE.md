@@ -90,28 +90,28 @@ Resolves to: https://trulyimagined.com/.well-known/did.json
 CREATE TABLE verifiable_credentials (
   id UUID PRIMARY KEY,
   user_profile_id UUID REFERENCES user_profiles(id),
-  
+
   -- Credential Type
   credential_type VARCHAR(100),  -- 'IdentityCredential', 'AgentCredential', etc.
-  
+
   -- W3C VC Document (Full JSON)
   credential_json JSONB NOT NULL,
-  
+
   -- DID Information
   issuer_did VARCHAR(500),       -- 'did:web:trulyimagined.com'
   holder_did VARCHAR(500),       -- 'did:web:trulyimagined.com:users:{userId}'
-  
+
   -- Lifecycle
   issued_at TIMESTAMP,
   expires_at TIMESTAMP,
   is_revoked BOOLEAN DEFAULT FALSE,
   revoked_at TIMESTAMP,
   revocation_reason TEXT,
-  
+
   -- Proof Details
   verification_method VARCHAR(500),  -- 'did:web:trulyimagined.com#key-1'
   proof_type VARCHAR(100),           -- 'Ed25519Signature2020'
-  
+
   created_at TIMESTAMP DEFAULT NOW()
 );
 ```
@@ -132,17 +132,20 @@ node scripts/generate-issuer-keys.js
 ```
 
 **Output:**
+
 ```
 ISSUER_ED25519_PUBLIC_KEY=z6Mkegd...      # 44-char multibase
 ISSUER_ED25519_PRIVATE_KEY=zrv49sT...     # 86-char multibase
 ```
 
 **Security:**
+
 - Private key stored in `.env.local` (never committed to Git)
 - Production: Store in AWS Secrets Manager or similar
 - Public key published in DID document at `/.well-known/did.json`
 
 **Key Details:**
+
 - Algorithm: Ed25519 (EdDSA on Curve25519)
 - Signature Suite: Ed25519Signature2020
 - Encoding: Multibase (base58-btc, z-prefixed)
@@ -159,14 +162,16 @@ Issue a new W3C Verifiable Credential.
 **Authentication:** Required (Auth0 JWT)
 
 **Request:**
+
 ```json
 {
-  "credentialType": "IdentityCredential",  // Optional
-  "expiresInDays": 365                     // Optional (default: no expiration)
+  "credentialType": "IdentityCredential", // Optional
+  "expiresInDays": 365 // Optional (default: no expiration)
 }
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -209,6 +214,7 @@ Issue a new W3C Verifiable Credential.
 ```
 
 **Requirements:**
+
 - User must have completed profile
 - User must have at least one verified identity link (Step 7)
 
@@ -221,10 +227,12 @@ List all credentials for the authenticated user.
 **Authentication:** Required
 
 **Query Parameters:**
+
 - `includeRevoked=true` - Include revoked credentials
 - `includeExpired=true` - Include expired credentials
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -254,10 +262,12 @@ Retrieve a specific credential by ID.
 **Authentication:** Required (must own credential or be Admin)
 
 **Query Parameters:**
+
 - `download=true` - Download as `.json` file
 - `verify=true` - Include signature verification result
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -279,13 +289,15 @@ Revoke a credential (marks as revoked, does not delete).
 **Authentication:** Required (must own credential or be Admin)
 
 **Request Body:**
+
 ```json
 {
-  "reason": "Key compromised"  // Optional
+  "reason": "Key compromised" // Optional
 }
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -304,12 +316,10 @@ Serve W3C DID Document for a user.
 **Authentication:** None (public endpoint)
 
 **Response:**
+
 ```json
 {
-  "@context": [
-    "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/suites/ed25519-2020/v1"
-  ],
+  "@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/ed25519-2020/v1"],
   "id": "did:web:trulyimagined.com:users:123e4567-...",
   "name": "Jane Doe",
   "verificationMethod": [
@@ -340,12 +350,10 @@ Serve platform issuer's DID Document.
 **Authentication:** None (public endpoint)
 
 **Response:**
+
 ```json
 {
-  "@context": [
-    "https://www.w3.org/ns/did/v1",
-    "https://w3id.org/security/suites/ed25519-2020/v1"
-  ],
+  "@context": ["https://www.w3.org/ns/did/v1", "https://w3id.org/security/suites/ed25519-2020/v1"],
   "id": "did:web:trulyimagined.com",
   "verificationMethod": [
     {
@@ -377,6 +385,7 @@ Serve platform issuer's DID Document.
 **Component:** `<VerifiableCredentialsCard />`
 
 **Features:**
+
 - **List Credentials**: Display all issued credentials with status (Active, Revoked, Expired)
 - **Issue New Credential**: Button to request new credential
 - **Download**: Download credential as `.json` file
@@ -408,6 +417,7 @@ Serve platform issuer's DID Document.
 ### Manual Testing Steps
 
 1. **Issue Credential**:
+
    ```bash
    # 1. Login as Actor user
    # 2. Navigate to /dashboard
@@ -417,6 +427,7 @@ Serve platform issuer's DID Document.
    ```
 
 2. **Download Credential**:
+
    ```bash
    # Click "Download" button
    # Verify credential-{uuid}.json file downloads
@@ -424,10 +435,11 @@ Serve platform issuer's DID Document.
    ```
 
 3. **Verify DID Document**:
+
    ```bash
    curl https://trulyimagined.com/.well-known/did.json
    # Should return platform issuer DID document
-   
+
    curl https://trulyimagined.com/users/{userId}/did.json
    # Should return user DID document
    ```
@@ -462,6 +474,7 @@ Installed packages (via `pnpm add`):
 ```
 
 **Purpose:**
+
 - `@digitalbazaar/vc`: Core W3C VC library (issue, verify)
 - `@digitalbazaar/ed25519-signature-2020`: Ed25519 signature suite
 - `@digitalbazaar/ed25519-verification-key-2020`: Ed25519 key management
@@ -482,6 +495,7 @@ ISSUER_ED25519_PRIVATE_KEY=zrv49sT...
 ```
 
 **⚠️ Security:**
+
 - Never commit private key to Git
 - Add to `.gitignore`
 - For production: Use AWS Secrets Manager
@@ -573,7 +587,6 @@ Regulator audits platform's identity verification:
 
 1. **DID Method**: Uses `did:web` (centralized, HTTPS-dependent)
    - **Future:** Consider `did:key` or blockchain-based DIDs
-   
 2. **Selective Disclosure**: Not implemented (full credential shared)
    - **Future:** Implement BBS+ signatures for privacy
 

@@ -1,17 +1,17 @@
 /**
  * Truly Imagined v3 - W3C Verifiable Credentials Library
- * 
+ *
  * Standards Compliance:
  * - W3C Verifiable Credentials Data Model 2.0 (https://www.w3.org/TR/vc-data-model-2.0/)
  * - W3C DID Core 1.0 (did:web method)
  * - Ed25519Signature2020 cryptographic suite
- * 
+ *
  * Features:
  * - Issue W3C Verifiable Credentials (v2.0 format)
  * - Verify credential signatures
  * - Revoke credentials
  * - Generate DID documents
- * 
+ *
  * V2.0 Changes:
  * - Context: https://www.w3.org/ns/credentials/v2 (was v1)
  * - Date fields: validFrom/validUntil (was issuanceDate/expirationDate)
@@ -22,6 +22,8 @@ import { Ed25519VerificationKey2020 } from '@digitalbazaar/ed25519-verification-
 import { Ed25519Signature2020 } from '@digitalbazaar/ed25519-signature-2020';
 import * as vc from '@digitalbazaar/vc';
 import { z } from 'zod';
+import { randomUUID } from 'crypto';
+import type { BitstringStatusListEntry } from './bitstring-status-list';
 
 // ===========================================
 // TYPES & SCHEMAS
@@ -45,11 +47,13 @@ export interface CredentialSubject {
 
 export interface VerifiableCredential {
   '@context': string[];
+  id: string; // W3C VC 2.0: unique credential identifier (URL)
   type: string[];
   issuer: string;
   validFrom: string; // W3C VC 2.0: replaces issuanceDate
   validUntil?: string; // W3C VC 2.0: replaces expirationDate
   credentialSubject: CredentialSubject;
+  credentialStatus?: BitstringStatusListEntry | BitstringStatusListEntry[]; // W3C Bitstring Status List v1.0
   proof?: Record<string, unknown>; // Cryptographic proof
 }
 
@@ -59,6 +63,7 @@ export interface IssueCredentialOptions {
   holderProfileId: string;
   claims: Record<string, unknown>;
   expiresInDays?: number;
+  credentialStatus?: BitstringStatusListEntry | BitstringStatusListEntry[]; // Optional status list entry
 }
 
 // ===========================================
@@ -81,8 +86,7 @@ async function getIssuerKeyPair(): Promise<Ed25519VerificationKey2020> {
 
   if (!publicKey || !privateKey) {
     throw new Error(
-      'Missing Ed25519 keypair in environment. ' +
-      'Run: node scripts/generate-issuer-keys.js'
+      'Missing Ed25519 keypair in environment. ' + 'Run: node scripts/generate-issuer-keys.js'
     );
   }
 
@@ -103,10 +107,10 @@ async function getIssuerKeyPair(): Promise<Ed25519VerificationKey2020> {
 
 /**
  * Issue a W3C Verifiable Credential to a user (v2.0 format)
- * 
+ *
  * @param options - Credential issuance options
  * @returns Signed Verifiable Credential (W3C VC 2.0 format)
- * 
+ *
  * @example
  * ```typescript
  * const credential = await issueCredential({
@@ -125,7 +129,8 @@ async function getIssuerKeyPair(): Promise<Ed25519VerificationKey2020> {
 export async function issueCredential(
   options: IssueCredentialOptions
 ): Promise<VerifiableCredential> {
-  const { credentialType, holderDid, holderProfileId, claims, expiresInDays } = options;
+  const { credentialType, holderDid, holderProfileId, claims, expiresInDays, credentialStatus } =
+    options;
 
   // Validate credential type
   CredentialTypeSchema.parse(credentialType);
@@ -147,6 +152,9 @@ export async function issueCredential(
     validUntil = expDate.toISOString();
   }
 
+  // Generate unique credential ID (W3C VC 2.0 requirement)
+  const credentialId = `https://trulyimagined.com/api/credentials/${randomUUID()}`;
+
   // Build credential subject
   const credentialSubject: CredentialSubject = {
     id: holderDid,
@@ -154,18 +162,31 @@ export async function issueCredential(
     ...claims,
   };
 
+  // Build context array (include status context if credentialStatus provided)
+  const contextArray = [
+    'https://www.w3.org/ns/credentials/v2', // W3C VC 2.0 context
+    'https://www.w3.org/ns/credentials/examples/v2', // Examples context
+  ];
+
+  if (credentialStatus) {
+    contextArray.push('https://www.w3.org/ns/credentials/status/v1'); // W3C Bitstring Status List context
+  }
+
   // Build unsigned credential (W3C VC 2.0 format)
-  const unsignedCredential = {
-    '@context': [
-      'https://www.w3.org/ns/credentials/v2', // W3C VC 2.0 context
-      'https://www.w3.org/ns/credentials/examples/v2', // Examples context
-    ],
+  const unsignedCredential: Record<string, unknown> = {
+    '@context': contextArray,
+    id: credentialId, // W3C VC 2.0: unique credential identifier
     type: ['VerifiableCredential', credentialType],
     issuer: 'did:web:trulyimagined.com',
     validFrom, // W3C VC 2.0: replaces issuanceDate
     ...(validUntil && { validUntil }), // W3C VC 2.0: replaces expirationDate
     credentialSubject,
   };
+
+  // Add credentialStatus if provided (W3C Bitstring Status List v1.0)
+  if (credentialStatus) {
+    unsignedCredential.credentialStatus = credentialStatus;
+  }
 
   // Sign the credential
   const signedCredential = await vc.issue({
@@ -183,10 +204,10 @@ export async function issueCredential(
 
 /**
  * Verify a W3C Verifiable Credential's signature and integrity
- * 
+ *
  * @param credential - The credential to verify
  * @returns Verification result with success status
- * 
+ *
  * @example
  * ```typescript
  * const result = await verifyCredential(credential);
@@ -229,11 +250,11 @@ export async function verifyCredential(
 /**
  * Generate a W3C DID Document for a user
  * Uses did:web method (HTTPS-based, no blockchain required)
- * 
+ *
  * @param userId - User's profile ID (UUID)
  * @param publicKeyMultibase - User's public key (optional, for user-controlled keys)
  * @returns DID Document (W3C DID Core 1.0)
- * 
+ *
  * @example
  * ```typescript
  * const didDoc = await generateDidDocument('123e4567-e89b-12d3-a456-426614174000');
@@ -312,7 +333,7 @@ export async function generateIssuerDidDocument(): Promise<Record<string, unknow
 /**
  * Custom document loader for resolving W3C credential contexts
  * Required by @digitalbazaar/vc library
- * 
+ *
  * Supports W3C VC Data Model 2.0 contexts
  */
 async function customDocumentLoader(url: string): Promise<Record<string, unknown>> {
@@ -403,7 +424,8 @@ async function customDocumentLoader(url: string): Promise<Record<string, unknown
           ActorCredential: 'https://trulyimagined.com/credentials#ActorCredential',
           EnterpriseCredential: 'https://trulyimagined.com/credentials#EnterpriseCredential',
           VerifiedAgeCredential: 'https://trulyimagined.com/credentials#VerifiedAgeCredential',
-          VerifiedProfessionalCredential: 'https://trulyimagined.com/credentials#VerifiedProfessionalCredential',
+          VerifiedProfessionalCredential:
+            'https://trulyimagined.com/credentials#VerifiedProfessionalCredential',
           // Custom properties
           profileId: 'https://trulyimagined.com/credentials#profileId',
           legalName: 'https://trulyimagined.com/credentials#legalName',
@@ -521,6 +543,68 @@ async function customDocumentLoader(url: string): Promise<Record<string, unknown
     };
   }
 
+  // W3C Bitstring Status List v1.0 context
+  if (url === 'https://www.w3.org/ns/credentials/status/v1') {
+    return {
+      contextUrl: null,
+      documentUrl: url,
+      document: {
+        '@context': {
+          '@version': 1.1,
+          '@protected': true,
+          BitstringStatusListCredential: {
+            '@id': 'https://www.w3.org/ns/credentials/status#BitstringStatusListCredential',
+          },
+          BitstringStatusList: {
+            '@id': 'https://www.w3.org/ns/credentials/status#BitstringStatusList',
+          },
+          BitstringStatusListEntry: {
+            '@id': 'https://www.w3.org/ns/credentials/status#BitstringStatusListEntry',
+          },
+          statusPurpose: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusPurpose',
+            '@type': '@vocab',
+          },
+          statusListIndex: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusListIndex',
+          },
+          statusListCredential: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusListCredential',
+            '@type': '@id',
+          },
+          encodedList: {
+            '@id': 'https://www.w3.org/ns/credentials/status#encodedList',
+          },
+          ttl: {
+            '@id': 'https://www.w3.org/ns/credentials/status#ttl',
+            '@type': 'http://www.w3.org/2001/XMLSchema#nonNegativeInteger',
+          },
+          statusSize: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusSize',
+            '@type': 'http://www.w3.org/2001/XMLSchema#positiveInteger',
+          },
+          statusMessage: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusMessage',
+            '@context': {
+              '@version': 1.1,
+              '@protected': true,
+              status: {
+                '@id': 'https://www.w3.org/ns/credentials/status#status',
+              },
+              message: {
+                '@id': 'https://www.w3.org/ns/credentials/status#message',
+              },
+            },
+          },
+          statusReference: {
+            '@id': 'https://www.w3.org/ns/credentials/status#statusReference',
+            '@type': '@id',
+          },
+        },
+      },
+    };
+  }
+
   throw new Error(`Unsupported context URL: ${url}`);
 }
 
@@ -543,7 +627,7 @@ export function getCredentialTypeForUser(
   if (role === 'Enterprise') {
     return 'EnterpriseCredential';
   }
-  
+
   // Default to IdentityCredential
   return 'IdentityCredential';
 }

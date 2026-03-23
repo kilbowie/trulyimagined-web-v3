@@ -15,12 +15,14 @@ Successfully upgraded Truly Imagined's Verifiable Credentials implementation fro
 ## 📋 Major Changes Implemented
 
 ### 1. Context URL Updated
+
 ```diff
 - '@context': ['https://www.w3.org/2018/credentials/v1']
 + '@context': ['https://www.w3.org/ns/credentials/v2']
 ```
 
 ### 2. Date Fields Renamed
+
 ```diff
 - issuanceDate: "2025-01-24T10:00:00Z"
 - expirationDate: "2026-01-24T10:00:00Z"
@@ -29,11 +31,13 @@ Successfully upgraded Truly Imagined's Verifiable Credentials implementation fro
 ```
 
 ### 3. TypeScript Types Updated
+
 - Updated `VerifiableCredential` interface to use `validFrom` and `validUntil`
 - Updated all functions and API endpoints to use new field names
 - Updated database insertion queries to map v2.0 fields correctly
 
 ### 4. Document Loader Enhanced
+
 - Added support for `https://www.w3.org/ns/credentials/v2` context
 - Added support for `https://www.w3.org/ns/credentials/examples/v2` context
 - Maintained backwards compatibility with v1.1 contexts
@@ -44,12 +48,15 @@ Successfully upgraded Truly Imagined's Verifiable Credentials implementation fro
 ## 🐛 500 Error - Root Cause & Fix
 
 ### **Problem**
+
 API endpoint was trying to access `credential.issuanceDate` and `credential.expirationDate` (v1.1 fields), but credentials were now using `validFrom` and `validUntil` (v2.0 fields).
 
 ### **Location**
+
 `apps/web/src/app/api/credentials/issue/route.ts` - Line 193-194
 
 ### **Fix**
+
 ```typescript
 // Before (v1.1):
 issued_at: credential.issuanceDate,
@@ -65,6 +72,7 @@ expires_at: credential.validUntil || null,
 ## 📁 Files Modified
 
 ### Core Library
+
 - ✅ `apps/web/src/lib/verifiable-credentials.ts`
   - Updated header documentation to reference v2.0
   - Changed context URLs to v2 format
@@ -74,12 +82,14 @@ expires_at: credential.validUntil || null,
   - Added custom credential type definitions in v2 examples context
 
 ### API Endpoints
+
 - ✅ `apps/web/src/app/api/credentials/issue/route.ts`
   - Updated documentation to reference v2.0
   - Fixed database insertion to use `validFrom`/`validUntil`
   - No other changes needed (credential generation handled by library)
 
 ### Other Endpoints (No Changes Required)
+
 - ✅ `apps/web/src/app/api/credentials/list/route.ts` - Only reads from database
 - ✅ `apps/web/src/app/api/credentials/[credentialId]/route.ts` - Only reads from database
 - ✅ DID document endpoints - Not affected by credential format changes
@@ -89,6 +99,7 @@ expires_at: credential.validUntil || null,
 ## 🧪 Testing
 
 ### Verification Steps
+
 1. TypeScript compilation: ✅ No errors
 2. Context resolution: ✅ V2 contexts load correctly
 3. Credential structure: ✅ Uses `validFrom` and `validUntil`
@@ -96,7 +107,9 @@ expires_at: credential.validUntil || null,
 5. Database storage: ✅ Credentials persist with correct timestamps
 
 ### Test Script
+
 Created `test-vc-v2.js` to validate:
+
 - Credential issuance with v2.0 format
 - Correct context URLs
 - Correct field names (validFrom/validUntil)
@@ -110,29 +123,32 @@ To run: `node test-vc-v2.js`
 ## 📊 V2.0 Standard Compliance
 
 ### Required Fields (Per Spec)
-| Field | Status | Implementation |
-|-------|--------|----------------|
-| `@context` | ✅ | `https://www.w3.org/ns/credentials/v2` |
-| `type` | ✅ | `['VerifiableCredential', 'IdentityCredential']` |
-| `issuer` | ✅ | `did:web:trulyimagined.com` |
-| `validFrom` | ✅ | ISO 8601 timestamp |
-| `credentialSubject` | ✅ | Contains holder DID and claims |
+
+| Field               | Status | Implementation                                   |
+| ------------------- | ------ | ------------------------------------------------ |
+| `@context`          | ✅     | `https://www.w3.org/ns/credentials/v2`           |
+| `type`              | ✅     | `['VerifiableCredential', 'IdentityCredential']` |
+| `issuer`            | ✅     | `did:web:trulyimagined.com`                      |
+| `validFrom`         | ✅     | ISO 8601 timestamp                               |
+| `credentialSubject` | ✅     | Contains holder DID and claims                   |
 
 ### Optional Fields
-| Field | Status | Implementation |
-|-------|--------|----------------|
-| `id` | ❌ | Not currently generated (can add if needed) |
-| `validUntil` | ✅ | ISO 8601 timestamp (if expiresInDays provided) |
-| `credentialStatus` | ❌ | Not yet implemented (use database `is_revoked` flag) |
-| `credentialSchema` | ❌ | Not yet implemented |
-| `evidence` | ❌ | Use `identityProviders` in claims instead |
-| `termsOfUse` | ❌ | Not yet implemented |
+
+| Field              | Status | Implementation                                       |
+| ------------------ | ------ | ---------------------------------------------------- |
+| `id`               | ❌     | Not currently generated (can add if needed)          |
+| `validUntil`       | ✅     | ISO 8601 timestamp (if expiresInDays provided)       |
+| `credentialStatus` | ❌     | Not yet implemented (use database `is_revoked` flag) |
+| `credentialSchema` | ❌     | Not yet implemented                                  |
+| `evidence`         | ❌     | Use `identityProviders` in claims instead            |
+| `termsOfUse`       | ❌     | Not yet implemented                                  |
 
 ---
 
 ## 🔐 Cryptographic Suite
 
 **Unchanged:** Still using Ed25519Signature2020
+
 - Compatible with both v1.1 and v2.0
 - Keypair stored in environment variables
 - Signature suite: `@digitalbazaar/ed25519-signature-2020`
@@ -173,7 +189,9 @@ To run: `node test-vc-v2.js`
 ## 🔄 Migration Notes
 
 ### Database Schema
+
 **No migration required!** The `verifiable_credentials` table uses generic timestamp columns:
+
 - `issued_at` → Stores `validFrom` value
 - `expires_at` → Stores `validUntil` value
 - `credential_json` → Stores full v2.0 credential as JSONB
@@ -181,6 +199,7 @@ To run: `node test-vc-v2.js`
 Existing v1.1 credentials in database remain valid and readable. New credentials use v2.0 format.
 
 ### Frontend
+
 **No changes required!** The UI displays credentials as-is from the API. Date fields are stored in the JSON and don't need UI updates.
 
 ---

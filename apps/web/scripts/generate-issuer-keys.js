@@ -2,13 +2,13 @@
 
 /**
  * Truly Imagined v3 - Ed25519 Issuer Key Generator
- * 
+ *
  * Generates an Ed25519 keypair for signing W3C Verifiable Credentials.
- * 
+ *
  * Usage:
  *   cd apps/web
  *   node scripts/generate-issuer-keys.js
- * 
+ *
  * Output:
  *   - Public/Private key in multibase format
  *   - Add to .env.local:
@@ -26,7 +26,7 @@ async function generateIssuerKeys() {
     // Generate new Ed25519 keypair
     const keyPair = await Ed25519VerificationKey2020.generate({
       id: 'did:web:trulyimagined.com#key-1',
-      controller: 'did:web:trulyimagined.com'
+      controller: 'did:web:trulyimagined.com',
     });
 
     // Export keys in multibase format (z-prefixed base58-btc encoding)
@@ -49,7 +49,6 @@ async function generateIssuerKeys() {
     console.log(`   - Controller: ${keyPair.controller}`);
     console.log(`   - Type: ${keyPair.type}`);
     console.log(`   - Suite: Ed25519Signature2020\n`);
-
   } catch (error) {
     console.error('❌ Error generating keypair:', error);
     process.exit(1);

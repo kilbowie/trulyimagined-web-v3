@@ -2,7 +2,7 @@
 
 /**
  * Run Migration 005: Verifiable Credentials
- * 
+ *
  * This script applies only migration 005, skipping earlier migrations
  * that have already been applied.
  */
@@ -27,7 +27,7 @@ async function runMigration005() {
     // Read and execute migration
     const sql = fs.readFileSync(migrationPath, 'utf-8');
     await db.query(sql);
-    
+
     console.log('[MIGRATION] ✓ Migration 005 completed successfully\n');
     process.exit(0);
   } catch (error: any) {

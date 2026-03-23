@@ -1,6 +1,6 @@
 /**
  * Verifiable Credentials Component
- * 
+ *
  * Displays user's W3C Verifiable Credentials and provides:
  * - List of issued credentials
  * - Download credential as JSON
@@ -117,7 +117,9 @@ export function VerifiableCredentialsCard() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Failed to download credential: ' + (err instanceof Error ? err.message : 'Unknown error'));
+      alert(
+        'Failed to download credential: ' + (err instanceof Error ? err.message : 'Unknown error')
+      );
     }
   }
 
@@ -212,9 +214,8 @@ export function VerifiableCredentialsCard() {
 
                     <div className="text-sm text-gray-600 space-y-1">
                       <p>
-                        <strong>Issued:</strong>{' '}
-                        {new Date(metadata.issuedAt).toLocaleDateString()} at{' '}
-                        {new Date(metadata.issuedAt).toLocaleTimeString()}
+                        <strong>Issued:</strong> {new Date(metadata.issuedAt).toLocaleDateString()}{' '}
+                        at {new Date(metadata.issuedAt).toLocaleTimeString()}
                       </p>
                       {metadata.expiresAt && (
                         <p>

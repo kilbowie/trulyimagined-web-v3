@@ -1,12 +1,12 @@
 /**
  * GET /api/credentials/list
- * 
+ *
  * List all Verifiable Credentials for the authenticated user
- * 
+ *
  * Query Parameters:
  * - includeRevoked=true: Include revoked credentials
  * - includeExpired=true: Include expired credentials
- * 
+ *
  * Response:
  * {
  *   "success": true,
@@ -30,10 +30,7 @@ export async function GET(request: NextRequest) {
     // 1. Authenticate user
     const session = await auth0.getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const auth0UserId = session.user.sub;

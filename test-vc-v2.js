@@ -1,17 +1,20 @@
 /**
  * Test W3C Verifiable Credentials Data Model 2.0 Implementation
- * 
+ *
  * This script tests the v2.0 upgrade:
  * - Context: https://www.w3.org/ns/credentials/v2
  * - Date fields: validFrom, validUntil (not issuanceDate, expirationDate)
  * - Proof generation and verification
  */
 
-const { issueCredential, verifyCredential } = require('./apps/web/src/lib/verifiable-credentials.ts');
+const {
+  issueCredential,
+  verifyCredential,
+} = require('./apps/web/src/lib/verifiable-credentials.ts');
 
 async function testV2Credential() {
   console.log('🧪 Testing W3C VC Data Model v2.0 Implementation\n');
-  console.log('=' .repeat(60));
+  console.log('='.repeat(60));
 
   try {
     // Test credential issuance
@@ -33,7 +36,7 @@ async function testV2Credential() {
 
     // Validate v2.0 format
     console.log('\n✅ Step 2: Validate v2.0 format...');
-    
+
     const hasV2Context = credential['@context'].includes('https://www.w3.org/ns/credentials/v2');
     const hasV1Context = credential['@context'].includes('https://www.w3.org/2018/credentials/v1');
     const hasValidFrom = 'validFrom' in credential;
@@ -74,7 +77,7 @@ async function testV2Credential() {
     console.log(`  - Valid Until: ${credential.validUntil || 'No expiration'}`);
     console.log(`  - Credential Subject: ${credential.credentialSubject.id}`);
     console.log(`  - Proof Type: ${credential.proof?.type || 'Unknown'}`);
-    
+
     return true;
   } catch (error) {
     console.error('\n❌ TEST FAILED:', error.message);

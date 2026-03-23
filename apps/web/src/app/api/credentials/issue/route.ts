@@ -1,21 +1,21 @@
 /**
  * POST /api/credentials/issue
- * 
+ *
  * Issue a W3C Verifiable Credential to an authenticated user
- * 
+ *
  * Standards: W3C Verifiable Credentials Data Model 2.0
- * 
+ *
  * Requirements:
  * - User must be authenticated (Auth0 JWT)
  * - User must have completed profile
  * - User must have at least one verified identity link
- * 
+ *
  * Request Body:
  * {
  *   "credentialType": "IdentityCredential" | "AgentCredential" | "ActorCredential" | etc.
  *   "expiresInDays": 365 (optional, default: no expiration)
  * }
- * 
+ *
  * Response:
  * {
  *   "success": true,
@@ -33,6 +33,7 @@ import {
   getCredentialTypeForUser,
   CredentialTypeSchema,
 } from '@/lib/verifiable-credentials';
+import { allocateStatusIndex } from '@/lib/status-list-manager';
 import { z } from 'zod';
 
 // ===========================================
@@ -53,10 +54,7 @@ export async function POST(request: NextRequest) {
     // 1. Authenticate user
     const session = await auth0.getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const auth0UserId = session.user.sub;
@@ -171,17 +169,8 @@ export async function POST(request: NextRequest) {
     // 7. Generate user's DID
     const holderDid = `did:web:trulyimagined.com:users:${profile.id}`;
 
-    // 8. Issue the Verifiable Credential
-    const credential = await issueCredential({
-      credentialType,
-      holderDid,
-      holderProfileId: profile.id,
-      claims,
-      expiresInDays: expiresInDays || undefined,
-    });
-
-    // 9. Store credential in database (W3C VC 2.0 format)
-    const insertResult = await pool.query(
+    // 8. Pre-allocate database record to get credential ID (for status list allocation)
+    const preInsertResult = await pool.query(
       `INSERT INTO verifiable_credentials (
         user_profile_id,
         credential_type,
@@ -189,34 +178,65 @@ export async function POST(request: NextRequest) {
         issuer_did,
         holder_did,
         issued_at,
-        expires_at,
         verification_method,
         proof_type
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING id`,
       [
         profile.id,
         credentialType,
-        JSON.stringify(credential),
+        JSON.stringify({}), // Temporary placeholder
         'did:web:trulyimagined.com',
         holderDid,
-        credential.validFrom, // W3C VC 2.0: was issuanceDate
-        credential.validUntil || null, // W3C VC 2.0: was expirationDate
+        new Date().toISOString(),
         'did:web:trulyimagined.com#key-1',
         'Ed25519Signature2020',
       ]
     );
 
-    const credentialId = insertResult.rows[0].id;
+    const credentialDbId = preInsertResult.rows[0].id;
 
-    // 10. Return credential to user
+    // 9. Allocate status list index for revocation
+    const credentialStatus = await allocateStatusIndex(pool, {
+      credentialId: credentialDbId,
+      statusPurpose: 'revocation',
+      statusSize: 1,
+    });
+
+    // 10. Issue the Verifiable Credential with status
+    const credential = await issueCredential({
+      credentialType,
+      holderDid,
+      holderProfileId: profile.id,
+      claims,
+      expiresInDays: expiresInDays || undefined,
+      credentialStatus, // Include W3C Bitstring Status List entry
+    });
+
+    // 11. Update credential in database with final signed credential
+    await pool.query(
+      `UPDATE verifiable_credentials 
+       SET credential_json = $1,
+           credential_id = $2,
+           expires_at = $3,
+           updated_at = NOW()
+       WHERE id = $4`,
+      [
+        JSON.stringify(credential),
+        credential.id, // Unique credential ID from W3C VC
+        credential.validUntil || null,
+        credentialDbId,
+      ]
+    );
+
+    // 12. Return credential to user
     return NextResponse.json({
       success: true,
       credential,
-      credentialId,
-      downloadUrl: `/api/credentials/${credentialId}`,
+      credentialId: credentialDbId,
+      downloadUrl: `/api/credentials/${credentialDbId}`,
       holderDid,
-      message: 'Verifiable Credential issued successfully',
+      message: 'Verifiable Credential issued successfully (with revocation status)',
     });
   } catch (error) {
     console.error('Error issuing credential:', error);

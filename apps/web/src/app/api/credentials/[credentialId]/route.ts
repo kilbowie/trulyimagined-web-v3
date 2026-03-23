@@ -1,16 +1,16 @@
 /**
  * GET /api/credentials/[credentialId]
- * 
+ *
  * Retrieve a W3C Verifiable Credential by ID
- * 
+ *
  * Requirements:
  * - User must be authenticated
  * - User must own the credential (or have admin role)
- * 
+ *
  * Query Parameters:
  * - download=true: Download as .json file
  * - verify=true: Include verification status
- * 
+ *
  * Response:
  * {
  *   "success": true,
@@ -35,16 +35,12 @@ import { verifyCredential, type VerifiableCredential } from '@/lib/verifiable-cr
 // GET /api/credentials/[credentialId]
 // ===========================================
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { credentialId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { credentialId: string } }) {
   try {
     const credentialId = params.credentialId;
 
     // Validate UUID format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(credentialId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid credential ID format' },
@@ -55,10 +51,7 @@ export async function GET(
     // 1. Authenticate user
     const session = await auth0.getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const auth0UserId = session.user.sub;
@@ -100,19 +93,13 @@ export async function GET(
     );
 
     if (credentialResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Credential not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
 
     const credentialData = credentialResult.rows[0];
 
     // 4. Authorization check: User must own the credential or be Admin
-    if (
-      credentialData.user_profile_id !== profile.id &&
-      profile.role !== 'Admin'
-    ) {
+    if (credentialData.user_profile_id !== profile.id && profile.role !== 'Admin') {
       return NextResponse.json(
         { success: false, error: 'Forbidden: You do not own this credential' },
         { status: 403 }
@@ -192,8 +179,7 @@ export async function DELETE(
     const credentialId = params.credentialId;
 
     // Validate UUID format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(credentialId)) {
       return NextResponse.json(
         { success: false, error: 'Invalid credential ID format' },
@@ -204,10 +190,7 @@ export async function DELETE(
     // 1. Authenticate user
     const session = await auth0.getSession();
     if (!session?.user) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const auth0UserId = session.user.sub;
@@ -234,10 +217,7 @@ export async function DELETE(
     );
 
     if (ownershipResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Credential not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
 
     const ownerId = ownershipResult.rows[0].user_profile_id;

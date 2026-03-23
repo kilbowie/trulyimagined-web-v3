@@ -1,11 +1,11 @@
 /**
  * GET /.well-known/did.json
- * 
+ *
  * Serve platform issuer's W3C DID Document
- * 
+ *
  * DID: did:web:trulyimagined.com
  * Resolution: https://trulyimagined.com/.well-known/did.json
- * 
+ *
  * This document contains the platform's public key for verifying
  * credentials issued by Truly Imagined.
  */

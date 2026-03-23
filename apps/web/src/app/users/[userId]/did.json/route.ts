@@ -1,12 +1,12 @@
 /**
  * GET /users/[userId]/did.json
- * 
+ *
  * Serve W3C DID Document for a user
- * 
+ *
  * DID Method: did:web
  * Format: did:web:trulyimagined.com:users:{userId}
  * Resolution: https://trulyimagined.com/users/{userId}/did.json
- * 
+ *
  * Returns:
  * {
  *   "@context": ["https://www.w3.org/ns/did/v1", ...],
@@ -25,21 +25,14 @@ import { generateDidDocument } from '@/lib/verifiable-credentials';
 // GET /users/[userId]/did.json
 // ===========================================
 
-export async function GET(
-  _request: NextRequest,
-  { params }: { params: { userId: string } }
-) {
+export async function GET(_request: NextRequest, { params }: { params: { userId: string } }) {
   try {
     const userId = params.userId;
 
     // Validate UUID format
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(userId)) {
-      return NextResponse.json(
-        { error: 'Invalid user ID format' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid user ID format' }, { status: 400 });
     }
 
     // Check if user exists
@@ -51,10 +44,7 @@ export async function GET(
     );
 
     if (userResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'User not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const user = userResult.rows[0];
