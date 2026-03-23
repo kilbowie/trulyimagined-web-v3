@@ -26,10 +26,7 @@ export default async function DashboardPage() {
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Link
-            href="/"
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors"
-          >
+          <Link href="/" className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">
             ← Home
           </Link>
         </div>
@@ -61,13 +58,22 @@ export default async function DashboardPage() {
               <div className="flex flex-wrap gap-2">
                 {roles.map((role) => {
                   const roleConfig = {
-                    Actor: { emoji: '🎭', color: 'bg-purple-100 text-purple-800 border-purple-200' },
+                    Actor: {
+                      emoji: '🎭',
+                      color: 'bg-purple-100 text-purple-800 border-purple-200',
+                    },
                     Agent: { emoji: '👔', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-                    Enterprise: { emoji: '🏢', color: 'bg-green-100 text-green-800 border-green-200' },
+                    Enterprise: {
+                      emoji: '🏢',
+                      color: 'bg-green-100 text-green-800 border-green-200',
+                    },
                     Admin: { emoji: '⚙️', color: 'bg-red-100 text-red-800 border-red-200' },
                   } as any;
 
-                  const config = roleConfig[role] || { emoji: '👤', color: 'bg-gray-100 text-gray-800 border-gray-200' };
+                  const config = roleConfig[role] || {
+                    emoji: '👤',
+                    color: 'bg-gray-100 text-gray-800 border-gray-200',
+                  };
 
                   return (
                     <div
@@ -96,7 +102,7 @@ export default async function DashboardPage() {
           ) : (
             <div className="space-y-4">
               <p className="text-gray-500">No roles found in your session</p>
-              
+
               <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                 <p className="text-sm text-red-800 mb-3">
                   <strong>⚠️ Roles are missing from your JWT token</strong>
@@ -130,9 +136,7 @@ export default async function DashboardPage() {
                   <div className="flex items-start">
                     <span className="text-2xl mr-3">🎭</span>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        Register Identity
-                      </h3>
+                      <h3 className="font-semibold text-gray-900 mb-1">Register Identity</h3>
                       <p className="text-sm text-gray-600">
                         Add your profile to the Identity Registry
                       </p>
@@ -147,12 +151,8 @@ export default async function DashboardPage() {
                   <div className="flex items-start">
                     <span className="text-2xl mr-3">👔</span>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        Agent Dashboard
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Coming soon...
-                      </p>
+                      <h3 className="font-semibold text-gray-900 mb-1">Agent Dashboard</h3>
+                      <p className="text-sm text-gray-500">Coming soon...</p>
                     </div>
                   </div>
                 </div>
@@ -164,12 +164,8 @@ export default async function DashboardPage() {
                   <div className="flex items-start">
                     <span className="text-2xl mr-3">🏢</span>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        License Requests
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Coming soon...
-                      </p>
+                      <h3 className="font-semibold text-gray-900 mb-1">License Requests</h3>
+                      <p className="text-sm text-gray-500">Coming soon...</p>
                     </div>
                   </div>
                 </div>
@@ -181,12 +177,8 @@ export default async function DashboardPage() {
                   <div className="flex items-start">
                     <span className="text-2xl mr-3">⚙️</span>
                     <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">
-                        Admin Panel
-                      </h3>
-                      <p className="text-sm text-gray-500">
-                        Coming soon...
-                      </p>
+                      <h3 className="font-semibold text-gray-900 mb-1">Admin Panel</h3>
+                      <p className="text-sm text-gray-500">Coming soon...</p>
                     </div>
                   </div>
                 </div>

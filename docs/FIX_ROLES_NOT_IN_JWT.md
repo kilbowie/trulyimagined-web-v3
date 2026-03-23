@@ -45,29 +45,29 @@ Delete ALL the default code and paste this EXACT code:
 ```javascript
 /**
  * Add Roles to Token Action
- * 
+ *
  * This adds user roles from Auth0 RBAC to the JWT token
  * so they can be read by your application.
  */
 exports.onExecutePostLogin = async (event, api) => {
   const namespace = 'https://trulyimagined.com';
-  
+
   // Get roles from Auth0 RBAC
   const roles = event.authorization?.roles || [];
-  
+
   console.log(`[Add Roles] User: ${event.user.email}`);
   console.log(`[Add Roles] Roles found: ${JSON.stringify(roles)}`);
-  
+
   if (roles.length > 0) {
     // Add roles to ID token (used by frontend)
     api.idToken.setCustomClaim(`${namespace}/roles`, roles);
-    
+
     // Add roles to Access token (used by API)
     api.accessToken.setCustomClaim(`${namespace}/roles`, roles);
-    
+
     // Add helper claim
     api.idToken.setCustomClaim(`${namespace}/hasRole`, true);
-    
+
     console.log(`[Add Roles] Successfully added ${roles.length} roles to token`);
   } else {
     console.log(`[Add Roles] No roles found for user`);
@@ -211,12 +211,14 @@ Sometimes Auth0 caches tokens. Force refresh:
 After completing all steps:
 
 ### On /debug-roles:
+
 ```
 ✅ Roles Found!
 Your account has 1 role(s) assigned: Admin
 ```
 
 ### On /auth/profile:
+
 ```json
 {
   "email": "adam@kilbowieconsulting.com",
@@ -227,6 +229,7 @@ Your account has 1 role(s) assigned: Admin
 ```
 
 ### On /dashboard:
+
 ```
 Roles & Permissions
 • Admin
@@ -237,22 +240,27 @@ Roles & Permissions
 ## 🚨 Common Mistakes
 
 ### ❌ Mistake 1: Action Created But Not Deployed
+
 - **Symptom:** No roles in token
 - **Fix:** Open Action, click Deploy button
 
 ### ❌ Mistake 2: Action Deployed But Not in Flow
+
 - **Symptom:** No roles in token
 - **Fix:** Go to Actions → Flows → Login, drag Action into flow, click Apply
 
 ### ❌ Mistake 3: Wrong Trigger Selected
+
 - **Symptom:** Action never executes
 - **Fix:** Delete Action, create new one with "Login / Post Login" trigger
 
 ### ❌ Mistake 4: Forgot to Log Out After Setup
+
 - **Symptom:** Old token still in use
 - **Fix:** Visit /auth/logout, then /auth/login again
 
 ### ❌ Mistake 5: Wrong Namespace in Action Code
+
 - **Symptom:** Claims not visible
 - **Fix:** Use `https://trulyimagined.com` (MUST be HTTPS URL format)
 

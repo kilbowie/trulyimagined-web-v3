@@ -3,10 +3,10 @@ import { auth0 } from '@/lib/auth0';
 
 /**
  * Check if user has roles assigned in Auth0
- * 
+ *
  * This is used to prevent redirect loops when a role has been assigned
  * but the JWT hasn't been refreshed yet.
- * 
+ *
  * GET /api/user/has-role
  */
 export async function GET(request: NextRequest) {
@@ -16,15 +16,12 @@ export async function GET(request: NextRequest) {
     const user = session?.user;
 
     if (!user) {
-      return NextResponse.json(
-        { hasRole: false, needsLogin: true },
-        { status: 200 }
-      );
+      return NextResponse.json({ hasRole: false, needsLogin: true }, { status: 200 });
     }
 
     // Check roles in JWT token
     const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
-    
+
     // If roles exist in token, return true
     if (roles.length > 0) {
       return NextResponse.json({
@@ -80,7 +77,7 @@ export async function GET(request: NextRequest) {
       }
 
       const auth0Roles = await rolesResponse.json();
-      
+
       // If user has roles in Auth0, they just need to refresh their token
       if (auth0Roles && auth0Roles.length > 0) {
         return NextResponse.json({
@@ -97,9 +94,6 @@ export async function GET(request: NextRequest) {
     }
   } catch (error: any) {
     console.error('[HAS-ROLE] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

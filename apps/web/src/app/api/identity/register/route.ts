@@ -3,11 +3,11 @@ import { auth0 } from '@/lib/auth0';
 
 /**
  * Actor Registration API Route (Development)
- * 
+ *
  * In production, this would call the Lambda function.
  * For local development, this is a placeholder that validates the
  * registration data.
- * 
+ *
  * POST /api/identity/register
  */
 export async function POST(request: NextRequest) {
@@ -17,19 +17,13 @@ export async function POST(request: NextRequest) {
     const user = session?.user;
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Check if user has Actor role
     const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
     if (!roles.includes('Actor')) {
-      return NextResponse.json(
-        { error: 'Forbidden: Actor role required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
     // Parse request body

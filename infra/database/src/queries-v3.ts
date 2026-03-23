@@ -5,11 +5,72 @@
  * Raw SQL queries to be used with the database client
  */
 
-// ===========================================
-// ACTORS (Identity Registry)
-// ===========================================
-
 export const queries = {
+  // ===========================================
+  // USER PROFILES (Database-Backed Roles)
+  // ===========================================
+  
+  userProfiles: {
+    create: `
+      INSERT INTO user_profiles (
+        auth0_user_id, email, role, username, legal_name, professional_name,
+        use_legal_as_professional, spotlight_id, profile_completed
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+    `,
+
+    getByAuth0Id: `
+      SELECT * FROM user_profiles WHERE auth0_user_id = $1;
+    `,
+
+    getByUsername: `
+      SELECT * FROM user_profiles WHERE username = $1;
+    `,
+
+    getByProfessionalName: `
+      SELECT * FROM user_profiles WHERE professional_name = $1;
+    `,
+
+    checkUsernameAvailable: `
+      SELECT EXISTS(SELECT 1 FROM user_profiles WHERE username = $1) as exists;
+    `,
+
+    checkProfessionalNameAvailable: `
+      SELECT EXISTS(SELECT 1 FROM user_profiles WHERE professional_name = $1) as exists;
+    `,
+
+    checkSpotlightIdAvailable: `
+      SELECT EXISTS(SELECT 1 FROM user_profiles WHERE spotlight_id = $1) as exists;
+    `,
+
+    update: `
+      UPDATE user_profiles 
+      SET role = COALESCE($2, role),
+          username = COALESCE($3, username),
+          legal_name = COALESCE($4, legal_name),
+          professional_name = COALESCE($5, professional_name),
+          use_legal_as_professional = COALESCE($6, use_legal_as_professional),
+          spotlight_id = COALESCE($7, spotlight_id)
+      WHERE auth0_user_id = $1
+      RETURNING *;
+    `,
+
+    getRole: `
+      SELECT role FROM user_profiles WHERE auth0_user_id = $1;
+    `,
+
+    listByRole: `
+      SELECT * FROM user_profiles 
+      WHERE role = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+  },
+
+  // ===========================================
+  // ACTORS (Identity Registry)
+  // ===========================================
+  
   actors: {
     create: `
       INSERT INTO actors (

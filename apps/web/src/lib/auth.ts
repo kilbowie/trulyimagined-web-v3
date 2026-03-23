@@ -16,7 +16,7 @@ export async function getCurrentUser() {
 }
 
 /**
- * Get user roles from session
+ * Get user roles from PostgreSQL database
  * 
  * @returns Array of role names
  */
@@ -24,7 +24,34 @@ export async function getUserRoles(): Promise<string[]> {
   const user = await getCurrentUser();
   if (!user) return [];
   
-  return user['https://trulyimagined.com/roles'] || [];
+  // TODO: In production, query PostgreSQL user_profiles table
+  // const result = await db.query(queries.userProfiles.getRole, [user.sub]);
+  // if (result.rows.length > 0 && result.rows[0].role) {
+  //   return [result.rows[0].role];
+  // }
+  // return [];
+  
+  // Mock for development - return empty array (no role yet)
+  console.log('[AUTH] getUserRoles called for:', user.sub);
+  return [];
+}
+
+/**
+ * Get user profile from PostgreSQL database
+ * 
+ * @returns User profile or null
+ */
+export async function getUserProfile() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  
+  // TODO: In production, query PostgreSQL user_profiles table
+  // const result = await db.query(queries.userProfiles.getByAuth0Id, [user.sub]);
+  // return result.rows[0] || null;
+  
+  // Mock for development
+  console.log('[AUTH] getUserProfile called for:', user.sub);
+  return null;
 }
 
 /**
@@ -74,7 +101,7 @@ export async function requireAuth() {
  */
 export async function requireRole(allowedRoles: string[]) {
   const user = await requireAuth();
-  const userRoles = user['https://trulyimagined.com/roles'] || [];
+  const userRoles = await getUserRoles(); // Now queries PostgreSQL
   
   const hasRequiredRole = userRoles.some((role: string) => allowedRoles.includes(role));
   

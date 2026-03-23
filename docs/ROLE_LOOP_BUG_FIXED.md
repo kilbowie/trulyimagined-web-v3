@@ -3,6 +3,7 @@
 ## The Problem
 
 You were experiencing an infinite loop where:
+
 1. You log in → prompted to select a role
 2. You select a role (e.g., Actor)
 3. Role gets assigned in Auth0 ✅
@@ -161,14 +162,16 @@ You were experiencing an infinite loop where:
 
 ### Why JWT Tokens Need Refresh
 
-**JWT tokens are immutable.** Once issued, they contain fixed claims until they expire. 
+**JWT tokens are immutable.** Once issued, they contain fixed claims until they expire.
 
 When you:
+
 - Assign a role in Auth0 ✅
 - The role is saved in Auth0's database ✅
 - But your current JWT token doesn't change ❌
 
 You need to:
+
 - Log out (destroys current JWT)
 - Log in again (Auth0 issues new JWT)
 - New JWT includes the updated roles ✅
@@ -176,12 +179,14 @@ You need to:
 ### Why Automatic Logout is Better
 
 **Before (Manual):**
+
 - User selects role → "Role assigned! Now log out and log back in"
 - Confusing - why do I need to log out?
 - Extra steps - user might forget
 - Poor UX
 
 **After (Automatic):**
+
 - User selects role → Success message → Auto logout → Auto redirect to login
 - Clear explanation of what's happening
 - No manual steps

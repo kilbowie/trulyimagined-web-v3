@@ -7,6 +7,7 @@
 A beautiful, user-friendly form where Actors can register their identity in the Truly Imagined registry.
 
 **Features:**
+
 - ✅ Role-based access (Actor role required)
 - ✅ Form validation
 - ✅ Beautiful UI matching the design system
@@ -15,6 +16,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 - ✅ Helpful information panels
 
 **Fields:**
+
 - First Name (required)
 - Last Name (required)
 - Stage Name (optional)
@@ -33,6 +35,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 **Method:** POST
 
 **Features:**
+
 - ✅ Auth0 session validation
 - ✅ Role checking (Actor role required)
 - ✅ Input validation
@@ -40,6 +43,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 - ✅ Ready for Lambda integration in production
 
 **Request Body:**
+
 ```json
 {
   "firstName": "John",
@@ -52,6 +56,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 ```
 
 **Response (Success):**
+
 ```json
 {
   "success": true,
@@ -75,6 +80,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 **Route:** `/dashboard`
 
 **Features:**
+
 - ✅ Beautiful role badges with emojis
 - ✅ Role-specific quick actions
 - ✅ "Register Identity" button for Actors
@@ -83,6 +89,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 - ✅ Access level descriptions
 
 **Role-Specific Actions:**
+
 - 🎭 **Actor:** Register Identity (active link)
 - 👔 **Agent:** Agent Dashboard (coming soon)
 - 🏢 **Enterprise:** License Requests (coming soon)
@@ -95,6 +102,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 **Route:** `/debug-roles`
 
 **Features:**
+
 - ✅ Comprehensive role diagnosis
 - ✅ Shows if roles are in JWT token
 - ✅ Custom claims inspection
@@ -113,6 +121,7 @@ A beautiful, user-friendly form where Actors can register their identity in the 
 This sets up the Auth0 Action to add roles to your JWT token.
 
 **Checklist:**
+
 1. Create "Add Roles to Token" Action in Auth0
 2. Deploy the Action
 3. Add Action to Login Flow
@@ -122,6 +131,7 @@ This sets up the Auth0 Action to add roles to your JWT token.
 7. Verify: http://localhost:3000/debug-roles
 
 **Expected Result:**
+
 ```
 ✅ Roles Found!
 Your account has 1 role(s) assigned: Admin
@@ -138,6 +148,7 @@ Once roles are in your token:
 3. **Expected:** Quick Actions section shows role-specific options
 
 **Example for Admin:**
+
 ```
 Roles & Permissions
 ⚙️ Admin
@@ -212,6 +223,7 @@ Your access level:
 ## 🎨 Screenshots (What You Should See)
 
 ### Dashboard with Roles:
+
 ```
 Dashboard
 
@@ -235,6 +247,7 @@ Quick Actions
 ```
 
 ### Registration Form:
+
 ```
 🎭 Register as Actor
 Join the Truly Imagined Identity Registry
@@ -270,6 +283,7 @@ What happens next?
 ## 📁 Files Created/Modified
 
 ### Created:
+
 1. ✅ `apps/web/src/app/register-actor/page.tsx` - Actor registration form
 2. ✅ `apps/web/src/app/api/identity/register/route.ts` - Registration API endpoint
 3. ✅ `apps/web/src/app/debug-roles/page.tsx` - Role debugging page
@@ -277,6 +291,7 @@ What happens next?
 5. ✅ `docs/STEP5_COMPLETE.md` - This file
 
 ### Modified:
+
 1. ✅ `apps/web/src/app/dashboard/page.tsx` - Enhanced with role badges and quick actions
 
 ---
@@ -286,12 +301,14 @@ What happens next?
 After verifying Step 5 works:
 
 **Step 6 — Consent Ledger (CRITICAL)**
+
 - Track all permissions and usage
 - Append-only log
 - Timestamped records
 - Future audit-ready
 
 **Tasks:**
+
 - [ ] Create ConsentLog table
 - [ ] Build API:
   - POST /consent/log
@@ -316,6 +333,7 @@ The Auth0 Action must be created, deployed, and added to the Login Flow.
 **Cause:** User doesn't have Actor role
 
 **Solution:**
+
 1. Go to Auth0 Dashboard → User Management → Users
 2. Find your user
 3. Roles tab → Assign Roles → Select "Actor"
@@ -328,6 +346,7 @@ The Auth0 Action must be created, deployed, and added to the Login Flow.
 **Expected:** This is development mode. The API returns a mock response.
 
 **To connect to real backend:**
+
 1. Deploy the Lambda function (identity-service)
 2. Update the API endpoint in `api/identity/register/route.ts` to call the Lambda
 3. Uncomment the TODO section in the code
@@ -350,6 +369,7 @@ The Auth0 Action must be created, deployed, and added to the Login Flow.
 ## 🎯 Current Phase: Phase 1, Days 1-30
 
 **Progress:**
+
 - ✅ Step 1 — Repositioning (Complete)
 - ✅ Step 2 — Repository Setup (Complete)
 - ✅ Step 3 — Backend Infrastructure (Complete)
