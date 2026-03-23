@@ -1,48 +1,42 @@
-﻿> **📐 TECHNICAL ARCHITECTURE:** For detailed system design, service breakdown, database schemas, standards integration, and implementation guides, see [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md)
+# Truly Imagined v3 — 90 Day Execution Roadmap
 
-> **✅ CURRENT STATE:** Steps 1-5 COMPLETE (Auth0, PostgreSQL, Actor Registration operational)
-
----
-
-# Truly Imagined v3 â€” 90 Day Execution Roadmap
-
-## ðŸŽ¯ Core Objective
+## 🎯 Core Objective
 
 Build the foundation of:
 
-> **â€œThe global registry and compliance infrastructure for human digital identity in AI.â€**
+> **“The global registry and compliance infrastructure for human digital identity in AI.”**
 
 By Day 90, we must have:
 
-- 300â€“1,000 verified actors onboarded
-- 3â€“5 agency relationships started
+- 300–1,000 verified actors onboarded
+- 3–5 agency relationships started
 - Identity Registry + Consent Ledger live
 - First licensed usage (minutes generated)
 - First revenue signals (even small)
 
 ---
 
-# ðŸ§­ Execution Principles
+# 🧭 Execution Principles
 
 - Prioritise **trust over features**
 - Prioritise **usage over scale**
 - Build **infrastructure, not tools**
-- Do things that **donâ€™t scale** early
+- Do things that **don’t scale** early
 - Ship fast, iterate fast
 
 ---
 
-# ðŸ—ï¸ PHASE 1 (Days 1â€“30)
+# 🏗️ PHASE 1 (Days 1–30)
 
 ## Trust Layer + Registry Foundation
 
-### ðŸŽ¯ Goal:
+### 🎯 Goal:
 
 Establish Truly Imagined as a **credible identity registry**, not an AI tool.
 
 ---
 
-## ðŸ”¹ Step 1 â€” Repositioning (Week 1â€“2)
+## 🔹 Step 1 — Repositioning (Week 1–2)
 
 ### Objective:
 
@@ -55,7 +49,7 @@ Shift all messaging to infrastructure + compliance.
 - [x] Update README.md with new vision
 - [x] Create 1-page explainer for actors/agencies
 - [x] Define core value proposition:
-  - â€œControl and license your digital identity in AIâ€
+  - “Control and license your digital identity in AI”
 
 ### Output:
 
@@ -63,7 +57,7 @@ Clear positioning as **rights infrastructure**
 
 ---
 
-## ðŸ”¹ Step 2 â€” Repository + Environment Setup
+## 🔹 Step 2 — Repository + Environment Setup
 
 ### Objective:
 
@@ -83,7 +77,7 @@ Create clean v3 monorepo
 
 ---
 
-## ðŸ”¹ Step 3 â€” Core Backend Infrastructure
+## 🔹 Step 3 — Core Backend Infrastructure
 
 ### Objective:
 
@@ -99,7 +93,7 @@ Lay technical foundation
 
 ---
 
-## ðŸ”¹ Step 4 â€” Auth Layer (Auth0)
+## 🔹 Step 4 — Auth Layer (Auth0)
 
 ### Objective:
 
@@ -121,7 +115,7 @@ Secure system with role-based access
 
 ---
 
-## ðŸ”¹ Step 5 â€” Identity Registry (MVP)
+## 🔹 Step 5 — Identity Registry (MVP)
 
 ### Objective:
 
@@ -144,7 +138,7 @@ Enable actors to register identity
 
 ---
 
-## ðŸ”¹ Step 6 â€” Consent Ledger (CRITICAL)
+## 🔹 Step 6 — Consent Ledger (CRITICAL)
 
 ### Objective:
 
@@ -166,7 +160,7 @@ Track all permissions and usage
 
 ---
 
-## ðŸ”¹ Step 7 â€” Basic Frontend
+## 🔹 Step 7 — Basic Frontend
 
 ### Objective:
 
@@ -187,26 +181,26 @@ Minimal functional UI (no design focus)
 
 ---
 
-## âœ… Phase 1 Success Criteria
+## ✅ Phase 1 Success Criteria
 
-- [ ] 50â€“100 actors onboarded
+- [ ] 50–100 actors onboarded
 - [ ] Identity + Consent systems working
 - [ ] Auth fully functional
 - [ ] Core flows usable end-to-end
 
 ---
 
-# âš™ï¸ PHASE 2 (Days 31â€“60)
+# ⚙️ PHASE 2 (Days 31–60)
 
 ## Supply Acquisition + Usage Enablement
 
-### ðŸŽ¯ Goal:
+### 🎯 Goal:
 
 Scale actor onboarding + enable first licensing
 
 ---
 
-## ðŸ”¹ Step 8 â€” Founding Actor Program
+## 🔹 Step 8 — Founding Actor Program
 
 ### Objective:
 
@@ -214,14 +208,14 @@ Rapidly onboard high-quality actors
 
 ### Tasks:
 
-- [ ] Launch â€œFounding Registryâ€
+- [ ] Launch “Founding Registry”
 - [ ] Create onboarding flow
 - [ ] Manual onboarding support (allowed)
 - [ ] Track actor pipeline
 
 ---
 
-## ðŸ”¹ Step 9 â€” Agency Outreach
+## 🔹 Step 9 — Agency Outreach
 
 ### Objective:
 
@@ -229,13 +223,13 @@ Secure early credibility
 
 ### Tasks:
 
-- [ ] Contact 5â€“10 agencies
+- [ ] Contact 5–10 agencies
 - [ ] Present registry as protection layer
 - [ ] Build relationships (not transactions)
 
 ---
 
-## ðŸ”¹ Step 10 â€” Licensing Service (MVP)
+## 🔹 Step 10 — Licensing Service (MVP)
 
 ### Objective:
 
@@ -256,7 +250,7 @@ Enable basic licensing flow
 
 ---
 
-## ðŸ”¹ Step 11 â€” Synthetic Audition Tool (Basic)
+## 🔹 Step 11 — Synthetic Audition Tool (Basic)
 
 ### Objective:
 
@@ -272,11 +266,11 @@ Generate first usage
 
 - [ ] Create simple UI flow
 - [ ] Connect to licensing system
-- [ ] Log usage as â€œminutesâ€
+- [ ] Log usage as “minutes”
 
 ---
 
-## ðŸ”¹ Step 12 â€” Usage Tracking
+## 🔹 Step 12 — Usage Tracking
 
 ### Objective:
 
@@ -290,26 +284,26 @@ Measure platform activity
 
 ---
 
-## âœ… Phase 2 Success Criteria
+## ✅ Phase 2 Success Criteria
 
-- [ ] 300â€“500 actors onboarded
-- [ ] 1â€“2 agency relationships
+- [ ] 300–500 actors onboarded
+- [ ] 1–2 agency relationships
 - [ ] Licensing flow functional
-- [ ] First 10,000â€“100,000 minutes generated
+- [ ] First 10,000–100,000 minutes generated
 
 ---
 
-# ðŸŒ PHASE 3 (Days 61â€“90)
+# 🌐 PHASE 3 (Days 61–90)
 
 ## Usage + Revenue Signals
 
-### ðŸŽ¯ Goal:
+### 🎯 Goal:
 
 Prove real-world demand
 
 ---
 
-## ðŸ”¹ Step 13 â€” First Customers
+## 🔹 Step 13 — First Customers
 
 ### Objective:
 
@@ -329,7 +323,7 @@ Get real usage
 
 ---
 
-## ðŸ”¹ Step 14 â€” Close First Deals
+## 🔹 Step 14 — Close First Deals
 
 ### Objective:
 
@@ -343,7 +337,7 @@ Validate monetisation
 
 ---
 
-## ðŸ”¹ Step 15 â€” Improve Core Flows
+## 🔹 Step 15 — Improve Core Flows
 
 ### Objective:
 
@@ -357,7 +351,7 @@ Stabilise system
 
 ---
 
-## ðŸ”¹ Step 16 â€” Basic Analytics
+## 🔹 Step 16 — Basic Analytics
 
 ### Objective:
 
@@ -372,7 +366,7 @@ Track growth
 
 ---
 
-## âœ… Phase 3 Success Criteria
+## ✅ Phase 3 Success Criteria
 
 - [ ] 500+ actors onboarded
 - [ ] 3+ agency relationships
@@ -382,7 +376,7 @@ Track growth
 
 ---
 
-# ðŸ“Š Weekly Tracking Metrics
+# 📊 Weekly Tracking Metrics
 
 Track every week:
 
@@ -394,7 +388,7 @@ Track every week:
 
 ---
 
-# âš ï¸ Non-Goals (Do NOT Build Yet)
+# ⚠️ Non-Goals (Do NOT Build Yet)
 
 - AI avatar generation tools
 - Advanced UI/UX design
@@ -404,15 +398,10 @@ Track every week:
 
 ---
 
-# ðŸ§  Final Reminder
+# 🧠 Final Reminder
 
 The goal is NOT to build a perfect product.
 
 The goal is:
 
-> **To prove that human digital identity can be registered, controlled, and licensed in AI â€” and that people will use it.**
-> **ðŸ“ TECHNICAL ARCHITECTURE:** For detailed system design, database schemas, service breakdown, and implementation patterns, see [TECHNICAL_ARCHITECTURE.md](./TECHNICAL_ARCHITECTURE.md)
-
----
-
-
+> **To prove that human digital identity can be registered, controlled, and licensed in AI — and that people will use it.**

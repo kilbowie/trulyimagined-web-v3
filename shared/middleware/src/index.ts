@@ -186,3 +186,82 @@ export function extractRequestIP(event: APIGatewayProxyEvent): string {
 export function extractUserAgent(event: APIGatewayProxyEvent): string {
   return event.headers['User-Agent'] || event.headers['user-agent'] || 'unknown';
 }
+
+// ==================== CONSENT ENFORCEMENT ====================
+
+/**
+ * Require consent for actor identity usage
+ * 
+ * Checks if active consent exists for the specified actor and consent type.
+ * Throws an error if consent is not granted or has been revoked/expired.
+ * 
+ * @param actorId - The actor's database ID
+ * @param consentType - Type of consent required (e.g., 'voice_synthesis', 'image_usage')
+ * @param projectId - Optional project ID to scope the consent check
+ * 
+ * @example
+ * await requireConsent('actor-123', 'voice_synthesis', 'project-456');
+ */
+export async function requireConsent(
+  actorId: string,
+  consentType: string,
+  projectId?: string
+): Promise<void> {
+  try {
+    // Build query string
+    const queryParams = new URLSearchParams({
+      actorId,
+      consentType,
+      ...(projectId && { projectId }),
+    });
+
+    // Call consent check API
+    const consentServiceUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001';
+    const url = `${consentServiceUrl}/consent/check?${queryParams.toString()}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(`Consent check failed: ${data.error || 'Unknown error'}`);
+    }
+
+    // Check if consent is granted
+    if (!data.isGranted) {
+      const reason = data.latestAction?.reason || 'Consent not granted';
+      throw new Error(`Consent required: ${reason}`);
+    }
+
+    console.log(`[CONSENT] Active consent verified for actor ${actorId}, type: ${consentType}`);
+  } catch (error: any) {
+    console.error('[CONSENT] Enforcement failed:', error);
+    throw new Error(`Consent validation failed: ${error.message}`);
+  }
+}
+
+/**
+ * Check if consent exists (without throwing)
+ * 
+ * @param actorId - The actor's database ID
+ * @param consentType - Type of consent to check
+ * @param projectId - Optional project ID
+ * @returns boolean indicating if consent is granted
+ */
+export async function hasConsent(
+  actorId: string,
+  consentType: string,
+  projectId?: string
+): Promise<boolean> {
+  try {
+    await requireConsent(actorId, consentType, projectId);
+    return true;
+  } catch {
+    return false;
+  }
+}
