@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
+import { isActor } from '@/lib/auth';
 
 /**
  * Actor Registration API Route (Development)
@@ -20,9 +21,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Check if user has Actor role
-    const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
-    if (!roles.includes('Actor')) {
+    // Check if user has Actor role (from PostgreSQL database)
+    const hasActorRole = await isActor();
+    if (!hasActorRole) {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
@@ -84,10 +85,13 @@ export async function POST(request: NextRequest) {
       },
       message: 'Registration successful (development mode)',
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[IDENTITY] Registration error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error.message },
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

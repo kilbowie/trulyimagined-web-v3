@@ -31,16 +31,16 @@ export default function RegisterActorPage() {
   useEffect(() => {
     async function checkRole() {
       try {
-        const response = await fetch('/auth/profile');
+        const response = await fetch('/api/profile');
         if (!response.ok) {
           router.push('/auth/login');
           return;
         }
 
-        const user = await response.json();
-        const roles = user['https://trulyimagined.com/roles'] || [];
+        const data = await response.json();
 
-        if (roles.includes('Actor')) {
+        // Check role from database (not JWT)
+        if (data.profile && data.profile.role === 'Actor') {
           setHasActorRole(true);
         } else {
           setError('Actor role required. Please contact admin if you should have access.');
@@ -89,9 +89,9 @@ export default function RegisterActorPage() {
       setTimeout(() => {
         router.push('/dashboard');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Registration error:', err);
-      setError(err.message || 'Failed to register. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to register. Please try again.');
     } finally {
       setSubmitting(false);
     }

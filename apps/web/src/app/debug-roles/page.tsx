@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserRoles } from '@/lib/auth';
+import { getCurrentUser, getUserRoles, getUserProfile } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 
 /**
@@ -14,6 +14,7 @@ export default async function DebugRolesPage() {
   }
 
   const roles = await getUserRoles();
+  const profile = await getUserProfile();
 
   // Check for roles in different possible locations
   const customClaimsRoles = user['https://trulyimagined.com/roles'];
@@ -35,27 +36,85 @@ export default async function DebugRolesPage() {
           </a>
         </div>
 
-        {/* Diagnosis Result */}
+        {/* Important Notice */}
+        <div className="bg-blue-50 border-2 border-blue-500 rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-2 text-blue-800">
+            ℹ️ Important: Roles Now Stored in PostgreSQL
+          </h2>
+          <p className="text-gray-700">
+            As of the latest update, <strong>roles are stored in the PostgreSQL database</strong>,
+            not in JWT tokens. The application checks your role from the{' '}
+            <code className="bg-white px-1 py-0.5 rounded">user_profiles</code> table. JWT roles (if
+            present) are shown below for reference only.
+          </p>
+        </div>
+
+        {/* Diagnosis Result - Database */}
         <div
           className={`rounded-lg shadow p-6 mb-6 ${
-            roles.length > 0
+            profile && profile.role
               ? 'bg-green-50 border-2 border-green-500'
               : 'bg-red-50 border-2 border-red-500'
           }`}
         >
           <h2 className="text-2xl font-bold mb-2">
-            {roles.length > 0 ? '✅ Roles Found!' : '❌ No Roles Found'}
+            {profile && profile.role ? '✅ Database Role Found!' : '❌ No Database Role Found'}
           </h2>
           <p className="text-gray-700">
-            {roles.length > 0
-              ? `Your account has ${roles.length} role(s) assigned: ${roles.join(', ')}`
-              : 'Your account has no roles assigned in the JWT token.'}
+            {profile && profile.role
+              ? `Your account has the role: ${profile.role} (stored in PostgreSQL)`
+              : 'Your account has no role assigned in the database. You may need to complete profile setup.'}
           </p>
+        </div>
+
+        {/* Database Profile */}
+        <div className="bg-white rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-semibold mb-4">📊 Database Profile (Primary Source)</h2>
+          {profile ? (
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <div className="font-medium">Role:</div>
+                <div className="bg-green-100 px-2 py-1 rounded inline-block font-semibold">
+                  {profile.role}
+                </div>
+
+                <div className="font-medium">Username:</div>
+                <div>{profile.username || 'N/A'}</div>
+
+                <div className="font-medium">Legal Name:</div>
+                <div>{profile.legal_name || 'N/A'}</div>
+
+                <div className="font-medium">Professional Name:</div>
+                <div>{profile.professional_name || 'N/A'}</div>
+
+                <div className="font-medium">Spotlight ID:</div>
+                <div>{profile.spotlight_id || 'N/A'}</div>
+              </div>
+
+              <details className="mt-4">
+                <summary className="text-blue-600 hover:text-blue-700 cursor-pointer">
+                  View full profile data
+                </summary>
+                <pre className="bg-gray-100 p-4 rounded overflow-x-auto text-xs mt-2">
+                  {JSON.stringify(profile, null, 2)}
+                </pre>
+              </details>
+            </div>
+          ) : (
+            <div className="bg-orange-50 border border-orange-300 rounded p-4">
+              <p className="text-orange-800">
+                No profile found in database. Please complete your profile setup at{' '}
+                <a href="/select-role" className="text-blue-600 underline">
+                  /select-role
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* What roles are detected */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">getUserRoles() Result</h2>
+          <h2 className="text-xl font-semibold mb-4">getUserRoles() Result (Database)</h2>
           <pre className="bg-gray-100 p-4 rounded overflow-x-auto">
             {JSON.stringify(roles, null, 2)}
           </pre>
@@ -63,7 +122,13 @@ export default async function DebugRolesPage() {
 
         {/* Custom Claims Check */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Custom Claims Check</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            JWT Custom Claims (Deprecated - Reference Only)
+          </h2>
+          <p className="text-sm text-gray-600 mb-4">
+            ⚠️ The application no longer uses JWT roles for authorization. This section shows JWT
+            claims for debugging purposes only.
+          </p>
 
           <div className="space-y-4">
             <div>
@@ -141,89 +206,65 @@ export default async function DebugRolesPage() {
         </div>
 
         {/* Troubleshooting Guide */}
-        {roles.length === 0 && (
+        {(!profile || !profile.role) && (
           <div className="bg-orange-50 border-2 border-orange-500 rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4 text-orange-800">
-              🔧 Troubleshooting: Why aren't my roles showing?
+              🔧 Troubleshooting: Why is my role not showing?
             </h2>
 
             <div className="space-y-4 text-gray-800">
               <div>
-                <h3 className="font-semibold mb-2">1. Have you logged out and back in?</h3>
+                <h3 className="font-semibold mb-2">1. Have you completed your profile setup?</h3>
                 <p className="mb-2">
-                  Roles are added to your JWT token during login. If you assigned roles in Auth0 but
-                  are still logged in, you need to:
+                  Roles are now stored in the PostgreSQL database, not in JWT tokens. To set your
+                  role:
                 </p>
                 <ol className="list-decimal list-inside ml-4 space-y-1">
                   <li>
-                    Click here:{' '}
-                    <a href="/auth/logout" className="text-blue-600 underline">
-                      /auth/logout
+                    Go to{' '}
+                    <a href="/select-role" className="text-blue-600 underline">
+                      /select-role
                     </a>
                   </li>
-                  <li>
-                    Then log back in:{' '}
-                    <a href="/auth/login" className="text-blue-600 underline">
-                      /auth/login
-                    </a>
-                  </li>
-                  <li>Come back to this page to check again</li>
+                  <li>Choose your role (Actor, Agent, Enterprise)</li>
+                  <li>Complete the profile form with your details</li>
+                  <li>Submit the form to save your profile and role to the database</li>
+                  <li>Come back to this page to verify your role is saved</li>
                 </ol>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">
-                  2. Did you create the "Add Roles to Token" Action?
-                </h3>
-                <p className="mb-2">Required steps in Auth0 Dashboard:</p>
+                <h3 className="font-semibold mb-2">2. Did the profile form submission succeed?</h3>
+                <p className="mb-2">Check that:</p>
                 <ol className="list-decimal list-inside ml-4 space-y-1">
-                  <li>Go to Actions → Library → Build Custom</li>
-                  <li>Name: "Add Roles to Token"</li>
-                  <li>Trigger: Login / Post Login</li>
-                  <li>
-                    Add the code from{' '}
-                    <code className="bg-white px-2 py-1 rounded">docs/AUTH0_ROLE_SETUP.md</code>
-                  </li>
-                  <li>
-                    Click <strong>Deploy</strong> (top right)
-                  </li>
+                  <li>You received a success message after submitting the form</li>
+                  <li>You were redirected to the dashboard</li>
+                  <li>No errors appeared during submission</li>
+                  <li>The database connection is working (check server logs for SSL errors)</li>
                 </ol>
               </div>
 
               <div>
-                <h3 className="font-semibold mb-2">3. Did you add the Action to the Login Flow?</h3>
+                <h3 className="font-semibold mb-2">3. Is the database connection working?</h3>
+                <p className="mb-2">
+                  The application needs to connect to PostgreSQL to retrieve your role. Check:
+                </p>
                 <ol className="list-decimal list-inside ml-4 space-y-1">
-                  <li>Go to Actions → Flows → Login</li>
-                  <li>Drag "Add Roles to Token" between Start and Complete</li>
-                  <li>
-                    Click <strong>Apply</strong>
-                  </li>
-                </ol>
-              </div>
-
-              <div>
-                <h3 className="font-semibold mb-2">4. Are roles assigned in Auth0?</h3>
-                <ol className="list-decimal list-inside ml-4 space-y-1">
-                  <li>Go to User Management → Users</li>
-                  <li>
-                    Find your user: <strong>{user.email}</strong>
-                  </li>
-                  <li>Click Roles tab</li>
-                  <li>Make sure at least one role is assigned</li>
+                  <li>DATABASE_URL is configured in .env.local</li>
+                  <li>SSL configuration is enabled for AWS RDS connection</li>
+                  <li>Server logs don't show "no pg_hba.conf entry" errors</li>
+                  <li>The user_profiles table exists in the database</li>
                 </ol>
               </div>
 
               <div className="mt-6 p-4 bg-white rounded border border-orange-300">
                 <p className="font-semibold mb-2">📋 Quick Checklist:</p>
                 <ul className="space-y-1">
-                  <li>☐ Roles created in Auth0 (Admin, Actor, Agent, Enterprise)</li>
-                  <li>
-                    ☐ Role assigned to user <strong>{user.email}</strong> in Auth0 Dashboard
-                  </li>
-                  <li>☐ "Add Roles to Token" Action created</li>
-                  <li>☐ Action deployed (green Deploy button)</li>
-                  <li>☐ Action added to Login Flow</li>
-                  <li>☐ Logged out and logged back in</li>
+                  <li>☐ Profile form completed at /select-role</li>
+                  <li>☐ Role selected (Actor, Agent, or Enterprise)</li>
+                  <li>☐ Form submitted successfully without errors</li>
+                  <li>☐ Database connection working (no SSL errors)</li>
+                  <li>☐ user_profiles table has your record</li>
                 </ul>
               </div>
             </div>
@@ -231,14 +272,14 @@ export default async function DebugRolesPage() {
         )}
 
         {/* Success Message */}
-        {roles.length > 0 && (
+        {profile && profile.role && (
           <div className="bg-green-50 border-2 border-green-500 rounded-lg shadow p-6">
             <h2 className="text-xl font-semibold mb-4 text-green-800">
               ✅ Everything is working correctly!
             </h2>
             <p className="text-gray-800 mb-4">
-              Your roles are properly configured and showing in the JWT token. The dashboard should
-              display your role(s).
+              Your role is properly configured and stored in the PostgreSQL database. The dashboard
+              and feature access control will use this role from the database.
             </p>
             <a
               href="/dashboard"
