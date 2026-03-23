@@ -2,6 +2,7 @@ import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
+import { VerifiableCredentialsCard } from '@/components/VerifiableCredentials';
 
 /**
  * Protected Dashboard Page
@@ -218,6 +219,13 @@ export default async function DashboardPage() {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Verifiable Credentials (for users with verified identity) */}
+        {hasActorRole && (
+          <div className="mt-6">
+            <VerifiableCredentialsCard />
           </div>
         )}
 
