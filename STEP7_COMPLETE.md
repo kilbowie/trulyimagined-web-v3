@@ -25,6 +25,7 @@ Step 7 establishes the **Identity Orchestration Layer** by enabling users to lin
 **File**: `infra/database/migrations/004_identity_links.sql`
 
 Created `identity_links` table with:
+
 - Foreign key to `user_profiles`
 - Provider information (provider name, type, user ID)
 - Verification & assurance levels (GPG 45 + eIDAS standards)
@@ -35,6 +36,7 @@ Created `identity_links` table with:
 - Automated `updated_at` trigger
 
 **Schema highlights**:
+
 ```sql
 CREATE TABLE identity_links (
   id UUID PRIMARY KEY,
@@ -55,9 +57,11 @@ CREATE TABLE identity_links (
 ### 2. Backend API Routes ✅
 
 #### POST /api/identity/link
+
 **Purpose**: Link external identity provider to user profile
 
 **Features**:
+
 - Validates verification & assurance levels
 - Prevents duplicate links (unique constraint)
 - Reactivates inactive links if re-linked
@@ -65,6 +69,7 @@ CREATE TABLE identity_links (
 - Returns link ID and verification details
 
 **Request body**:
+
 ```json
 {
   "provider": "uk-gov-verify",
@@ -80,9 +85,11 @@ CREATE TABLE identity_links (
 ---
 
 #### POST /api/identity/unlink
+
 **Purpose**: Soft-delete identity provider link
 
 **Features**:
+
 - Unlink by specific link ID or all links for a provider
 - Soft delete (sets `is_active = FALSE`)
 - Preserves audit trail
@@ -91,9 +98,11 @@ CREATE TABLE identity_links (
 ---
 
 #### GET /api/identity/links?activeOnly=true
+
 **Purpose**: List all identity provider links for current user
 
 **Features**:
+
 - Optional filter for active links only
 - Calculates summary statistics:
   - Total links, active/inactive counts
@@ -103,6 +112,7 @@ CREATE TABLE identity_links (
 - Checks expiry dates
 
 **Response**:
+
 ```json
 {
   "userId": "uuid",
@@ -123,14 +133,17 @@ CREATE TABLE identity_links (
 ### 3. Verification Service ✅
 
 #### POST /api/verification/start
+
 **Purpose**: Initiate identity verification with KYC provider
 
 **Supported providers**:
+
 - ✅ **Mock** (development): Instant high-assurance link
 - 🔄 **Onfido** (placeholder): Awaiting API credentials
 - 🔄 **Yoti** (placeholder): Awaiting API credentials
 
 **Mock verification behavior**:
+
 - Automatically creates `identity_links` record
 - Sets verification_level = 'high'
 - Sets assurance_level = 'high'
@@ -140,9 +153,11 @@ CREATE TABLE identity_links (
 ---
 
 #### GET /api/verification/status
+
 **Purpose**: Get overall verification status for current user
 
 **Features**:
+
 - Aggregates all active identity links
 - Calculates highest verification & assurance levels
 - Categorizes overall status:
@@ -159,6 +174,7 @@ CREATE TABLE identity_links (
 **Page**: `/dashboard/verify-identity`
 
 **Features**:
+
 - **Verification Status Card**:
   - Overall status badge (color-coded)
   - Current verification level (GPG 45)
@@ -183,6 +199,7 @@ CREATE TABLE identity_links (
   - Benefits of higher verification
 
 **User Experience**:
+
 - Loading states for async operations
 - Success/error message display
 - Confirmation dialogs for destructive actions
@@ -194,12 +211,14 @@ CREATE TABLE identity_links (
 ### 5. Dashboard Integration ✅
 
 Added "Verify Identity" card to Actor dashboard:
+
 - Icon: 🔐
 - Title: "Verify Identity"
 - Description: "Link external providers to increase verification level"
 - Links to `/dashboard/verify-identity`
 
 Positioned alongside:
+
 - Register Identity
 - Manage Consents
 
@@ -223,11 +242,13 @@ User → Frontend → Next.js API Route → PostgreSQL
 ### Standards Compliance
 
 **UK Trust Framework (GPG 45)**:
+
 - ✅ Verification levels: low, medium, high, very-high
 - ✅ Structured for government ID integration
 - ✅ Confidence scoring infrastructure ready
 
 **eIDAS (EU Digital Identity)**:
+
 - ✅ Assurance levels: low, substantial, high
 - ✅ Compatible with EU digital wallets
 - ✅ Ready for cross-border identity linking
@@ -249,7 +270,7 @@ User → Frontend → Next.js API Route → PostgreSQL
 
 ### Manual Testing ✅
 
-1. **Link Provider**: 
+1. **Link Provider**:
    - ✅ Mock verification creates identity_link
    - ✅ High verification level assigned
    - ✅ Duplicate prevention works
@@ -274,6 +295,7 @@ User → Frontend → Next.js API Route → PostgreSQL
 ## Files Created/Modified
 
 ### Created:
+
 - `infra/database/migrations/004_identity_links.sql`
 - `services/identity-service/src/handlers/link-provider.ts`
 - `services/identity-service/src/handlers/unlink-provider.ts`
@@ -286,6 +308,7 @@ User → Frontend → Next.js API Route → PostgreSQL
 - `apps/web/src/app/dashboard/verify-identity/page.tsx`
 
 ### Modified:
+
 - `apps/web/src/app/dashboard/page.tsx` (added Verify Identity card)
 
 ---
@@ -293,11 +316,13 @@ User → Frontend → Next.js API Route → PostgreSQL
 ## Integration Points
 
 ### Current:
+
 - ✅ Auth0 authentication (session validation)
 - ✅ PostgreSQL (identity_links table)
 - ✅ User profiles (foreign key relationship)
 
 ### Future:
+
 - 🔄 Onfido KYC (when API credentials available)
 - 🔄 Yoti Digital Identity
 - 🔄 UK Gov Verify / Gov.UK One Login
@@ -315,6 +340,7 @@ According to TECHNICAL_ARCHITECTURE.md, **Step 8** is:
 **Objective**: Calculate overall identity confidence based on linked providers
 
 **Tasks**:
+
 1. Implement `resolveIdentity(userId)` function
 2. Weight providers by verification level
 3. Create confidence algorithm:
@@ -331,12 +357,12 @@ According to TECHNICAL_ARCHITECTURE.md, **Step 8** is:
 
 ## Compliance Readiness
 
-| Standard | Status | Notes |
-|----------|--------|-------|
-| GPG 45 (UK) | ✅ Ready | Verification levels implemented |
-| eIDAS (EU) | ✅ Ready | Assurance levels implemented |
-| GDPR | ✅ Ready | Soft deletes, audit trail, encryption support |
-| SOC 2 | 🔄 Partial | Audit logging in place, access controls ready |
+| Standard    | Status     | Notes                                         |
+| ----------- | ---------- | --------------------------------------------- |
+| GPG 45 (UK) | ✅ Ready   | Verification levels implemented               |
+| eIDAS (EU)  | ✅ Ready   | Assurance levels implemented                  |
+| GDPR        | ✅ Ready   | Soft deletes, audit trail, encryption support |
+| SOC 2       | 🔄 Partial | Audit logging in place, access controls ready |
 
 ---
 

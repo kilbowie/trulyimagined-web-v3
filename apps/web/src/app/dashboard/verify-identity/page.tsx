@@ -69,7 +69,7 @@ export default function VerifyIdentityPage() {
     }
   }
 
-  async function startVerification(provider: 'mock' | 'onfido' | 'yoti' = 'mock') {
+  async function startVerification(provider: 'stripe' | 'mock' | 'onfido' | 'yoti' = 'stripe') {
     try {
       setVerifying(true);
       setError(null);
@@ -91,8 +91,15 @@ export default function VerifyIdentityPage() {
         throw new Error(data.message || 'Verification failed');
       }
 
+      // Handle Stripe Identity redirect
+      if (provider === 'stripe' && data.url) {
+        // Redirect user to Stripe Identity hosted page
+        window.location.href = data.url;
+        return;
+      }
+
       setSuccessMessage(data.message || `Verification started with ${provider}`);
-      
+
       // Refresh data
       await fetchData();
 
@@ -142,12 +149,13 @@ export default function VerifyIdentityPage() {
     );
   }
 
-  const statusColor = {
-    'unverified': 'text-gray-600 bg-gray-100',
-    'partially-verified': 'text-yellow-700 bg-yellow-100',
-    'verified': 'text-blue-700 bg-blue-100',
-    'fully-verified': 'text-green-700 bg-green-100',
-  }[verificationStatus?.status || 'unverified'] || 'text-gray-600 bg-gray-100';
+  const statusColor =
+    {
+      unverified: 'text-gray-600 bg-gray-100',
+      'partially-verified': 'text-yellow-700 bg-yellow-100',
+      verified: 'text-blue-700 bg-blue-100',
+      'fully-verified': 'text-green-700 bg-green-100',
+    }[verificationStatus?.status || 'unverified'] || 'text-gray-600 bg-gray-100';
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
@@ -176,7 +184,7 @@ export default function VerifyIdentityPage() {
         {/* Verification Status Card */}
         <div className="bg-white shadow rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Current Verification Status</h2>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-gray-600 mb-1">Overall Status</p>
@@ -254,78 +262,130 @@ export default function VerifyIdentityPage() {
         {/* Start Verification */}
         <div className="bg-white shadow rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Start New Verification</h2>
-          
+
           <div className="space-y-4">
-            {/* Mock Verification (Development) */}
-            <div className="border border-gray-200 rounded-lg p-4">
+            {/* Stripe Identity (Primary) */}
+            <div className="border-2 border-blue-500 rounded-lg p-4 bg-blue-50">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Mock Verification (Development)</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Instantly create a high-assurance identity link for testing purposes
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-gray-900">Stripe Identity Verification</h3>
+                    <span className="text-xs px-2 py-1 bg-blue-600 text-white rounded font-semibold">
+                      RECOMMENDED
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700 mt-2">
+                    <strong>Official government ID verification</strong> with liveness detection.
+                    Fast, secure, and globally certified.
                   </p>
-                  <div className="mt-2 flex gap-2">
+                  <ul className="text-sm text-gray-600 mt-3 space-y-1">
+                    <li>✓ Government-issued ID (passport, driver's license, national ID)</li>
+                    <li>✓ Liveness check (selfie verification)</li>
+                    <li>✓ GPG 45 & eIDAS compliant</li>
+                    <li>✓ Instant verification (usually &lt; 1 minute)</li>
+                  </ul>
+                  <div className="mt-3 flex gap-2">
                     <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
-                      Instant
+                      ~1 min
                     </span>
                     <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">
                       HIGH verification
                     </span>
+                    <span className="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
+                      $1.50-$3.00 per verification
+                    </span>
                   </div>
                 </div>
                 <button
-                  onClick={() => startVerification('mock')}
+                  onClick={() => startVerification('stripe')}
                   disabled={verifying}
-                  className="ml-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="ml-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold shadow-md"
                 >
-                  {verifying ? 'Processing...' : 'Start Mock'}
+                  {verifying ? 'Processing...' : 'Start Verification'}
                 </button>
               </div>
             </div>
 
-            {/* Onfido (Coming Soon) */}
-            <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Onfido KYC Verification</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Professional identity verification with document scanning and liveness checks
-                  </p>
-                  <div className="mt-2">
-                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                      Coming Soon - API credentials required
-                    </span>
-                  </div>
-                </div>
-                <button
-                  disabled
-                  className="ml-4 px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-                >
-                  Not Available
-                </button>
-              </div>
-            </div>
+            {/* Development/Testing Options */}
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                Development & Testing Options
+              </h3>
 
-            {/* Yoti (Coming Soon) */}
-            <div className="border border-gray-200 rounded-lg p-4 opacity-60">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">Yoti Digital Identity</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Government-certified digital identity verification
-                  </p>
-                  <div className="mt-2">
-                    <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
-                      Coming Soon - API credentials required
-                    </span>
+              {/* Mock Verification (Development) */}
+              <div className="border border-gray-200 rounded-lg p-4 mb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">Mock Verification</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Instantly create a high-assurance identity link for testing purposes (development only)
+                    </p>
+                    <div className="mt-2 flex gap-2">
+                      <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">
+                        Instant
+                      </span>
+                      <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded">
+                        HIGH verification
+                      </span>
+                      <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">
+                        Development only
+                      </span>
+                    </div>
                   </div>
+                  <button
+                    onClick={() => startVerification('mock')}
+                    disabled={verifying}
+                    className="ml-4 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    {verifying ? 'Processing...' : 'Start Mock'}
+                  </button>
                 </div>
-                <button
-                  disabled
-                  className="ml-4 px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
-                >
-                  Not Available
-                </button>
+              </div>
+
+              {/* Onfido (Legacy, requires API key) */}
+              <div className="border border-gray-200 rounded-lg p-4 mb-3 opacity-60">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">Onfido KYC (Legacy)</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Professional identity verification - requires ONFIDO_API_TOKEN
+                    </p>
+                    <div className="mt-2">
+                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                        Not configured
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    disabled
+                    className="ml-4 px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                  >
+                    Not Available
+                  </button>
+                </div>
+              </div>
+
+              {/* Yoti (Legacy, requires API key) */}
+              <div className="border border-gray-200 rounded-lg p-4 opacity-60">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-gray-900">Yoti Digital Identity (Legacy)</h3>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Government-certified digital identity - requires YOTI_CLIENT_SDK_ID
+                    </p>
+                    <div className="mt-2">
+                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded">
+                        Not configured
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    disabled
+                    className="ml-4 px-4 py-2 bg-gray-300 text-gray-500 rounded cursor-not-allowed"
+                  >
+                    Not Available
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -342,7 +402,8 @@ export default function VerifyIdentityPage() {
               <strong>eIDAS (EU Standard):</strong> Low, Substantial, High
             </p>
             <p className="mt-3">
-              Higher verification levels unlock more features and increase trust with agencies and studios.
+              Higher verification levels unlock more features and increase trust with agencies and
+              studios.
             </p>
           </div>
         </div>

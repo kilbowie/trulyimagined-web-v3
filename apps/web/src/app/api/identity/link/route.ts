@@ -5,7 +5,7 @@ import { query } from '@/lib/db';
 /**
  * POST /api/identity/link
  * Links an external identity provider to the user's profile
- * 
+ *
  * Step 7: Multi-Provider Identity Linking
  * Supports: Government IDs, Banks, KYC providers (Onfido, Yoti, etc.)
  */
@@ -66,10 +66,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user profile ID from Auth0 user ID
-    const userResult = await query(
-      `SELECT id FROM user_profiles WHERE auth0_user_id = $1`,
-      [session.user.sub]
-    );
+    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
+      session.user.sub,
+    ]);
 
     if (userResult.rows.length === 0) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });

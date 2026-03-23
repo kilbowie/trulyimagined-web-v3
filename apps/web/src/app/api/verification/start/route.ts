@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
+import { createVerificationSession } from '@/lib/stripe';
 
 /**
  * POST /api/verification/start
  * Initiates identity verification with a KYC provider
- * 
- * Step 7: Multi-Provider Identity Linking
- * Supports: Onfido, Yoti, or mock verification for development
+ *
+ * Step 7: Multi-Provider Identity Linking with Stripe Identity
+ * Supports: Stripe Identity (primary), Mock (development), Onfido/Yoti (legacy)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -20,14 +21,14 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const {
-      provider = 'mock', // 'onfido', 'yoti', 'mock'
+      provider = 'stripe', // 'stripe' (primary), 'mock', 'onfido', 'yoti'
       verificationType: _verificationType = 'identity', // 'identity', 'document', 'liveness'
       documents = ['passport'], // Document types for verification
     } = body;
 
     // Get user profile
     const userResult = await query(
-      `SELECT id, email, first_name, last_name FROM user_profiles WHERE auth0_user_id = $1`,
+      `SELECT id, email, legal_name, professional_name FROM user_profiles WHERE auth0_user_id = $1`,
       [session.user.sub]
     );
 
@@ -41,23 +42,27 @@ export async function POST(request: NextRequest) {
     let verificationResult;
 
     switch (provider) {
+      case 'stripe':
+        verificationResult = await startStripeVerification(userProfile);
+        break;
+
       case 'onfido':
         verificationResult = await startOnfidoVerification(userProfile, documents);
         break;
-      
+
       case 'yoti':
         verificationResult = await startYotiVerification(userProfile);
         break;
-      
+
       case 'mock':
         verificationResult = await startMockVerification(userProfile);
         break;
-      
+
       default:
         return NextResponse.json(
           {
             error: 'Unsupported verification provider',
-            supported: ['onfido', 'yoti', 'mock'],
+            supported: ['stripe', 'mock', 'onfido', 'yoti'],
           },
           { status: 400 }
         );
@@ -86,6 +91,70 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Start Stripe Identity verification
+ * Primary verification provider for Truly Imagined
+ * 
+ * Features:
+ * - Government ID verification (passport, driver's license, national ID)
+ * - Liveness detection (selfie matching)
+ * - Document authenticity validation
+ * - GPG 45 & eIDAS compliance
+ * 
+ * Cost: $1.50-$3.00 per verification
+ */
+async function startStripeVerification(userProfile: Record<string, unknown>) {
+  const userId = userProfile.id as string;
+  const userEmail = userProfile.email as string;
+
+  try {
+    // Check if Stripe is configured
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error(
+        'Stripe Identity not configured. Set STRIPE_SECRET_KEY environment variable.'
+      );
+    }
+
+    // Create Stripe Identity verification session
+    const session = await createVerificationSession(userEmail, {
+      user_profile_id: userId,
+      user_email: userEmail,
+      legal_name: userProfile.legal_name as string,
+    });
+
+    console.log('[VERIFICATION] Created Stripe Identity session:', {
+      userId,
+      sessionId: session.id,
+      status: session.status,
+    });
+
+    // Cast session to access expires_at property
+    const sessionData = session as unknown as { expires_at?: number };
+
+    // Return session details for client to complete verification
+    return {
+      provider: 'stripe',
+      verificationId: session.id,
+      status: session.status, // 'requires_input', 'processing', 'verified'
+      clientSecret: session.client_secret, // For frontend Stripe.js
+      url: session.url, // Hosted verification page URL
+      expiresAt: sessionData.expires_at ? new Date(sessionData.expires_at * 1000).toISOString() : null,
+      message: 'Please complete the verification process using the provided URL or client secret',
+      nextSteps: [
+        'User redirects to session.url or uses client_secret with @stripe/stripe-js',
+        'User uploads government ID (passport/license/national ID)',
+        'User completes liveness check (selfie)',
+        'Stripe processes verification (usually < 1 minute)',
+        'Webhook receives verification result',
+        'Identity link created in database',
+      ],
+    };
+  } catch (error) {
+    console.error('[VERIFICATION] Stripe Identity error:', error);
+    throw error;
   }
 }
 
@@ -170,8 +239,8 @@ async function startMockVerification(userProfile: Record<string, unknown>) {
       'high',
       'high',
       JSON.stringify({
-        firstName: userProfile.first_name,
-        lastName: userProfile.last_name,
+        legalName: userProfile.legal_name,
+        professionalName: userProfile.professional_name,
         email: userProfile.email,
         documentType: 'passport',
         documentNumber: 'MOCK1234567',

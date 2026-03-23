@@ -1,6 +1,7 @@
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
 
 /**
  * Protected Dashboard Page
@@ -162,13 +163,16 @@ export default async function DashboardPage() {
                     href="/dashboard/verify-identity"
                     className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
                   >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">🔐</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Verify Identity</h3>
-                        <p className="text-sm text-gray-600">
-                          Link external providers to increase verification level
-                        </p>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start flex-1">
+                        <span className="text-2xl mr-3">🔐</span>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-gray-900 mb-1">Verify Identity</h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            Link external providers to increase verification level
+                          </p>
+                          {hasActorRole && <ConfidenceScoreBadge />}
+                        </div>
                       </div>
                     </div>
                   </Link>

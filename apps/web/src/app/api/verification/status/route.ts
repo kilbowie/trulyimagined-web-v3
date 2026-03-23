@@ -5,7 +5,7 @@ import { query } from '@/lib/db';
 /**
  * GET /api/verification/status?provider={provider}
  * Checks the overall identity verification status for the current user
- * 
+ *
  * Returns summary of all verification links and highest assurance level achieved
  */
 export async function GET(_request: NextRequest) {
@@ -18,10 +18,9 @@ export async function GET(_request: NextRequest) {
     }
 
     // Get user profile ID
-    const userResult = await query(
-      `SELECT id FROM user_profiles WHERE auth0_user_id = $1`,
-      [session.user.sub]
-    );
+    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
+      session.user.sub,
+    ]);
 
     if (userResult.rows.length === 0) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });

@@ -20,7 +20,7 @@ interface IdentityLink {
 /**
  * GET /api/identity/links?activeOnly=true
  * Lists all identity provider links for the current user
- * 
+ *
  * Step 7: Multi-Provider Identity Linking
  */
 export async function GET(request: NextRequest) {
@@ -37,10 +37,9 @@ export async function GET(request: NextRequest) {
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
     // Get user profile ID from Auth0 user ID
-    const userResult = await query(
-      `SELECT id FROM user_profiles WHERE auth0_user_id = $1`,
-      [session.user.sub]
-    );
+    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
+      session.user.sub,
+    ]);
 
     if (userResult.rows.length === 0) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });

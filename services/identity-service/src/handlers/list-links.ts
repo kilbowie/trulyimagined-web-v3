@@ -196,7 +196,10 @@ function calculateLinksSummary(links: IdentityLink[]) {
 /**
  * Get a single identity link by ID
  */
-export async function getIdentityLink(userId: string, linkId: string): Promise<IdentityLink | null> {
+export async function getIdentityLink(
+  userId: string,
+  linkId: string
+): Promise<IdentityLink | null> {
   const result = await query(
     `SELECT 
       id,

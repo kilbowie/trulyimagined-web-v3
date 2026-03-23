@@ -54,7 +54,9 @@ export async function linkIdentityProvider(
   // Validate verification level
   const validVerificationLevels = ['low', 'medium', 'high', 'very-high'];
   if (verificationLevel && !validVerificationLevels.includes(verificationLevel)) {
-    throw new Error(`Invalid verification level. Must be one of: ${validVerificationLevels.join(', ')}`);
+    throw new Error(
+      `Invalid verification level. Must be one of: ${validVerificationLevels.join(', ')}`
+    );
   }
 
   // Validate assurance level (eIDAS)
@@ -177,10 +179,7 @@ export async function linkIdentityProvider(
 /**
  * Check if a specific provider is already linked
  */
-export async function isProviderLinked(
-  userId: string,
-  provider: string
-): Promise<boolean> {
+export async function isProviderLinked(userId: string, provider: string): Promise<boolean> {
   const result = await query(
     `SELECT id FROM identity_links 
      WHERE user_profile_id = $1 AND provider = $2 AND is_active = TRUE`,
