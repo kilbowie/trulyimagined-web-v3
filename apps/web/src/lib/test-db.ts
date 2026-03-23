@@ -22,7 +22,7 @@ async function main() {
       WHERE table_schema = 'public' 
       AND table_name = 'user_profiles'
     `);
-    
+
     if (result.rows.length > 0) {
       console.log('✅ user_profiles table exists');
     } else {
@@ -40,10 +40,12 @@ async function main() {
       WHERE table_name = 'user_profiles'
       ORDER BY ordinal_position
     `);
-    
+
     console.log('\n📋 user_profiles table structure:');
-    result.rows.forEach(row => {
-      console.log(`  - ${row.column_name}: ${row.data_type} ${row.is_nullable === 'NO' ? '(required)' : '(optional)'}`);
+    result.rows.forEach((row) => {
+      console.log(
+        `  - ${row.column_name}: ${row.data_type} ${row.is_nullable === 'NO' ? '(required)' : '(optional)'}`
+      );
     });
   } catch (error) {
     console.error('❌ Error checking structure:', error);
@@ -56,9 +58,9 @@ async function main() {
       FROM pg_indexes 
       WHERE tablename = 'user_profiles'
     `);
-    
+
     console.log('\n📊 Indexes:');
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       console.log(`  - ${row.indexname}`);
     });
   } catch (error) {
@@ -73,9 +75,9 @@ async function main() {
       WHERE table_schema = 'public' 
       ORDER BY table_name
     `);
-    
+
     console.log('\n📁 All tables in database:');
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       console.log(`  - ${row.table_name}`);
     });
   } catch (error) {

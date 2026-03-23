@@ -17,10 +17,7 @@ export async function GET(_request: NextRequest) {
     }
 
     // Query PostgreSQL user_profiles table
-    const result = await query(
-      'SELECT * FROM user_profiles WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
 
     const profile = result.rows[0] || null;
 
@@ -111,10 +108,7 @@ export async function POST(request: NextRequest) {
       [finalProfessionalName]
     );
     if (profNameCheck.rows[0].exists) {
-      return NextResponse.json(
-        { error: 'Professional name already taken' },
-        { status: 409 }
-      );
+      return NextResponse.json({ error: 'Professional name already taken' }, { status: 409 });
     }
 
     // If Spotlight ID provided, check it's unique
@@ -124,10 +118,7 @@ export async function POST(request: NextRequest) {
         [spotlightId]
       );
       if (spotlightCheck.rows[0].exists) {
-        return NextResponse.json(
-          { error: 'Spotlight ID already registered' },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: 'Spotlight ID already registered' }, { status: 409 });
       }
     }
 
