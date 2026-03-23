@@ -97,7 +97,10 @@ export async function createStatusList(
   const validFrom = new Date().toISOString();
 
   const unsignedStatusListCredential = {
-    '@context': ['https://www.w3.org/ns/credentials/v2', 'https://www.w3.org/ns/credentials/status/v1'],
+    '@context': [
+      'https://www.w3.org/ns/credentials/v2',
+      'https://www.w3.org/ns/credentials/status/v1',
+    ],
     id: statusListCredentialUrl,
     type: ['VerifiableCredential', 'BitstringStatusListCredential'],
     issuer: 'did:web:trulyimagined.com',

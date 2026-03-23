@@ -86,9 +86,7 @@ export interface BitstringStatusListCredential {
  */
 export function generateBitstring(size: number = DEFAULT_BITSTRING_SIZE): Buffer {
   if (size < MIN_BITSTRING_LENGTH) {
-    throw new Error(
-      `Bitstring size must be at least ${MIN_BITSTRING_LENGTH} bits (got ${size})`
-    );
+    throw new Error(`Bitstring size must be at least ${MIN_BITSTRING_LENGTH} bits (got ${size})`);
   }
 
   if (size % 8 !== 0) {
@@ -122,9 +120,7 @@ export function setBit(bitstring: Buffer, index: number, value: 0 | 1): void {
   const maxIndex = bitstring.length * 8 - 1;
 
   if (index < 0 || index > maxIndex) {
-    throw new RangeError(
-      `Index ${index} out of range (bitstring supports 0-${maxIndex})`
-    );
+    throw new RangeError(`Index ${index} out of range (bitstring supports 0-${maxIndex})`);
   }
 
   if (value !== 0 && value !== 1) {
@@ -165,9 +161,7 @@ export function getBit(bitstring: Buffer, index: number): 0 | 1 {
   const maxIndex = bitstring.length * 8 - 1;
 
   if (index < 0 || index > maxIndex) {
-    throw new RangeError(
-      `Index ${index} out of range (bitstring supports 0-${maxIndex})`
-    );
+    throw new RangeError(`Index ${index} out of range (bitstring supports 0-${maxIndex})`);
   }
 
   // Calculate byte and bit position

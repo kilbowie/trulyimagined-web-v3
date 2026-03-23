@@ -18,7 +18,7 @@ Successfully implemented W3C Bitstring Status List v1.0 for privacy-preserving c
 ✅ **Revocation API** - Complete HTTP API for status list management  
 ✅ **GZIP Compression** - Efficient storage (~99% compression for sparse revocation)  
 ✅ **Multibase Encoding** - Standard base64url encoding with 'u' prefix  
-✅ **Privacy-Preserving** - Minimum 131,072 credential capacity per list (group privacy)  
+✅ **Privacy-Preserving** - Minimum 131,072 credential capacity per list (group privacy)
 
 ---
 
@@ -28,7 +28,7 @@ Successfully implemented W3C Bitstring Status List v1.0 for privacy-preserving c
 
 1. **Database Schema** (Migration 006)
    - Created `bitstring_status_lists` table
-   - Created `credential_status_entries` table  
+   - Created `credential_status_entries` table
    - Added `credential_id` column to `verifiable_credentials`
 
 2. **Core Libraries**
@@ -113,6 +113,7 @@ Status lists are published as verifiable credentials:
 5. **Status Values:** 0 = valid, 1 = revoked
 
 **Example:**
+
 ```
 Uncompressed: 16,384 bytes (131,072 bits)
 After GZIP:   ~200 bytes (when <1% revoked)
@@ -162,6 +163,7 @@ pnpm tsx src/migrate-006.ts
 ```
 
 Expected output:
+
 ```
 🚀 Starting Migration 006: Bitstring Status Lists...
 📄 Executing SQL migration...
@@ -182,6 +184,7 @@ curl -X POST http://localhost:3000/api/credentials/issue \
 ```
 
 Expected response includes `credentialStatus`:
+
 ```json
 {
   "success": true,
@@ -206,6 +209,7 @@ curl http://localhost:3000/api/credentials/status/revocation-2024-03-23
 ```
 
 Expected response:
+
 ```json
 {
   "@context": [...],
@@ -230,6 +234,7 @@ curl -X POST http://localhost:3000/api/credentials/revoke \
 ```
 
 Expected response:
+
 ```json
 {
   "success": true,
@@ -247,7 +252,7 @@ Fetch the status list again and decode the bitstring to verify the bit at `statu
 
 ```sql
 -- Check status lists
-SELECT list_id, status_purpose, current_index, max_index, is_full 
+SELECT list_id, status_purpose, current_index, max_index, is_full
 FROM bitstring_status_lists;
 
 -- Check credential status entries
@@ -309,6 +314,7 @@ WHERE is_revoked = true;
 Issue a new W3C Verifiable Credential with automatic status list allocation.
 
 **Request:**
+
 ```json
 {
   "credentialType": "IdentityCredential",
@@ -317,6 +323,7 @@ Issue a new W3C Verifiable Credential with automatic status list allocation.
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -335,6 +342,7 @@ Retrieve a BitstringStatusListCredential for verification.
 **Response:** BitstringStatusListCredential (JSON-LD)
 
 **Headers:**
+
 - `Content-Type: application/vc+ld+json`
 - `Cache-Control: public, max-age=3600`
 
@@ -343,6 +351,7 @@ Retrieve a BitstringStatusListCredential for verification.
 Revoke a credential (updates bitstring status list).
 
 **Request:**
+
 ```json
 {
   "credentialId": "uuid",
@@ -351,6 +360,7 @@ Revoke a credential (updates bitstring status list).
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -379,6 +389,7 @@ Revoke a credential (updates bitstring status list).
 ## 📖 Standards Compliance Checklist
 
 ✅ **W3C Bitstring Status List v1.0**
+
 - [x] BitstringStatusListEntry format
 - [x] BitstringStatusListCredential format
 - [x] Minimum bitstring size (131,072 bits)
@@ -390,12 +401,14 @@ Revoke a credential (updates bitstring status list).
 - [x] Random index allocation for privacy
 
 ✅ **W3C Verifiable Credentials Data Model 2.0**
+
 - [x] Unique credential ID (id field)
 - [x] credentialStatus field (optional)
 - [x] Context URLs (v2, status/v1)
 - [x] Cryptographic proofs (Ed25519Signature2020)
 
 ✅ **W3C DID Core 1.0**
+
 - [x] did:web method for issuer and holders
 - [x] Public key verification methods
 

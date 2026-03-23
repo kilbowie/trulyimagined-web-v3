@@ -45,10 +45,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { getStatusListCredential } from '@/lib/status-list-manager';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { listId: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { listId: string } }) {
   try {
     const listId = params.listId;
 

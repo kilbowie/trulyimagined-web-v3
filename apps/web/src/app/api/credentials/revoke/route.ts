@@ -94,10 +94,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (credentialResult.rows.length === 0) {
-      return NextResponse.json(
-        { success: false, error: 'Credential not found' },
-        { status: 404 }
-      );
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
 
     const credential = credentialResult.rows[0];

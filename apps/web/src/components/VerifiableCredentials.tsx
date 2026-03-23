@@ -44,6 +44,7 @@ export function VerifiableCredentialsCard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [issuing, setIssuing] = useState(false);
+  const [revoking, setRevoking] = useState<string | null>(null); // credentialId being revoked
 
   // Fetch user's credentials
   useEffect(() => {
@@ -120,6 +121,49 @@ export function VerifiableCredentialsCard() {
       alert(
         'Failed to download credential: ' + (err instanceof Error ? err.message : 'Unknown error')
       );
+    }
+  }
+
+  async function revokeCredential(credentialId: string) {
+    // Confirmation dialog
+    const confirmed = window.confirm(
+      '⚠️ Are you sure you want to revoke this credential?\n\n' +
+        'This action cannot be undone. The credential will be permanently marked as revoked ' +
+        'in the W3C Bitstring Status List and will fail verification checks.'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setRevoking(credentialId);
+      setError(null);
+
+      const response = await fetch('/api/credentials/revoke', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          credentialId,
+          reason: 'Revoked by credential holder',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to revoke credential');
+      }
+
+      // Refresh credentials list
+      await fetchCredentials();
+
+      alert('✅ Credential revoked successfully!');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke credential');
+      alert('❌ ' + (err instanceof Error ? err.message : 'Failed to revoke credential'));
+    } finally {
+      setRevoking(null);
     }
   }
 
@@ -244,6 +288,16 @@ export function VerifiableCredentialsCard() {
                     >
                       👁️ View
                     </Link>
+                    {!metadata.isRevoked && (
+                      <button
+                        onClick={() => revokeCredential(metadata.id)}
+                        disabled={revoking === metadata.id}
+                        className="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+                        title="Revoke credential"
+                      >
+                        {revoking === metadata.id ? '⏳' : '🚫'} Revoke
+                      </button>
+                    )}
                   </div>
                 </div>
 
