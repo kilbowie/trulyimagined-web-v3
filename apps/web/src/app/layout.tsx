@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import Auth0Provider from '@/components/Auth0Provider';
 
 export const metadata: Metadata = {
   title: 'Truly Imagined v3 - Global Performer Digital Identity Registry',
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Auth0Provider>{children}</Auth0Provider>
+      </body>
     </html>
   );
 }

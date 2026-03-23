@@ -13,7 +13,8 @@
   "dependencies": {
     "@trulyimagined/types": "workspace:*",
     "@trulyimagined/utils": "workspace:*",
-    "jsonwebtoken": "^9.0.2"
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^4.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.132",
