@@ -3,9 +3,11 @@
 ## 🎯 Vision & Strategic Objective
 
 Transform Truly Imagined from:
+
 > **"A single-product digital identity registry for talent"**
 
 Into:
+
 > **"A scalable identity orchestration layer capable of integrating with government digital identity frameworks, financial institutions, and healthcare systems"**
 
 ---
@@ -38,13 +40,14 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 - ✅ **PostgreSQL Database**: AWS RDS with 3 migrations deployed
 - ✅ **Auth0 Integration**: JWT validation middleware, role-based access control
 - ✅ **Identity Registry MVP**: Actor registration API (`POST /api/identity/register`) + frontend
-- ✅ **Database Schema**: 
+- ✅ **Database Schema**:
   - `user_profiles` (all users with roles: Actor, Agent, Admin, Enterprise)
   - `actors` (extended Actor profiles linked to user_profiles)
   - `consent_log` (append-only audit trail)
   - `licensing_requests`, `usage_tracking`, `audit_log`
 
 **Tech Stack:**
+
 - **Frontend**: Next.js 14 (App Router), Tailwind CSS, Vercel
 - **Backend**: AWS Lambda (Node.js 18), API Gateway, PostgreSQL 15 (RDS)
 - **Auth**: Auth0 (OIDC/OAuth2) with JWT verification (`jwks-rsa`)
@@ -116,12 +119,14 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 **Location**: `services/identity-service/`
 
 **Responsibilities:**
+
 - User identity registration and management
 - Multi-provider identity linking (Auth0, government IDs, banks, KYC)
 - Identity resolution and confidence scoring
 - Profile management
 
 **Folder Structure:**
+
 ```
 services/identity-service/
 ├── src/
@@ -183,6 +188,7 @@ Response: {
 ```
 
 **Dependencies:**
+
 - `pg`, `zod`, `jsonwebtoken`, `jwks-rsa`
 
 ---
@@ -192,12 +198,14 @@ Response: {
 **Location**: `services/consent-service/`
 
 **Responsibilities:**
+
 - Record consent grants, revocations, updates
 - Enforce consent scope and duration
 - Provide "proof of consent" API for external verification
 - Manage consent expiry
 
 **Folder Structure:**
+
 ```
 services/consent-service/
 ├── src/
@@ -260,14 +268,17 @@ POST /api/consent/revoke
 ```typescript
 async function checkConsent(actorId: string, consentType: string, projectId: string) {
   // Query consent_log for most recent grant/revoke
-  const latestConsent = await db.query(`
+  const latestConsent = await db.query(
+    `
     SELECT * FROM consent_log 
     WHERE actor_id = $1 
       AND consent_type = $2 
       AND (consent_scope->>'projectId' = $3 OR consent_scope->>'projectId' IS NULL)
     ORDER BY created_at DESC 
     LIMIT 1
-  `, [actorId, consentType, projectId]);
+  `,
+    [actorId, consentType, projectId]
+  );
 
   // Check if granted and not expired
   if (latestConsent.action === 'granted') {
@@ -288,12 +299,14 @@ async function checkConsent(actorId: string, consentType: string, projectId: str
 **Location**: `services/credential-service/` (new)
 
 **Responsibilities:**
+
 - Issue W3C Verifiable Credentials (VCs)
 - Store and manage credentials
 - Implement selective disclosure (BBS+, future)
 - Verify presented credentials
 
 **Folder Structure:**
+
 ```
 services/credential-service/
 ├── src/
@@ -347,6 +360,7 @@ Response: {
 ```
 
 **Dependencies:**
+
 - `@digitalbazaar/vc`, `@digitalbazaar/ed25519-signature-2020`, `did-resolver`
 
 ---
@@ -356,12 +370,14 @@ Response: {
 **Location**: `services/verification-service/` (new)
 
 **Responsibilities:**
+
 - Integrate with KYC providers (Onfido, Persona, Jumio)
 - Orchestrate government ID verification
 - Calculate assurance levels (UK Trust Framework GPG 45, eIDAS)
 - Manage verification workflows
 
 **Folder Structure:**
+
 ```
 services/verification-service/
 ├── src/
@@ -418,6 +434,7 @@ Response: {
 ```
 
 **Dependencies:**
+
 - `onfido-node`, `persona` (KYC SDKs)
 
 ---
@@ -427,6 +444,7 @@ Response: {
 **Location**: `services/audit-service/` (new)
 
 **Responsibilities:**
+
 - Immutable audit logging (all system actions)
 - Compliance reporting (GDPR, data access logs)
 - Anomaly detection
@@ -457,6 +475,7 @@ GET /api/audit/logs?userId={uuid}&eventType=CONSENT_GRANTED&startDate=...&endDat
 **Location**: `services/licensing-service/`
 
 **Responsibilities:**
+
 - Handle licensing requests for AI usage
 - Track usage metrics (minutes generated, API calls)
 - Integrate with consent service for enforcement
@@ -491,6 +510,7 @@ POST /api/usage/track
 ## 3.1 Existing Schema (Deployed ✅)
 
 ### `user_profiles` Table
+
 ```sql
 CREATE TABLE user_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -513,6 +533,7 @@ CREATE TABLE user_profiles (
 ---
 
 ### `actors` Table
+
 ```sql
 CREATE TABLE actors (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -539,6 +560,7 @@ CREATE TABLE actors (
 ---
 
 ### `consent_log` Table (Append-Only ✅)
+
 ```sql
 CREATE TABLE consent_log (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -562,6 +584,7 @@ CREATE TABLE consent_log (
 ---
 
 ### Other Existing Tables
+
 - `licensing_requests`: License requests (status: pending/approved/denied)
 - `usage_tracking`: Track AI generation minutes
 - `audit_log`: General system audit events
@@ -571,29 +594,30 @@ CREATE TABLE consent_log (
 ## 3.2 New Schema (TODO — Next Migrations)
 
 ### Migration 004: `identity_links` Table
+
 ```sql
 -- Links user identities to external providers
 CREATE TABLE identity_links (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  
+
   provider VARCHAR(100) NOT NULL,  -- 'auth0', 'uk-gov-verify', 'bank-openid', 'onfido'
   provider_user_id VARCHAR(255) NOT NULL,
   provider_type VARCHAR(50) NOT NULL,  -- 'oauth', 'oidc', 'kyc', 'government'
-  
+
   verification_level VARCHAR(50),  -- 'low', 'medium', 'high', 'very-high' (GPG 45)
   assurance_level VARCHAR(50),     -- eIDAS: 'low', 'substantial', 'high'
   verified_at TIMESTAMP WITH TIME ZONE,
-  
+
   credential_data JSONB,  -- Encrypted claims from provider
-  
+
   is_active BOOLEAN DEFAULT TRUE,
   linked_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE,
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  
+
   UNIQUE(user_profile_id, provider, provider_user_id)
 );
 ```
@@ -603,24 +627,25 @@ CREATE TABLE identity_links (
 ---
 
 ### Migration 005: `verifiable_credentials` Table
+
 ```sql
 -- W3C Verifiable Credentials storage
 CREATE TABLE verifiable_credentials (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  
+
   credential_type VARCHAR(100) NOT NULL,
   credential_json JSONB NOT NULL,  -- Full W3C VC
-  
+
   issuer_did VARCHAR(255) NOT NULL,
   issued_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE,
-  
+
   is_revoked BOOLEAN DEFAULT FALSE,
   revoked_at TIMESTAMP WITH TIME ZONE,
-  
+
   holder_did VARCHAR(255),
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
@@ -628,29 +653,30 @@ CREATE TABLE verifiable_credentials (
 ---
 
 ### Migration 006: `kyc_verifications` Table
+
 ```sql
 -- KYC verification records
 CREATE TABLE kyc_verifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  
+
   provider VARCHAR(100) NOT NULL,  -- 'onfido', 'persona'
   provider_verification_id VARCHAR(255) UNIQUE NOT NULL,
-  
+
   verification_type VARCHAR(100) NOT NULL,
   documents_submitted VARCHAR(100)[],
-  
+
   status VARCHAR(50) NOT NULL DEFAULT 'pending',
-  
+
   result JSONB,
   assurance_level VARCHAR(50),
   confidence_score DECIMAL(3,2),
-  
+
   document_verified BOOLEAN,
   liveness_check_passed BOOLEAN,
   name_match BOOLEAN,
   dob_match BOOLEAN,
-  
+
   started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   completed_at TIMESTAMP WITH TIME ZONE,
   expires_at TIMESTAMP WITH TIME ZONE
@@ -660,25 +686,26 @@ CREATE TABLE kyc_verifications (
 ---
 
 ### Migration 007: `agents` Table
+
 ```sql
 -- Extended profile for Agent role
 CREATE TABLE agents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  
+
   agency_name VARCHAR(255),
   agency_registration_number VARCHAR(100),
   agency_address TEXT,
   agency_website VARCHAR(500),
-  
+
   is_verified BOOLEAN DEFAULT FALSE,
   verified_at TIMESTAMP WITH TIME ZONE,
-  
+
   represents_actors UUID[],  -- Array of actor IDs
-  
+
   bio TEXT,
   profile_image_url VARCHAR(500),
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
@@ -686,26 +713,27 @@ CREATE TABLE agents (
 ---
 
 ### Migration 008: `enterprises` Table
+
 ```sql
 -- Extended profile for Enterprise role
 CREATE TABLE enterprises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_profile_id UUID NOT NULL REFERENCES user_profiles(id) ON DELETE CASCADE,
-  
+
   company_name VARCHAR(255) NOT NULL,
   company_registration_number VARCHAR(100) UNIQUE,
   company_address TEXT,
   company_website VARCHAR(500),
-  
+
   is_verified BOOLEAN DEFAULT FALSE,
   verified_at TIMESTAMP WITH TIME ZONE,
-  
+
   api_key_hash VARCHAR(255),
   api_rate_limit INTEGER DEFAULT 1000,
-  
+
   stripe_customer_id VARCHAR(255),
   billing_email VARCHAR(255),
-  
+
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
@@ -751,23 +779,29 @@ CREATE TABLE enterprises (
 ```typescript
 async function resolveIdentity(userProfileId: string): Promise<IdentityResolution> {
   // 1. Fetch all identity links
-  const links = await db.query(`
+  const links = await db.query(
+    `
     SELECT * FROM identity_links 
     WHERE user_profile_id = $1 AND is_active = TRUE
-  `, [userProfileId]);
+  `,
+    [userProfileId]
+  );
 
   // 2. Fetch KYC verifications
-  const kycVerifications = await db.query(`
+  const kycVerifications = await db.query(
+    `
     SELECT * FROM kyc_verifications 
     WHERE user_profile_id = $1 AND status = 'complete'
-  `, [userProfileId]);
+  `,
+    [userProfileId]
+  );
 
   // 3. Calculate weighted confidence score
   const weights = {
-    'auth0': 0.1,
+    auth0: 0.1,
     'uk-gov-verify': 0.4,
     'bank-openid': 0.3,
-    'onfido': 0.4
+    onfido: 0.4,
   };
 
   let weightedScore = 0;
@@ -794,7 +828,7 @@ async function resolveIdentity(userProfileId: string): Promise<IdentityResolutio
     identityLinks: links,
     kycVerifications,
     overallConfidence: confidenceScore,
-    assuranceLevel
+    assuranceLevel,
   };
 }
 ```
@@ -808,6 +842,7 @@ async function resolveIdentity(userProfileId: string): Promise<IdentityResolutio
 **Current**: ✅ Auth0 (OIDC provider)
 
 **Future Integrations**:
+
 - UK Gov Gateway (OneLogin)
 - Bank Open Banking OIDC
 - NHS Identity (future)
@@ -826,7 +861,7 @@ const client = new ukGovIssuer.Client({
   client_id: process.env.UK_GOV_CLIENT_ID,
   client_secret: process.env.UK_GOV_CLIENT_SECRET,
   redirect_uris: ['https://trulyimagined.com/auth/callback/gov'],
-  response_types: ['code']
+  response_types: ['code'],
 });
 
 // 2. Generate authorization URL with PKCE
@@ -837,18 +872,16 @@ const authUrl = client.authorizationUrl({
   scope: 'openid profile',
   code_challenge,
   code_challenge_method: 'S256',
-  vtr: '["Cl.Cm"]'  // Request Confidence Level Medium
+  vtr: '["Cl.Cm"]', // Request Confidence Level Medium
 });
 
 // Redirect user to authUrl
 
 // 3. Exchange code for tokens (in callback)
 const params = client.callbackParams(req);
-const tokenSet = await client.callback(
-  'https://trulyimagined.com/auth/callback/gov',
-  params,
-  { code_verifier }
-);
+const tokenSet = await client.callback('https://trulyimagined.com/auth/callback/gov', params, {
+  code_verifier,
+});
 
 const claims = tokenSet.claims();
 // claims.sub = Government user ID
@@ -878,19 +911,19 @@ import vc from '@digitalbazaar/vc';
 import { Ed25519Signature2020 } from '@digitalbazaar/ed25519-signature-2020';
 
 const credential = {
-  "@context": [
-    "https://www.w3.org/2018/credentials/v1",
-    "https://trulyimagined.com/credentials/v1"
+  '@context': [
+    'https://www.w3.org/2018/credentials/v1',
+    'https://trulyimagined.com/credentials/v1',
   ],
-  "type": ["VerifiableCredential", "IdentityCredential"],
-  "issuer": "did:web:trulyimagined.com",
-  "issuanceDate": new Date().toISOString(),
-  "credentialSubject": {
-    "id": `did:web:trulyimagined.com:users:${user.id}`,
-    "fullName": user.legalName,
-    "verificationLevel": "high",
-    "verifiedAt": new Date().toISOString()
-  }
+  type: ['VerifiableCredential', 'IdentityCredential'],
+  issuer: 'did:web:trulyimagined.com',
+  issuanceDate: new Date().toISOString(),
+  credentialSubject: {
+    id: `did:web:trulyimagined.com:users:${user.id}`,
+    fullName: user.legalName,
+    verificationLevel: 'high',
+    verifiedAt: new Date().toISOString(),
+  },
 };
 
 // Sign credential
@@ -898,11 +931,14 @@ const suite = new Ed25519Signature2020({ key: issuerKeyPair });
 const signedVC = await vc.issue({ credential, suite, documentLoader });
 
 // Store in database
-await db.query(`
+await db.query(
+  `
   INSERT INTO verifiable_credentials (
     user_profile_id, credential_type, credential_json, issuer_did
   ) VALUES ($1, $2, $3, $4)
-`, [user.profileId, 'IdentityCredential', signedVC, 'did:web:trulyimagined.com']);
+`,
+  [user.profileId, 'IdentityCredential', signedVC, 'did:web:trulyimagined.com']
+);
 ```
 
 ---
@@ -919,12 +955,14 @@ await db.query(`
 {
   "@context": "https://www.w3.org/ns/did/v1",
   "id": "did:web:trulyimagined.com:users:550e8400-...",
-  "verificationMethod": [{
-    "id": "did:web:trulyimagined.com:users:550e8400-...#key-1",
-    "type": "Ed25519VerificationKey2020",
-    "controller": "did:web:trulyimagined.com:users:550e8400-...",
-    "publicKeyMultibase": "z6Mkj..."
-  }],
+  "verificationMethod": [
+    {
+      "id": "did:web:trulyimagined.com:users:550e8400-...#key-1",
+      "type": "Ed25519VerificationKey2020",
+      "controller": "did:web:trulyimagined.com:users:550e8400-...",
+      "publicKeyMultibase": "z6Mkj..."
+    }
+  ],
   "authentication": ["...-users:550e8400-...#key-1"]
 }
 ```
@@ -936,23 +974,25 @@ await db.query(`
 export async function GET(req, { params }) {
   const { userId } = params;
   const user = await db.query(`SELECT * FROM user_profiles WHERE id = $1`, [userId]);
-  
+
   if (!user) return new Response('Not Found', { status: 404 });
 
   const didDocument = {
-    "@context": "https://www.w3.org/ns/did/v1",
-    "id": `did:web:trulyimagined.com:users:${userId}`,
-    "verificationMethod": [{
-      "id": `did:web:trulyimagined.com:users:${userId}#key-1`,
-      "type": "Ed25519VerificationKey2020",
-      "controller": `did:web:trulyimagined.com:users:${userId}`,
-      "publicKeyMultibase": user.publicKey
-    }],
-    "authentication": [`did:web:trulyimagined.com:users:${userId}#key-1`]
+    '@context': 'https://www.w3.org/ns/did/v1',
+    id: `did:web:trulyimagined.com:users:${userId}`,
+    verificationMethod: [
+      {
+        id: `did:web:trulyimagined.com:users:${userId}#key-1`,
+        type: 'Ed25519VerificationKey2020',
+        controller: `did:web:trulyimagined.com:users:${userId}`,
+        publicKeyMultibase: user.publicKey,
+      },
+    ],
+    authentication: [`did:web:trulyimagined.com:users:${userId}#key-1`],
   };
 
   return new Response(JSON.stringify(didDocument), {
-    headers: { 'Content-Type': 'application/did+json' }
+    headers: { 'Content-Type': 'application/did+json' },
   });
 }
 ```
@@ -989,6 +1029,7 @@ CREATE TABLE consent_log (
 ## 6.2 Revocation Mechanism
 
 **Flow:**
+
 1. Actor clicks "Revoke" on consent
 2. System appends new record with `action='revoked'`
 3. External systems query `/api/consent/check` → returns `isGranted: false`
@@ -998,12 +1039,15 @@ CREATE TABLE consent_log (
 async function revokeConsent(req) {
   const { actorId, consentId, reason } = req.body;
 
-  await db.query(`
+  await db.query(
+    `
     INSERT INTO consent_log (actor_id, action, consent_type, consent_scope, metadata) 
     SELECT actor_id, 'revoked', consent_type, consent_scope, 
            jsonb_build_object('originalConsentId', $2, 'reason', $3)
     FROM consent_log WHERE id = $2
-  `, [actorId, consentId, reason]);
+  `,
+    [actorId, consentId, reason]
+  );
 
   return { status: 'revoked', loggedAt: new Date() };
 }
@@ -1029,20 +1073,24 @@ async function getConsentProof(req) {
   }
 
   // Generate signed JWT proof
-  const proof = jwt.sign({
-    iss: 'did:web:trulyimagined.com',
-    sub: actorId,
-    consentType,
-    projectId,
-    scope: consent.scope,
-    grantedAt: consent.grantedAt,
-    expiresAt: consent.expiresAt,
-    iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(new Date(consent.expiresAt).getTime() / 1000)
-  }, process.env.CONSENT_SIGNING_KEY, {
-    algorithm: 'RS256',
-    keyid: 'consent-key-1'
-  });
+  const proof = jwt.sign(
+    {
+      iss: 'did:web:trulyimagined.com',
+      sub: actorId,
+      consentType,
+      projectId,
+      scope: consent.scope,
+      grantedAt: consent.grantedAt,
+      expiresAt: consent.expiresAt,
+      iat: Math.floor(Date.now() / 1000),
+      exp: Math.floor(new Date(consent.expiresAt).getTime() / 1000),
+    },
+    process.env.CONSENT_SIGNING_KEY,
+    {
+      algorithm: 'RS256',
+      keyid: 'consent-key-1',
+    }
+  );
 
   return { isGranted: true, consentId: consent.id, proof };
 }
@@ -1053,7 +1101,7 @@ async function getConsentProof(req) {
 ```typescript
 const decoded = jwt.verify(proof, trulyImaginedPublicKey, {
   algorithms: ['RS256'],
-  issuer: 'did:web:trulyimagined.com'
+  issuer: 'did:web:trulyimagined.com',
 });
 
 if (decoded.consentType === 'voice_synthesis' && new Date(decoded.expiresAt) > new Date()) {
@@ -1078,7 +1126,7 @@ import jwt from 'jsonwebtoken';
 const client = jwksClient({
   jwksUri: `https://${process.env.AUTH0_DOMAIN}/.well-known/jwks.json`,
   cache: true,
-  cacheMaxAge: 600000  // 10 minutes
+  cacheMaxAge: 600000, // 10 minutes
 });
 
 export async function validateAuth0Token(event) {
@@ -1086,14 +1134,19 @@ export async function validateAuth0Token(event) {
   if (!token) throw new Error('No token provided');
 
   return new Promise((resolve, reject) => {
-    jwt.verify(token, getKey, {
-      audience: process.env.AUTH0_AUDIENCE,
-      issuer: `https://${process.env.AUTH0_DOMAIN}/`,
-      algorithms: ['RS256']
-    }, (err, decoded) => {
-      if (err) reject(err);
-      else resolve(decoded);
-    });
+    jwt.verify(
+      token,
+      getKey,
+      {
+        audience: process.env.AUTH0_AUDIENCE,
+        issuer: `https://${process.env.AUTH0_DOMAIN}/`,
+        algorithms: ['RS256'],
+      },
+      (err, decoded) => {
+        if (err) reject(err);
+        else resolve(decoded);
+      }
+    );
   });
 }
 ```
@@ -1116,11 +1169,11 @@ const ALGORITHM = 'aes-256-gcm';
 export function encrypt(plaintext: string, key: string): string {
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(key, 'hex'), iv);
-  
+
   let encrypted = cipher.update(plaintext, 'utf8', 'base64');
   encrypted += cipher.final('base64');
   const authTag = cipher.getAuthTag();
-  
+
   return `${iv.toString('base64')}:${authTag.toString('base64')}:${encrypted}`;
 }
 
@@ -1130,7 +1183,7 @@ export function decrypt(ciphertext: string, key: string): string {
   const authTag = Buffer.from(authTagB64, 'base64');
   const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(key, 'hex'), iv);
   decipher.setAuthTag(authTag);
-  
+
   let plaintext = decipher.update(encrypted, 'base64', 'utf8');
   plaintext += decipher.final('utf8');
   return plaintext;
@@ -1138,8 +1191,10 @@ export function decrypt(ciphertext: string, key: string): string {
 
 // Usage: Encrypt identity_links.credential_data
 const encryptedData = encrypt(JSON.stringify(claims), process.env.ENCRYPTION_KEY);
-await db.query(`UPDATE identity_links SET credential_data = $1 WHERE id = $2`, 
-  [encryptedData, linkId]);
+await db.query(`UPDATE identity_links SET credential_data = $1 WHERE id = $2`, [
+  encryptedData,
+  linkId,
+]);
 ```
 
 **Key Storage**: AWS Secrets Manager
@@ -1165,8 +1220,8 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
     rejectUnauthorized: true,
-    ca: process.env.RDS_CA_CERT
-  }
+    ca: process.env.RDS_CA_CERT,
+  },
 });
 ```
 
@@ -1189,6 +1244,7 @@ export async function getSecret(secretName: string): Promise<string> {
 ```
 
 **Secrets to Store:**
+
 - `trulyimagined/db-password`
 - `trulyimagined/encryption-key`
 - `trulyimagined/auth0-client-secret`
@@ -1240,10 +1296,10 @@ import { generateBls12381G2KeyPair, sign, deriveProof } from '@mattrglobal/bbs-s
 // 1. Issuer signs credential
 const keyPair = await generateBls12381G2KeyPair();
 const messages = [
-  Buffer.from('John Smith'),    // name
-  Buffer.from('1990-01-01'),    // DOB
-  Buffer.from('123 Main St'),   // address
-  Buffer.from('GB')             // nationality
+  Buffer.from('John Smith'), // name
+  Buffer.from('1990-01-01'), // DOB
+  Buffer.from('123 Main St'), // address
+  Buffer.from('GB'), // nationality
 ];
 const signature = await sign({ keyPair, messages });
 
@@ -1252,7 +1308,7 @@ const proof = await deriveProof({
   signature,
   publicKey: keyPair.publicKey,
   messages,
-  revealed: [0, 3]  // name and nationality only
+  revealed: [0, 3], // name and nationality only
 });
 
 // 3. Verifier sees only revealed fields
@@ -1265,6 +1321,7 @@ const proof = await deriveProof({
 ## 8.2 Zero-Knowledge Proofs (ZKP)
 
 **Use Case**: Prove attributes without revealing raw data
+
 - "I am over 18" without revealing birthdate
 - "I live in UK" without revealing address
 
@@ -1273,6 +1330,7 @@ const proof = await deriveProof({
 **Phase**: Phase 3+ (complex, requires circuit design)
 
 **Design Now to Avoid Rework:**
+
 - Store claims in structured format (✅ using JSONB)
 - Use numeric age instead of birthdate
 - Store country code separately
@@ -1330,28 +1388,31 @@ import { Onfido, Region } from 'onfido-node';
 
 const onfido = new Onfido({
   apiToken: process.env.ONFIDO_API_TOKEN,
-  region: Region.EU
+  region: Region.EU,
 });
 
 // Create applicant
 const applicant = await onfido.applicant.create({
   firstName: userProfile.firstName,
   lastName: userProfile.lastName,
-  email: userProfile.email
+  email: userProfile.email,
 });
 
 // Generate SDK token for frontend
 const sdkToken = await onfido.sdkToken.generate({
   applicantId: applicant.id,
-  referrer: 'https://trulyimagined.com/*'
+  referrer: 'https://trulyimagined.com/*',
 });
 
 // Store verification record
-await db.query(`
+await db.query(
+  `
   INSERT INTO kyc_verifications (
     user_profile_id, provider, provider_verification_id, status
   ) VALUES ($1, $2, $3, $4)
-`, [userId, 'onfido', applicant.id, 'pending']);
+`,
+  [userId, 'onfido', applicant.id, 'pending']
+);
 
 return { sdkToken: sdkToken.token, applicantId: applicant.id };
 ```
@@ -1366,23 +1427,26 @@ app.post('/api/verification/webhook/onfido', async (req, res) => {
   if (!isValid) return res.status(401).send('Invalid signature');
 
   const { payload } = req.body;
-  
+
   if (payload.action === 'check.completed') {
     const check = await onfido.check.find(payload.object.id);
-    
+
     // Update verification record
-    await db.query(`
+    await db.query(
+      `
       UPDATE kyc_verifications 
       SET status = $1, result = $2, document_verified = $3, 
           liveness_check_passed = $4, completed_at = NOW()
       WHERE provider_verification_id = $5
-    `, [
-      check.result,
-      check,
-      check.breakdown.document_verification?.result === 'clear',
-      check.breakdown.facial_similarity_photo?.result === 'clear',
-      payload.object.applicant_id
-    ]);
+    `,
+      [
+        check.result,
+        check,
+        check.breakdown.document_verification?.result === 'clear',
+        check.breakdown.facial_similarity_photo?.result === 'clear',
+        payload.object.applicant_id,
+      ]
+    );
   }
 
   res.sendStatus(200);
@@ -1401,13 +1465,13 @@ import { AuthAPIClient, DataAPIClient } from 'truelayer-client';
 // Generate auth link
 const authClient = new AuthAPIClient({
   client_id: process.env.TRUELAYER_CLIENT_ID,
-  client_secret: process.env.TRUELAYER_CLIENT_SECRET
+  client_secret: process.env.TRUELAYER_CLIENT_SECRET,
 });
 
 const authUrl = authClient.getAuthUrl({
   redirectURI: 'https://trulyimagined.com/auth/callback/bank',
   scope: ['info', 'accounts'],
-  nonce: 'random-nonce'
+  nonce: 'random-nonce',
 });
 
 // Exchange code for tokens
@@ -1417,11 +1481,14 @@ const dataClient = new DataAPIClient({ access_token: tokens.access_token });
 const info = await dataClient.getInfo();
 
 // Store identity link
-await db.query(`
+await db.query(
+  `
   INSERT INTO identity_links (
     user_profile_id, provider, provider_user_id, provider_type, verification_level
   ) VALUES ($1, $2, $3, $4, $5)
-`, [userId, 'truelayer', info.accountHolderId, 'open-banking', 'medium']);
+`,
+  [userId, 'truelayer', info.accountHolderId, 'open-banking', 'medium']
+);
 ```
 
 ---
@@ -1478,6 +1545,7 @@ jobs:
 ## 10.3 Monitoring
 
 **Tools:**
+
 1. **CloudWatch**: Lambda invocations, errors, duration
 2. **Sentry** (optional): Error tracking
 
@@ -1492,7 +1560,7 @@ import * as Sentry from '@sentry/nextjs';
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.VERCEL_ENV,
-  tracesSampleRate: 0.1
+  tracesSampleRate: 0.1,
 });
 ```
 
@@ -1503,6 +1571,7 @@ Sentry.init({
 ## 11.1 When to Scale Beyond Vercel?
 
 **Triggers:**
+
 - Lambda timeout issues (>30s execution)
 - Cold start latency >500ms p99
 - Cost exceeds dedicated infrastructure
@@ -1513,16 +1582,19 @@ Sentry.init({
 ## 11.2 Incremental Migration Plan
 
 ### Phase 1: ✅ Current State
+
 - PostgreSQL on RDS (scalable)
 - S3 for media
 - Lambda for APIs
 
 ### Phase 2: Containerize Heavy Services
+
 **When**: Identity resolution, credential issuance become bottlenecks
 
 **How**: Migrate to AWS ECS (Fargate)
 
 **Services to Migrate First:**
+
 1. Identity Service (compute-heavy)
 2. Verification Service (slow external APIs)
 3. Credential Service (cryptography)
@@ -1544,6 +1616,7 @@ CMD ["node", "dist/index.js"]
 ---
 
 ### Phase 3: Keep Frontend on Vercel
+
 **Why**: Vercel excels at Next.js (SSR, ISR, edge)
 
 **What Stays**: Next.js app, thin API routes
@@ -1552,9 +1625,11 @@ CMD ["node", "dist/index.js"]
 ---
 
 ### Phase 4: Message Queue (EventBridge / SQS)
+
 **When**: Need async processing
 
 **Pattern**:
+
 ```
 API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 ```
@@ -1593,6 +1668,7 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
    - `requireConsent(actorId, consentType, projectId)`
 
 **Files to Create**:
+
 - `services/consent-service/src/handlers/grant-consent.ts`
 - `services/consent-service/src/handlers/revoke-consent.ts`
 - `services/consent-service/src/handlers/check-consent.ts`
@@ -1602,6 +1678,7 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 - `apps/web/src/app/dashboard/consents/page.tsx`
 
 **Acceptance Criteria**:
+
 - Actor can grant consent
 - Actor can revoke consent
 - External API can check consent validity
@@ -1792,6 +1869,7 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 # 📊 Success Metrics
 
 **Technical Milestones** (Next 90 Days):
+
 - ✅ Steps 1-5 complete (current)
 - ✅ Consent system operational (Step 6)
 - ✅ Multi-provider linking (Steps 7-8)
@@ -1799,12 +1877,14 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 - ✅ Encryption + security (Steps 11-12)
 
 **Business Metrics**:
+
 - 300+ actors onboarded
 - 3+ agency relationships
 - First licensed usage
 - Revenue signals
 
 **Compliance Readiness**:
+
 - Audit logs complete
 - Data encryption (at rest + in transit)
 - RBAC implemented
@@ -1817,10 +1897,12 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 ## When to Use Vercel vs. AWS Lambda?
 
 **Vercel**:
+
 - ✅ Next.js frontend + simple APIs
 - ❌ Long-running tasks (>10s)
 
 **AWS Lambda**:
+
 - ✅ Backend business logic
 - ✅ Database operations
 - ❌ Real-time WebSockets (use ECS)
@@ -1830,15 +1912,18 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 ## When to Adopt New Standards?
 
 **Implement Now**:
+
 - ✅ OIDC/OAuth2
 - ✅ W3C VCs
 - ✅ DID:web
 
 **Phase 2**:
+
 - ⏳ BBS+ Selective Disclosure
 - ⏳ DID:key
 
 **Phase 3+**:
+
 - ⏳ zk-SNARKs
 - ⏳ Blockchain DIDs
 
@@ -1847,16 +1932,19 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 # 📝 Key Files & Locations
 
 **Deployed Schema**:
+
 - `infra/database/migrations/001_initial_schema.sql` ✅
 - `infra/database/migrations/002_user_profiles.sql` ✅
 - `infra/database/migrations/003_link_actors_to_user_profiles.sql` ✅
 
 **Implemented Services**:
+
 - `apps/web/src/app/api/identity/register/route.ts` ✅
 - `apps/web/src/app/api/profile/route.ts` ✅
 - `shared/middleware/src/index.ts` (JWT, RBAC) ✅
 
 **Next Migrations (TODO)**:
+
 - `004_identity_links.sql`
 - `005_verifiable_credentials.sql`
 - `006_kyc_verifications.sql`
@@ -1864,6 +1952,7 @@ API Gateway → Lambda (writes to SQS) → ECS Worker (processes queue)
 - `008_enterprises.sql`
 
 **Services to Build**:
+
 - `services/consent-service/` (Step 6) 🚀 NEXT
 - `services/verification-service/` (Step 7)
 - `services/credential-service/` (Step 9)
@@ -1878,6 +1967,7 @@ This architecture transforms Truly Imagined from a **single-product registry** i
 **Next Priority**: Step 6 — Consent Ledger (CRITICAL for compliance & trust)
 
 **Benefits**:
+
 - ✅ Modular services (extensible)
 - ✅ Standards-aligned (OIDC, W3C VCs, DIDs)
 - ✅ Production-grade security

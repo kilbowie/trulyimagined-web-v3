@@ -3,12 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 /**
  * GET /api/consent/check?actorId={id}&consentType={type}&projectId={id}
  * Checks if consent is currently active
- * 
+ *
  * Query params:
  * - actorId: string (required)
  * - consentType: string (required)
  * - projectId: string (optional)
- * 
+ *
  * Returns:
  * {
  *   isGranted: boolean
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     // Call Lambda consent service
     const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001';
     const url = `${lambdaUrl}/consent/check?${queryParams.toString()}`;
-    
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {

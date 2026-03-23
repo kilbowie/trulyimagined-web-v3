@@ -3,6 +3,7 @@
 ## Step 6: Consent Ledger (COMPLETE)
 
 ### Overview
+
 The consent ledger is now fully implemented as an immutable, append-only audit trail for actor consent management. This system enables cryptographic proof of consent for external consumers and ensures compliance with UK Trust Framework and eIDAS standards.
 
 ---
@@ -10,6 +11,7 @@ The consent ledger is now fully implemented as an immutable, append-only audit t
 ## Architecture
 
 ### Backend Components (Lambda)
+
 - **Location**: `services/consent-service/`
 - **Handlers**:
   - `grant-consent.ts` - Record consent grants
@@ -19,6 +21,7 @@ The consent ledger is now fully implemented as an immutable, append-only audit t
 - **Database**: `consent_log` table (append-only, immutable)
 
 ### API Routes (Next.js)
+
 - **Location**: `apps/web/src/app/api/consent/`
 - **Endpoints**:
   - `POST /api/consent/grant` - Grant new consent
@@ -27,6 +30,7 @@ The consent ledger is now fully implemented as an immutable, append-only audit t
   - `GET /api/consent/[actorId]` - List all consents for actor
 
 ### Frontend UI
+
 - **Location**: `apps/web/src/app/dashboard/consents/`
 - **Features**:
   - View active, revoked, and expired consents
@@ -35,6 +39,7 @@ The consent ledger is now fully implemented as an immutable, append-only audit t
   - Consent scope details (project, territories, usage types, duration)
 
 ### Middleware (Enforcement)
+
 - **Location**: `shared/middleware/src/index.ts`
 - **Functions**:
   - `requireConsent(actorId, consentType, projectId?)` - Enforce consent (throws if not granted)
@@ -68,6 +73,7 @@ curl -X POST http://localhost:3000/api/consent/grant \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -92,6 +98,7 @@ curl -X GET "http://localhost:3000/api/consent/check?actorId=actor-uuid-123&cons
 ```
 
 **Expected Response (Active Consent):**
+
 ```json
 {
   "isGranted": true,
@@ -113,6 +120,7 @@ curl -X GET "http://localhost:3000/api/consent/check?actorId=actor-uuid-123&cons
 ```
 
 **Expected Response (No Consent):**
+
 ```json
 {
   "isGranted": false,
@@ -133,6 +141,7 @@ curl -X GET "http://localhost:3000/api/consent/actor-uuid-123?limit=100&offset=0
 ```
 
 **Expected Response:**
+
 ```json
 {
   "actorId": "actor-uuid-123",
@@ -173,6 +182,7 @@ curl -X POST http://localhost:3000/api/consent/revoke \
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -242,6 +252,7 @@ export async function testHandler(event: any) {
 ```
 
 **Test Cases**:
+
 1. Call with valid consent → Expect 200 OK
 2. Call with revoked consent → Expect 403 Forbidden
 3. Call with expired consent → Expect 403 Forbidden
@@ -253,21 +264,21 @@ export async function testHandler(event: any) {
 
 ```sql
 -- View all consents for an actor
-SELECT * FROM consent_log 
-WHERE actor_id = 'actor-uuid-123' 
+SELECT * FROM consent_log
+WHERE actor_id = 'actor-uuid-123'
 ORDER BY created_at DESC;
 
 -- Count consents by action
-SELECT action, COUNT(*) 
-FROM consent_log 
-WHERE actor_id = 'actor-uuid-123' 
+SELECT action, COUNT(*)
+FROM consent_log
+WHERE actor_id = 'actor-uuid-123'
 GROUP BY action;
 
 -- Find most recent consent per type
-SELECT DISTINCT ON (consent_type) 
-  consent_type, action, created_at 
-FROM consent_log 
-WHERE actor_id = 'actor-uuid-123' 
+SELECT DISTINCT ON (consent_type)
+  consent_type, action, created_at
+FROM consent_log
+WHERE actor_id = 'actor-uuid-123'
 ORDER BY consent_type, created_at DESC;
 ```
 
@@ -276,18 +287,21 @@ ORDER BY consent_type, created_at DESC;
 ## Acceptance Criteria (Step 6)
 
 ✅ **Backend Consent Handlers**
+
 - [x] Grant consent handler with validation
 - [x] Revoke consent handler (append-only, no deletions)
 - [x] Check consent handler with expiry logic
 - [x] List consents handler with pagination
 
 ✅ **API Routes**
+
 - [x] POST /api/consent/grant
 - [x] POST /api/consent/revoke
 - [x] GET /api/consent/check
 - [x] GET /api/consent/[actorId]
 
 ✅ **Frontend UI**
+
 - [x] Consent dashboard page
 - [x] Display active, revoked, and expired consents
 - [x] Summary cards
@@ -295,11 +309,13 @@ ORDER BY consent_type, created_at DESC;
 - [x] Consent scope details
 
 ✅ **Middleware**
+
 - [x] requireConsent() function
 - [x] hasConsent() function
 - [x] Example usage documentation
 
 ✅ **Database**
+
 - [x] Immutable consent_log table (already deployed)
 - [x] Append-only design (no UPDATE/DELETE)
 
@@ -308,6 +324,7 @@ ORDER BY consent_type, created_at DESC;
 ## Next Steps (Step 7)
 
 Once testing is complete, proceed to:
+
 - **Step 7**: Multi-Provider Identity Linking
 - **Step 8**: Onfido KYC Integration
 

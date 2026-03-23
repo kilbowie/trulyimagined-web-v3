@@ -57,7 +57,7 @@ export default async function DashboardPage() {
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {roles.map((role) => {
-                  const roleConfig = {
+                  const roleConfig: Record<string, { emoji: string; color: string }> = {
                     Actor: {
                       emoji: '🎭',
                       color: 'bg-purple-100 text-purple-800 border-purple-200',
@@ -68,7 +68,7 @@ export default async function DashboardPage() {
                       color: 'bg-green-100 text-green-800 border-green-200',
                     },
                     Admin: { emoji: '⚙️', color: 'bg-red-100 text-red-800 border-red-200' },
-                  } as any;
+                  };
 
                   const config = roleConfig[role] || {
                     emoji: '👤',
@@ -129,20 +129,36 @@ export default async function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Actor Actions */}
               {hasActorRole && (
-                <Link
-                  href="/register-actor"
-                  className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                >
-                  <div className="flex items-start">
-                    <span className="text-2xl mr-3">🎭</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Register Identity</h3>
-                      <p className="text-sm text-gray-600">
-                        Add your profile to the Identity Registry
-                      </p>
+                <>
+                  <Link
+                    href="/register-actor"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🎭</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">Register Identity</h3>
+                        <p className="text-sm text-gray-600">
+                          Add your profile to the Identity Registry
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                </Link>
+                  </Link>
+                  <Link
+                    href="/dashboard/consents"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">✅</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">Manage Consents</h3>
+                        <p className="text-sm text-gray-600">
+                          View and manage your identity usage permissions
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                </>
               )}
 
               {/* Agent Actions */}

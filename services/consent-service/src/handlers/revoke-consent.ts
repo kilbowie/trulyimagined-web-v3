@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 
 /**
  * Revoke Consent Handler
- * 
+ *
  * Records a consent revocation in the immutable consent_log table
  * Does NOT delete previous grants - maintains full audit trail
  */
@@ -15,9 +15,9 @@ const pool = new Pool({
 
 interface RevokeConsentRequest {
   actorId: string;
-  consentId?: string;  // Optional: revoke specific consent
-  consentType?: string;  // Optional: revoke all consents of this type
-  projectId?: string;  // Optional: revoke consents for specific project
+  consentId?: string; // Optional: revoke specific consent
+  consentType?: string; // Optional: revoke all consents of this type
+  projectId?: string; // Optional: revoke consents for specific project
   reason?: string;
 }
 
@@ -99,7 +99,7 @@ export async function revokeConsent(event: APIGatewayProxyEvent) {
           }),
         ]
       );
-    } 
+    }
     // Scenario 2: Revoke all consents of specific type
     else if (consentType) {
       result = await pool.query(

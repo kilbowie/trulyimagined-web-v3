@@ -1,6 +1,6 @@
 /**
  * Consent Enforcement Example
- * 
+ *
  * This example demonstrates how to use the requireConsent middleware
  * in Lambda functions to enforce consent before processing requests.
  */
@@ -10,12 +10,12 @@ import { requireConsent, hasConsent } from '@trulyimagined/middleware';
 
 /**
  * Example: AI Voice Generation Service
- * 
+ *
  * Before generating an AI voice for an actor, this handler checks:
  * 1. If the actor has granted voice_synthesis consent
  * 2. If the consent is still active (not revoked or expired)
  * 3. If the consent applies to the specific project
- * 
+ *
  * If consent is not granted, the request is rejected with a 403 Forbidden response.
  */
 export const generateVoiceHandler: APIGatewayProxyHandler = async (event) => {
@@ -51,7 +51,7 @@ export const generateVoiceHandler: APIGatewayProxyHandler = async (event) => {
 
     // If we reached here, consent is granted - proceed with voice generation
     console.log(`[VOICE] Generating voice for actor ${actorId}, project: ${projectId}`);
-    
+
     // ... actual voice generation logic here ...
 
     return {
@@ -79,7 +79,7 @@ export const generateVoiceHandler: APIGatewayProxyHandler = async (event) => {
 
 /**
  * Example: Image Usage Service
- * 
+ *
  * Before using an actor's image in a project, check for image_usage consent.
  */
 export const useImageHandler: APIGatewayProxyHandler = async (event) => {
@@ -128,7 +128,7 @@ export const useImageHandler: APIGatewayProxyHandler = async (event) => {
 
 /**
  * Example: Conditional Logic Based on Consent
- * 
+ *
  * Use hasConsent() to check consent without throwing an error.
  * Useful for conditional features.
  */

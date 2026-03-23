@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 /**
  * Consent Management Dashboard
- * 
+ *
  * Allows actors to:
  * - View all consents (active, revoked, expired)
  * - Revoke active consents
@@ -63,18 +63,18 @@ export default function ConsentsPage() {
       // Get current user's profile to find actorId
       const meResponse = await fetch('/api/me');
       const meData = await meResponse.json();
-      
+
       if (!meData.user) {
         router.push('/api/auth/login');
         return;
       }
 
       const userId = meData.user.sub;
-      
+
       // Get actor profile
       const actorResponse = await fetch(`/api/profile/${userId}`);
       const actorData = await actorResponse.json();
-      
+
       if (!actorData.actor) {
         setError('No actor profile found. Please register as an actor first.');
         setLoading(false);
@@ -96,9 +96,10 @@ export default function ConsentsPage() {
       setActiveConsents(data.consents.active || []);
       setRevokedConsents(data.consents.revoked || []);
       setExpiredConsents(data.consents.expired || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CONSENTS] Fetch error:', err);
-      setError(err.message);
+      const error = err as Error;
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -107,7 +108,9 @@ export default function ConsentsPage() {
   const handleRevokeConsent = async (consentId: string, consentType: string) => {
     if (!actorId) return;
 
-    const confirmed = confirm('Are you sure you want to revoke this consent? This action cannot be undone.');
+    const confirmed = confirm(
+      'Are you sure you want to revoke this consent? This action cannot be undone.'
+    );
     if (!confirmed) return;
 
     try {
@@ -131,12 +134,13 @@ export default function ConsentsPage() {
       }
 
       alert('Consent revoked successfully!');
-      
+
       // Refresh consents list
       fetchConsents();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[CONSENTS] Revoke error:', err);
-      alert(`Error: ${err.message}`);
+      const error = err as Error;
+      alert(`Error: ${error.message}`);
     }
   };
 
@@ -169,9 +173,7 @@ export default function ConsentsPage() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Consent Management</h1>
-        <p className="text-gray-600 mb-8">
-          Manage your digital identity usage permissions
-        </p>
+        <p className="text-gray-600 mb-8">Manage your digital identity usage permissions</p>
 
         {/* Summary Cards */}
         {summary && (

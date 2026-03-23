@@ -4,7 +4,7 @@ import { auth0 } from '@/lib/auth0';
 /**
  * POST /api/consent/grant
  * Grants consent for identity usage
- * 
+ *
  * Body:
  * {
  *   actorId: string
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get Auth0 session
     const session = await auth0.getSession();
-    
+
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Call Lambda consent service
     const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001/consent/grant';
-    
+
     const response = await fetch(lambdaUrl, {
       method: 'POST',
       headers: {

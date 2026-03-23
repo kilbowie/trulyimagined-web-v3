@@ -4,7 +4,7 @@ import { auth0 } from '@/lib/auth0';
 /**
  * POST /api/consent/revoke
  * Revokes previously granted consent
- * 
+ *
  * Body:
  * {
  *   actorId: string
@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   try {
     // Get Auth0 session
     const session = await auth0.getSession();
-    
+
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -28,10 +28,7 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!actorId) {
-      return NextResponse.json(
-        { error: 'Missing required field: actorId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required field: actorId' }, { status: 400 });
     }
 
     if (!consentId && !consentType && !projectId) {
@@ -43,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Call Lambda consent service
     const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001/consent/revoke';
-    
+
     const response = await fetch(lambdaUrl, {
       method: 'POST',
       headers: {

@@ -49,7 +49,7 @@ export default function AuthNav() {
       </Link>
 
       <a
-        href="/api/auth/logout"
+        href="/auth/logout"
         className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition text-sm"
       >
         Log Out

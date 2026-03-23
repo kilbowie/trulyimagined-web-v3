@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 
 /**
  * List Consents Handler
- * 
+ *
  * Returns full consent history for an actor from the immutable ledger
  * Useful for actors to view their consent trail and manage permissions
  */
@@ -85,12 +85,12 @@ export async function listConsents(event: APIGatewayProxyEvent) {
     // Get total count (for pagination)
     let countQuery = `SELECT COUNT(*) FROM consent_log WHERE actor_id = $1`;
     const countParams: (string | number)[] = [actorId];
-    
+
     if (action) {
       countQuery += ` AND action = $2`;
       countParams.push(action);
     }
-    
+
     const countResult = await pool.query(countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
@@ -104,10 +104,9 @@ export async function listConsents(event: APIGatewayProxyEvent) {
 
     for (const record of result.rows) {
       const key = `${record.consent_type}:${record.consent_scope?.projectId || 'general'}`;
-      
+
       const existing = latestByTypeProject.get(key);
-      if (!existing || 
-          new Date(record.created_at) > new Date(existing.created_at)) {
+      if (!existing || new Date(record.created_at) > new Date(existing.created_at)) {
         latestByTypeProject.set(key, record);
       }
     }
@@ -127,10 +126,10 @@ export async function listConsents(event: APIGatewayProxyEvent) {
 
       if (record.action === 'granted') {
         // Check expiry
-        const expiryDate = record.consent_scope?.duration?.endDate 
-          ? new Date(record.consent_scope.duration.endDate) 
+        const expiryDate = record.consent_scope?.duration?.endDate
+          ? new Date(record.consent_scope.duration.endDate)
           : null;
-        
+
         if (expiryDate && expiryDate < new Date()) {
           expiredConsents.push({ ...consentObj, expiredAt: expiryDate });
         } else {

@@ -7,13 +7,13 @@ import { listConsents } from './handlers/list-consents';
 /**
  * Consent Service - Lambda Handler
  * Step 6: Consent Ledger (CRITICAL)
- * 
+ *
  * Routes requests to modular handlers:
  * - POST /consent/grant - Grant consent
  * - POST /consent/revoke - Revoke consent
  * - GET /consent/check - Check if consent is active
  * - GET /consent/{actorId} - List all consents for actor
- * 
+ *
  * CRITICAL: This is an append-only ledger. No updates or deletes allowed.
  */
 

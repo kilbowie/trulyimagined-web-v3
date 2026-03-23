@@ -1,6 +1,6 @@
 /**
  * Shared Middleware for Truly Imagined v3
- * 
+ *
  * Auth0 JWT validation and role extraction
  */
 
@@ -77,7 +77,9 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
       roles: decoded['https://trulyimagined.com/roles'] || [],
     };
 
-    console.log(`[AUTH] User authenticated: ${user.email} (roles: ${(user.roles || []).join(', ')})`);
+    console.log(
+      `[AUTH] User authenticated: ${user.email} (roles: ${(user.roles || []).join(', ')})`
+    );
     return user;
   } catch (error) {
     console.error('[AUTH] Token validation failed:', error);
@@ -154,12 +156,12 @@ export function canAccessActorResources(user: AuthUser, actorAuth0Id: string): b
   if (user.sub === actorAuth0Id) {
     return true;
   }
-  
+
   // User is an agent or admin (can access any actor)
   if (isAgent(user) || isAdmin(user)) {
     return true;
   }
-  
+
   return false;
 }
 
@@ -168,7 +170,7 @@ export function canAccessActorResources(user: AuthUser, actorAuth0Id: string): b
  */
 export function requireActorAccess(user: AuthUser, actorAuth0Id: string) {
   if (!canAccessActorResources(user, actorAuth0Id)) {
-    throw new Error('Forbidden: Cannot access this actor\'s resources');
+    throw new Error("Forbidden: Cannot access this actor's resources");
   }
 }
 
@@ -191,14 +193,14 @@ export function extractUserAgent(event: APIGatewayProxyEvent): string {
 
 /**
  * Require consent for actor identity usage
- * 
+ *
  * Checks if active consent exists for the specified actor and consent type.
  * Throws an error if consent is not granted or has been revoked/expired.
- * 
+ *
  * @param actorId - The actor's database ID
  * @param consentType - Type of consent required (e.g., 'voice_synthesis', 'image_usage')
  * @param projectId - Optional project ID to scope the consent check
- * 
+ *
  * @example
  * await requireConsent('actor-123', 'voice_synthesis', 'project-456');
  */
@@ -247,7 +249,7 @@ export async function requireConsent(
 
 /**
  * Check if consent exists (without throwing)
- * 
+ *
  * @param actorId - The actor's database ID
  * @param consentType - Type of consent to check
  * @param projectId - Optional project ID

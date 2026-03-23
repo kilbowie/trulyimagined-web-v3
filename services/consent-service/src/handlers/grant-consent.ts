@@ -3,7 +3,7 @@ import { Pool } from 'pg';
 
 /**
  * Grant Consent Handler
- * 
+ *
  * Records a consent grant in the immutable consent_log table
  * This is the primary mechanism for actors to grant permission for their digital identity usage
  */
@@ -24,9 +24,9 @@ interface GrantConsentRequest {
       startDate?: string;
       endDate?: string;
     };
-    usageTypes?: string[];  // ['advertising', 'promotional', 'editorial']
+    usageTypes?: string[]; // ['advertising', 'promotional', 'editorial']
     territories?: string[]; // ['UK', 'US', 'global']
-    exclusions?: string[];  // ['political', 'adult-content']
+    exclusions?: string[]; // ['political', 'adult-content']
   };
   requesterId?: string;
   requesterType?: 'actor' | 'agent' | 'studio' | 'admin' | 'enterprise';
