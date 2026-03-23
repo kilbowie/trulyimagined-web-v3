@@ -36,27 +36,18 @@ export default function AuthNav() {
     <nav className="flex items-center gap-6">
       <div className="flex items-center gap-2">
         {user.picture && (
-          <img
-            src={user.picture}
-            alt={user.name || 'User'}
-            className="w-8 h-8 rounded-full"
-          />
+          <img src={user.picture} alt={user.name || 'User'} className="w-8 h-8 rounded-full" />
         )}
         <div className="flex flex-col">
           <span className="text-sm font-medium">{user.name || user.email}</span>
-          {roles.length > 0 && (
-            <span className="text-xs text-gray-500">{roles.join(', ')}</span>
-          )}
+          {roles.length > 0 && <span className="text-xs text-gray-500">{roles.join(', ')}</span>}
         </div>
       </div>
-      
-      <Link
-        href="/dashboard"
-        className="text-sm hover:text-blue-600 transition"
-      >
+
+      <Link href="/dashboard" className="text-sm hover:text-blue-600 transition">
         Dashboard
       </Link>
-      
+
       <a
         href="/api/auth/logout"
         className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition text-sm"
