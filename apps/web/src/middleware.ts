@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     return authResponse;
   } catch (error) {
     console.error('[Middleware] Error:', error);
-    
+
     // If there's an error in auth middleware, let the request through
     // This prevents the entire site from breaking
     return NextResponse.next();

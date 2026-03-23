@@ -1,6 +1,20 @@
 import AuthNav from '@/components/AuthNav';
+import { getCurrentUser, getUserRoles } from '@/lib/auth';
+import { redirect } from 'next/navigation';
 
-export default function Home() {
+export default async function Home() {
+  // Check if user is authenticated and has a role
+  const user = await getCurrentUser();
+
+  if (user) {
+    const roles = await getUserRoles();
+
+    // If user is logged in but has no role, redirect to role selection
+    if (roles.length === 0) {
+      redirect('/select-role');
+    }
+  }
+
   return (
     <>
       {/* Navigation */}
@@ -20,7 +34,8 @@ export default function Home() {
                 The Global Registry for Human Digital Identity in AI
               </h1>
               <p className="text-2xl text-gray-600 max-w-3xl mx-auto">
-                Compliance infrastructure that gives actors control over how their digital identity is used in artificial intelligence.
+                Compliance infrastructure that gives actors control over how their digital identity
+                is used in artificial intelligence.
               </p>
             </div>
 
@@ -33,8 +48,9 @@ export default function Home() {
                 Truly Imagined is not an AI tool. We are <strong>rights infrastructure</strong>.
               </p>
               <p className="text-lg text-gray-700 max-w-2xl mx-auto">
-                We provide the foundational registry and compliance layer that enables actors to register their digital identity, 
-                define consent boundaries, and license their likeness for AI-generated content.
+                We provide the foundational registry and compliance layer that enables actors to
+                register their digital identity, define consent boundaries, and license their
+                likeness for AI-generated content.
               </p>
             </div>
 
@@ -55,7 +71,8 @@ export default function Home() {
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Licensing Control</h3>
                 <p className="text-gray-600">
-                  Actor-owned preferences for how, when, and where their digital identity can be licensed.
+                  Actor-owned preferences for how, when, and where their digital identity can be
+                  licensed.
                 </p>
               </div>
             </div>
@@ -65,9 +82,7 @@ export default function Home() {
               <p className="text-lg font-medium">
                 Building trust-first infrastructure for the age of AI.
               </p>
-              <p className="text-sm text-gray-500">
-                Registry • Compliance • Auditability
-              </p>
+              <p className="text-sm text-gray-500">Registry • Compliance • Auditability</p>
             </div>
           </div>
         </div>
