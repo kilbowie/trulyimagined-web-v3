@@ -24,12 +24,14 @@ Created a new `user_profiles` table with the following structure:
 - **updated_at**: TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 
 **Indexes:**
+
 - `idx_user_profiles_auth0_user_id` on auth0_user_id
 - `idx_user_profiles_email` on email
 - `idx_user_profiles_username` on username
 - `idx_user_profiles_role` on role
 
 **Trigger:**
+
 - Auto-updates `updated_at` timestamp on record modification
 
 ### 2. Database Queries ✅
@@ -56,7 +58,7 @@ Added `userProfiles` query object with the following methods:
 - **GET /api/profile**: Fetch user profile (currently returns mock data)
 - **POST /api/profile**: Create new user profile with validation
   - Validates role (Actor, Agent, Enterprise, Admin)
-  - Validates username format (3-50 chars, alphanumeric, _, -)
+  - Validates username format (3-50 chars, alphanumeric, \_, -)
   - Validates Spotlight ID format (URL)
   - Handles "same as legal name" checkbox logic
 
@@ -72,10 +74,12 @@ Added `userProfiles` query object with the following methods:
 Transformed into a two-step profile creation flow:
 
 **Step 1: Role Selection**
+
 - Choose from Actor, Agent, or Enterprise roles
 - Visual cards with icons and descriptions
 
 **Step 2: Profile Details**
+
 - **Username**: Required, validated format (3-50 chars)
 - **Legal Name**: Required
 - **Professional Name**: Required, with "Same as legal name" checkbox
@@ -163,6 +167,7 @@ psql -h your-rds-endpoint -U your-username -d your-database -f infra/database/mi
 **File:** `apps/web/src/app/dashboard/page.tsx`
 
 Update to:
+
 - Check if user has completed profile setup
 - Redirect to `/select-role` if no profile exists
 - Display username and professional name from database
@@ -189,19 +194,20 @@ Once database is connected, test:
 
 ## Key Differences from Auth0 RBAC
 
-| Feature | Auth0 RBAC (Old) | PostgreSQL (New) |
-|---------|-----------------|------------------|
-| **Role Storage** | JWT custom claims | PostgreSQL database |
-| **Role Assignment** | Auth0 Management API | Direct database insert |
-| **Role Retrieval** | Parse JWT token | Query database |
-| **Token Refresh** | Required logout/login | Not needed |
-| **Profile Fields** | Role only | Role + username + legal name + professional name + Spotlight ID |
-| **Setup Flow** | Role selection only | Two-step: role + profile details |
-| **Debugging** | Auth0 dashboard | Database queries |
+| Feature             | Auth0 RBAC (Old)      | PostgreSQL (New)                                                |
+| ------------------- | --------------------- | --------------------------------------------------------------- |
+| **Role Storage**    | JWT custom claims     | PostgreSQL database                                             |
+| **Role Assignment** | Auth0 Management API  | Direct database insert                                          |
+| **Role Retrieval**  | Parse JWT token       | Query database                                                  |
+| **Token Refresh**   | Required logout/login | Not needed                                                      |
+| **Profile Fields**  | Role only             | Role + username + legal name + professional name + Spotlight ID |
+| **Setup Flow**      | Role selection only   | Two-step: role + profile details                                |
+| **Debugging**       | Auth0 dashboard       | Database queries                                                |
 
 ## Environment Variables Required
 
 ### Current (Auth0 Authentication)
+
 ```
 AUTH0_SECRET=...
 AUTH0_BASE_URL=...
@@ -212,6 +218,7 @@ APP_BASE_URL=...
 ```
 
 ### New (PostgreSQL)
+
 ```
 DATABASE_URL=postgresql://username:password@endpoint:5432/database_name
 ```

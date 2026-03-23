@@ -11,7 +11,7 @@ const pool = new Pool({
 
 /**
  * Execute a SQL query
- * 
+ *
  * @param text SQL query text
  * @param params Query parameters
  * @returns Query result
@@ -19,17 +19,17 @@ const pool = new Pool({
 export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
   const start = Date.now();
   const client = await pool.connect();
-  
+
   try {
     const result = await client.query(text, params);
     const duration = Date.now() - start;
-    
+
     console.log('[DB] Query executed', {
       text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
       duration: `${duration}ms`,
       rows: result.rowCount,
     });
-    
+
     return result;
   } catch (error) {
     console.error('[DB] Query error', {

@@ -56,14 +56,16 @@ export default function RoleSelectionPage() {
     if (!value) return 'Username is required';
     if (value.length < 3) return 'Username must be at least 3 characters';
     if (value.length > 50) return 'Username must be 50 characters or less';
-    if (!/^[a-zA-Z0-9_-]+$/.test(value)) return 'Username can only contain letters, numbers, underscores, and hyphens';
+    if (!/^[a-zA-Z0-9_-]+$/.test(value))
+      return 'Username can only contain letters, numbers, underscores, and hyphens';
     return null;
   }
 
   // Validate Spotlight ID format
   function validateSpotlightId(value: string): string | null {
     if (!value) return null; // Optional field
-    if (!value.match(/^https?:\/\/.+/)) return 'Must be a valid URL (starting with http:// or https://)';
+    if (!value.match(/^https?:\/\/.+/))
+      return 'Must be a valid URL (starting with http:// or https://)';
     return null;
   }
 
@@ -166,9 +168,7 @@ export default function RoleSelectionPage() {
             <p className="text-lg text-gray-600 mb-2">
               Welcome to Truly Imagined, <strong>{username}</strong>!
             </p>
-            <p className="text-sm text-gray-500 mb-6">
-              Redirecting you to your dashboard...
-            </p>
+            <p className="text-sm text-gray-500 mb-6">Redirecting you to your dashboard...</p>
             <div className="flex items-center justify-center gap-2 text-blue-600">
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
                 <circle
@@ -229,13 +229,19 @@ export default function RoleSelectionPage() {
                 className="flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
                 </svg>
                 Back to role selection
               </button>
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
               <p className="text-lg text-gray-600">
-                You selected: <strong>{AVAILABLE_ROLES.find(r => r.id === selectedRole)?.name}</strong>
+                You selected:{' '}
+                <strong>{AVAILABLE_ROLES.find((r) => r.id === selectedRole)?.name}</strong>
               </p>
             </div>
 
@@ -265,9 +271,7 @@ export default function RoleSelectionPage() {
                   }`}
                   disabled={loading}
                 />
-                {usernameError && (
-                  <p className="mt-1 text-sm text-red-600">{usernameError}</p>
-                )}
+                {usernameError && <p className="mt-1 text-sm text-red-600">{usernameError}</p>}
                 <p className="mt-1 text-xs text-gray-500">
                   3-50 characters. Letters, numbers, underscores, and hyphens only.
                 </p>
@@ -321,9 +325,7 @@ export default function RoleSelectionPage() {
                   }`}
                   disabled={loading || useLegalAsProfessional}
                 />
-                {profNameError && (
-                  <p className="mt-1 text-sm text-red-600">{profNameError}</p>
-                )}
+                {profNameError && <p className="mt-1 text-sm text-red-600">{profNameError}</p>}
                 <p className="mt-1 text-xs text-gray-500">
                   The name you use professionally (stage name, business name, etc.)
                 </p>
@@ -381,17 +383,17 @@ export default function RoleSelectionPage() {
                         />
                       </svg>
                       Creating profile...
-                  </span>
-                ) : (
-                  'Continue'
-                )}
-              </button>
+                    </span>
+                  ) : (
+                    'Continue'
+                  )}
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <p>You can change your role later in your profile settings</p>
-          </div>
+            <div className="mt-6 text-center text-sm text-gray-500">
+              <p>You can change your role later in your profile settings</p>
+            </div>
           </>
         )}
       </div>

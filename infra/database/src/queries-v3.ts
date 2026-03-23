@@ -9,7 +9,7 @@ export const queries = {
   // ===========================================
   // USER PROFILES (Database-Backed Roles)
   // ===========================================
-  
+
   userProfiles: {
     create: `
       INSERT INTO user_profiles (
@@ -70,7 +70,7 @@ export const queries = {
   // ===========================================
   // ACTORS (Identity Registry)
   // ===========================================
-  
+
   actors: {
     create: `
       INSERT INTO actors (

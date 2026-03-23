@@ -19,6 +19,7 @@ DATABASE_URL=postgresql://username:password@your-rds-endpoint.region.rds.amazona
 ```
 
 Replace:
+
 - `username` - Your RDS database username
 - `password` - Your RDS database password
 - `your-rds-endpoint.region.rds.amazonaws.com` - Your RDS endpoint
@@ -67,6 +68,7 @@ Or copy the SQL content and run it directly in your database management tool (e.
 Update `apps/web/src/app/api/profile/route.ts`:
 
 Add imports at the top:
+
 ```typescript
 import { query } from '@/lib/db';
 ```
@@ -74,6 +76,7 @@ import { query } from '@/lib/db';
 Then uncomment the TODO sections and replace mock data with actual database queries.
 
 For example, in the GET handler:
+
 ```typescript
 // Replace this mock:
 return NextResponse.json({
@@ -82,10 +85,7 @@ return NextResponse.json({
 });
 
 // With actual query:
-const result = await query(
-  'SELECT * FROM user_profiles WHERE auth0_user_id = $1',
-  [user.sub]
-);
+const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
 
 const profile = result.rows[0] || null;
 return NextResponse.json({
@@ -95,6 +95,7 @@ return NextResponse.json({
 ```
 
 And in the POST handler:
+
 ```typescript
 // Check username availability
 const usernameCheck = await query(
@@ -123,7 +124,7 @@ const result = await query(
     finalProfessionalName,
     useLegalAsProfessional || false,
     spotlightId || null,
-    true
+    true,
   ]
 );
 
@@ -138,21 +139,20 @@ return NextResponse.json({
 Update `apps/web/src/lib/auth.ts`:
 
 Add imports:
+
 ```typescript
 import { query } from '@/lib/db';
 ```
 
 Update `getUserRoles()`:
+
 ```typescript
 export async function getUserRoles(): Promise<string[]> {
   const user = await getCurrentUser();
   if (!user) return [];
-  
-  const result = await query(
-    'SELECT role FROM user_profiles WHERE auth0_user_id = $1',
-    [user.sub]
-  );
-  
+
+  const result = await query('SELECT role FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
+
   if (result.rows.length > 0 && result.rows[0].role) {
     return [result.rows[0].role];
   }
@@ -161,16 +161,14 @@ export async function getUserRoles(): Promise<string[]> {
 ```
 
 Update `getUserProfile()`:
+
 ```typescript
 export async function getUserProfile() {
   const user = await getCurrentUser();
   if (!user) return null;
-  
-  const result = await query(
-    'SELECT * FROM user_profiles WHERE auth0_user_id = $1',
-    [user.sub]
-  );
-  
+
+  const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
+
   return result.rows[0] || null;
 }
 ```
@@ -221,6 +219,7 @@ export default async function DashboardPage() {
 ### Connection Errors
 
 If you get "Connection refused" or "SSL required":
+
 - Verify your RDS security group allows inbound connections on port 5432
 - Check that your DATABASE_URL is correct
 - Ensure SSL is properly configured
@@ -228,6 +227,7 @@ If you get "Connection refused" or "SSL required":
 ### Migration Errors
 
 If the migration fails:
+
 - Check that you're connecting to the correct database
 - Verify the user has permission to CREATE TABLE
 - Check for existing tables that might conflict
@@ -235,6 +235,7 @@ If the migration fails:
 ### Profile Not Saving
 
 If profile creation fails:
+
 - Check browser console for errors
 - Check server logs (terminal where Next.js is running)
 - Verify database client is properly initialized

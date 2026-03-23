@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-
-// In production, this would connect to PostgreSQL via API
-// For now, mock implementation that simulates database calls
+import { query } from '@/lib/db';
 
 /**
  * Get user profile
- * 
+ *
  * GET /api/profile
  */
 export async function GET(_request: NextRequest) {
@@ -15,24 +13,28 @@ export async function GET(_request: NextRequest) {
     const user = session?.user;
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // TODO: In production, query PostgreSQL user_profiles table
-    // const profile = await db.query(queries.userProfiles.getByAuth0Id, [user.sub]);
-    
-    // For now, return mock data to unblock development
+    // Query PostgreSQL user_profiles table
+    const result = await query(
+      'SELECT * FROM user_profiles WHERE auth0_user_id = $1',
+      [user.sub]
+    );
+
+    const profile = result.rows[0] || null;
+
     return NextResponse.json({
-      profile: null, // Will be null for new users
-      needsSetup: true,
+      profile,
+      needsSetup: !profile,
     });
   } catch (error: unknown) {
     console.error('[PROFILE] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -40,7 +42,7 @@ export async function GET(_request: NextRequest) {
 
 /**
  * Create or update user profile
- * 
+ *
  * POST /api/profile
  */
 export async function POST(request: NextRequest) {
@@ -49,21 +51,12 @@ export async function POST(request: NextRequest) {
     const user = session?.user;
 
     if (!user) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
-    const {
-      role,
-      username,
-      legalName,
-      professionalName,
-      useLegalAsProfessional,
-      spotlightId,
-    } = body;
+    const { role, username, legalName, professionalName, useLegalAsProfessional, spotlightId } =
+      body;
 
     // Validation
     if (!role || !username || !legalName) {
@@ -78,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (!validRoles.includes(role)) {
       return NextResponse.json(
         { error: 'Invalid role. Must be: Actor, Agent, Enterprise, or Admin' },
-        { status: 400}
+        { status: 400 }
       );
     }
 
@@ -99,76 +92,79 @@ export async function POST(request: NextRequest) {
     }
 
     // Determine professional name
-    const finalProfessionalName = useLegalAsProfessional 
-      ? legalName 
-      : (professionalName || legalName);
+    const finalProfessionalName = useLegalAsProfessional
+      ? legalName
+      : professionalName || legalName;
 
-    // TODO: In production, insert into PostgreSQL
-    // First check if username/professional name already exist
-    // const usernameCheck = await db.query(queries.userProfiles.checkUsernameAvailable, [username]);
-    // if (usernameCheck.rows[0].exists) {
-    //   return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
-    // }
-    
-    // const profNameCheck = await db.query(queries.userProfiles.checkProfessionalNameAvailable, [finalProfessionalName]);
-    // if (profNameCheck.rows[0].exists) {
-    //   return NextResponse.json({ error: 'Professional name already taken' }, { status: 409 });
-    // }
+    // Check if username already exists
+    const usernameCheck = await query(
+      'SELECT EXISTS(SELECT 1 FROM user_profiles WHERE username = $1)',
+      [username]
+    );
+    if (usernameCheck.rows[0].exists) {
+      return NextResponse.json({ error: 'Username already taken' }, { status: 409 });
+    }
+
+    // Check if professional name already exists
+    const profNameCheck = await query(
+      'SELECT EXISTS(SELECT 1 FROM user_profiles WHERE professional_name = $1)',
+      [finalProfessionalName]
+    );
+    if (profNameCheck.rows[0].exists) {
+      return NextResponse.json(
+        { error: 'Professional name already taken' },
+        { status: 409 }
+      );
+    }
 
     // If Spotlight ID provided, check it's unique
-    // if (spotlightId) {
-    //   const spotlightCheck = await db.query(queries.userProfiles.checkSpotlightIdAvailable, [spotlightId]);
-    //   if (spotlightCheck.rows[0].exists) {
-    //     return NextResponse.json({ error: 'Spotlight ID already registered' }, { status: 409 });
-    //   }
-    // }
+    if (spotlightId) {
+      const spotlightCheck = await query(
+        'SELECT EXISTS(SELECT 1 FROM user_profiles WHERE spotlight_id = $1)',
+        [spotlightId]
+      );
+      if (spotlightCheck.rows[0].exists) {
+        return NextResponse.json(
+          { error: 'Spotlight ID already registered' },
+          { status: 409 }
+        );
+      }
+    }
 
     // Create profile
-    // const result = await db.query(queries.userProfiles.create, [
-    //   user.sub, // auth0_user_id
-    //   user.email, // email
-    //   role,
-    //   username,
-    //   legalName,
-    //   finalProfessionalName,
-    //   useLegalAsProfessional || false,
-    //   spotlightId || null,
-    //   true, // profile_completed
-    // ]);
-
-    console.log('[PROFILE] Created profile:', {
-      auth0UserId: user.sub,
-      email: user.email,
-      role,
-      username,
-      legalName,
-      professionalName: finalProfessionalName,
-      useLegalAsProfessional,
-      spotlightId,
-    });
-
-    // Mock response for development
-    return NextResponse.json({
-      success: true,
-      profile: {
-        id: `mock-${Date.now()}`,
-        auth0UserId: user.sub,
-        email: user.email,
+    const result = await query(
+      `INSERT INTO user_profiles (
+        auth0_user_id, email, role, username, legal_name, 
+        professional_name, use_legal_as_professional, spotlight_id, profile_completed
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *`,
+      [
+        user.sub,
+        user.email,
         role,
         username,
         legalName,
-        professionalName: finalProfessionalName,
-        useLegalAsProfessional: useLegalAsProfessional || false,
-        spotlightId: spotlightId || null,
-        profileCompleted: true,
-        createdAt: new Date().toISOString(),
-      },
-      message: 'Profile created successfully (development mode)',
+        finalProfessionalName,
+        useLegalAsProfessional || false,
+        spotlightId || null,
+        true,
+      ]
+    );
+
+    console.log('[PROFILE] Created profile successfully');
+
+    return NextResponse.json({
+      success: true,
+      profile: result.rows[0],
+      message: 'Profile created successfully',
     });
   } catch (error: unknown) {
     console.error('[PROFILE] Error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Internal server error',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
