@@ -21,6 +21,7 @@
 ### Instructions
 
 1. **Start dev server**:
+
    ```powershell
    pnpm dev
    ```
@@ -55,10 +56,11 @@
    - Confidence badge should now show: **85% Confidence** 🔵 Blue
 
 6. **Test confidence API**:
+
    ```powershell
    # Open browser dev tools and run:
    fetch('/api/identity/resolution').then(r => r.json()).then(console.log)
-   
+
    # Expected output:
    # {
    #   "confidencePercentage": 85,
@@ -95,11 +97,12 @@
    - Reveal and copy **Secret key** (starts with `sk_test_`)
 
 2. **Create .env.local**:
+
    ```bash
    # In apps/web/.env.local
    STRIPE_SECRET_KEY=sk_test_51ABCdef...
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51ABCdef...
-   
+
    # Database (if not already set)
    DATABASE_HOST=your-rds-endpoint.region.rds.amazonaws.com
    DATABASE_NAME=trulyimagined
@@ -107,7 +110,7 @@
    DATABASE_PASSWORD=your_password_here
    DATABASE_PORT=5432
    DATABASE_SSL=true
-   
+
    # Auth0 (if not already set)
    AUTH0_DOMAIN=your-tenant.auth0.com
    AUTH0_CLIENT_ID=your_client_id
@@ -170,13 +173,16 @@ If you've completed both mock and Stripe verification:
    - **Confidence: (0.0425 + 0.34) / 0.45 = 0.85 (85%)**
 
 2. **Check API response**:
+
    ```javascript
-   fetch('/api/identity/resolution').then(r => r.json()).then(data => {
-     console.log('Confidence:', data.confidencePercentage);
-     console.log('Level:', data.assuranceLevel);
-     console.log('Providers:', data.linkedProvidersCount);
-     console.log('Breakdown:', data.providerBreakdown);
-   });
+   fetch('/api/identity/resolution')
+     .then((r) => r.json())
+     .then((data) => {
+       console.log('Confidence:', data.confidencePercentage);
+       console.log('Level:', data.assuranceLevel);
+       console.log('Providers:', data.linkedProvidersCount);
+       console.log('Breakdown:', data.providerBreakdown);
+     });
    ```
 
 3. **Expected output**:
@@ -214,6 +220,7 @@ If you've completed both mock and Stripe verification:
 ### Development Environment
 
 ❌ **Webhooks don't work on localhost**
+
 - Stripe webhooks require publicly accessible URL
 - **Workaround**: Use Stripe CLI for local webhook testing:
   ```powershell
@@ -222,6 +229,7 @@ If you've completed both mock and Stripe verification:
 - Or deploy to production/staging
 
 ❌ **Mock verification doesn't set hasGovernmentId**
+
 - Mock verification is for schema testing only
 - Doesn't represent real identity verification
 - **Workaround**: Test with Stripe Identity in production
@@ -229,11 +237,13 @@ If you've completed both mock and Stripe verification:
 ### Stripe Test Mode
 
 ✅ **Test documents work**
+
 - Stripe test mode accepts any document image
 - Verification will succeed/fail based on test data
 - No real identity verification in test mode
 
 ⚠️ **No real liveness check in test**
+
 - Selfie upload simulated in test mode
 - Real liveness detection only in production
 - **Workaround**: Deploy to production for real testing
@@ -247,6 +257,7 @@ If you've completed both mock and Stripe verification:
 ✅ **Fixed** - This was the schema bug, now resolved
 
 If you still see this:
+
 1. Clear browser cache
 2. Restart dev server: `pnpm dev`
 3. Check that verification/start/route.ts uses `legal_name`, `professional_name`
@@ -254,6 +265,7 @@ If you still see this:
 ### Error: "STRIPE_SECRET_KEY environment variable is not set"
 
 Solution:
+
 1. Create `apps/web/.env.local`
 2. Add Stripe keys from dashboard
 3. Restart dev server
@@ -261,18 +273,21 @@ Solution:
 ### Confidence score shows 0% after mock verification
 
 Check:
+
 1. Browser dev tools > Network tab
 2. POST /api/verification/start should return success
 3. GET /api/identity/links should show mock-kyc provider
 4. GET /api/identity/resolution should return confidence data
 
 If still 0%:
+
 - Check database: `SELECT * FROM identity_links WHERE user_profile_id = '<your_id>';`
 - Verify is_active = true
 
 ### Dashboard badge not updating
 
 Solution:
+
 1. Hard refresh page (Ctrl+Shift+R)
 2. Check browser console for fetch errors
 3. Verify GET /api/identity/resolution returns valid data

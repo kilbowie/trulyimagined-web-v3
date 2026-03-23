@@ -1,7 +1,7 @@
 /**
  * Test Script for Identity Verification Flow
  * Tests Step 7: Multi-Provider Identity Linking
- * 
+ *
  * Run with: npx ts-node test-verification-flow.ts
  */
 
@@ -16,9 +16,9 @@ async function testVerificationFlow() {
   console.log('  5. List identity links');
   console.log('  6. Test unlink functionality');
   console.log('\n' + '='.repeat(60));
-  
+
   const baseUrl = 'http://localhost:3000';
-  
+
   console.log('\n⚠️  IMPORTANT: This test requires an authenticated session.');
   console.log('To test properly:');
   console.log('  1. Open browser: http://localhost:3000');
@@ -34,7 +34,7 @@ async function testVerificationFlow() {
   console.log('  ✓ Provider "mock-kyc" appears in linked providers list');
   console.log('  ✓ Unlink button removes the provider');
   console.log('\n' + '='.repeat(60));
-  
+
   console.log('\n📊 Database Verification:');
   console.log('Run this query to see the created identity_links:');
   console.log('');
@@ -42,7 +42,7 @@ async function testVerificationFlow() {
   console.log('       assurance_level, is_active, verified_at');
   console.log('FROM identity_links;');
   console.log('\n' + '='.repeat(60));
-  
+
   console.log('\n✅ Manual Testing Instructions:');
   console.log('');
   console.log('Test Case 1: Start Mock Verification');
@@ -73,14 +73,14 @@ async function testVerificationFlow() {
   console.log('  → Verify: JSON response with overall status');
   console.log('  → Verify: Highest verification/assurance levels shown');
   console.log('\n' + '='.repeat(60));
-  
+
   console.log('\n🔄 Testing Consent Flow (Step 6):');
   console.log('  → Visit: http://localhost:3000/dashboard/consents');
   console.log('  → Verify: Page loads without 500 error');
   console.log('  → Verify: Empty state or existing consents displayed');
   console.log('  → Check: Summary cards show counts');
   console.log('\n' + '='.repeat(60));
-  
+
   console.log('\n✨ All tests should be performed while logged in as an Actor.');
   console.log('');
 }

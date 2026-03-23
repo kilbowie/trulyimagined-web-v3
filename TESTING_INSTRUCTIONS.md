@@ -1,6 +1,7 @@
 # Testing Instructions for Step 7 (Identity Verification) & Step 6 (Consent)
 
 ## ✅ Stage 1: Database Migration - COMPLETE
+
 - Migration 004_identity_links.sql executed successfully
 - `identity_links` table created in database
 
@@ -9,24 +10,29 @@
 ## 🧪 Stage 2: Test Identity Verification Flow
 
 ### Test Environment:
+
 - Dev Server: http://localhost:3000 (RUNNING ✅)
 - Database: Connected to trulyimagined_v3 (RDS)
 
 ### Test Plan:
 
 #### 1. Test Verification Status Page
+
 **URL**: http://localhost:3000/dashboard/verify-identity
 
 **Expected Results**:
+
 - [ ] Page loads without errors
-- [ ] Shows "UNVERIFIED" status initially  
+- [ ] Shows "UNVERIFIED" status initially
 - [ ] Displays three verification options (Mock, Onfido, Yoti)
 - [ ] Shows empty "Linked Identity Providers" section
 
 #### 2. Test Mock Verification
+
 **Action**: Click "Start Mock" button
 
 **Expected Results**:
+
 - [ ] Success message appears instantly
 - [ ] Status updates to "VERIFIED" or "FULLY-VERIFIED"
 - [ ] Verification Level shows "HIGH"
@@ -35,21 +41,26 @@
 - [ ] Linked provider shows badges: "kyc" type, "HIGH" level
 
 #### 3. Test API Endpoints
+
 **Direct API Access** (while logged in):
 
 `GET /api/verification/status`
+
 - [ ] Returns JSON with overall status
 - [ ] Shows highestVerificationLevel and highestAssuranceLevel
 - [ ] Lists all linked providers
 
 `GET /api/identity/links`
+
 - [ ] Returns JSON with links array
 - [ ] Includes summary object with statistics
 
 #### 4. Test Unlink Functionality
+
 **Action**: Click "Unlink" button on mock-kyc provider
 
 **Expected Results**:
+
 - [ ] Confirmation dialog appears
 - [ ] Provider removed from list after confirmation
 - [ ] Status resets to "UNVERIFIED"
@@ -62,26 +73,32 @@
 ### Test Consents Dashboard
 
 #### 1. Test Page Load
+
 **URL**: http://localhost:3000/dashboard/consents
 
 **Expected Results**:
+
 - [ ] Page loads without 500 error (THIS WAS THE BUG WE FIXED)
 - [ ] Shows empty state or existing consents
 - [ ] Summary cards display counts (Active, Revoked, Expired)
 
 #### 2. Test API Endpoints
+
 **Direct API Access**:
 
 `GET /api/consent/[your-actor-id]`
+
 - [ ] Returns JSON with actorId
 - [ ] Includes summary object
 - [ ] Contains consents arrays (active, revoked, expired)
 
 `POST /api/consent/grant`
+
 - [ ] Can manually test with fetch or Postman
 - [ ] Creates consent record in database
 
 `POST /api/consent/revoke`
+
 - [ ] Can manually test with fetch or Postman
 - [ ] Creates revocation record in database
 
@@ -92,7 +109,7 @@
 Run this query to see created identity_links:
 
 ```sql
-SELECT 
+SELECT
   il.id,
   up.email,
   il.provider,
@@ -110,7 +127,7 @@ ORDER BY il.created_at DESC;
 Run this query to see consent logs:
 
 ```sql
-SELECT 
+SELECT
   cl.id,
   cl.actor_id,
   cl.action,
@@ -127,6 +144,7 @@ LIMIT 10;
 ## ✨ Success Criteria
 
 ### Step 7 (Identity Verification):
+
 - [x] Database migration completed
 - [ ] Verification page loads correctly
 - [ ] Mock verification creates identity link
@@ -135,6 +153,7 @@ LIMIT 10;
 - [ ] Unlink functionality works
 
 ### Step 6 (Consent):
+
 - [x] Database tables exist (from previous steps)
 - [ ] Consents page loads without 500 error
 - [ ] Empty state or existing consents display
@@ -152,9 +171,9 @@ LIMIT 10;
 2. **Navigate to Dashboard**:
    - Go to: http://localhost:3000/dashboard
    - You should see 3 cards for Actors:
-     * Register Identity
-     * Manage Consents
-     * Verify Identity 🔐 (NEW!)
+     - Register Identity
+     - Manage Consents
+     - Verify Identity 🔐 (NEW!)
 
 3. **Test Verification Flow**:
    - Click "Verify Identity" card
@@ -174,6 +193,7 @@ LIMIT 10;
 All tests must be performed while logged in with an account that has the "Actor" role assigned in Auth0.
 
 If you encounter authentication issues:
+
 - Visit: http://localhost:3000/debug-roles
 - Verify your JWT token contains roles
 - Check Auth0 Action is configured correctly

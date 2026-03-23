@@ -22,6 +22,7 @@ The system now supports government-certified identity verification with real-tim
 ### 1. Bug Fixes (Critical)
 
 ✅ **Fixed schema mismatch in verification endpoints**
+
 - **Issue**: Verification code queried `first_name`, `last_name` but schema has `legal_name`, `professional_name`
 - **Fix**: Updated `apps/web/src/app/api/verification/start/route.ts` to use correct columns
 - **Impact**: Mock verification now works correctly
@@ -29,21 +30,25 @@ The system now supports government-certified identity verification with real-tim
 ### 2. Stripe Identity Integration (Step 7)
 
 ✅ **Stripe SDK installed and configured**
+
 - Packages: `stripe@20.4.1`, `@stripe/stripe-js@8.11.0`
 - Environment variables added to `.env.example`
 
 ✅ **Stripe verification session creation**
+
 - File: `apps/web/src/lib/stripe.ts`
 - Functions: `createVerificationSession()`, `getVerificationSession()`, `getVerifiedIdentityData()`
 - GPG 45 & eIDAS mapping functions included
 
 ✅ **Verification start endpoint updated**
+
 - File: `apps/web/src/app/api/verification/start/route.ts`
 - Added `stripe` as primary provider (default)
 - `startStripeVerification()` function creates Stripe Identity session
 - Returns `session.url` for redirect to Stripe-hosted verification page
 
 ✅ **Stripe webhook handler**
+
 - File: `apps/web/src/app/api/webhooks/stripe/route.ts`
 - Endpoint: `POST /api/webhooks/stripe`
 - Handles events:
@@ -56,6 +61,7 @@ The system now supports government-certified identity verification with real-tim
 ### 3. Identity Confidence Scoring (Step 8)
 
 ✅ **Confidence scoring algorithm**
+
 - File: `apps/web/src/lib/identity-resolution.ts`
 - Function: `resolveIdentity(userProfileId)`
 - Provider weights:
@@ -70,6 +76,7 @@ The system now supports government-certified identity verification with real-tim
 - Assurance level determination (very-high ≥90%, high ≥70%, medium ≥50%, low >0%)
 
 ✅ **Identity resolution API endpoint**
+
 - File: `apps/web/src/app/api/identity/resolution/route.ts`
 - Endpoint: `GET /api/identity/resolution`
 - Returns:
@@ -82,6 +89,7 @@ The system now supports government-certified identity verification with real-tim
 ### 4. Frontend Updates
 
 ✅ **Verification UI updated**
+
 - File: `apps/web/src/app/dashboard/verify-identity/page.tsx`
 - **Stripe Identity** prominently featured as recommended option
 - Shows: Government ID verification, liveness check, GPG 45/eIDAS compliance, ~1 min verification time
@@ -90,6 +98,7 @@ The system now supports government-certified identity verification with real-tim
 - Handles Stripe redirect flow (`window.location.href = data.url`)
 
 ✅ **Confidence score badge on dashboard**
+
 - File: `apps/web/src/components/ConfidenceScore.tsx`
 - Components:
   - `<ConfidenceScoreBadge />` - Compact badge showing percentage
@@ -98,6 +107,7 @@ The system now supports government-certified identity verification with real-tim
 - Automatically fetches `/api/identity/resolution`
 
 ✅ **Dashboard integration**
+
 - File: `apps/web/src/app/dashboard/page.tsx`
 - Confidence badge shows on "Verify Identity" card
 - Real-time display of user's identity confidence
@@ -105,6 +115,7 @@ The system now supports government-certified identity verification with real-tim
 ### 5. Documentation
 
 ✅ **GPG 45 & eIDAS mapping strategy**
+
 - File: `docs/STRIPE_IDENTITY_GOVERNMENT_STANDARDS.md`
 - Comprehensive guide covering:
   - Why Stripe Identity?
@@ -118,6 +129,7 @@ The system now supports government-certified identity verification with real-tim
   - Database schema appendix
 
 ✅ **Environment variable documentation**
+
 - Updated: `apps/web/.env.example`
 - Added Stripe Identity section with:
   - `STRIPE_SECRET_KEY`
@@ -160,7 +172,7 @@ provider VARCHAR(255)              -- 'stripe-identity'
 provider_user_id VARCHAR(255)      -- Stripe session ID (e.g., 'vs_1ABC...')
 provider_type VARCHAR(50)          -- 'kyc'
 verification_level VARCHAR(50)     -- 'high', 'medium', 'low'
-assurance_level VARCHAR(50)        -- 'high', 'substantial', 'low'  
+assurance_level VARCHAR(50)        -- 'high', 'substantial', 'low'
 credential_data JSONB              -- Encrypted verified identity data
 metadata JSONB                     -- { stripe_session_id, gpg45_confidence, eidas_level }
 verified_at TIMESTAMPTZ            -- When Stripe verified identity
@@ -198,16 +210,16 @@ INSERT INTO identity_links (
 
 ### New Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/verification/start` | Start identity verification (updated with Stripe) |
-| `POST` | `/api/webhooks/stripe` | Stripe webhook handler for verification events |
-| `GET` | `/api/identity/resolution` | Get user's identity confidence score & resolution |
+| Method | Endpoint                   | Description                                       |
+| ------ | -------------------------- | ------------------------------------------------- |
+| `POST` | `/api/verification/start`  | Start identity verification (updated with Stripe) |
+| `POST` | `/api/webhooks/stripe`     | Stripe webhook handler for verification events    |
+| `GET`  | `/api/identity/resolution` | Get user's identity confidence score & resolution |
 
 ### Updated Endpoints
 
-| Method | Endpoint | Changes |
-|--------|----------|---------|
+| Method | Endpoint                  | Changes                                                                                         |
+| ------ | ------------------------- | ----------------------------------------------------------------------------------------------- |
 | `POST` | `/api/verification/start` | - Fixed schema bug<br>- Added Stripe Identity handler<br>- Default provider changed to 'stripe' |
 
 ---
@@ -341,25 +353,25 @@ DATABASE_SSL=true
 
 ### GPG 45 (UK Trust Framework)
 
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| Government-issued ID | ✅ | Stripe verifies passport/license/national ID |
-| Liveness detection | ✅ | Stripe selfie matching (biometric) |
-| Document authenticity | ✅ | Stripe validates document security features |
-| Evidence strength: High | ✅ | Photo ID with biometric = High |
-| Fraud prevention: High | ✅ | Liveness check prevents spoofing |
-| Verification level: High | ✅ | Mapped correctly in `identity_links.verification_level` |
+| Requirement              | Status | Evidence                                                |
+| ------------------------ | ------ | ------------------------------------------------------- |
+| Government-issued ID     | ✅     | Stripe verifies passport/license/national ID            |
+| Liveness detection       | ✅     | Stripe selfie matching (biometric)                      |
+| Document authenticity    | ✅     | Stripe validates document security features             |
+| Evidence strength: High  | ✅     | Photo ID with biometric = High                          |
+| Fraud prevention: High   | ✅     | Liveness check prevents spoofing                        |
+| Verification level: High | ✅     | Mapped correctly in `identity_links.verification_level` |
 
 **Result**: Stripe Identity verification maps to **GPG 45 High** confidence level ✅
 
 ### eIDAS (EU Regulation 910/2014)
 
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| Multi-factor authentication | ✅ | Something you have (ID) + something you are (biometric) |
-| Biometric authentication | ✅ | Liveness check (selfie matching) |
-| Secure channel | ✅ | HTTPS + Stripe PCI-compliant infrastructure |
-| Level of Assurance: High | ✅ | Multi-factor + biometric = High LoA |
+| Requirement                 | Status | Evidence                                                |
+| --------------------------- | ------ | ------------------------------------------------------- |
+| Multi-factor authentication | ✅     | Something you have (ID) + something you are (biometric) |
+| Biometric authentication    | ✅     | Liveness check (selfie matching)                        |
+| Secure channel              | ✅     | HTTPS + Stripe PCI-compliant infrastructure             |
+| Level of Assurance: High    | ✅     | Multi-factor + biometric = High LoA                     |
 
 **Result**: Stripe Identity verification maps to **eIDAS High** level of assurance ✅
 
@@ -432,6 +444,7 @@ DATABASE_SSL=true
 ### Next Implementation Step
 
 📋 **Step 9: Verifiable Credentials Issuance**
+
 - Implement W3C Verifiable Credentials
 - Generate issuer keys (Ed25519)
 - Create `POST /api/credentials/issue` endpoint

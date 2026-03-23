@@ -1,17 +1,17 @@
 /**
  * POST /api/webhooks/stripe
- * 
+ *
  * Stripe webhook endpoint for Identity verification events
- * 
+ *
  * Step 7: Multi-Provider Identity Linking
  * Handles: identity.verification_session.verified, identity.verification_session.requires_input
- * 
+ *
  * Setup:
  * 1. Configure webhook in Stripe Dashboard: https://dashboard.stripe.com/webhooks
  * 2. Add endpoint URL: https://yourdomain.com/api/webhooks/stripe
  * 3. Select events: identity.verification_session.*
  * 4. Copy webhook signing secret to STRIPE_WEBHOOK_SECRET env var
- * 
+ *
  * @see https://stripe.com/docs/identity/verify-identity-documents#handle-verification-outcomes
  */
 
@@ -34,20 +34,14 @@ export async function POST(request: NextRequest) {
 
     if (!signature) {
       console.error('[STRIPE WEBHOOK] Missing stripe-signature header');
-      return NextResponse.json(
-        { error: 'Missing stripe-signature header' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
     }
 
     // Verify webhook signature
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       console.error('[STRIPE WEBHOOK] STRIPE_WEBHOOK_SECRET not configured');
-      return NextResponse.json(
-        { error: 'Webhook secret not configured' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
     let event: Stripe.Event;
@@ -81,7 +75,9 @@ export async function POST(request: NextRequest) {
         break;
 
       case 'identity.verification_session.processing':
-        await handleVerificationProcessing(event.data.object as Stripe.Identity.VerificationSession);
+        await handleVerificationProcessing(
+          event.data.object as Stripe.Identity.VerificationSession
+        );
         break;
 
       case 'identity.verification_session.canceled':

@@ -23,7 +23,7 @@ async function runMigration004() {
 
     // Read and execute migration
     const sql = fs.readFileSync(migrationFile, 'utf-8');
-    
+
     console.log('[MIGRATION] Executing SQL...');
     await db.query(sql);
     console.log('[MIGRATION] ✓ Migration completed successfully!\n');

@@ -1,20 +1,20 @@
 /**
  * Identity Resolution & Confidence Scoring
- * 
+ *
  * Step 8: Identity Confidence Scoring
- * 
+ *
  * Calculates overall identity confidence based on:
  * - Number of linked identity providers
  * - Verification levels of each provider
  * - Provider weights (based on trust level)
  * - GPG 45 & eIDAS assurance mapping
- * 
+ *
  * Algorithm:
  * 1. Fetch all active identity links for user
  * 2. Apply provider-specific weights
  * 3. Calculate weighted average confidence score
  * 4. Determine overall assurance level (low/medium/high/very-high)
- * 
+ *
  * @see TECHNICAL_ARCHITECTURE.md Section 4.2
  */
 
@@ -22,7 +22,7 @@ import { query } from './db';
 
 /**
  * Provider weights based on trust level and verification rigor
- * 
+ *
  * Scoring logic:
  * - Stripe Identity: 0.4 (Government ID + liveness)
  * - UK Gov Verify: 0.4 (GPG 45 certified)
@@ -36,9 +36,9 @@ export const PROVIDER_WEIGHTS: Record<string, number> = {
   'uk-gov-verify': 0.4,
   'uk-gov-one-login': 0.4,
   'bank-openid': 0.3,
-  'onfido': 0.35,
-  'yoti': 0.35,
-  'auth0': 0.1,
+  onfido: 0.35,
+  yoti: 0.35,
+  auth0: 0.1,
   'mock-kyc': 0.05,
 };
 
@@ -47,11 +47,11 @@ export const PROVIDER_WEIGHTS: Record<string, number> = {
  */
 export const VERIFICATION_LEVEL_SCORES: Record<string, number> = {
   'very-high': 1.0,
-  'high': 0.85,
-  'medium': 0.6,
-  'low': 0.3,
-  'pending': 0.0,
-  'none': 0.0,
+  high: 0.85,
+  medium: 0.6,
+  low: 0.3,
+  pending: 0.0,
+  none: 0.0,
 };
 
 /**
@@ -101,7 +101,7 @@ export interface IdentityResolution {
 
 /**
  * Resolve identity and calculate confidence score for a user
- * 
+ *
  * @param userProfileId - User profile ID
  * @returns Identity resolution with confidence score
  */
@@ -326,7 +326,7 @@ function generateRecommendations(context: {
 
 /**
  * Get quick confidence summary for a user (lightweight version)
- * 
+ *
  * @param userProfileId - User profile ID
  * @returns Quick confidence summary
  */

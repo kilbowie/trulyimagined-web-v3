@@ -318,7 +318,8 @@ export default function VerifyIdentityPage() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900">Mock Verification</h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      Instantly create a high-assurance identity link for testing purposes (development only)
+                      Instantly create a high-assurance identity link for testing purposes
+                      (development only)
                     </p>
                     <div className="mt-2 flex gap-2">
                       <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">

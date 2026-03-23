@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 
 /**
  * Identity Confidence Score Badge
- * 
+ *
  * Step 8: Identity Confidence Scoring
  * Displays user's overall identity confidence score
  */
@@ -80,7 +80,9 @@ export function ConfidenceScoreBadge() {
   }
 
   return (
-    <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${badgeColor}`}>
+    <div
+      className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${badgeColor}`}
+    >
       <span className="mr-1.5">{emoji}</span>
       <span>{confidencePercentage}% Confidence</span>
       {confidence.hasGovernmentId && <span className="ml-2">✓ Gov ID</span>}
@@ -179,10 +181,10 @@ export function ConfidenceScoreCard() {
       {/* Main Score */}
       <div className={`rounded-lg p-4 mb-4 ${colorScheme.bg}`}>
         <div className="text-center">
-          <div className="text-4xl font-bold mb-2 ${colorScheme.text}">
-            {confidencePercentage}%
-          </div>
-          <div className={`inline-block px-4 py-1 rounded-full text-sm font-semibold ${colorScheme.badge}`}>
+          <div className="text-4xl font-bold mb-2 ${colorScheme.text}">{confidencePercentage}%</div>
+          <div
+            className={`inline-block px-4 py-1 rounded-full text-sm font-semibold ${colorScheme.badge}`}
+          >
             {(assuranceLevel || 'none').toUpperCase()} Assurance
           </div>
         </div>

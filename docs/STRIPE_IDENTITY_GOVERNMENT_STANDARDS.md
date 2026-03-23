@@ -48,31 +48,33 @@ This document explains how Stripe Identity verification results map to these gov
 
 ### Official GPG 45 Levels
 
-| GPG 45 Level | Evidence Requirements | Fraud Risk | Use Cases |
-|--------------|----------------------|------------|-----------|
-| **Very High** | Multiple high-quality sources + biometric | Very Low | High-risk transactions, government services |
-| **High** | Government-issued ID + liveness check | Low | Financial services, legal documents |
-| **Medium** | Single high-quality ID source | Medium | Standard KYC, basic identity verification |
-| **Low** | Self-declared information + basic checks | High | Low-risk services, initial registration |
+| GPG 45 Level  | Evidence Requirements                     | Fraud Risk | Use Cases                                   |
+| ------------- | ----------------------------------------- | ---------- | ------------------------------------------- |
+| **Very High** | Multiple high-quality sources + biometric | Very Low   | High-risk transactions, government services |
+| **High**      | Government-issued ID + liveness check     | Low        | Financial services, legal documents         |
+| **Medium**    | Single high-quality ID source             | Medium     | Standard KYC, basic identity verification   |
+| **Low**       | Self-declared information + basic checks  | High       | Low-risk services, initial registration     |
 
 ### Truly Imagined Mapping
 
-| Stripe Status | Verification Details | GPG 45 Level | Rationale |
-|---------------|---------------------|--------------|-----------|
-| `verified` | Government ID + liveness ✅ | **High** | Meets "High" requirements: Government-issued photo ID (evidence strength: high) + liveness check (fraud prevention: high) |
-| `requires_input` | Partial/unclear documents | **Medium** | Document uploaded but quality/authenticity unclear |
-| `failed` | Authentication failed | **Low** | Verification attempted but failed checks |
-| `processing` | In progress | **Pending** | Awaiting Stripe verification result |
-| `canceled` | User canceled | **None** | No verification completed |
+| Stripe Status    | Verification Details        | GPG 45 Level | Rationale                                                                                                                 |
+| ---------------- | --------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------- |
+| `verified`       | Government ID + liveness ✅ | **High**     | Meets "High" requirements: Government-issued photo ID (evidence strength: high) + liveness check (fraud prevention: high) |
+| `requires_input` | Partial/unclear documents   | **Medium**   | Document uploaded but quality/authenticity unclear                                                                        |
+| `failed`         | Authentication failed       | **Low**      | Verification attempted but failed checks                                                                                  |
+| `processing`     | In progress                 | **Pending**  | Awaiting Stripe verification result                                                                                       |
+| `canceled`       | User canceled               | **None**     | No verification completed                                                                                                 |
 
 ### Why "High" Not "Very High"?
 
 Stripe Identity provides:
+
 - ✅ Government-issued photo ID (high evidence strength)
 - ✅ Liveness detection (biometric check)
 - ✅ Document authenticity validation
 
 **To reach "Very High"**, GPG 45 requires:
+
 - Multiple independent high-quality sources (e.g., passport + utility bill + bank verification)
 - Activity history checks
 - KBV (Knowledge-Based Verification) questions
@@ -87,19 +89,19 @@ Stripe Identity provides:
 
 ### Official eIDAS Levels
 
-| eIDAS Level | Authentication Requirements | Examples |
-|-------------|---------------------------|----------|
-| **High** | Multi-factor + biometric | Government login, legal signatures |
-| **Substantial** | Two-factor authentication | Banking, healthcare records |
-| **Low** | Single-factor | Basic online services |
+| eIDAS Level     | Authentication Requirements | Examples                           |
+| --------------- | --------------------------- | ---------------------------------- |
+| **High**        | Multi-factor + biometric    | Government login, legal signatures |
+| **Substantial** | Two-factor authentication   | Banking, healthcare records        |
+| **Low**         | Single-factor               | Basic online services              |
 
 ### Truly Imagined Mapping
 
-| Stripe Status | Authentication Factors | eIDAS Level | Rationale |
-|---------------|----------------------|-------------|-----------|
-| `verified` | Government ID + liveness + session | **High** | Multi-factor (something you have: ID, something you are: biometric) + secure channel |
-| `requires_input` | Partial verification | **Substantial** | Two-factor but incomplete |
-| `failed` / `canceled` | Failed authentication | **Low** | Did not meet higher standards |
+| Stripe Status         | Authentication Factors             | eIDAS Level     | Rationale                                                                            |
+| --------------------- | ---------------------------------- | --------------- | ------------------------------------------------------------------------------------ |
+| `verified`            | Government ID + liveness + session | **High**        | Multi-factor (something you have: ID, something you are: biometric) + secure channel |
+| `requires_input`      | Partial verification               | **Substantial** | Two-factor but incomplete                                                            |
+| `failed` / `canceled` | Failed authentication              | **Low**         | Did not meet higher standards                                                        |
 
 **Note**: eIDAS Level "High" requires multi-factor authentication including biometric. Stripe Identity's liveness check (selfie matching) qualifies as biometric authentication.
 
@@ -113,14 +115,14 @@ Different identity providers have different trust levels based on verification r
 
 ```typescript
 const PROVIDER_WEIGHTS = {
-  'stripe-identity': 0.4,      // Government ID + liveness
-  'uk-gov-verify': 0.4,        // GPG 45 certified
-  'uk-gov-one-login': 0.4,     // Official UK Gov Gateway
-  'bank-openid': 0.3,          // Financial institution KYC
-  'onfido': 0.35,              // Professional KYC provider
-  'yoti': 0.35,                // Digital identity specialist
-  'auth0': 0.1,                // Email verification only
-  'mock-kyc': 0.05,            // Development/testing
+  'stripe-identity': 0.4, // Government ID + liveness
+  'uk-gov-verify': 0.4, // GPG 45 certified
+  'uk-gov-one-login': 0.4, // Official UK Gov Gateway
+  'bank-openid': 0.3, // Financial institution KYC
+  onfido: 0.35, // Professional KYC provider
+  yoti: 0.35, // Digital identity specialist
+  auth0: 0.1, // Email verification only
+  'mock-kyc': 0.05, // Development/testing
 };
 ```
 
@@ -129,11 +131,11 @@ const PROVIDER_WEIGHTS = {
 ```typescript
 const VERIFICATION_LEVEL_SCORES = {
   'very-high': 1.0,
-  'high': 0.85,
-  'medium': 0.6,
-  'low': 0.3,
-  'pending': 0.0,
-  'none': 0.0,
+  high: 0.85,
+  medium: 0.6,
+  low: 0.3,
+  pending: 0.0,
+  none: 0.0,
 };
 ```
 
@@ -148,6 +150,7 @@ overallConfidence = Σ(providerWeight × verificationScore) / Σ(providerWeight)
 **Example**:
 
 User has:
+
 - Stripe Identity: `verified` (weight: 0.4, score: 0.85) → contribution: 0.34
 - Auth0 email: `verified` (weight: 0.1, score: 0.85) → contribution: 0.085
 
@@ -160,12 +163,12 @@ overallConfidence = (0.34 + 0.085) / (0.4 + 0.1) = 0.425 / 0.5 = 0.85 (85%)
 ### Assurance Level Thresholds
 
 | Confidence Score | Assurance Level | UI Badge Color |
-|------------------|-----------------|----------------|
-| ≥ 90% | Very High | 🟢 Green |
-| 70-89% | High | 🔵 Blue |
-| 50-69% | Medium | 🟡 Yellow |
-| 1-49% | Low | 🟠 Orange |
-| 0% | None | ⚪ Gray |
+| ---------------- | --------------- | -------------- |
+| ≥ 90%            | Very High       | 🟢 Green       |
+| 70-89%           | High            | 🔵 Blue        |
+| 50-69%           | Medium          | 🟡 Yellow      |
+| 1-49%            | Low             | 🟠 Orange      |
+| 0%               | None            | ⚪ Gray        |
 
 ---
 
@@ -174,6 +177,7 @@ overallConfidence = (0.34 + 0.085) / (0.4 + 0.1) = 0.425 / 0.5 = 0.85 (85%)
 ### Files Created
 
 #### Backend
+
 - `apps/web/src/lib/stripe.ts` - Stripe SDK initialization & mapping functions
 - `apps/web/src/lib/identity-resolution.ts` - Confidence scoring algorithm
 - `apps/web/src/app/api/verification/start/route.ts` - Updated with Stripe handler
@@ -181,10 +185,12 @@ overallConfidence = (0.34 + 0.085) / (0.4 + 0.1) = 0.425 / 0.5 = 0.85 (85%)
 - `apps/web/src/app/api/identity/resolution/route.ts` - Confidence score API endpoint
 
 #### Frontend
+
 - `apps/web/src/app/dashboard/verify-identity/page.tsx` - Updated UI with Stripe as primary option
 - `apps/web/src/components/ConfidenceScore.tsx` - Confidence score badge & card components
 
 #### Configuration
+
 - `apps/web/.env.example` - Updated with Stripe environment variables
 
 ### Environment Variables Required
@@ -364,6 +370,7 @@ Use Stripe test API keys for real integration testing:
 ### Contact
 
 For questions about GPG 45 or eIDAS mapping strategy:
+
 - **Technical Lead**: adam@kilbowieconsulting.co.uk
 - **Architecture Review**: See `TECHNICAL_ARCHITECTURE.md` Section 4.2
 
@@ -371,13 +378,13 @@ For questions about GPG 45 or eIDAS mapping strategy:
 
 ## Appendix A: Stripe Identity Verification Outcomes
 
-| Outcome | Description | Action Taken |
-|---------|-------------|--------------|
-| `verified` | All checks passed, identity confirmed | Create identity_link with high verification_level |
-| `requires_input` | Document unclear, needs re-upload | Create identity_link with medium verification_level |
-| `failed` | Document invalid or fraud detected | Log failure, do not create identity_link |
-| `processing` | Still analyzing document | Wait for webhook |
-| `canceled` | User abandoned verification | No identity_link created |
+| Outcome          | Description                           | Action Taken                                        |
+| ---------------- | ------------------------------------- | --------------------------------------------------- |
+| `verified`       | All checks passed, identity confirmed | Create identity_link with high verification_level   |
+| `requires_input` | Document unclear, needs re-upload     | Create identity_link with medium verification_level |
+| `failed`         | Document invalid or fraud detected    | Log failure, do not create identity_link            |
+| `processing`     | Still analyzing document              | Wait for webhook                                    |
+| `canceled`       | User abandoned verification           | No identity_link created                            |
 
 ---
 

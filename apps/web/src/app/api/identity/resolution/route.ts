@@ -1,10 +1,10 @@
 /**
  * GET /api/identity/resolution
- * 
+ *
  * Get identity resolution and confidence score for the authenticated user
- * 
+ *
  * Step 8: Identity Confidence Scoring
- * 
+ *
  * Returns:
  * - Overall identity confidence score (0-100%)
  * - Assurance level (low/medium/high/very-high)
@@ -12,7 +12,7 @@
  * - List of linked identity providers
  * - Provider breakdown with individual contributions
  * - Recommendations to improve confidence
- * 
+ *
  * Example response:
  * {
  *   "userProfileId": "123",
@@ -44,10 +44,9 @@ export async function GET(_request: NextRequest) {
     }
 
     // Get user profile ID
-    const userResult = await query(
-      `SELECT id FROM user_profiles WHERE auth0_user_id = $1`,
-      [session.user.sub]
-    );
+    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
+      session.user.sub,
+    ]);
 
     if (userResult.rows.length === 0) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });

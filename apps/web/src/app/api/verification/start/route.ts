@@ -97,13 +97,13 @@ export async function POST(request: NextRequest) {
 /**
  * Start Stripe Identity verification
  * Primary verification provider for Truly Imagined
- * 
+ *
  * Features:
  * - Government ID verification (passport, driver's license, national ID)
  * - Liveness detection (selfie matching)
  * - Document authenticity validation
  * - GPG 45 & eIDAS compliance
- * 
+ *
  * Cost: $1.50-$3.00 per verification
  */
 async function startStripeVerification(userProfile: Record<string, unknown>) {
@@ -141,7 +141,9 @@ async function startStripeVerification(userProfile: Record<string, unknown>) {
       status: session.status, // 'requires_input', 'processing', 'verified'
       clientSecret: session.client_secret, // For frontend Stripe.js
       url: session.url, // Hosted verification page URL
-      expiresAt: sessionData.expires_at ? new Date(sessionData.expires_at * 1000).toISOString() : null,
+      expiresAt: sessionData.expires_at
+        ? new Date(sessionData.expires_at * 1000).toISOString()
+        : null,
       message: 'Please complete the verification process using the provided URL or client secret',
       nextSteps: [
         'User redirects to session.url or uses client_secret with @stripe/stripe-js',
