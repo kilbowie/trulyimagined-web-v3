@@ -62,7 +62,7 @@ export default function ConsentsPage() {
 
       // Get current user's profile to find actorId
       const meResponse = await fetch('/api/me');
-      
+
       if (!meResponse.ok) {
         if (meResponse.status === 401) {
           router.push('/auth/login');
@@ -70,7 +70,7 @@ export default function ConsentsPage() {
         }
         throw new Error('Failed to fetch user profile');
       }
-      
+
       const meData = await meResponse.json();
 
       if (!meData.success || !meData.data) {
@@ -97,7 +97,7 @@ export default function ConsentsPage() {
 
       // Fetch consents from API
       const consentsResponse = await fetch(`/api/consent/${currentActorId}`);
-      
+
       if (!consentsResponse.ok) {
         if (consentsResponse.status === 404) {
           // No consents found yet - this is okay

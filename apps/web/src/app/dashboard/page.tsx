@@ -158,6 +158,20 @@ export default async function DashboardPage() {
                       </div>
                     </div>
                   </Link>
+                  <Link
+                    href="/dashboard/verify-identity"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">🔐</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">Verify Identity</h3>
+                        <p className="text-sm text-gray-600">
+                          Link external providers to increase verification level
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
                 </>
               )}
 

@@ -83,26 +83,27 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       isGranted: isGranted && !isExpired,
-      consent: isGranted && !isExpired
-        ? {
-            consentId: latestConsent.id,
-            actorId: latestConsent.actor_id,
-            consentType: latestConsent.consent_type,
-            scope: latestConsent.consent_scope,
-            grantedAt: latestConsent.created_at,
-            projectName: latestConsent.project_name,
-            expiresAt: latestConsent.consent_scope?.duration?.endDate || null,
-            isExpired,
-          }
-        : null,
+      consent:
+        isGranted && !isExpired
+          ? {
+              consentId: latestConsent.id,
+              actorId: latestConsent.actor_id,
+              consentType: latestConsent.consent_type,
+              scope: latestConsent.consent_scope,
+              grantedAt: latestConsent.created_at,
+              projectName: latestConsent.project_name,
+              expiresAt: latestConsent.consent_scope?.duration?.endDate || null,
+              isExpired,
+            }
+          : null,
       latestAction: {
         action: latestConsent.action,
         timestamp: latestConsent.created_at,
         reason: isExpired
           ? 'Consent expired'
           : latestConsent.action === 'revoked'
-          ? 'Consent revoked'
-          : null,
+            ? 'Consent revoked'
+            : null,
       },
     });
   } catch (error: unknown) {

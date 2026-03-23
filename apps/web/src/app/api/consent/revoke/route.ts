@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get IP and User Agent
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ipAddress =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     let result;
@@ -108,10 +109,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (!result || result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Failed to create revocation record' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Failed to create revocation record' }, { status: 500 });
     }
 
     const revocationRecord = result.rows[0];

@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Get IP and User Agent from request
-    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const ipAddress =
+      request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
     // Insert into consent_log (append-only)
