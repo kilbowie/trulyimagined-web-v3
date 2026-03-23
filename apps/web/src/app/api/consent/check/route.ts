@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/db';
 
 /**
  * GET /api/consent/check?actorId={id}&consentType={type}&projectId={id}
@@ -31,31 +32,79 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Build query string
-    const queryParams = new URLSearchParams({
-      actorId,
-      consentType,
-      ...(projectId && { projectId }),
-    });
+    // Query for most recent consent action (granted or revoked)
+    let sqlQuery = `
+      SELECT * FROM consent_log 
+      WHERE actor_id = $1 
+        AND consent_type = $2
+    `;
+    const queryParams: (string | number)[] = [actorId, consentType];
 
-    // Call Lambda consent service
-    const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001';
-    const url = `${lambdaUrl}/consent/check?${queryParams.toString()}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    // Optional: filter by project ID if provided
+    if (projectId) {
+      sqlQuery += ` AND (consent_scope->>'projectId' = $3 OR consent_scope->>'projectId' IS NULL)`;
+      queryParams.push(projectId);
     }
 
-    return NextResponse.json(data, { status: 200 });
+    sqlQuery += ` ORDER BY created_at DESC LIMIT 1`;
+
+    const result = await query(sqlQuery, queryParams);
+
+    if (result.rows.length === 0) {
+      return NextResponse.json({
+        isGranted: false,
+        message: 'No consent record found for this actor and consent type',
+        actorId,
+        consentType,
+        projectId: projectId || null,
+      });
+    }
+
+    const latestConsent = result.rows[0];
+
+    // Check if most recent action was 'granted' or 'revoked'
+    const isGranted = latestConsent.action === 'granted';
+
+    // Check expiry if consent was granted
+    let isExpired = false;
+    if (isGranted && latestConsent.consent_scope?.duration?.endDate) {
+      const expiryDate = new Date(latestConsent.consent_scope.duration.endDate);
+      isExpired = expiryDate < new Date();
+    }
+
+    console.log('[CONSENT] Consent check:', {
+      actorId,
+      consentType,
+      projectId,
+      isGranted: isGranted && !isExpired,
+      action: latestConsent.action,
+      isExpired,
+    });
+
+    return NextResponse.json({
+      isGranted: isGranted && !isExpired,
+      consent: isGranted && !isExpired
+        ? {
+            consentId: latestConsent.id,
+            actorId: latestConsent.actor_id,
+            consentType: latestConsent.consent_type,
+            scope: latestConsent.consent_scope,
+            grantedAt: latestConsent.created_at,
+            projectName: latestConsent.project_name,
+            expiresAt: latestConsent.consent_scope?.duration?.endDate || null,
+            isExpired,
+          }
+        : null,
+      latestAction: {
+        action: latestConsent.action,
+        timestamp: latestConsent.created_at,
+        reason: isExpired
+          ? 'Consent expired'
+          : latestConsent.action === 'revoked'
+          ? 'Consent revoked'
+          : null,
+      },
+    });
   } catch (error: unknown) {
     console.error('[API] Check consent error:', error);
     const err = error as Error;

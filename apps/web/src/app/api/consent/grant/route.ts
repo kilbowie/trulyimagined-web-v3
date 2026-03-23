@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
+import { query } from '@/lib/db';
 
 /**
  * POST /api/consent/grant
@@ -38,30 +39,62 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Call Lambda consent service
-    const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001/consent/grant';
+    // Get IP and User Agent from request
+    const ipAddress = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+    const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    const response = await fetch(lambdaUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+    // Insert into consent_log (append-only)
+    const result = await query(
+      `INSERT INTO consent_log (
+        actor_id, action, consent_type, consent_scope,
+        project_name, project_description,
+        requester_id, requester_type,
+        ip_address, user_agent, metadata
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      RETURNING *`,
+      [
         actorId,
+        'granted',
         consentType,
-        scope,
-        requesterId: session.user.sub,
-        requesterType: session.user['https://trulyimagined.com/role'] || 'actor',
-      }),
+        JSON.stringify(scope || {}),
+        scope?.projectName || null,
+        scope?.projectDescription || null,
+        session.user.sub,
+        session.user['https://trulyimagined.com/role'] || 'actor',
+        ipAddress,
+        userAgent,
+        JSON.stringify({
+          grantedAt: new Date().toISOString(),
+          source: 'api',
+        }),
+      ]
+    );
+
+    const consentRecord = result.rows[0];
+
+    console.log('[CONSENT] Consent granted:', {
+      id: consentRecord.id,
+      actorId,
+      consentType,
+      projectName: scope?.projectName,
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
-    }
-
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Consent granted and logged to immutable ledger',
+        consent: {
+          consentId: consentRecord.id,
+          actorId: consentRecord.actor_id,
+          action: consentRecord.action,
+          consentType: consentRecord.consent_type,
+          scope: consentRecord.consent_scope,
+          grantedAt: consentRecord.created_at,
+          projectName: consentRecord.project_name,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error: unknown) {
     console.error('[API] Grant consent error:', error);
     const err = error as Error;

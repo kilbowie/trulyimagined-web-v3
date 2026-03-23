@@ -62,35 +62,57 @@ export default function ConsentsPage() {
 
       // Get current user's profile to find actorId
       const meResponse = await fetch('/api/me');
+      
+      if (!meResponse.ok) {
+        if (meResponse.status === 401) {
+          router.push('/auth/login');
+          return;
+        }
+        throw new Error('Failed to fetch user profile');
+      }
+      
       const meData = await meResponse.json();
 
-      if (!meData.user) {
-        router.push('/api/auth/login');
+      if (!meData.success || !meData.data) {
+        router.push('/auth/login');
         return;
       }
 
-      const userId = meData.user.sub;
+      const userId = meData.data.id;
 
-      // Get actor profile
-      const actorResponse = await fetch(`/api/profile/${userId}`);
-      const actorData = await actorResponse.json();
+      // Get user profile which may contain actor link
+      const profileResponse = await fetch('/api/profile');
+      const profileData = await profileResponse.json();
 
-      if (!actorData.actor) {
-        setError('No actor profile found. Please register as an actor first.');
+      if (!profileData.profile) {
+        setError('No profile found. Please complete your profile setup first.');
         setLoading(false);
         return;
       }
 
-      const currentActorId = actorData.actor.id;
+      // For now, use the user's profile ID as the actor ID
+      // In production, this would query the actors table via user_profile_id
+      const currentActorId = profileData.profile.id || userId;
       setActorId(currentActorId);
 
       // Fetch consents from API
       const consentsResponse = await fetch(`/api/consent/${currentActorId}`);
-      const data = await consentsResponse.json();
-
+      
       if (!consentsResponse.ok) {
+        if (consentsResponse.status === 404) {
+          // No consents found yet - this is okay
+          setSummary({ active: 0, revoked: 0, expired: 0, totalRecords: 0 });
+          setActiveConsents([]);
+          setRevokedConsents([]);
+          setExpiredConsents([]);
+          setLoading(false);
+          return;
+        }
+        const data = await consentsResponse.json();
         throw new Error(data.error || 'Failed to fetch consents');
       }
+
+      const data = await consentsResponse.json();
 
       setSummary(data.summary);
       setActiveConsents(data.consents.active || []);

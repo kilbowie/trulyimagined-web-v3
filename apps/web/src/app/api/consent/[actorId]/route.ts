@@ -1,5 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
+import { query } from '@/lib/db';
+
+interface ConsentRecord {
+  id: string;
+  actor_id: string;
+  action: string;
+  consent_type: string;
+  consent_scope: Record<string, unknown> | null;
+  project_name: string | null;
+  project_description: string | null;
+  requester_id?: string | null;
+  requester_type?: string | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+}
+
+interface ConsentResponse {
+  consentId: string;
+  consentType: string;
+  action: string;
+  scope: Record<string, unknown> | null;
+  projectName: string | null;
+  projectDescription: string | null;
+  grantedAt: string;
+  revokedAt?: string | null;
+  expiresAt?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
 
 /**
  * GET /api/consent/[actorId]?limit={n}&offset={n}
@@ -34,35 +65,127 @@ export async function GET(request: NextRequest, { params }: { params: { actorId:
 
     const actorId = params.actorId;
     const searchParams = request.nextUrl.searchParams;
-    const limit = searchParams.get('limit') || '100';
-    const offset = searchParams.get('offset') || '0';
+    const limit = parseInt(searchParams.get('limit') || '100');
+    const offset = parseInt(searchParams.get('offset') || '0');
     const action = searchParams.get('action');
 
-    // Build query string
-    const queryParams = new URLSearchParams({
-      limit,
-      offset,
-      ...(action && { action }),
-    });
+    // Build query - fetch from database directly
+    let sqlQuery = `
+      SELECT * FROM consent_log 
+      WHERE actor_id = $1
+    `;
+    const queryParams: (string | number)[] = [actorId];
 
-    // Call Lambda consent service
-    const lambdaUrl = process.env.CONSENT_SERVICE_URL || 'http://localhost:3001';
-    const url = `${lambdaUrl}/consent/${actorId}?${queryParams.toString()}`;
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return NextResponse.json(data, { status: response.status });
+    // Optional filter by action
+    if (action) {
+      sqlQuery += ` AND action = $${queryParams.length + 1}`;
+      queryParams.push(action);
     }
 
-    return NextResponse.json(data, { status: 200 });
+    sqlQuery += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${
+      queryParams.length + 2
+    }`;
+    queryParams.push(limit, offset);
+
+    // Execute query
+    const result = await query(sqlQuery, queryParams);
+
+    // Get total count (for pagination)
+    let countQuery = `SELECT COUNT(*) FROM consent_log WHERE actor_id = $1`;
+    const countParams: (string | number)[] = [actorId];
+
+    if (action) {
+      countQuery += ` AND action = $2`;
+      countParams.push(action);
+    }
+
+    const countResult = await query(countQuery, countParams);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    // Group consents by current status (active/revoked/expired)
+    const activeConsents: ConsentResponse[] = [];
+    const revokedConsents: ConsentResponse[] = [];
+    const expiredConsents: ConsentResponse[] = [];
+
+    // Map to track latest action per consent type + project
+    const latestByTypeProject = new Map<string, ConsentRecord>();
+
+    for (const record of result.rows) {
+      const key = `${record.consent_type}:${record.consent_scope?.projectId || 'general'}`;
+
+      const existing = latestByTypeProject.get(key);
+      if (!existing || new Date(record.created_at) > new Date(existing.created_at)) {
+        latestByTypeProject.set(key, record);
+      }
+    }
+
+    // Categorize consents
+    for (const [, record] of latestByTypeProject) {
+      const consentObj = {
+        consentId: record.id,
+        consentType: record.consent_type,
+        action: record.action,
+        scope: record.consent_scope,
+        projectName: record.project_name,
+        projectDescription: record.project_description,
+        grantedAt: record.created_at,
+        metadata: record.metadata,
+      };
+
+      if (record.action === 'granted') {
+        // Check expiry
+        const scope = record.consent_scope as { duration?: { endDate?: string } } | null;
+        const expiryDateStr = scope?.duration?.endDate;
+        const expiryDate = expiryDateStr ? new Date(expiryDateStr) : null;
+
+        if (expiryDate && expiryDate < new Date()) {
+          expiredConsents.push({ ...consentObj, expiresAt: expiryDate.toISOString() });
+        } else {
+          activeConsents.push({ ...consentObj, expiresAt: expiryDate?.toISOString() || null });
+        }
+      } else if (record.action === 'revoked') {
+        revokedConsents.push({ ...consentObj, revokedAt: record.created_at });
+      }
+    }
+
+    console.log('[CONSENT] List consents:', {
+      actorId,
+      totalRecords: result.rows.length,
+      active: activeConsents.length,
+      revoked: revokedConsents.length,
+      expired: expiredConsents.length,
+    });
+
+    return NextResponse.json({
+      actorId,
+      summary: {
+        active: activeConsents.length,
+        revoked: revokedConsents.length,
+        expired: expiredConsents.length,
+        totalRecords: totalCount,
+      },
+      consents: {
+        active: activeConsents,
+        revoked: revokedConsents,
+        expired: expiredConsents,
+      },
+      fullHistory: result.rows.map((record) => ({
+        id: record.id,
+        action: record.action,
+        consentType: record.consent_type,
+        scope: record.consent_scope,
+        projectName: record.project_name,
+        timestamp: record.created_at,
+        metadata: record.metadata,
+      })),
+      pagination: {
+        limit,
+        offset,
+        total: totalCount,
+        hasMore: offset + limit < totalCount,
+      },
+      message: 'Consent ledger is append-only and immutable',
+    });
   } catch (error: unknown) {
     console.error('[API] List consents error:', error);
     const err = error as Error;
