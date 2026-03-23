@@ -142,7 +142,9 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // Legacy credential without status list - just update database
-      console.log(`Legacy credential ${credentialId} does not have status list entry. Marking as revoked in database only.`);
+      console.log(
+        `Legacy credential ${credentialId} does not have status list entry. Marking as revoked in database only.`
+      );
       await pool.query(
         `UPDATE verifiable_credentials 
          SET is_revoked = true, revoked_at = NOW(), updated_at = NOW() 
@@ -172,7 +174,7 @@ export async function POST(request: NextRequest) {
     // 11. Return success response
     return NextResponse.json({
       success: true,
-      message: hasStatusEntry 
+      message: hasStatusEntry
         ? 'Credential revoked successfully (W3C Bitstring Status List updated)'
         : 'Legacy credential revoked successfully (database-only revocation)',
       credentialId,

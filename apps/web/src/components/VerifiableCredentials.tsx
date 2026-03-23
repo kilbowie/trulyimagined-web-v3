@@ -159,10 +159,10 @@ export function VerifiableCredentialsCard() {
       await fetchCredentials();
 
       // Show appropriate success message
-      const message = data.legacy 
+      const message = data.legacy
         ? '✅ Legacy credential revoked successfully!\n\nNote: This credential was created before W3C Status List implementation, so revocation is recorded in the database only.'
         : '✅ Credential revoked successfully!\n\nThe W3C Bitstring Status List has been updated.';
-      
+
       alert(message);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to revoke credential');

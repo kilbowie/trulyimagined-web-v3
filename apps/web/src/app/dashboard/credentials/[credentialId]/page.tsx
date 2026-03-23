@@ -172,10 +172,10 @@ export default function CredentialDetailPage() {
       }
 
       // Show appropriate success message
-      const message = responseData.legacy 
+      const message = responseData.legacy
         ? '✅ Legacy credential revoked successfully!\n\nNote: This credential was created before W3C Status List implementation, so revocation is recorded in the database only.'
         : '✅ Credential revoked successfully!\n\nThe W3C Bitstring Status List has been updated.';
-      
+
       alert(message);
       await fetchCredential(); // Refresh to show revoked status
     } catch (err) {
