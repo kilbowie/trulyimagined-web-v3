@@ -14,21 +14,27 @@
 **File**: `apps/web/src/app/dashboard/page.tsx`
 
 **Implementation**:
+
 ```tsx
-{/* Debug Links - Admin Only */}
-{hasAdminRole && (
-  <div className="mt-6 text-center text-sm text-gray-500">
-    <Link href="/debug-roles">Debug Roles</Link>
-    {' • '}
-    <Link href="/auth/profile">View Raw Profile</Link>
-  </div>
-)}
+{
+  /* Debug Links - Admin Only */
+}
+{
+  hasAdminRole && (
+    <div className="mt-6 text-center text-sm text-gray-500">
+      <Link href="/debug-roles">Debug Roles</Link>
+      {' • '}
+      <Link href="/auth/profile">View Raw Profile</Link>
+    </div>
+  );
+}
 ```
 
 **Before**: Debug links visible to all roles (Actor, Agent, Enterprise, Admin)  
 **After**: Debug links only visible to Admin role
 
 **Testing**:
+
 - Admin users: Will see debug links
 - Actor/Agent/Enterprise users: Will NOT see debug links
 - Dashboard maintains role-based Quick Actions for all roles
@@ -45,6 +51,7 @@
 **Script Created**: `verify-email-auth0.js`
 
 **Execution Result**:
+
 ```
 ✓ Management API token obtained
 ✓ User found: auth0|69c0a8726e8cd2f46877d134
@@ -58,6 +65,7 @@ Verification Summary:
 ```
 
 **Effect**:
+
 - User can now log in and access full dashboard features
 - Email verification status will show: ✅ Yes on dashboard
 - User can access consent onboarding flow
@@ -84,6 +92,7 @@ Verification Summary:
 ### Test Dashboard Cleanup
 
 1. **As Admin** (adam@kilbowieconsulting.com):
+
    ```bash
    # Login at http://localhost:3000/auth/login
    # Navigate to dashboard
@@ -91,6 +100,7 @@ Verification Summary:
    ```
 
 2. **As Actor** (adamrossgreene@gmail.com):
+
    ```bash
    # Login at http://localhost:3000/auth/login
    # Navigate to dashboard
@@ -108,6 +118,7 @@ Verification Summary:
 ### Test Email Verification
 
 1. **Login as adamrossgreene@gmail.com**:
+
    ```bash
    # Go to http://localhost:3000/auth/login
    # Login with credentials
@@ -134,6 +145,7 @@ The verification script uses Auth0 Management API with these credentials:
 - **Client Secret**: `AUTH0_CLIENT_SECRET` (stored in .env.local)
 
 **Required Scopes**:
+
 - `read:users` - To find users by email
 - `update:users` - To mark email as verified
 
@@ -144,16 +156,19 @@ The verification script uses Auth0 Management API with these credentials:
 ## 📊 Impact Assessment
 
 ### Dashboard UX Improvement
+
 - **Before**: All users saw debug links (confusing for non-technical users)
 - **After**: Only admins see debug links (cleaner UX for Actor/Agent/Enterprise)
 - **Line Count**: 4 lines of code added (conditional wrapper)
 
 ### Email Verification
+
 - **Before**: `adamrossgreene@gmail.com` had unverified email (blocked onboarding flows)
 - **After**: Email verified ✅ (full access to consent features)
 - **Automation**: Reusable script for future email verifications
 
 ### Testing Readiness
+
 - ✅ Admin dashboard fully functional
 - ✅ Actor testing account ready for consent onboarding
 - ✅ Debug features preserved for admin troubleshooting
@@ -164,18 +179,21 @@ The verification script uses Auth0 Management API with these credentials:
 ## 🚀 Next Steps
 
 ### 1. Manual UI Testing (High Priority)
+
 - Test dashboard as Admin (should see debug links)
 - Test dashboard as Actor (should NOT see debug links)
 - Verify email verification status displays correctly
 - Test consent onboarding flow with adamrossgreene@gmail.com
 
 ### 2. Consent Onboarding Testing
+
 - Login as adamrossgreene@gmail.com
 - Navigate to consent features
 - Verify email verification allows full access
 - Test consent granting/revoking flows
 
 ### 3. Step 12 Usage Tracking (Manual Testing)
+
 - Start dev server: `pnpm dev`
 - Navigate to /usage as admin
 - Verify metrics display correctly
@@ -183,6 +201,7 @@ The verification script uses Auth0 Management API with these credentials:
 - Post test usage via API
 
 ### 4. Step 13 Planning (Business Development)
+
 - Determine technical support needed for First Customers phase
 - Options:
   - Landing pages / marketing materials

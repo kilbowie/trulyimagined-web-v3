@@ -1,9 +1,9 @@
 /**
  * Verify Email in Auth0
- * 
+ *
  * This script verifies an email address in Auth0 using the Management API.
  * Email verification is required for consent onboarding and other features.
- * 
+ *
  * Usage: node verify-email-auth0.js
  */
 
@@ -175,14 +175,14 @@ async function main() {
     console.error();
     log('red', '❌', `Error: ${error.message}`);
     console.log();
-    
+
     if (error.message.includes('credentials')) {
       console.log('Troubleshooting:');
       console.log('  - Check AUTH0_M2M_CLIENT_ID and AUTH0_M2M_CLIENT_SECRET in .env.local');
       console.log('  - Ensure the application has "Management API" access in Auth0 Dashboard');
       console.log('  - Required scopes: read:users, update:users');
     }
-    
+
     process.exit(1);
   }
 }
