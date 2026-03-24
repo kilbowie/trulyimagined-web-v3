@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
+import { encryptJSON } from '@trulyimagined/utils';
 
 /**
  * POST /api/identity/link
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
 
       // If exists but inactive, reactivate it
       if (!existing.is_active) {
+        // Encrypt credential_data before storing (Step 11: Database Encryption)
+        const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
+        
         await query(
           `UPDATE identity_links 
            SET is_active = TRUE, 
@@ -103,7 +107,7 @@ export async function POST(request: NextRequest) {
           [
             verificationLevel || null,
             assuranceLevel || null,
-            credentialData ? JSON.stringify(credentialData) : null,
+            encryptedCredentialData,
             metadata ? JSON.stringify(metadata) : null,
             expiresAt || null,
             existing.id,
@@ -141,6 +145,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Create new identity link
+    // Encrypt credential_data before storing (Step 11: Database Encryption)
+    const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
+    
     const result = await query(
       `INSERT INTO identity_links (
         user_profile_id,
@@ -163,7 +170,7 @@ export async function POST(request: NextRequest) {
         providerType,
         verificationLevel || 'medium',
         assuranceLevel || null,
-        credentialData ? JSON.stringify(credentialData) : null,
+        encryptedCredentialData,
         metadata ? JSON.stringify(metadata) : null,
         expiresAt || null,
       ]

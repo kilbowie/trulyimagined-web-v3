@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { pool } from '@/lib/db';
 import { verifyCredential, type VerifiableCredential } from '@/lib/verifiable-credentials';
+import { decryptJSON } from '@trulyimagined/utils';
 
 // ===========================================
 // GET /api/credentials/[credentialId]
@@ -107,7 +108,8 @@ export async function GET(request: NextRequest, { params }: { params: { credenti
     }
 
     // 5. Parse credential JSON
-    const credential: VerifiableCredential = credentialData.credential_json;
+    // Decrypt credential_json from database (Step 11: Database Encryption)
+    const credential: VerifiableCredential = decryptJSON(credentialData.credential_json);
 
     // 6. Build metadata
     const metadata = {

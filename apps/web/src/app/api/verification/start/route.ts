@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
 import { createVerificationSession } from '@/lib/stripe';
+import { encryptJSON } from '@trulyimagined/utils';
 
 /**
  * POST /api/verification/start
@@ -218,6 +219,21 @@ async function startMockVerification(userProfile: Record<string, unknown>) {
   const verificationId = `mock-${Date.now()}`;
   const userId = userProfile.id as string;
 
+  // Prepare credential data
+  const credentialData = {
+    legalName: userProfile.legal_name,
+    professionalName: userProfile.professional_name,
+    email: userProfile.email,
+    documentType: 'passport',
+    documentNumber: 'MOCK1234567',
+    documentVerified: true,
+    livenessCheck: true,
+    verifiedAt: new Date().toISOString(),
+  };
+
+  // Encrypt credential_data before storing (Step 11: Database Encryption)
+  const encryptedCredentialData = encryptJSON(credentialData);
+
   // Create mock identity link with high verification level
   const linkResult = await query(
     `INSERT INTO identity_links (
@@ -240,16 +256,7 @@ async function startMockVerification(userProfile: Record<string, unknown>) {
       'kyc',
       'high',
       'high',
-      JSON.stringify({
-        legalName: userProfile.legal_name,
-        professionalName: userProfile.professional_name,
-        email: userProfile.email,
-        documentType: 'passport',
-        documentNumber: 'MOCK1234567',
-        documentVerified: true,
-        livenessCheck: true,
-        verifiedAt: new Date().toISOString(),
-      }),
+      encryptedCredentialData,
       JSON.stringify({
         provider: 'Mock KYC Provider',
         environment: 'development',

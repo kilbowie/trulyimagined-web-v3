@@ -30,6 +30,9 @@ yarn-error.log*
 *.key
 *.crt
 
+# Encryption keys (Step 11)
+.encryption-key.local
+
 # Testing
 coverage/
 .nyc_output/

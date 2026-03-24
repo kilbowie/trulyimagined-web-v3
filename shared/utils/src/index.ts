@@ -5,6 +5,18 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { ApiResponse } from '@trulyimagined/types';
 
+// ==================== ENCRYPTION ====================
+
+export {
+  encryptField,
+  decryptField,
+  encryptJSON,
+  decryptJSON,
+  isEncrypted,
+  generateEncryptionKey,
+  rotateKey,
+} from './crypto';
+
 // ==================== ID GENERATION ====================
 
 export function generateId(): string {

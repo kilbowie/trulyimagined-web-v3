@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe, mapStripeStatusToVerificationLevel, getVerifiedIdentityData } from '@/lib/stripe';
 import { query } from '@/lib/db';
+import { encryptJSON } from '@trulyimagined/utils';
 import Stripe from 'stripe';
 
 /**
@@ -140,6 +141,9 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
         linkId: existingLink.rows[0].id,
       });
 
+      // Encrypt credential_data before storing (Step 11: Database Encryption)
+      const encryptedCredentialData = encryptJSON(verifiedData);
+
       // Update existing link
       await query(
         `UPDATE identity_links 
@@ -154,7 +158,7 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
         [
           levels.verification_level,
           levels.assurance_level,
-          JSON.stringify(verifiedData),
+          encryptedCredentialData,
           JSON.stringify({
             stripe_session_id: session.id,
             gpg45_confidence: levels.gpg45_confidence,
@@ -169,6 +173,9 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
 
       console.log('[STRIPE WEBHOOK] Updated existing identity link');
     } else {
+      // Encrypt credential_data before storing (Step 11: Database Encryption)
+      const encryptedCredentialData = encryptJSON(verifiedData);
+
       // Create new identity link
       const linkResult = await query(
         `INSERT INTO identity_links (
@@ -191,7 +198,7 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
           'kyc',
           levels.verification_level,
           levels.assurance_level,
-          JSON.stringify(verifiedData),
+          encryptedCredentialData,
           JSON.stringify({
             stripe_session_id: session.id,
             gpg45_confidence: levels.gpg45_confidence,
@@ -270,6 +277,13 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
 
     console.log('[STRIPE WEBHOOK] Updated identity link to requires_input status');
   } else {
+    // Encrypt credential_data before storing (Step 11: Database Encryption)
+    const credentialData = {
+      status: 'requires_input',
+      last_error: session.last_error?.reason,
+    };
+    const encryptedCredentialData = encryptJSON(credentialData);
+
     // Create new link with requires_input status
     await query(
       `INSERT INTO identity_links (
@@ -290,10 +304,7 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
         'kyc',
         levels.verification_level,
         levels.assurance_level,
-        JSON.stringify({
-          status: 'requires_input',
-          last_error: session.last_error?.reason,
-        }),
+        encryptedCredentialData,
         JSON.stringify({
           stripe_session_id: session.id,
           gpg45_confidence: levels.gpg45_confidence,

@@ -34,6 +34,7 @@ import {
   CredentialTypeSchema,
 } from '@/lib/verifiable-credentials';
 import { allocateStatusIndex } from '@/lib/status-list-manager';
+import { encryptJSON } from '@trulyimagined/utils';
 import { z } from 'zod';
 
 // ===========================================
@@ -170,6 +171,9 @@ export async function POST(request: NextRequest) {
     const holderDid = `did:web:trulyimagined.com:users:${profile.id}`;
 
     // 8. Pre-allocate database record to get credential ID (for status list allocation)
+    // Use placeholder encrypted data
+    const placeholderEncrypted = encryptJSON({});
+
     const preInsertResult = await pool.query(
       `INSERT INTO verifiable_credentials (
         user_profile_id,
@@ -185,7 +189,7 @@ export async function POST(request: NextRequest) {
       [
         profile.id,
         credentialType,
-        JSON.stringify({}), // Temporary placeholder
+        placeholderEncrypted, // Temporary placeholder (encrypted)
         'did:web:trulyimagined.com',
         holderDid,
         new Date().toISOString(),
@@ -214,6 +218,9 @@ export async function POST(request: NextRequest) {
     });
 
     // 11. Update credential in database with final signed credential
+    // Encrypt credential_json before storing (Step 11: Database Encryption)
+    const encryptedCredential = encryptJSON(credential);
+
     await pool.query(
       `UPDATE verifiable_credentials 
        SET credential_json = $1,
@@ -222,7 +229,7 @@ export async function POST(request: NextRequest) {
            updated_at = NOW()
        WHERE id = $4`,
       [
-        JSON.stringify(credential),
+        encryptedCredential,
         credential.id, // Unique credential ID from W3C VC
         credential.validUntil || null,
         credentialDbId,

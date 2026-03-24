@@ -23,6 +23,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { pool } from '@/lib/db';
+import { decryptJSON } from '@trulyimagined/utils';
 import type { VerifiableCredential } from '@/lib/verifiable-credentials';
 
 export async function GET(request: NextRequest) {
@@ -89,7 +90,8 @@ export async function GET(request: NextRequest) {
 
     // 6. Format response
     const credentials = credentialsResult.rows.map((row) => {
-      const credential: VerifiableCredential = row.credential_json;
+      // Decrypt credential_json from database (Step 11: Database Encryption)
+      const credential: VerifiableCredential = decryptJSON(row.credential_json);
 
       return {
         credential,
