@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@trulyimagined/types": "workspace:*",
+    "@aws-sdk/client-secrets-manager": "^3.515.0",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

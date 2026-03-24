@@ -20,6 +20,7 @@
     "test": "pnpm -r test"
   },
   "devDependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.515.0",
     "@types/node": "^20.11.0",
     "@typescript-eslint/eslint-plugin": "^6.19.0",
     "@typescript-eslint/parser": "^6.19.0",

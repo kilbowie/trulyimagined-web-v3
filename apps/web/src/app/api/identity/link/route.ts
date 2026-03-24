@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       if (!existing.is_active) {
         // Encrypt credential_data before storing (Step 11: Database Encryption)
         const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
-        
+
         await query(
           `UPDATE identity_links 
            SET is_active = TRUE, 
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
     // Create new identity link
     // Encrypt credential_data before storing (Step 11: Database Encryption)
     const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
-    
+
     const result = await query(
       `INSERT INTO identity_links (
         user_profile_id,

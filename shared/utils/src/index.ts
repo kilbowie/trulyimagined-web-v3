@@ -17,6 +17,16 @@ export {
   rotateKey,
 } from './crypto';
 
+// ==================== SECRETS MANAGEMENT ====================
+
+export {
+  getSecret,
+  clearSecretCache,
+  getSecretCacheStats,
+  validateSecrets,
+} from './secrets';
+export type { SecretName } from './secrets';
+
 // ==================== ID GENERATION ====================
 
 export function generateId(): string {
