@@ -2,7 +2,7 @@
 
 **Date**: March 24, 2026  
 **Status**: ✅ COMPLETE (Phase 1)  
-**Region**: eu-west-2  
+**Region**: eu-west-2
 
 ---
 
@@ -11,6 +11,7 @@
 ### ✅ Completed
 
 **Secret Migrated:**
+
 - `prod/encryption-key` (AES-256 database encryption key)
   - **ARN**: `arn:aws:secretsmanager:eu-west-2:440779547223:secret:prod/encryption-key-92KiIe`
   - **Description**: AES-256 key for database field encryption (Step 11)
@@ -19,6 +20,7 @@
   - **Created**: 2026-03-24T13:47:43Z
 
 **Verification:**
+
 ```bash
 # Secret successfully retrieved via AWS CLI
 aws secretsmanager get-secret-value --secret-id prod/encryption-key --region eu-west-2
@@ -129,6 +131,7 @@ const ENCRYPTION_KEY = await getSecret('prod/encryption-key');
 ```
 
 **Files to update:**
+
 - `apps/web/src/app/api/identity/link/route.ts`
 - `apps/web/src/app/api/verification/start/route.ts`
 - `apps/web/src/app/api/webhooks/stripe/route.ts`
@@ -170,20 +173,21 @@ aws cloudwatch put-metric-alarm \
 
 ### ✅ Before vs. After
 
-| Security Aspect | Before (.env.local) | After (Secrets Manager) |
-|----------------|---------------------|------------------------|
-| Encryption at rest | ❌ None | ✅ AES-256-GCM (KMS) |
-| Access control | ❌ File system | ✅ IAM policies |
-| Audit trail | ❌ None | ✅ CloudTrail |
-| Rotation | ❌ Manual | ✅ Automatic (90 days) |
-| Multi-AZ backup | ❌ None | ✅ Automatic |
-| Compliance | ❌ Not compliant | ✅ SOC 2, GDPR, PCI DSS |
+| Security Aspect    | Before (.env.local) | After (Secrets Manager) |
+| ------------------ | ------------------- | ----------------------- |
+| Encryption at rest | ❌ None             | ✅ AES-256-GCM (KMS)    |
+| Access control     | ❌ File system      | ✅ IAM policies         |
+| Audit trail        | ❌ None             | ✅ CloudTrail           |
+| Rotation           | ❌ Manual           | ✅ Automatic (90 days)  |
+| Multi-AZ backup    | ❌ None             | ✅ Automatic            |
+| Compliance         | ❌ Not compliant    | ✅ SOC 2, GDPR, PCI DSS |
 
 ---
 
 ## Cost
 
 **Monthly**: ~$0.50
+
 - Secret storage: 1 secret × $0.40 = $0.40
 - API calls: ~1,000/month × $0.05/10K = $0.01
 - KMS: Included (uses default AWS key)
@@ -197,11 +201,12 @@ aws cloudwatch put-metric-alarm \
 ## Production Readiness Impact
 
 **Before Migration**: 85% production-ready  
-**After Migration**: 90% production-ready  
+**After Migration**: 90% production-ready
 
 **Critical Blocker Resolved**: ✅ Encryption keys no longer stored in plaintext files
 
 **Remaining Work** (non-blocking):
+
 - Migrate remaining secrets when services configured (Phase 2)
 - Enable automatic rotation (optional, can be done anytime)
 - Configure CloudWatch alarms (optional, monitoring enhancement)
@@ -211,6 +216,7 @@ aws cloudwatch put-metric-alarm \
 ## References
 
 For detailed documentation, see:
+
 - [AWS_SECRETS_MANAGER_MIGRATION.md](./AWS_SECRETS_MANAGER_MIGRATION.md) - Complete guide
 - [AWS_SECRETS_QUICK_REFERENCE.md](./AWS_SECRETS_QUICK_REFERENCE.md) - Commands & examples
 - [AWS_SECRETS_MIGRATION_SUMMARY.md](./AWS_SECRETS_MIGRATION_SUMMARY.md) - Executive summary

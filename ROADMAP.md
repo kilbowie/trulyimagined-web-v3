@@ -289,6 +289,7 @@ Measure platform activity
 - [ ] Link to actors
 
 ---
+
 ## ðŸ"' Security & Infrastructure Hardening
 
 ### Objective:
@@ -311,6 +312,7 @@ Complete production security setup
 **Note**: Run `node scripts/migrate-secrets-to-aws.js prod` after adding each secret to `.env.local`
 
 ---
+
 ## âœ… Phase 2 Success Criteria
 
 - [ ] 300â€“500 actors onboarded
