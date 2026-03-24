@@ -3,7 +3,7 @@
 **Date:** March 2026  
 **Step:** 11 (Database Encryption) - Production Hardening  
 **Status:** ✅ Ready for implementation  
-**Priority:** Critical Security Blocker  
+**Priority:** Critical Security Blocker
 
 ---
 
@@ -14,6 +14,7 @@
 **Solution:** Migrate all secrets to AWS Secrets Manager with encryption, audit logging, and automatic rotation
 
 **Impact:**
+
 - ✅ Eliminates #1 production security risk
 - ✅ Achieves SOC 2 / GDPR / PCI DSS compliance
 - ✅ Enables automatic key rotation (zero downtime)
@@ -31,6 +32,7 @@
 ### 1. Comprehensive Documentation
 
 **[AWS_SECRETS_MANAGER_MIGRATION.md](./AWS_SECRETS_MANAGER_MIGRATION.md)** (10,000+ words)
+
 - Why AWS Secrets Manager is best practice (10 security vulnerabilities with .env files)
 - Real-world breach examples (Capital One 2019, Codecov 2021)
 - Architecture diagrams (deployment pattern, access flow)
@@ -41,6 +43,7 @@
 - Monitoring & alerting setup (CloudWatch, CloudTrail)
 
 **[AWS_SECRETS_QUICK_REFERENCE.md](./AWS_SECRETS_QUICK_REFERENCE.md)** (3,000+ words)
+
 - Quick start guide (6 steps to production)
 - Installation instructions (pnpm, AWS CLI)
 - Usage examples (code snippets for API routes)
@@ -53,6 +56,7 @@
 ### 2. Implementation Code
 
 **[shared/utils/src/secrets.ts](./shared/utils/src/secrets.ts)** (350+ lines)
+
 - Type-safe secret retrieval (`getSecret()`)
 - Client-side caching (5-minute TTL, 99% hit rate)
 - Automatic environment detection (dev vs. prod)
@@ -63,16 +67,17 @@
 - Full TypeScript support with `SecretName` type
 
 **Features:**
+
 ```typescript
 // Type-safe secret names (autocomplete in IDE)
-type SecretName = 
+type SecretName =
   | 'prod/encryption-key'
   | 'prod/vc-issuer-key'
   | 'prod/consent-key'
   | 'prod/auth0-client-secret'
   | 'prod/stripe-secret-key'
   | 'prod/stripe-webhook-secret'
-  | 'staging/...' // Staging variants
+  | 'staging/...'; // Staging variants
 
 // Usage in code
 const key = await getSecret('prod/encryption-key'); // ✅ Type-checked
@@ -95,6 +100,7 @@ if (cached && cached.expiresAt > Date.now()) {
 ### 3. Migration Scripts
 
 **[scripts/migrate-secrets-to-aws.js](./scripts/migrate-secrets-to-aws.js)** (300+ lines)
+
 - Interactive migration script with confirmation prompts
 - Validates all required secrets exist in `.env.local`
 - Creates 6 secrets in AWS Secrets Manager:
@@ -110,6 +116,7 @@ if (cached && cached.expiresAt > Date.now()) {
 - Colored terminal output (success ✅, error ✗, warning ⚠, info ℹ)
 
 **[scripts/test-secrets-manager.js](./scripts/test-secrets-manager.js)** (250+ lines)
+
 - Validates AWS credentials configured
 - Tests retrieval of all 6 secrets
 - Measures performance (should be <100ms)
@@ -121,6 +128,7 @@ if (cached && cached.expiresAt > Date.now()) {
 ### 4. IAM Policy Template
 
 **[infra/iam/secrets-manager-readonly-policy.json](./infra/iam/secrets-manager-readonly-policy.json)**
+
 - Minimal read-only permissions (least privilege)
 - Production secrets: `prod/*` access only
 - Staging secrets: `staging/*` access only
@@ -131,6 +139,7 @@ if (cached && cached.expiresAt > Date.now()) {
 - Explicit deny for unencrypted transport
 
 **Usage:**
+
 ```bash
 # Create IAM policy
 aws iam create-policy \
@@ -146,12 +155,15 @@ aws iam attach-user-policy \
 ### 5. Package Updates
 
 **[package.json](./package.json)** (root)
+
 - Added `@aws-sdk/client-secrets-manager` as devDependency (for scripts)
 
 **[shared/utils/package.json](./shared/utils/package.json)**
+
 - Added `@aws-sdk/client-secrets-manager` as dependency (for application code)
 
 **[shared/utils/src/index.ts](./shared/utils/src/index.ts)**
+
 - Exported secrets management functions:
   - `getSecret()`
   - `clearSecretCache()`
@@ -218,6 +230,7 @@ const ENCRYPTION_KEY = await getSecret('prod/encryption-key');
 ```
 
 **Files to Update:**
+
 1. `apps/web/src/app/api/identity/link/route.ts`
 2. `apps/web/src/app/api/verification/start/route.ts`
 3. `apps/web/src/app/api/webhooks/stripe/route.ts`
@@ -256,6 +269,7 @@ aws cloudtrail lookup-events \
 ### ✅ Step 11 Encryption Tests (Complete)
 
 **Unit Tests:** 20/20 passing
+
 - Basic encryption/decryption (4 tests)
 - JSON encryption/decryption (5 tests)
 - Tamper detection (3 tests)
@@ -264,6 +278,7 @@ aws cloudtrail lookup-events \
 - Error handling (3 tests)
 
 **Integration Tests:** 12/12 passing
+
 - Stripe Identity credential_data (3 tests)
 - W3C Verifiable Credentials (3 tests)
 - Mock verification data (1 test)
@@ -273,6 +288,7 @@ aws cloudtrail lookup-events \
 **Total:** 32/32 tests passing (100% success rate)
 
 **What This Validates:**
+
 - ✅ Encryption algorithm correct (AES-256-GCM)
 - ✅ Compatible with Stripe API data structures
 - ✅ Compatible with W3C Verifiable Credentials
@@ -287,31 +303,31 @@ aws cloudtrail lookup-events \
 
 ### ❌ Before (Environment Variables in .env.local)
 
-| Security Aspect | Status | Risk Level |
-|----------------|--------|------------|
-| Encryption at rest | ❌ None | Critical |
-| Access control | ❌ File system | High |
-| Audit trail | ❌ None | High |
-| Rotation | ❌ Manual | High |
-| Key backup | ❌ Developer responsibility | High |
-| Compliance | ❌ Not SOC 2 / PCI DSS compliant | Critical |
-| Multi-region | ❌ Single workstation | High |
-| Availability | ❌ No SLA | Medium |
+| Security Aspect    | Status                           | Risk Level |
+| ------------------ | -------------------------------- | ---------- |
+| Encryption at rest | ❌ None                          | Critical   |
+| Access control     | ❌ File system                   | High       |
+| Audit trail        | ❌ None                          | High       |
+| Rotation           | ❌ Manual                        | High       |
+| Key backup         | ❌ Developer responsibility      | High       |
+| Compliance         | ❌ Not SOC 2 / PCI DSS compliant | Critical   |
+| Multi-region       | ❌ Single workstation            | High       |
+| Availability       | ❌ No SLA                        | Medium     |
 
 **Overall Risk:** 🔴 **Critical - Not production-safe**
 
 ### ✅ After (AWS Secrets Manager)
 
-| Security Aspect | Status | Risk Level |
-|----------------|--------|------------|
-| Encryption at rest | ✅ AES-256-GCM (FIPS 140-2 L3) | None |
-| Access control | ✅ IAM policies | None |
-| Audit trail | ✅ CloudTrail (who/when/what) | None |
-| Rotation | ✅ Automatic (90/365 days) | None |
-| Key backup | ✅ Multi-AZ replication | None |
-| Compliance | ✅ SOC 2, GDPR, PCI DSS | None |
-| Multi-region | ✅ Replication available | None |
-| Availability | ✅ 99.99% SLA | None |
+| Security Aspect    | Status                         | Risk Level |
+| ------------------ | ------------------------------ | ---------- |
+| Encryption at rest | ✅ AES-256-GCM (FIPS 140-2 L3) | None       |
+| Access control     | ✅ IAM policies                | None       |
+| Audit trail        | ✅ CloudTrail (who/when/what)  | None       |
+| Rotation           | ✅ Automatic (90/365 days)     | None       |
+| Key backup         | ✅ Multi-AZ replication        | None       |
+| Compliance         | ✅ SOC 2, GDPR, PCI DSS        | None       |
+| Multi-region       | ✅ Replication available       | None       |
+| Availability       | ✅ 99.99% SLA                  | None       |
 
 **Overall Risk:** 🟢 **Low - Production-ready**
 
@@ -321,13 +337,13 @@ aws cloudtrail lookup-events \
 
 ### Monthly Costs
 
-| Service | Usage | Cost |
-|---------|-------|------|
-| Secrets Manager storage | 6 secrets × $0.40 | $2.40 |
-| API calls (with caching) | 3,300/month × $0.05/10K | $0.02 |
-| KMS key | 1 key × $1.00 | $1.00 |
-| CloudTrail logs | ~100MB/month × $0.10 | $0.10 |
-| **Total** | | **$3.52/month** |
+| Service                  | Usage                   | Cost            |
+| ------------------------ | ----------------------- | --------------- |
+| Secrets Manager storage  | 6 secrets × $0.40       | $2.40           |
+| API calls (with caching) | 3,300/month × $0.05/10K | $0.02           |
+| KMS key                  | 1 key × $1.00           | $1.00           |
+| CloudTrail logs          | ~100MB/month × $0.10    | $0.10           |
+| **Total**                |                         | **$3.52/month** |
 
 **Annual Cost:** $42.24/year
 
@@ -338,6 +354,7 @@ aws cloudtrail lookup-events \
 **ROI:** 105,000x annual return
 
 **Perspective:**
+
 - $3.52/month = 1 cup of coffee ☕
 - Average data breach = 1,264,204 cups of coffee ☕☕☕
 
@@ -348,24 +365,29 @@ aws cloudtrail lookup-events \
 ### ✅ Post-Migration Compliance
 
 **SOC 2 Type II:**
+
 - ✅ CC6.7: Encryption keys in dedicated key management system
 - ✅ CC7.2: System monitoring (CloudWatch alarms)
 - ✅ CC8.1: Change detection (CloudTrail audit logs)
 
 **GDPR Article 32:**
+
 - ✅ Encryption of personal data
 - ✅ Ongoing confidentiality (automatic rotation)
 - ✅ Regular testing (rotation testing)
 
 **PCI DSS v4.0:**
+
 - ✅ 3.5.1: Cryptographic keys in key management system
 - ✅ 3.6.1: Key rotation procedures
 - ✅ 10.3.4: Access to cryptographic material logged
 
 **UK Trust Framework (eIDAS):**
+
 - ✅ TC-4: Key management system for LOA3 (high assurance)
 
 **Audit Evidence Available:**
+
 - CloudTrail logs (who accessed keys, when)
 - Rotation schedules (automatic rotation configured)
 - IAM policies (least privilege documented)
@@ -378,16 +400,19 @@ aws cloudtrail lookup-events \
 ### CloudWatch Alarms (Recommended)
 
 **1. Secret Access Failures**
+
 - Metric: `secretsmanager:GetSecretValue` errors
 - Threshold: > 5 errors in 5 minutes
 - Action: Email + PagerDuty alert
 
 **2. High API Call Volume (Cost Alert)**
+
 - Metric: `secretsmanager:GetSecretValue` count
 - Threshold: > 1,000 calls/hour
 - Action: Email cost team
 
 **3. Unauthorized Access Attempts**
+
 - Metric: CloudTrail `AccessDenied` events
 - Threshold: > 0 in 1 minute
 - Action: Security team alert + PagerDuty
@@ -395,6 +420,7 @@ aws cloudtrail lookup-events \
 ### CloudTrail Queries
 
 **Recent secret access:**
+
 ```sql
 SELECT userIdentity.principalId, eventTime, sourceIPAddress
 FROM cloudtrail_logs
@@ -405,6 +431,7 @@ LIMIT 100
 ```
 
 **Rotation history:**
+
 ```sql
 SELECT eventTime, responseElements.versionId
 FROM cloudtrail_logs
@@ -418,6 +445,7 @@ ORDER BY eventTime DESC
 ## Next Steps (Post-Implementation)
 
 ### Week 1: Basic Hardening
+
 - [ ] Deploy to staging environment first
 - [ ] Run full test suite (32 tests)
 - [ ] Monitor CloudWatch metrics (7 days)
@@ -425,18 +453,21 @@ ORDER BY eventTime DESC
 - [ ] Verify CloudTrail logging active
 
 ### Week 2: Advanced Security
+
 - [ ] Enable automatic rotation (90/365 days)
 - [ ] Configure CloudWatch alarms
 - [ ] Test rotation process (trigger manual rotation)
 - [ ] Document runbooks (rotation failures, access denied)
 
 ### Month 1: Optimization
+
 - [ ] Review CloudTrail logs (identify access patterns)
 - [ ] Optimize cache TTL if needed (5 min default)
 - [ ] Cost analysis (actual vs. estimated)
 - [ ] Consider VPC endpoint (if high security requirements)
 
 ### Ongoing (Monthly)
+
 - [ ] Review CloudTrail audit logs
 - [ ] Test secret retrieval (smoke test)
 - [ ] Validate rotation schedules
@@ -447,23 +478,26 @@ ORDER BY eventTime DESC
 ## Rollback Plan (Emergency)
 
 ### Option 1: Immediate Vercel Rollback (30 seconds)
+
 ```bash
 vercel rollback
 # Reverts to previous deployment (uses .env.local via Vercel env vars)
 ```
 
 ### Option 2: Emergency Environment Override (1 minute)
+
 ```bash
 # Add emergency override to Vercel
 vercel env add EMERGENCY_ENCRYPTION_KEY_OVERRIDE production
 # Paste value from .env.local
 
 # Code automatically uses override:
-const key = process.env.EMERGENCY_ENCRYPTION_KEY_OVERRIDE 
+const key = process.env.EMERGENCY_ENCRYPTION_KEY_OVERRIDE
   || await getSecret('prod/encryption-key');
 ```
 
 ### Option 3: Feature Flag Disable (2 minutes)
+
 ```bash
 # Disable Secrets Manager via feature flag
 vercel env add ENABLE_SECRETS_MANAGER production
@@ -482,11 +516,13 @@ if (process.env.ENABLE_SECRETS_MANAGER !== 'false') {
 ## Files Created/Modified
 
 ### Documentation (3 files)
+
 1. **AWS_SECRETS_MANAGER_MIGRATION.md** (10,000 words) - Complete migration guide
 2. **AWS_SECRETS_QUICK_REFERENCE.md** (3,000 words) - Quick reference
 3. **This file** - Summary document
 
 ### Implementation (5 files)
+
 1. **shared/utils/src/secrets.ts** (350 lines) - Secrets Manager client library
 2. **shared/utils/src/index.ts** (updated) - Export secrets functions
 3. **shared/utils/package.json** (updated) - Add AWS SDK dependency
@@ -495,6 +531,7 @@ if (process.env.ENABLE_SECRETS_MANAGER !== 'false') {
 6. **scripts/test-secrets-manager.js** (250 lines) - Test script
 
 ### Infrastructure (1 file)
+
 1. **infra/iam/secrets-manager-readonly-policy.json** - IAM policy template
 
 **Total:** 9 files (3 docs + 5 code + 1 IAM policy)
@@ -534,6 +571,7 @@ if (process.env.ENABLE_SECRETS_MANAGER !== 'false') {
 **Production Readiness: 85%**
 
 Blockers:
+
 - 🔴 Encryption keys in `.env.local` (not production-safe)
 - 🔴 No audit trail for key access
 - 🔴 No automatic key rotation
@@ -544,6 +582,7 @@ Blockers:
 **Production Readiness: 90%**
 
 Remaining work:
+
 - 🟡 Automatic rotation setup (nice-to-have, not blocker)
 - 🟡 CloudWatch alarms (nice-to-have, not blocker)
 - 🟡 VPC endpoint (optional, high-security orgs only)
@@ -556,26 +595,28 @@ Remaining work:
 
 ### Security Improvements
 
-| Aspect | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Key storage | `.env.local` file | AWS Secrets Manager | 🟢🟢🟢 |
-| Encryption at rest | ❌ None | ✅ AES-256-GCM | 🟢🟢🟢 |
-| Access control | File system | IAM policies | 🟢🟢🟢 |
-| Audit trail | ❌ None | CloudTrail | 🟢🟢🟢 |
-| Rotation | Manual | Automatic | 🟢🟢 |
-| Compliance | ❌ None | SOC 2, GDPR, PCI DSS | 🟢🟢🟢 |
-| Availability | No SLA | 99.99% SLA | 🟢🟢 |
-| Multi-region DR | ❌ None | Optional replication | 🟢 |
+| Aspect             | Before            | After                | Improvement |
+| ------------------ | ----------------- | -------------------- | ----------- |
+| Key storage        | `.env.local` file | AWS Secrets Manager  | 🟢🟢🟢      |
+| Encryption at rest | ❌ None           | ✅ AES-256-GCM       | 🟢🟢🟢      |
+| Access control     | File system       | IAM policies         | 🟢🟢🟢      |
+| Audit trail        | ❌ None           | CloudTrail           | 🟢🟢🟢      |
+| Rotation           | Manual            | Automatic            | 🟢🟢        |
+| Compliance         | ❌ None           | SOC 2, GDPR, PCI DSS | 🟢🟢🟢      |
+| Availability       | No SLA            | 99.99% SLA           | 🟢🟢        |
+| Multi-region DR    | ❌ None           | Optional replication | 🟢          |
 
 **Overall Security Posture:** 🔴 Critical Risk → 🟢 Production-Ready
 
 ### Cost Impact
 
 **Additional Costs:**
+
 - AWS Secrets Manager: $3.52/month
 - Developer effort (one-time): 4.5 hours ($810)
 
 **Cost Savings:**
+
 - Data breach risk reduction: $4.45M
 - Manual rotation time saved: ~2 hours/month
 - Compliance audit time saved: ~4 hours/quarter
@@ -589,6 +630,7 @@ Remaining work:
 **Status:** ✅ **Ready for implementation**
 
 **What We Built:**
+
 1. Complete Secrets Manager integration library (TypeScript)
 2. Interactive migration scripts (production-grade)
 3. Comprehensive documentation (10,000+ words)
@@ -597,6 +639,7 @@ Remaining work:
 6. Test validation (32/32 encryption tests passing)
 
 **Security Impact:**
+
 - Eliminates critical production blocker (#1 security risk)
 - Achieves SOC 2 / GDPR / PCI DSS compliance
 - Enables automatic key rotation (zero downtime)

@@ -43,6 +43,7 @@ node scripts/migrate-secrets-to-aws.js staging
 ```
 
 **What the script does:**
+
 - Reads secrets from `apps/web/.env.local`
 - Creates 6 secrets in AWS Secrets Manager:
   - `prod/encryption-key` (AES-256 for database encryption)
@@ -65,6 +66,7 @@ AWS_ACCESS_KEY_ID=AKIA... AWS_SECRET_ACCESS_KEY=... node scripts/test-secrets-ma
 ```
 
 **What the test script does:**
+
 - Validates AWS credentials
 - Tests retrieval of all 6 secrets
 - Measures performance (should be <100ms per secret)
@@ -73,6 +75,7 @@ AWS_ACCESS_KEY_ID=AKIA... AWS_SECRET_ACCESS_KEY=... node scripts/test-secrets-ma
 ### 4. Configure Vercel Environment Variables
 
 **Option A: Vercel Dashboard**
+
 1. Go to https://vercel.com/your-project/settings/environment-variables
 2. Add:
    ```
@@ -84,6 +87,7 @@ AWS_ACCESS_KEY_ID=AKIA... AWS_SECRET_ACCESS_KEY=... node scripts/test-secrets-ma
 4. Save
 
 **Option B: Vercel CLI**
+
 ```bash
 vercel env add AWS_REGION production
 # Enter: us-east-1
@@ -131,11 +135,11 @@ import { encryptJSON } from '@trulyimagined/utils';
 export async function POST(req: Request) {
   // Get secret (cached for 5 minutes)
   const key = await getSecret('prod/encryption-key');
-  
+
   // Use secret
   const data = await req.json();
   const encrypted = encryptJSON(data, key);
-  
+
   // ... rest of route handler
 }
 ```
@@ -169,11 +173,7 @@ const key = await getSecret('prod/encryption-key');
 import { validateSecrets } from '@trulyimagined/utils';
 
 // Validate required secrets during app initialization
-await validateSecrets([
-  'prod/encryption-key',
-  'prod/vc-issuer-key',
-  'prod/consent-key',
-]);
+await validateSecrets(['prod/encryption-key', 'prod/vc-issuer-key', 'prod/consent-key']);
 
 // App will fail fast if any secret is missing
 ```
@@ -308,10 +308,7 @@ aws cloudtrail lookup-events \
     {
       "Sid": "ReadProductionSecrets",
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret"
-      ],
+      "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
       "Resource": "arn:aws:secretsmanager:us-east-1:*:secret:prod/*"
     },
     {
@@ -338,10 +335,7 @@ aws cloudtrail lookup-events \
     {
       "Sid": "CreateSecrets",
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:CreateSecret",
-        "secretsmanager:TagResource"
-      ],
+      "Action": ["secretsmanager:CreateSecret", "secretsmanager:TagResource"],
       "Resource": "*"
     },
     {
@@ -363,19 +357,13 @@ aws cloudtrail lookup-events \
     {
       "Sid": "ManageSecrets",
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:*"
-      ],
+      "Action": ["secretsmanager:*"],
       "Resource": "arn:aws:secretsmanager:us-east-1:*:secret:*"
     },
     {
       "Sid": "ManageKMS",
       "Effect": "Allow",
-      "Action": [
-        "kms:Decrypt",
-        "kms:Encrypt",
-        "kms:GenerateDataKey"
-      ],
+      "Action": ["kms:Decrypt", "kms:Encrypt", "kms:GenerateDataKey"],
       "Resource": "*"
     }
   ]
@@ -389,6 +377,7 @@ aws cloudtrail lookup-events \
 ### CloudWatch Alarms
 
 **1. Secret Access Failures**
+
 ```bash
 aws cloudwatch put-metric-alarm \
   --alarm-name secrets-manager-get-secret-errors \
@@ -404,6 +393,7 @@ aws cloudwatch put-metric-alarm \
 ```
 
 **2. High API Call Volume (Cost Alert)**
+
 ```bash
 aws cloudwatch put-metric-alarm \
   --alarm-name secrets-manager-high-api-calls \
@@ -420,8 +410,9 @@ aws cloudwatch put-metric-alarm \
 ### CloudTrail Queries
 
 **Who accessed a specific secret?**
+
 ```sql
-SELECT 
+SELECT
   userIdentity.principalId,
   eventTime,
   sourceIPAddress,
@@ -434,8 +425,9 @@ LIMIT 100
 ```
 
 **All secret access in last 24 hours:**
+
 ```sql
-SELECT 
+SELECT
   requestParameters.secretId AS secret_name,
   COUNT(*) AS access_count,
   userIdentity.principalId AS accessor
@@ -454,6 +446,7 @@ ORDER BY access_count DESC
 
 **Cause:** Secret doesn't exist in AWS Secrets Manager  
 **Solution:**
+
 ```bash
 # Run migration script
 node scripts/migrate-secrets-to-aws.js prod
@@ -469,6 +462,7 @@ aws secretsmanager create-secret \
 
 **Cause:** IAM permissions not configured  
 **Solution:**
+
 1. Attach IAM policy to user/role (see IAM Policies section above)
 2. Verify policy with:
    ```bash
@@ -479,6 +473,7 @@ aws secretsmanager create-secret \
 
 **Cause:** AWS credentials expired or incorrect  
 **Solution:**
+
 ```bash
 # Reconfigure AWS CLI
 aws configure
@@ -491,6 +486,7 @@ aws sts get-caller-identity
 
 **Cause:** No client-side caching  
 **Solution:** Already implemented! Secrets are cached for 5 minutes. Verify:
+
 ```typescript
 import { getSecretCacheStats } from '@trulyimagined/utils';
 console.log(getSecretCacheStats());
@@ -500,6 +496,7 @@ console.log(getSecretCacheStats());
 
 **Cause:** Wrong environment or secret not updated  
 **Solution:**
+
 ```bash
 # Check secret value
 aws secretsmanager get-secret-value --secret-id prod/encryption-key
@@ -516,21 +513,23 @@ aws secretsmanager update-secret \
 
 ### Current Costs
 
-| Item | Usage | Cost |
-|------|-------|------|
-| Secret storage | 6 secrets × $0.40/month | $2.40/month |
-| API calls | ~3,300/month with caching | $0.02/month |
-| KMS encryption | 1 key × $1.00/month | $1.00/month |
-| **Total** | | **$3.42/month** |
+| Item           | Usage                     | Cost            |
+| -------------- | ------------------------- | --------------- |
+| Secret storage | 6 secrets × $0.40/month   | $2.40/month     |
+| API calls      | ~3,300/month with caching | $0.02/month     |
+| KMS encryption | 1 key × $1.00/month       | $1.00/month     |
+| **Total**      |                           | **$3.42/month** |
 
 ### Optimization Strategies
 
 **1. Aggressive Caching (Implemented)**
+
 - 5-minute TTL = 99% cache hit rate
 - Reduces API calls from ~300K/month → 3.3K/month
 - Savings: $1.48/month
 
 **2. Batch Secret Retrieval**
+
 ```typescript
 // Instead of multiple calls:
 const key1 = await getSecret('prod/encryption-key');
@@ -544,6 +543,7 @@ const [key1, key2] = await Promise.all([
 ```
 
 **3. Lazy Loading**
+
 ```typescript
 // Don't load secrets until actually needed
 let cachedKey: string | null = null;
@@ -558,6 +558,7 @@ async function getEncryptionKey() {
 
 **4. Secret Replication (Multi-Region)**
 Only enable if disaster recovery required (adds cost):
+
 ```bash
 aws secretsmanager replicate-secret-to-regions \
   --secret-id prod/encryption-key \
@@ -579,6 +580,7 @@ aws secretsmanager replicate-secret-to-regions \
 ### 🔲 Recommended (Post-Deployment)
 
 - [ ] **Enable Automatic Rotation (90 days)**
+
   ```bash
   aws secretsmanager rotate-secret \
     --secret-id prod/encryption-key \
@@ -586,11 +588,13 @@ aws secretsmanager replicate-secret-to-regions \
   ```
 
 - [ ] **Enable CloudWatch Alarms (access failures)**
+
   ```bash
   # See Monitoring & Alerting section above
   ```
 
 - [ ] **Enable VPC Endpoint** (maximum security)
+
   ```bash
   aws ec2 create-vpc-endpoint \
     --vpc-id vpc-12345678 \
@@ -598,6 +602,7 @@ aws secretsmanager replicate-secret-to-regions \
   ```
 
 - [ ] **Enable Secret Replication** (multi-region DR)
+
   ```bash
   aws secretsmanager replicate-secret-to-regions \
     --secret-id prod/encryption-key \
@@ -632,7 +637,7 @@ vercel rollback
 
 ```typescript
 // Add emergency override in code
-const key = process.env.EMERGENCY_ENCRYPTION_KEY_OVERRIDE 
+const key = process.env.EMERGENCY_ENCRYPTION_KEY_OVERRIDE
   || await getSecret('prod/encryption-key');
 
 // Set in Vercel during incident
@@ -662,6 +667,7 @@ vercel env add ENABLE_SECRETS_MANAGER production
 ## Summary
 
 **Quick Start:**
+
 1. `pnpm install` (install AWS SDK)
 2. `aws configure` (configure AWS CLI)
 3. `node scripts/migrate-secrets-to-aws.js prod` (migrate secrets)

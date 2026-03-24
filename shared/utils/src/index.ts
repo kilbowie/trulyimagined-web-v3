@@ -19,12 +19,7 @@ export {
 
 // ==================== SECRETS MANAGEMENT ====================
 
-export {
-  getSecret,
-  clearSecretCache,
-  getSecretCacheStats,
-  validateSecrets,
-} from './secrets';
+export { getSecret, clearSecretCache, getSecretCacheStats, validateSecrets } from './secrets';
 export type { SecretName } from './secrets';
 
 // ==================== ID GENERATION ====================

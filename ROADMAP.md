@@ -289,7 +289,28 @@ Measure platform activity
 - [ ] Link to actors
 
 ---
+## ðŸ"' Security & Infrastructure Hardening
 
+### Objective:
+
+Complete production security setup
+
+### Tasks:
+
+- [x] **AWS Secrets Manager Migration (Phase 1)**: Migrated ENCRYPTION_KEY for database field encryption (Step 11 complete)
+- [ ] **AWS Secrets Manager Migration (Phase 2)**: Migrate remaining secrets once configured:
+  - [ ] VC_ISSUER_PRIVATE_KEY (when Step 9 W3C credentials implemented)
+  - [ ] CONSENT_SIGNING_PRIVATE_KEY (when Step 10 consent system implemented)
+  - [ ] AUTH0_CLIENT_SECRET (when Auth0 Management API configured)
+  - [ ] STRIPE_SECRET_KEY (when Stripe integration configured)
+  - [ ] STRIPE_WEBHOOK_SECRET (when Stripe webhooks configured)
+- [ ] Enable automatic secret rotation (90/365 days)
+- [ ] Configure CloudWatch alarms for secret access failures
+- [ ] Review CloudTrail audit logs monthly
+
+**Note**: Run `node scripts/migrate-secrets-to-aws.js prod` after adding each secret to `.env.local`
+
+---
 ## âœ… Phase 2 Success Criteria
 
 - [ ] 300â€“500 actors onboarded

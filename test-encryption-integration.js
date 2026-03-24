@@ -1,6 +1,6 @@
 /**
  * Step 11: Database Encryption Integration Test
- * 
+ *
  * Tests encryption with actual API data structures to ensure compatibility
  * with identity_links.credential_data and verifiable_credentials.credential_json
  */
@@ -78,7 +78,10 @@ test('Should encrypt/decrypt Stripe verification session data', () => {
   assert(encrypted !== JSON.stringify(stripeCredentialData), 'Data should be encrypted');
   assert(encrypted.includes(':'), 'Should have IV:tag:ciphertext format');
   assert(decrypted.legalName === stripeCredentialData.legalName, 'Legal name should match');
-  assert(decrypted.documentNumber === stripeCredentialData.documentNumber, 'Document number should match');
+  assert(
+    decrypted.documentNumber === stripeCredentialData.documentNumber,
+    'Document number should match'
+  );
   assert(decrypted.verificationReport.livenessScore === 0.99, 'Nested data should match');
 });
 
@@ -94,7 +97,10 @@ test('Should encrypt/decrypt Stripe requires_input data', () => {
   const encrypted = encryptJSON(requiresInputData);
   const decrypted = decryptJSON(encrypted);
 
-  assert(JSON.stringify(decrypted) === JSON.stringify(requiresInputData), 'Data should match exactly');
+  assert(
+    JSON.stringify(decrypted) === JSON.stringify(requiresInputData),
+    'Data should match exactly'
+  );
 });
 
 test('Should handle null/empty credential_data fields', () => {
@@ -162,10 +168,16 @@ test('Should encrypt/decrypt IdentityCredential', () => {
   const decrypted = decryptJSON(encrypted);
 
   assert(encrypted.length > 500, 'Encrypted VC should be substantial size');
-  assert(decrypted['@context'][0] === 'https://www.w3.org/2018/credentials/v1', 'Context should match');
+  assert(
+    decrypted['@context'][0] === 'https://www.w3.org/2018/credentials/v1',
+    'Context should match'
+  );
   assert(decrypted.type.includes('IdentityCredential'), 'Type should be preserved');
   assert(decrypted.credentialSubject.email === 'user@example.com', 'Email should match');
-  assert(decrypted.credentialSubject.verificationLevel === 'high', 'Verification level should match');
+  assert(
+    decrypted.credentialSubject.verificationLevel === 'high',
+    'Verification level should match'
+  );
   assert(decrypted.proof.type === 'Ed25519Signature2020', 'Proof type should match');
   assert(decrypted.credentialStatus.statusListIndex === '94567', 'Status index should match');
 });
@@ -244,7 +256,10 @@ test('Should handle very large credentials (with extensive metadata)', () => {
   const encrypted = encryptJSON(largeCredential);
   const decrypted = decryptJSON(encrypted);
 
-  assert(decrypted.credentialSubject.metadata.verificationHistory.length === 50, 'Large array should be preserved');
+  assert(
+    decrypted.credentialSubject.metadata.verificationHistory.length === 50,
+    'Large array should be preserved'
+  );
   assert(encrypted.length > 1000, 'Large credential should encrypt to substantial size');
 });
 
@@ -306,7 +321,10 @@ test('Should simulate INSERT → SELECT → DECRYPT flow', () => {
   const decryptedData = decryptJSON(retrievedFromDb);
 
   assert(decryptedData.documentNumber === 'DB123456', 'Data should survive database round-trip');
-  assert(typeof databaseRecord.credential_data === 'string', 'Encrypted data should be string for TEXT column');
+  assert(
+    typeof databaseRecord.credential_data === 'string',
+    'Encrypted data should be string for TEXT column'
+  );
   assert(databaseRecord.credential_data.includes(':'), 'Stored data should be in encrypted format');
 });
 
@@ -379,7 +397,10 @@ test('Should handle credentials with date objects (serialized as strings)', () =
   const encrypted = encryptJSON(dataWithDates);
   const decrypted = decryptJSON(encrypted);
 
-  assert(decrypted.verifiedAt === '2024-01-15T10:30:00.000Z', 'Date should be preserved as ISO string');
+  assert(
+    decrypted.verifiedAt === '2024-01-15T10:30:00.000Z',
+    'Date should be preserved as ISO string'
+  );
   assert(decrypted.expiresAt === '2025-01-15T10:30:00.000Z', 'Expiry date should be preserved');
 });
 
@@ -395,7 +416,9 @@ console.log(`${colors.cyan}Total:  ${testsPassed + testsFailed}${colors.reset}`)
 
 if (testsFailed === 0) {
   console.log(`\n${colors.green}✓ All integration tests passed!${colors.reset}`);
-  console.log(`${colors.green}✓ Encryption verified for production data structures${colors.reset}\n`);
+  console.log(
+    `${colors.green}✓ Encryption verified for production data structures${colors.reset}\n`
+  );
   process.exit(0);
 } else {
   console.log(`\n${colors.red}✗ Some integration tests failed${colors.reset}\n`);

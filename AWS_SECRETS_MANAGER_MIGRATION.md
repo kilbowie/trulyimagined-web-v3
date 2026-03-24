@@ -22,6 +22,7 @@
 #### ❌ Current Risk: Environment File Storage
 
 **What We Have Now:**
+
 ```bash
 # apps/web/.env.local (gitignored but risky)
 ENCRYPTION_KEY="0092edde77e4180cd5f984925197b58059e156a1bb6c40c37576259baf44370e"
@@ -30,6 +31,7 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 ```
 
 **Security Risks:**
+
 1. **Shell History Exposure:** Keys logged in terminal history (`export ENCRYPTION_KEY=...`)
 2. **Process Dumps:** Keys visible in `/proc/[pid]/environ` on Linux/Unix
 3. **Log File Leakage:** Accidentally logged by application or infrastructure
@@ -43,8 +45,8 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 
 #### Real-World Breach Examples
 
-- **2019:** Capital One breach exposed AWS keys in environment variables  
-- **2021:** Codecov supply chain attack accessed secrets from CI/CD environments  
+- **2019:** Capital One breach exposed AWS keys in environment variables
+- **2021:** Codecov supply chain attack accessed secrets from CI/CD environments
 - **2022:** Multiple GitHub Actions workflows leaked AWS credentials in logs
 
 ### 2. AWS Secrets Manager Advantages
@@ -52,23 +54,27 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 #### ✅ Enhanced Security
 
 **Encryption at Rest:**
+
 - Secrets encrypted using AWS KMS (AES-256-GCM)
 - Hardware Security Modules (HSM) backed encryption keys
 - FIPS 140-2 Level 3 validated cryptographic operations
 
 **Access Control:**
+
 - IAM policy-based access (principle of least privilege)
 - Resource-based policies for cross-account access
 - VPC endpoint support (no internet exposure)
 - Automatic deny for anonymous access
 
 **Audit & Compliance:**
+
 - CloudTrail logging of all secret access/rotation events
 - Compliance: SOC 2, PCI DSS, HIPAA, ISO 27001
 - Automatic compliance reporting
 - Secret version history (rollback capability)
 
 **Automatic Rotation:**
+
 - Lambda-based rotation without application downtime
 - Multi-user rotation strategy (blue-green deployments)
 - Rotation schedules (e.g., every 30/60/90 days)
@@ -77,18 +83,21 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 #### ✅ Operational Benefits
 
 **High Availability:**
+
 - Multi-AZ replication (99.99% SLA)
 - Automatic failover
 - Encrypted backups to S3
 - Disaster recovery included
 
 **Developer Experience:**
+
 - SDK integration (AWS SDK for JavaScript)
 - Caching to reduce API calls (AWS Secrets Manager cache)
 - Versioning and rollback support
 - Secret tagging and organization
 
 **Cost Efficiency:**
+
 - $0.40/secret/month + $0.05/10,000 API calls
 - Our usage: ~6 secrets = $2.40/month
 - Free tier: 30 days of secret storage
@@ -96,47 +105,52 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 ### 3. Compliance & Regulatory Requirements
 
 **SOC 2 Type II (Required for Enterprise Customers):**
+
 - Control: Secrets must be stored in dedicated secrets management system
 - Evidence: AWS Secrets Manager audit logs
 - Requirement: Automatic rotation capability
 
 **GDPR Article 32:**
+
 - "Encryption of personal data" ✅
 - "Ability to ensure ongoing confidentiality" ✅ (automatic rotation)
 - "A process for regularly testing security measures" ✅ (rotation testing)
 
 **PCI DSS v4.0 (If processing payments):**
+
 - Requirement 3.5.1: Cryptographic keys protected by key management system
 - Requirement 3.6.1: Key rotation procedures documented
 - Requirement 10.3.4: Access to cryptographic material logged
 
 **UK Trust Framework (eIDAS Equivalent):**
+
 - Technical Control TC-4: Key management system required for LOA3 (high assurance)
 
 ### 4. Cost-Benefit Analysis
 
 #### One-Time Migration Costs
 
-| Item | Effort | Cost |
-|------|--------|------|
-| Infrastructure setup | 1 hour | $180 |
-| Code migration | 2 hours | $360 |
-| Testing & validation | 1 hour | $180 |
-| Documentation | 0.5 hour | $90 |
-| **Total** | **4.5 hours** | **$810** |
+| Item                 | Effort        | Cost     |
+| -------------------- | ------------- | -------- |
+| Infrastructure setup | 1 hour        | $180     |
+| Code migration       | 2 hours       | $360     |
+| Testing & validation | 1 hour        | $180     |
+| Documentation        | 0.5 hour      | $90      |
+| **Total**            | **4.5 hours** | **$810** |
 
 #### Ongoing Costs
 
-| Item | Monthly Cost | Annual Cost |
-|------|--------------|-------------|
-| AWS Secrets Manager (6 secrets) | $2.40 | $28.80 |
-| API calls (~10K/month) | $0.05 | $0.60 |
-| Lambda rotation (256MB, 1s, 6x/month) | $0.00 | $0.00 |
-| **Total** | **$2.45** | **$29.40** |
+| Item                                  | Monthly Cost | Annual Cost |
+| ------------------------------------- | ------------ | ----------- |
+| AWS Secrets Manager (6 secrets)       | $2.40        | $28.80      |
+| API calls (~10K/month)                | $0.05        | $0.60       |
+| Lambda rotation (256MB, 1s, 6x/month) | $0.00        | $0.00       |
+| **Total**                             | **$2.45**    | **$29.40**  |
 
 #### Risk Reduction Value
 
 **Avoided Costs (Single Data Breach):**
+
 - GDPR fine: Up to €20M or 4% annual revenue
 - Customer notification: $50K-$500K
 - Legal fees: $100K-$1M
@@ -189,7 +203,7 @@ CONSENT_SIGNING_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIEvQIBADAN..."
 
 ### Database Credentials (Handled by AWS RDS)
 
-- **DATABASE_URL / POSTGRES_***: Already managed by AWS RDS Secrets Manager integration ✅
+- **DATABASE*URL / POSTGRES*\***: Already managed by AWS RDS Secrets Manager integration ✅
 
 ---
 
@@ -259,6 +273,7 @@ const encrypted = encryptJSON(data, ENCRYPTION_KEY);
 **Solution:** AWS Secrets Manager Cache (client-side caching)
 
 **Configuration:**
+
 ```typescript
 import { SecretsManagerClient } from '@aws-sdk/client-secrets-manager';
 import { SecretsCache } from 'aws-secrets-cache';
@@ -277,6 +292,7 @@ const secret2 = await cache.getSecretString('prod/encryption-key'); // FREE
 ```
 
 **Expected API Calls:**
+
 - Vercel cold starts: ~10/day × 30 days = 300 calls/month
 - Cache TTL expirations: ~100/day × 30 days = 3,000 calls/month
 - **Total:** ~3,300 calls/month = $0.02/month
@@ -310,13 +326,8 @@ aws secretsmanager create-secret \
   "Statement": [
     {
       "Effect": "Allow",
-      "Action": [
-        "secretsmanager:GetSecretValue",
-        "secretsmanager:DescribeSecret"
-      ],
-      "Resource": [
-        "arn:aws:secretsmanager:us-east-1:*:secret:prod/*"
-      ]
+      "Action": ["secretsmanager:GetSecretValue", "secretsmanager:DescribeSecret"],
+      "Resource": ["arn:aws:secretsmanager:us-east-1:*:secret:prod/*"]
     },
     {
       "Effect": "Allow",
@@ -354,6 +365,7 @@ Create `shared/utils/src/secrets.ts` (implementation provided below)
 **2.2 Update Application Code**
 
 Replace direct environment variable access:
+
 ```typescript
 // BEFORE (Step 11)
 const key = process.env.ENCRYPTION_KEY;
@@ -382,9 +394,10 @@ if (process.env.NODE_ENV === 'development') {
 // test-secrets-manager.js
 process.env.AWS_SDK_JS_SUPPRESS_MAINTENANCE_MODE_MESSAGE = '1';
 const mockSecretsManager = {
-  getSecretValue: () => Promise.resolve({
-    SecretString: 'test-encryption-key-12345678901234567890123456789012',
-  }),
+  getSecretValue: () =>
+    Promise.resolve({
+      SecretString: 'test-encryption-key-12345678901234567890123456789012',
+    }),
 };
 ```
 
@@ -439,6 +452,7 @@ curl https://trulyimagined.com/api/health
 ### If AWS Secrets Manager Integration Fails
 
 **Option 1: Immediate Rollback (30 seconds)**
+
 ```bash
 # Revert to previous Vercel deployment
 vercel rollback
@@ -447,6 +461,7 @@ vercel rollback
 ```
 
 **Option 2: Emergency Environment Variable Override**
+
 ```typescript
 // In code: Check for emergency override
 const key = process.env.EMERGENCY_ENCRYPTION_KEY_OVERRIDE || await getSecret('prod/encryption-key');
@@ -456,6 +471,7 @@ EMERGENCY_ENCRYPTION_KEY_OVERRIDE=0092edde...
 ```
 
 **Option 3: Gradual Rollback**
+
 ```typescript
 // Feature flag in code
 const USE_SECRETS_MANAGER = process.env.ENABLE_SECRETS_MANAGER === 'true';
@@ -474,6 +490,7 @@ if (USE_SECRETS_MANAGER) {
 ### CloudWatch Alarms
 
 **1. Secret Access Failures**
+
 ```
 Metric: secretsmanager:GetSecretValue (Errors)
 Threshold: > 5 errors in 5 minutes
@@ -481,6 +498,7 @@ Action: SNS → Email + PagerDuty
 ```
 
 **2. High API Call Volume**
+
 ```
 Metric: secretsmanager:GetSecretValue (Count)
 Threshold: > 1000 calls/hour
@@ -488,6 +506,7 @@ Action: SNS → Email (cost alert)
 ```
 
 **3. Unauthorized Access Attempts**
+
 ```
 Metric: CloudTrail (AccessDenied events)
 Threshold: > 0 in 1 minute
@@ -497,6 +516,7 @@ Action: SNS → Security team + PagerDuty
 ### CloudTrail Audit Queries
 
 **Who accessed encryption key?**
+
 ```sql
 SELECT userIdentity.principalId, eventTime, sourceIPAddress
 FROM cloudtrail_logs
@@ -507,6 +527,7 @@ LIMIT 100
 ```
 
 **When was key rotated?**
+
 ```sql
 SELECT eventTime, userIdentity.principalId, responseElements.versionId
 FROM cloudtrail_logs
@@ -579,14 +600,14 @@ aws secretsmanager replicate-secret-to-regions \
 
 ### Expected Monthly Costs
 
-| Service | Usage | Cost |
-|---------|-------|------|
-| Secrets Manager storage | 6 secrets | $2.40 |
-| API calls | 3,300/month | $0.02 |
-| KMS key | 1 key | $1.00 |
-| CloudTrail logs | ~100MB/month | $0.10 |
-| Lambda rotation | 6 executions/month | $0.00 |
-| **Total** | | **$3.52/month** |
+| Service                 | Usage              | Cost            |
+| ----------------------- | ------------------ | --------------- |
+| Secrets Manager storage | 6 secrets          | $2.40           |
+| API calls               | 3,300/month        | $0.02           |
+| KMS key                 | 1 key              | $1.00           |
+| CloudTrail logs         | ~100MB/month       | $0.10           |
+| Lambda rotation         | 6 executions/month | $0.00           |
+| **Total**               |                    | **$3.52/month** |
 
 ### Cost Reduction Strategies
 
@@ -600,24 +621,28 @@ aws secretsmanager replicate-secret-to-regions \
 ## Next Steps
 
 ### Immediate (This Session)
+
 1. ✅ Complete Step 11 testing (DONE: 32/32 tests passing)
 2. 🔄 Implement Secrets Manager client library
 3. 🔄 Create migration scripts
 4. 🔄 Update application code
 
 ### Week 1 (Post-Implementation)
+
 1. Deploy to staging environment
 2. Run full test suite with Secrets Manager
 3. Performance testing (ensure <50ms secret retrieval)
 4. Deploy to production
 
 ### Week 2 (Hardening)
+
 1. Enable automatic rotation
 2. Configure CloudWatch alarms
 3. Document runbooks
 4. Train team on secret management
 
 ### Ongoing (Monthly)
+
 1. Review CloudTrail audit logs
 2. Test rotation process
 3. Validate security posture
@@ -637,6 +662,7 @@ Post-migration, we will satisfy:
 - ✅ **UK Trust Framework TC-4:** Key management for LOA3 (high assurance)
 
 **Audit Evidence:**
+
 - CloudTrail logs (who accessed keys, when)
 - Rotation schedules (automatic rotation configured)
 - IAM policies (least privilege access control)
