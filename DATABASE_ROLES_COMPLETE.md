@@ -9,12 +9,14 @@
 ## 🎯 What Changed
 
 ### Before (Auth0 JWT Roles)
+
 - Roles stored in Auth0 and added to JWT tokens
 - API routes checked `session.user['https://trulyimagined.com/roles']`
 - Required Auth0 Actions and role assignment in Auth0 Dashboard
 - Decentralized role management
 
 ### After (Database Roles) ✅
+
 - Roles stored in PostgreSQL `user_profiles` table
 - API routes use `isAdmin()`, `isActor()`, etc. from `@/lib/auth`
 - Role assignment via direct database updates
@@ -46,6 +48,7 @@ CREATE TABLE user_profiles (
 ```
 
 **Key Constraints:**
+
 - Each user has exactly ONE role (no multi-role support)
 - Role must be one of: `Actor`, `Agent`, `Enterprise`, `Admin`
 - `auth0_user_id` links to Auth0 authentication
@@ -55,9 +58,11 @@ CREATE TABLE user_profiles (
 ## 🔧 Updated Files
 
 ### 1. API Route: `/api/usage/stats`
+
 **File:** [apps/web/src/app/api/usage/stats/route.ts](apps/web/src/app/api/usage/stats/route.ts)
 
 **Before:**
+
 ```typescript
 import { auth0 } from '@/lib/auth0';
 
@@ -67,6 +72,7 @@ const isAdmin = roles.includes('Admin') || roles.includes('Staff');
 ```
 
 **After:**
+
 ```typescript
 import { getCurrentUser, isAdmin } from '@/lib/auth';
 
@@ -75,6 +81,7 @@ const hasAdminRole = await isAdmin(); // Queries database
 ```
 
 **Benefits:**
+
 - ✅ Single source of truth (database)
 - ✅ No dependency on Auth0 Actions
 - ✅ Simplified role management
@@ -92,10 +99,7 @@ All role checking functions query the database:
 // Get user roles from database
 export async function getUserRoles(): Promise<string[]> {
   const user = await getCurrentUser();
-  const result = await query(
-    'SELECT role FROM user_profiles WHERE auth0_user_id = $1',
-    [user.sub]
-  );
+  const result = await query('SELECT role FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
   return result.rows[0]?.role ? [result.rows[0].role] : [];
 }
 
@@ -116,15 +120,13 @@ export async function isAgent(): Promise<boolean> {
 export async function requireRole(allowedRoles: string[]) {
   const user = await requireAuth();
   const userRoles = await getUserRoles();
-  
-  const hasRequiredRole = userRoles.some(role => 
-    allowedRoles.includes(role)
-  );
-  
+
+  const hasRequiredRole = userRoles.some((role) => allowedRoles.includes(role));
+
   if (!hasRequiredRole) {
     throw new Error(`Forbidden: Required roles: ${allowedRoles.join(', ')}`);
   }
-  
+
   return user;
 }
 ```
@@ -134,6 +136,7 @@ export async function requireRole(allowedRoles: string[]) {
 ## 👤 Admin Role Assignment
 
 ### Assigned User
+
 **Email:** adam@kilbowieconsulting.com  
 **Username:** adm-adam  
 **Role:** Admin  
@@ -141,6 +144,7 @@ export async function requireRole(allowedRoles: string[]) {
 **Status:** ✅ Active
 
 ### Assignment Script
+
 **File:** [assign-admin-role.js](assign-admin-role.js)
 
 ```bash
@@ -149,6 +153,7 @@ node assign-admin-role.js
 ```
 
 **Script Features:**
+
 - ✅ Checks if user exists in database
 - ✅ Creates `user_profiles` entry if missing
 - ✅ Updates existing role to Admin
@@ -166,7 +171,7 @@ node assign-admin-role.js
 
 ```
 ✓ Test 1: User profile found
-✓ Test 2: Role is 'Admin' 
+✓ Test 2: Role is 'Admin'
 ✓ Test 3: Auth0 User ID set correctly
 ✓ Test 4: isAdmin() returns true
 ✓ Test 5: Admin user listed in database
@@ -174,6 +179,7 @@ node assign-admin-role.js
 ```
 
 **Run tests:**
+
 ```bash
 node test-database-roles.js
 ```
@@ -183,6 +189,7 @@ node test-database-roles.js
 ## 🚀 Testing the /usage Dashboard
 
 ### Prerequisites
+
 1. ✅ Dev server running: `pnpm dev`
 2. ✅ Database role assigned: Admin
 3. ✅ User logged in: adam@kilbowieconsulting.com
@@ -190,6 +197,7 @@ node test-database-roles.js
 ### Access Steps
 
 1. **Navigate to dashboard:**
+
    ```
    http://localhost:3000/usage
    ```
@@ -229,6 +237,7 @@ These routes already use database role checking:
 ## 🔄 Migration Status
 
 ### Completed ✅
+
 - ✅ Database schema with `user_profiles.role`
 - ✅ Auth helper functions (`isAdmin()`, `isActor()`, etc.)
 - ✅ `/api/usage/stats` route updated to database roles
@@ -236,6 +245,7 @@ These routes already use database role checking:
 - ✅ Testing scripts created and verified
 
 ### Pending 🔄
+
 - 🔄 Update `/api/admin/users` to use database roles
 - 🔄 Update Lambda middleware to query database (if needed)
 - 🔄 Update remaining routes that check JWT roles
@@ -243,6 +253,7 @@ These routes already use database role checking:
 - 🔄 Implement role change notifications
 
 ### Deprecated ⚠️
+
 - ⚠️ Auth0 JWT role claims (still works but not primary)
 - ⚠️ Auth0 Actions "Add Roles to Token" (not required)
 - ⚠️ Auth0 role assignment in dashboard (use database instead)
@@ -296,29 +307,33 @@ These routes already use database role checking:
 ## 🔧 Managing Roles
 
 ### Assign Admin Role
+
 ```bash
 node assign-admin-role.js
 ```
 
 ### Check User Role (SQL)
+
 ```sql
-SELECT email, username, role, profile_completed 
-FROM user_profiles 
+SELECT email, username, role, profile_completed
+FROM user_profiles
 WHERE email = 'user@example.com';
 ```
 
 ### Update Role (SQL)
+
 ```sql
-UPDATE user_profiles 
-SET role = 'Admin', updated_at = NOW() 
+UPDATE user_profiles
+SET role = 'Admin', updated_at = NOW()
 WHERE email = 'user@example.com';
 ```
 
 ### List All Admins (SQL)
+
 ```sql
-SELECT email, username, created_at 
-FROM user_profiles 
-WHERE role = 'Admin' 
+SELECT email, username, created_at
+FROM user_profiles
+WHERE role = 'Admin'
 ORDER BY created_at DESC;
 ```
 
@@ -349,6 +364,7 @@ All criteria met:
 - ✅ Ready to test `/usage` dashboard
 
 **Next Steps:**
+
 1. Start dev server: `pnpm dev`
 2. Navigate to: `http://localhost:3000/usage`
 3. Verify dashboard loads without 403 error

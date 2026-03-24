@@ -1,9 +1,9 @@
 /**
  * Test Database Role Verification
- * 
+ *
  * This script verifies that database-based role checking is working correctly
  * for adam@kilbowieconsulting.com.
- * 
+ *
  * Usage:
  *   node test-database-roles.js
  */
@@ -47,17 +47,16 @@ const TARGET_EMAIL = 'adam@kilbowieconsulting.com';
 
 async function testDatabaseRoles() {
   logHeader('Database Role Verification Tests');
-  
+
   let testsPassed = 0;
   let testsFailed = 0;
 
   try {
     // Test 1: Verify user_profiles entry exists
     logInfo('Test 1: Check user_profiles entry exists');
-    const profileResult = await db.query(
-      'SELECT * FROM user_profiles WHERE email = $1',
-      [TARGET_EMAIL]
-    );
+    const profileResult = await db.query('SELECT * FROM user_profiles WHERE email = $1', [
+      TARGET_EMAIL,
+    ]);
 
     if (profileResult.rows.length === 0) {
       logError('User profile not found');
@@ -157,7 +156,6 @@ async function testDatabaseRoles() {
       logError(`✗ ${testsFailed} test(s) failed`);
       process.exit(1);
     }
-
   } catch (error) {
     logError(`Test error: ${error.message}`);
     console.error(error);

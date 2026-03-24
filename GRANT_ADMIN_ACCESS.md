@@ -5,6 +5,7 @@
 **New Method:** See [DATABASE_ROLES_COMPLETE.md](DATABASE_ROLES_COMPLETE.md)
 
 **Quick Command:**
+
 ```bash
 node assign-admin-role.js
 ```
@@ -15,17 +16,20 @@ node assign-admin-role.js
 
 The platform now uses **database-based role checking** instead of Auth0 JWT roles.
 
-**Old Method (This Guide):** 
+**Old Method (This Guide):**
+
 - Assign roles in Auth0 Dashboard
 - Add roles to JWT tokens via Auth0 Actions
 - Check `session.user['https://trulyimagined.com/roles']` in API routes
 
 **New Method (Current):**
+
 - Store roles in PostgreSQL `user_profiles` table
 - Run `node assign-admin-role.js` to assign Admin role
 - Check roles via `isAdmin()` function (queries database)
 
 **See:**
+
 - [DATABASE_ROLES_COMPLETE.md](DATABASE_ROLES_COMPLETE.md) - Complete migration documentation
 - [assign-admin-role.js](assign-admin-role.js) - Script to assign admin role
 - [test-database-roles.js](test-database-roles.js) - Verify role assignment
@@ -102,7 +106,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
   if (event.authorization) {
     const roles = event.authorization.roles || [];
-    
+
     // Add to both ID token and Access token
     api.idToken.setCustomClaim(`${namespace}/roles`, roles);
     api.accessToken.setCustomClaim(`${namespace}/roles`, roles);
@@ -118,16 +122,19 @@ exports.onExecutePostLogin = async (event, api) => {
 ### 5. Test Access
 
 1. **Log out completely** from your app:
+
    ```
    http://localhost:3000/api/auth/logout
    ```
 
 2. **Log back in**:
+
    ```
    http://localhost:3000/api/auth/login
    ```
 
 3. **Navigate to usage dashboard**:
+
    ```
    http://localhost:3000/usage
    ```
@@ -148,6 +155,7 @@ exports.onExecutePostLogin = async (event, api) => {
 
 1. Navigate to: `http://localhost:3000/api/auth/me`
 2. Look for the roles in the response:
+
    ```json
    {
      "https://trulyimagined.com/roles": ["Admin"]
@@ -215,11 +223,13 @@ After completing the steps above, verify:
 ## Quick Copy-Paste Commands
 
 ### Check your roles via API
+
 ```bash
 curl http://localhost:3000/api/auth/me
 ```
 
 ### Test stats endpoint directly
+
 ```bash
 curl http://localhost:3000/api/usage/stats \
   -H "Cookie: appSession=<your-session-cookie>"

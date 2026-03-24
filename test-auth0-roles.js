@@ -1,9 +1,9 @@
 /**
  * Test Auth0 Roles
- * 
+ *
  * This script helps verify that Auth0 roles are properly configured
  * and appearing in JWT tokens.
- * 
+ *
  * Run after logging into the app:
  *   node test-auth0-roles.js
  */

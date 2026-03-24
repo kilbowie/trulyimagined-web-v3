@@ -229,16 +229,18 @@ export default async function DashboardPage() {
           </div>
         )}
 
-        {/* Debug Links */}
-        <div className="mt-6 text-center text-sm text-gray-500">
-          <Link href="/debug-roles" className="hover:text-gray-700 underline">
-            Debug Roles
-          </Link>
-          {' • '}
-          <Link href="/auth/profile" className="hover:text-gray-700 underline">
-            View Raw Profile
-          </Link>
-        </div>
+        {/* Debug Links (Admin only) */}
+        {hasAdminRole && (
+          <div className="mt-6 text-center text-sm text-gray-500">
+            <Link href="/debug-roles" className="hover:text-gray-700 underline">
+              Debug Roles
+            </Link>
+            {' • '}
+            <Link href="/auth/profile" className="hover:text-gray-700 underline">
+              View Raw Profile
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

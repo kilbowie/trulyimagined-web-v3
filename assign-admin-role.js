@@ -1,8 +1,8 @@
 /**
  * Assign Admin Role to adam@kilbowieconsulting.com
- * 
+ *
  * This script creates or updates the user_profiles entry to grant Admin role.
- * 
+ *
  * Usage:
  *   node assign-admin-role.js
  */
@@ -47,48 +47,44 @@ const TARGET_EMAIL = 'adam@kilbowieconsulting.com';
 
 async function assignAdminRole() {
   logHeader('Assign Admin Role to User');
-  
+
   try {
     // 1. Find user by email in Auth0 users (check if they've logged in)
     logInfo(`Looking for user with email: ${TARGET_EMAIL}`);
-    
+
     // First, let's check if they have a user_profiles entry
-    const profileCheck = await db.query(
-      'SELECT * FROM user_profiles WHERE email = $1',
-      [TARGET_EMAIL]
-    );
+    const profileCheck = await db.query('SELECT * FROM user_profiles WHERE email = $1', [
+      TARGET_EMAIL,
+    ]);
 
     if (profileCheck.rows.length > 0) {
       const profile = profileCheck.rows[0];
       logInfo(`Found existing user_profiles entry for ${TARGET_EMAIL}`);
       logInfo(`Current role: ${profile.role || 'None'}`);
       logInfo(`Auth0 User ID: ${profile.auth0_user_id}`);
-      
+
       // Update to Admin role
       if (profile.role === 'Admin') {
         logSuccess('User already has Admin role!');
       } else {
-        await db.query(
-          'UPDATE user_profiles SET role = $1, updated_at = NOW() WHERE email = $2',
-          ['Admin', TARGET_EMAIL]
-        );
+        await db.query('UPDATE user_profiles SET role = $1, updated_at = NOW() WHERE email = $2', [
+          'Admin',
+          TARGET_EMAIL,
+        ]);
         logSuccess(`Updated role from '${profile.role}' to 'Admin'`);
       }
     } else {
       logInfo('No user_profiles entry found');
       logInfo('Checking if user exists in any table...');
-      
+
       // Check actors table (they might have been registered as an actor)
-      const actorCheck = await db.query(
-        'SELECT * FROM actors WHERE email = $1',
-        [TARGET_EMAIL]
-      );
-      
+      const actorCheck = await db.query('SELECT * FROM actors WHERE email = $1', [TARGET_EMAIL]);
+
       if (actorCheck.rows.length > 0) {
         const actor = actorCheck.rows[0];
         logInfo(`Found user in actors table`);
         logInfo(`Auth0 User ID: ${actor.auth0_user_id}`);
-        
+
         // Create user_profiles entry with Admin role
         await db.query(
           `INSERT INTO user_profiles (
@@ -99,7 +95,7 @@ async function assignAdminRole() {
             TARGET_EMAIL,
             'adam_admin', // Default username
             'Admin',
-            true
+            true,
           ]
         );
         logSuccess('Created user_profiles entry with Admin role');
@@ -118,11 +114,10 @@ async function assignAdminRole() {
 
     // 2. Verify the role assignment
     logHeader('Verification');
-    
-    const verifyResult = await db.query(
-      'SELECT * FROM user_profiles WHERE email = $1',
-      [TARGET_EMAIL]
-    );
+
+    const verifyResult = await db.query('SELECT * FROM user_profiles WHERE email = $1', [
+      TARGET_EMAIL,
+    ]);
 
     if (verifyResult.rows.length > 0) {
       const profile = verifyResult.rows[0];
@@ -148,7 +143,6 @@ async function assignAdminRole() {
     } else {
       logError('Failed to verify - user_profiles entry not found');
     }
-
   } catch (error) {
     logError(`Error: ${error.message}`);
     console.error(error);
