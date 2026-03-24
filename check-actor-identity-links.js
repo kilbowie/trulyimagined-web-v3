@@ -1,6 +1,6 @@
 /**
  * Check Actor Identity Links
- * 
+ *
  * This script checks if adamrossgreene@gmail.com has any identity links
  * and whether they're active and verified.
  */
@@ -79,7 +79,7 @@ async function main() {
         console.log();
       });
 
-      const activeLinks = linksResult.rows.filter(link => link.is_active);
+      const activeLinks = linksResult.rows.filter((link) => link.is_active);
       if (activeLinks.length === 0) {
         console.log('⚠️  No ACTIVE identity links found');
         console.log('Credential issuance requires at least one active identity link.');

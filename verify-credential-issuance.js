@@ -1,6 +1,6 @@
 /**
  * Verify Credential Issuance - End-to-End Test
- * 
+ *
  * This script verifies that credential issuance will work for adamrossgreene@gmail.com
  * by checking all prerequisites and simulating the issuance logic.
  */
@@ -98,7 +98,11 @@ async function verifyIssuance() {
     } else {
       log('green', '✓', `Found ${linksResult.rows.length} active identity link(s)`);
       linksResult.rows.forEach((link, idx) => {
-        log('blue', 'ℹ', `  ${idx + 1}. ${link.provider} - ${link.verification_level} - ${link.assurance_level}`);
+        log(
+          'blue',
+          'ℹ',
+          `  ${idx + 1}. ${link.provider} - ${link.verification_level} - ${link.assurance_level}`
+        );
       });
 
       // Find highest verification level
@@ -173,10 +177,10 @@ async function verifyIssuance() {
     if (profileResult.rows.length > 0) {
       const role = profileResult.rows[0].role;
       const credentialTypeMap = {
-        'Actor': 'ActorCredential',
-        'Agent': 'AgentCredential',
-        'Enterprise': 'EnterpriseCredential',
-        'Admin': 'IdentityCredential',
+        Actor: 'ActorCredential',
+        Agent: 'AgentCredential',
+        Enterprise: 'EnterpriseCredential',
+        Admin: 'IdentityCredential',
       };
       const credentialType = credentialTypeMap[role] || 'IdentityCredential';
       log('green', '✓', `Credential type for role "${role}": ${credentialType}`);
@@ -203,7 +207,7 @@ async function verifyIssuance() {
       console.log('   ✅ New credential appears in the list');
       console.log('   ✅ Can download credential as JSON-LD file');
       console.log();
-      console.log('If There\'s Still an Error:');
+      console.log("If There's Still an Error:");
       console.log('   • Check browser console for detailed error messages');
       console.log('   • Check server logs for API errors');
       console.log('   • Verify Auth0 session is valid');

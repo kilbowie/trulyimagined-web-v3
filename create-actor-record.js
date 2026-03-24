@@ -1,6 +1,6 @@
 /**
  * Create Actor Record for Credential Issuance
- * 
+ *
  * This scriptcreates an actor record in the actors table for adamrossgreene@gmail.com.
  * While not explicitly required by credential issuance API, having an actor record
  * ensures full functionality across the platform.
@@ -71,10 +71,10 @@ async function main() {
 
       if (linkCheckResult.rows.length === 0) {
         log('yellow', '⏳', 'Linking actor to user profile...');
-        await db.query(
-          `UPDATE actors SET user_profile_id = $1 WHERE id = $2`,
-          [profile.id, actor.id]
-        );
+        await db.query(`UPDATE actors SET user_profile_id = $1 WHERE id = $2`, [
+          profile.id,
+          actor.id,
+        ]);
         log('green', '✓', 'Actor linked to user profile');
       } else {
         log('green', '✓', 'Actor already linked to user profile');
@@ -93,7 +93,8 @@ async function main() {
         lastName = nameParts.slice(1).join(' ') || 'User';
       } else if (profile.username) {
         // Try to extract from username (e.g., "adamrossgreene" -> "Adam", "Greene")
-        firstName = profile.username.substring(0, 1).toUpperCase() + profile.username.substring(1, 4);
+        firstName =
+          profile.username.substring(0, 1).toUpperCase() + profile.username.substring(1, 4);
         lastName = 'User';
       }
 
@@ -140,7 +141,7 @@ async function main() {
     );
 
     log('blue', 'ℹ', `Identity Links: ${linksResult.rows.length} total`);
-    const activeLinks = linksResult.rows.filter(link => link.is_active);
+    const activeLinks = linksResult.rows.filter((link) => link.is_active);
     log('green', '✓', `Active Links: ${activeLinks.length}`);
     console.log();
 
@@ -148,7 +149,9 @@ async function main() {
     console.log('📊 Credential Issuance Prerequisites:');
     console.log(`   ✅ User profile exists and completed`);
     console.log(`   ✅ Actor record exists (linked to profile)`);
-    console.log(`   ${activeLinks.length > 0 ? '✅' : '❌'} Active identity links: ${activeLinks.length}`);
+    console.log(
+      `   ${activeLinks.length > 0 ? '✅' : '❌'} Active identity links: ${activeLinks.length}`
+    );
     console.log(`   ✅ Issuer keypair configured`);
     console.log(`   ✅ Encryption key configured`);
     console.log();

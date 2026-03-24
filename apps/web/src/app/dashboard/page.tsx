@@ -161,6 +161,48 @@ export default async function DashboardPage() {
                     </div>
                   </Link>
                   <Link
+                    href="/dashboard/consent-preferences"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">⚙️</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">Consent Preferences</h3>
+                        <p className="text-sm text-gray-600">
+                          Update your consent policy and usage permissions
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/dashboard/licenses"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">📜</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">License Tracker</h3>
+                        <p className="text-sm text-gray-600">
+                          Monitor licenses granted to API clients
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link
+                    href="/dashboard/consent-history"
+                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
+                  >
+                    <div className="flex items-start">
+                      <span className="text-2xl mr-3">📋</span>
+                      <div>
+                        <h3 className="font-semibold text-gray-900 mb-1">Consent Ledger History</h3>
+                        <p className="text-sm text-gray-600">
+                          View complete version history of your consent
+                        </p>
+                      </div>
+                    </div>
+                  </Link>
+                  <Link
                     href="/dashboard/verify-identity"
                     className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
                   >

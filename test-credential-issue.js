@@ -1,6 +1,6 @@
 /**
  * Test Credential Issuance
- * 
+ *
  * Tests the credential issuance API for adamrossgreene@gmail.com
  */
 
@@ -67,14 +67,16 @@ async function testCredentialIssuance() {
     );
 
     console.log(`📊 Active Identity Links: ${linksResult.rows.length}`);
-    
+
     if (linksResult.rows.length === 0) {
       console.log('❌ ISSUE: No active identity links found');
       return;
     }
 
     linksResult.rows.forEach((link, idx) => {
-      console.log(`   ${idx + 1}. ${link.provider} - ${link.verification_level} - ${link.verified_at}`);
+      console.log(
+        `   ${idx + 1}. ${link.provider} - ${link.verification_level} - ${link.verified_at}`
+      );
     });
     console.log();
 
@@ -103,7 +105,10 @@ async function testCredentialIssuance() {
 
     try {
       // Import the necessary functions
-      const { issueCredential, getCredentialTypeForUser } = require('./apps/web/src/lib/verifiable-credentials.ts');
+      const {
+        issueCredential,
+        getCredentialTypeForUser,
+      } = require('./apps/web/src/lib/verifiable-credentials.ts');
       const { allocateStatusIndex } = require('./apps/web/src/lib/status-list-manager.ts');
       const { encryptJSON } = require('./shared/utils/dist');
 
@@ -118,12 +123,11 @@ async function testCredentialIssuance() {
       console.log('✅ All prerequisites met!');
       console.log();
       console.log('The credential issuance should work.');
-      console.log('If there\'s still an error, check:');
+      console.log("If there's still an error, check:");
       console.log('  1. Auth0 session validity when calling from UI');
       console.log('  2. Browser console for detailed errors');
       console.log('  3. Server logs for API errors');
       console.log('  4. Network tab for API response details');
-      
     } catch (importError) {
       console.log('❌ Import Error:', importError.message);
       console.log();
@@ -132,7 +136,6 @@ async function testCredentialIssuance() {
       console.log('  2. pnpm build');
       console.log('  3. Restart dev server');
     }
-
   } catch (error) {
     console.error('❌ Error:', error.message);
     console.error(error);

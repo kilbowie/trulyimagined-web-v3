@@ -10,6 +10,7 @@
 ## 🔍 Problem Analysis
 
 ### Issue Report
+
 User reported: "Failing to issue a credential on the Actor profile"
 
 ### Investigation Steps
@@ -18,7 +19,7 @@ User reported: "Failing to issue a credential on the Actor profile"
    - ✅ Authenticated user (Auth0 JWT)
    - ✅ Profile completed (`profile_completed = TRUE`)
    - ✅ At least one active verified identity link
-   - ⚠️  Actor record (NOT explicitly required by API, but missing)
+   - ⚠️ Actor record (NOT explicitly required by API, but missing)
 
 2. **Verified User Prerequisites**
    - ✅ User profile exists: `adamrossgreene@gmail.com`
@@ -41,6 +42,7 @@ User reported: "Failing to issue a credential on the Actor profile"
 **Script**: `create-actor-record.js`
 
 **Actions Performed**:
+
 ```sql
 INSERT INTO actors (
   id,
@@ -70,6 +72,7 @@ INSERT INTO actors (
 ```
 
 **Result**:
+
 - ✅ Actor record created with ID: `d0364e6c-a3e3-462d-9a25-9bd5ef5d9499`
 - ✅ Linked to user profile: `7145aebf-0af7-47c6-88dd-0938748c3918`
 - ✅ Verification status: `verified`
@@ -80,6 +83,7 @@ INSERT INTO actors (
 **Script**: `verify-credential-issuance.js`
 
 **All Checks Passed**:
+
 - ✅ User profile exists and completed
 - ✅ Actor record exists (linked to profile)
 - ✅ Active identity links: 1 (mock-kyc, high level)
@@ -112,6 +116,7 @@ INSERT INTO actors (
 **To verify the fix works:**
 
 1. **Start Development Server**
+
    ```bash
    cd apps/web
    pnpm dev
@@ -132,6 +137,7 @@ INSERT INTO actors (
    - Wait for processing (1-2 seconds)
 
 5. **Expected Result**
+
    ```
    ✅ Credential issued successfully!
    ```
@@ -176,6 +182,7 @@ INSERT INTO actors (
 ### Actors Table Schema
 
 **Required Fields**:
+
 - `id` (UUID PRIMARY KEY)
 - `auth0_user_id` (VARCHAR(255) UNIQUE NOT NULL)
 - `email` (VARCHAR(255) UNIQUE NOT NULL)
@@ -185,6 +192,7 @@ INSERT INTO actors (
 - `user_profile_id` (UUID) ⬅️ **Links to user_profiles table**
 
 **Optional Fields**:
+
 - `stage_name`, `bio`, `profile_image_url`, `location`, `registry_id`, etc.
 
 ### Credential Issuance Flow
@@ -254,36 +262,38 @@ All criteria met ✅:
 
 ### Before Fix
 
-| Check                        | Status | Note                                      |
-| ---------------------------- | ------ | ----------------------------------------- |
-| User Profile                 | ✅     | Exists, completed                         |
-| Identity Links               | ✅     | 1 active (high verification)              |
-| **Actor Record**             | ❌     | **MISSING - Root Cause**                  |
-| Issuer Keypair               | ✅     | Configured                                |
-| Encryption Key               | ✅     | Configured                                |
-| **Credential Issuance**      | ❌     | **FAILED**                                |
+| Check                   | Status | Note                         |
+| ----------------------- | ------ | ---------------------------- |
+| User Profile            | ✅     | Exists, completed            |
+| Identity Links          | ✅     | 1 active (high verification) |
+| **Actor Record**        | ❌     | **MISSING - Root Cause**     |
+| Issuer Keypair          | ✅     | Configured                   |
+| Encryption Key          | ✅     | Configured                   |
+| **Credential Issuance** | ❌     | **FAILED**                   |
 
 ### After Fix
 
-| Check                        | Status | Note                                      |
-| ---------------------------- | ------ | ----------------------------------------- |
-| User Profile                 | ✅     | Exists, completed                         |
-| Identity Links               | ✅     | 1 active (high verification)              |
-| **Actor Record**             | ✅     | **CREATED & LINKED**                      |
-| Issuer Keypair               | ✅     | Configured                                |
-| Encryption Key               | ✅     | Configured                                |
-| **Credential Issuance**      | ✅     | **WORKING**                               |
+| Check                   | Status | Note                         |
+| ----------------------- | ------ | ---------------------------- |
+| User Profile            | ✅     | Exists, completed            |
+| Identity Links          | ✅     | 1 active (high verification) |
+| **Actor Record**        | ✅     | **CREATED & LINKED**         |
+| Issuer Keypair          | ✅     | Configured                   |
+| Encryption Key          | ✅     | Configured                   |
+| **Credential Issuance** | ✅     | **WORKING**                  |
 
 ---
 
 ## 🚀 Next Steps
 
 ### Immediate
+
 1. ✅ Manual test: Log in and issue credential via UI
 2. ✅ Verify credential downloads correctly
 3. ✅ Test credential revocation functionality
 
 ### Future Enhancements
+
 - Add onboarding step to automatically create actor records when user selects Actor role
 - Add database constraint to ensure actors with Actor role always have an actor record
 - Implement actor profile completion workflow (stage_name, bio, profile image)
@@ -307,15 +317,18 @@ All criteria met ✅:
 If credential issuance still fails:
 
 ### Check Prerequisites
+
 ```bash
 node verify-credential-issuance.js
 ```
 
 ### Check Browser Console
+
 - Look for error messages starting with `[CREDENTIAL]`
 - Check network tab for `/api/credentials/issue` response
 
 ### Check Server Logs
+
 - Start dev server with: `pnpm dev`
 - Watch for errors in terminal output
 
