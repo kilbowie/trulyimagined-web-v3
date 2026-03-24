@@ -1,6 +1,6 @@
 /**
  * GET /api/consent-ledger/current
- * 
+ *
  * Get current consent entry for authenticated actor
  */
 
@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
     const auth0UserId = session.user.sub;
 
     // 2. Get user profile
-    const profileResult = await query(
-      'SELECT id FROM user_profiles WHERE auth0_user_id = $1',
-      [auth0UserId]
-    );
+    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
+      auth0UserId,
+    ]);
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
@@ -32,10 +31,9 @@ export async function GET(request: NextRequest) {
     const profile = profileResult.rows[0];
 
     // 3. Find actor record
-    const actorResult = await query(
-      'SELECT id FROM actors WHERE user_profile_id = $1',
-      [profile.id]
-    );
+    const actorResult = await query('SELECT id FROM actors WHERE user_profile_id = $1', [
+      profile.id,
+    ]);
 
     if (actorResult.rows.length === 0) {
       return NextResponse.json({
@@ -61,9 +59,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[CONSENT LEDGER] Get current error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch consent data' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch consent data' }, { status: 500 });
   }
 }

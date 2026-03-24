@@ -1,8 +1,8 @@
 /**
  * Migration 007: Consent Ledger + Licensing System
- * 
+ *
  * Run: pnpm exec ts-node infra/database/src/migrate-007.ts
- * 
+ *
  * This migration creates:
  * - consent_ledger table (versioned, immutable consent policies)
  * - licenses table (license grants with permission snapshots)
@@ -34,9 +34,9 @@ async function migrate() {
     // Execute migration in a transaction
     console.log('📝 Executing SQL migration...');
     await pool.query('BEGIN');
-    
+
     await pool.query(sql);
-    
+
     await pool.query('COMMIT');
 
     console.log('✅ Migration 007 completed successfully!');

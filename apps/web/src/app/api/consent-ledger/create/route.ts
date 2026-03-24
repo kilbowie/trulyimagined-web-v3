@@ -1,8 +1,8 @@
 /**
  * POST /api/consent-ledger/create
- * 
+ *
  * Create a new consent entry (for authenticated actors only)
- * 
+ *
  * This endpoint allows actors to update their consent preferences.
  * A new versioned entry is created, and the previous one is marked as "superseded".
  */
@@ -21,31 +21,44 @@ import {
 // REQUEST SCHEMA
 // ===========================================
 
+const PermissionLevelSchema = z.enum(['allow', 'require_approval', 'deny']);
+
 const CreateConsentEntrySchema = z.object({
   policy: z.object({
-    usage: z.object({
-      film_tv: z.boolean(),
-      advertising: z.boolean(),
-      ai_training: z.boolean(),
-      synthetic_media: z.boolean(),
-      voice_replication: z.boolean(),
+    mediaUsage: z.object({
+      film: PermissionLevelSchema,
+      television: PermissionLevelSchema,
+      streaming: PermissionLevelSchema,
+      gaming: PermissionLevelSchema,
+      voiceReplication: PermissionLevelSchema,
+      virtualReality: PermissionLevelSchema,
+      socialMedia: PermissionLevelSchema,
+      advertising: PermissionLevelSchema,
+      merchandise: PermissionLevelSchema,
+      livePerformance: PermissionLevelSchema,
+    }),
+    contentTypes: z.object({
+      explicit: PermissionLevelSchema,
+      political: PermissionLevelSchema,
+      religious: PermissionLevelSchema,
+      violence: PermissionLevelSchema,
+      alcohol: PermissionLevelSchema,
+      tobacco: PermissionLevelSchema,
+      gambling: PermissionLevelSchema,
+      pharmaceutical: PermissionLevelSchema,
+      firearms: PermissionLevelSchema,
+      adultContent: PermissionLevelSchema,
+    }),
+    territories: z.object({
+      allowed: z.array(z.string()),
+      denied: z.array(z.string()),
     }),
     commercial: z.object({
       paymentRequired: z.boolean(),
       minFee: z.number().optional(),
       revenueShare: z.number().min(0).max(100).optional(),
     }),
-    constraints: z.object({
-      duration: z.number().optional(),
-      expiryDate: z.string().optional(),
-      territory: z.array(z.string()).optional(),
-    }),
     attributionRequired: z.boolean(),
-    aiControls: z.object({
-      trainingAllowed: z.boolean(),
-      likenessGenerationAllowed: z.boolean(),
-      voiceCloningAllowed: z.boolean(),
-    }),
   }),
   reason: z.string().optional(),
 });
@@ -77,10 +90,9 @@ export async function POST(request: NextRequest) {
     const profile = profileResult.rows[0];
 
     // 3. Find actor record
-    const actorResult = await query(
-      'SELECT id FROM actors WHERE user_profile_id = $1',
-      [profile.id]
-    );
+    const actorResult = await query('SELECT id FROM actors WHERE user_profile_id = $1', [
+      profile.id,
+    ]);
 
     if (actorResult.rows.length === 0) {
       return NextResponse.json(

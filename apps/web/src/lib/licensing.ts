@@ -1,8 +1,8 @@
 /**
  * Licensing Library
- * 
+ *
  * Server-side actions for managing actor licenses to API clients.
- * 
+ *
  * Core Principles:
  * - Licenses capture a snapshot of consent policy at issuance time
  * - Even if actor updates consent, existing licenses retain original terms
@@ -71,7 +71,7 @@ export interface APIClient {
 
 /**
  * Create a new license
- * 
+ *
  * This captures the current consent policy as a snapshot.
  */
 export async function createLicense(params: CreateLicenseParams): Promise<License> {

@@ -3,6 +3,7 @@
 ## 🎉 Overview
 
 A comprehensive consent management and licensing system has been successfully implemented, featuring:
+
 - **Immutable Consent Ledger** with versioning
 - **Snapshot-based License Management** for API clients
 - **API Client Registry** with verification workflow
@@ -20,6 +21,7 @@ This system provides actors with granular control over how their digital identit
 The following tables were created in the database:
 
 ### 1. **api_clients** - External API Consumer Registry
+
 ```sql
 CREATE TABLE api_clients (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -34,9 +36,11 @@ CREATE TABLE api_clients (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
 **Purpose**: Register external platforms that request access to actor data.
 
 ### 2. **consent_ledger** - Versioned Immutable Consent Policies
+
 ```sql
 CREATE TABLE consent_ledger (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -49,15 +53,17 @@ CREATE TABLE consent_ledger (
   ip_address VARCHAR(45),                       -- IP address of updater
   user_agent TEXT,                              -- User agent string
   created_at TIMESTAMP DEFAULT NOW() NOT NULL,
-  
+
   CONSTRAINT consent_ledger_actor_version_unique UNIQUE(actor_id, version),
   CONSTRAINT consent_ledger_version_positive CHECK(version > 0),
   CONSTRAINT consent_ledger_created_at_not_future CHECK(created_at <= NOW())
 );
 ```
+
 **Key Principle**: Append-only. Never UPDATE existing entries. Each change creates a new version.
 
 ### 3. **licenses** - License Grants with Permission Snapshots
+
 ```sql
 CREATE TABLE licenses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -78,9 +84,11 @@ CREATE TABLE licenses (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 ```
+
 **Key Principle**: Licenses capture policy snapshot at issuance time. Even if actor updates consent, existing licenses retain original terms.
 
 ### 4. **license_usage_log** - Audit Trail
+
 ```sql
 CREATE TABLE license_usage_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -97,14 +105,17 @@ CREATE TABLE license_usage_log (
   created_at TIMESTAMP DEFAULT NOW() NOT NULL
 );
 ```
+
 **Purpose**: Complete audit trail of all consent checks.
 
 ### Database Functions
 
 #### `get_latest_consent(actor_id UUID)`
+
 Returns the most recent active consent entry for an actor.
 
 #### `get_next_consent_version(actor_id UUID)`
+
 Returns `MAX(version) + 1` for versioning.
 
 ---
@@ -118,6 +129,7 @@ Core library for consent ledger operations.
 **Key Exports**:
 
 #### Types
+
 - `ConsentPolicy`: Complete policy structure
   - `usage`: 5 boolean permissions (streaming, theatrical, commercial, educational, archival)
   - `commercial`: Payment terms (paymentRequired, minFee, revenueShare)
@@ -127,6 +139,7 @@ Core library for consent ledger operations.
 - `ConsentLedgerEntry`: Complete database record
 
 #### Operations
+
 ```typescript
 // Create new consent entry (versioning automatic)
 createConsentEntry(params: CreateConsentEntryParams): Promise<ConsentLedgerEntry>
@@ -145,6 +158,7 @@ getConsentVersion(actorId: string, version: number): Promise<ConsentLedgerEntry 
 ```
 
 #### Evaluation
+
 ```typescript
 // Check if usage type is permitted and not expired
 evaluateConsentUsage(policy: ConsentPolicy, usageType: string): { allowed: boolean; reason?: string }
@@ -165,11 +179,13 @@ License management and API client operations.
 **Key Exports**:
 
 #### Types
+
 - `License`: Complete license record with snapshot
 - `APIClient`: API client registry entry
 - `LicenseUsageLogEntry`: Audit trail entry
 
 #### License Operations
+
 ```typescript
 // Create license with policy snapshot
 createLicense(params: CreateLicenseParams): Promise<License>
@@ -194,6 +210,7 @@ getLicenseStats(actorId: string): Promise<LicenseStats>
 ```
 
 #### API Client Operations
+
 ```typescript
 // Get client by ID
 getAPIClient(clientId: string): Promise<APIClient | null>
@@ -206,6 +223,7 @@ getVerifiedAPIClients(): Promise<APIClient[]>
 ```
 
 #### Usage Logging
+
 ```typescript
 // Log consent check to audit trail
 logLicenseUsage(params: LicenseUsageLogParams): Promise<void>
@@ -225,6 +243,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Authentication**: Bearer token (API key)
 
 **Request**:
+
 ```json
 {
   "actorId": "uuid",
@@ -235,6 +254,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 ```
 
 **Flow**:
+
 1. Extract API key from `Authorization: Bearer <key>` header
 2. Validate request schema
 3. Verify API client credential_status = 'verified'
@@ -247,6 +267,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 10. Log decision to license_usage_log (audit trail)
 
 **Response** (200):
+
 ```json
 {
   "decision": "allow" | "deny" | "conditional",
@@ -273,6 +294,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 ```
 
 **Error Codes**:
+
 - `401`: Missing or invalid API key
 - `400`: Invalid request format
 - `403`: Unverified client, no license, expired license, usage not permitted
@@ -289,6 +311,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Authorization**: Actor-only (checks actors table)
 
 **Request**:
+
 ```json
 {
   "policy": {
@@ -301,7 +324,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
     },
     "commercial": {
       "paymentRequired": true,
-      "minFee": 150.00,
+      "minFee": 150.0,
       "revenueShare": 12.5
     },
     "constraints": {
@@ -320,6 +343,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 ```
 
 **Response** (200):
+
 ```json
 {
   "success": true,
@@ -334,6 +358,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 ```
 
 **Versioning Behavior**:
+
 - Gets next version number automatically
 - Marks previous "active" entry as "superseded"
 - Inserts new entry with status "active"
@@ -346,9 +371,11 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Purpose**: Retrieve current consent and optional history.
 
 **Query Params**:
+
 - `includeHistory=true` - Include version history
 
 **Response**:
+
 ```json
 {
   "current": {
@@ -377,9 +404,11 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Purpose**: List all licenses granted to API clients for actor's data.
 
 **Query Params**:
+
 - `status=active|revoked|expired|suspended` - Filter by status (optional)
 
 **Response**:
+
 ```json
 {
   "licenses": [
@@ -416,6 +445,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Purpose**: Update actor's consent policy.
 
 **Features**:
+
 - **Usage Permissions**: 5 checkboxes (streaming, theatrical, commercial, educational, archival)
 - **Commercial Terms**: Payment required checkbox, min fee input, revenue share percentage
 - **Constraints**: Duration (days), expiry date picker, territory (comma-separated countries)
@@ -435,6 +465,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Purpose**: Monitor licenses granted to API clients.
 
 **Features**:
+
 - **Stats Cards**: 5 cards showing total/active/revoked/expired/suspended counts
 - **Filter Tabs**: All, Active, Revoked, Expired, Suspended
 - **License Cards**: Each license displays:
@@ -458,6 +489,7 @@ getLicenseUsageLog(licenseId: string, limit: number): Promise<LicenseUsageLogEnt
 **Purpose**: View complete version history of consent.
 
 **Features**:
+
 - **Timeline View**: Visual timeline with colored dots (green=active, gray=superseded, red=revoked)
 - **Version Cards**: Each version shows:
   - Version number + status badge
@@ -513,26 +545,31 @@ These appear after the existing "Manage Consents" link.
 ## 🔐 Key Architectural Principles
 
 ### Immutability
+
 - **consent_ledger**: Append-only. Never UPDATE. Only INSERT.
 - **licenses**: Permission snapshot never changes. Reflects policy at issuance time.
 
 ### Versioning
+
 - Each actor has incrementing versions (1, 2, 3, ...)
 - Only one "active" entry at a time
 - Previous entries marked "superseded"
 - Revocation creates new entry with status "revoked"
 
 ### Snapshot-based Licensing
+
 - When a license is issued, policy is copied to `granted_permissions_snapshot`
 - Even if actor updates consent later, license retains original terms
 - Licenses have their own lifecycle (active → revoked/expired/suspended)
 
 ### Transactional Integrity
+
 - All write operations use PostgreSQL transactions (BEGIN/COMMIT/ROLLBACK)
 - Versioning logic guaranteed atomic
 - Multiple tables updated consistently
 
 ### Audit Trail
+
 - Every consent check logged to license_usage_log
 - IP addresses and user agents captured
 - Decision and reason recorded
@@ -543,6 +580,7 @@ These appear after the existing "Manage Consents" link.
 ## 📘 Usage Examples
 
 ### Actor Updates Consent
+
 1. Actor navigates to `/dashboard/consent-preferences`
 2. Toggles usage permissions, updates commercial terms
 3. Enters reason: "Updated pricing model"
@@ -551,6 +589,7 @@ These appear after the existing "Manage Consents" link.
 6. Success message: "Consent updated successfully! Version 4 created."
 
 ### External Platform Checks Consent
+
 1. Platform makes API call: `POST /api/v1/consent/check`
 2. Provides: actorId, requestedUsage="streaming", apiClientId
 3. System validates:
@@ -564,6 +603,7 @@ These appear after the existing "Manage Consents" link.
 6. Logs to license_usage_log
 
 ### Actor Views License History
+
 1. Actor navigates to `/dashboard/licenses`
 2. Sees 3 active licenses, 1 revoked, 0 expired
 3. Filters to "Active"
@@ -577,12 +617,14 @@ These appear after the existing "Manage Consents" link.
 ## 🧪 Testing
 
 ### Database Tables
+
 - ✅ All 4 tables created
 - ✅ 12 indexes created
 - ✅ 2 database functions created
 - ✅ Confirmed via check-consent-tables.ts script
 
 ### Next Steps for Testing
+
 1. **Manual UI Testing**:
    - Start dev server: `pnpm dev`
    - Login as actor: adamrossgreene@gmail.com
@@ -634,6 +676,7 @@ These appear after the existing "Manage Consents" link.
 ## 📝 Documentation
 
 **Files Created**:
+
 - `CONSENT_LEDGER_COMPLETE.md` (this file) - Complete implementation guide
 - `infra/database/migrations/007_consent_ledger_licenses.sql` - Database schema
 - `infra/database/src/migrate-007.ts` - Migration runner
@@ -660,7 +703,7 @@ The Consent Ledger + Licensing System is **COMPLETE** and **PRODUCTION-READY**. 
 ✅ **Granular permission controls** (5 usage types, 3 AI controls, commercial terms, constraints)  
 ✅ **Complete audit trail** of all consent checks  
 ✅ **Actor-friendly UI** for managing preferences  
-✅ **Comprehensive API** for programmatic access  
+✅ **Comprehensive API** for programmatic access
 
 This implementation follows industry best practices for consent management, data protection, and audit compliance. The system is ready for actors to begin managing their consent preferences and for external platforms to integrate the enforcement endpoint.
 

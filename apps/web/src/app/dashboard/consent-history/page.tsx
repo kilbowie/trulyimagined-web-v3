@@ -59,7 +59,7 @@ export default function ConsentHistoryPage() {
       setLoading(true);
       setError(null);
       const res = await fetch('/api/consent-ledger/current?includeHistory=true');
-      
+
       if (!res.ok) {
         throw new Error('Failed to load consent history');
       }
@@ -86,19 +86,27 @@ export default function ConsentHistoryPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500 border-green-400';
-      case 'superseded': return 'bg-gray-500 border-gray-400';
-      case 'revoked': return 'bg-red-500 border-red-400';
-      default: return 'bg-gray-500 border-gray-400';
+      case 'active':
+        return 'bg-green-500 border-green-400';
+      case 'superseded':
+        return 'bg-gray-500 border-gray-400';
+      case 'revoked':
+        return 'bg-red-500 border-red-400';
+      default:
+        return 'bg-gray-500 border-gray-400';
     }
   };
 
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-300 bg-green-500/20 border-green-500';
-      case 'superseded': return 'text-gray-300 bg-gray-500/20 border-gray-500';
-      case 'revoked': return 'text-red-300 bg-red-500/20 border-red-500';
-      default: return 'text-gray-300 bg-gray-500/20 border-gray-500';
+      case 'active':
+        return 'text-green-300 bg-green-500/20 border-green-500';
+      case 'superseded':
+        return 'text-gray-300 bg-gray-500/20 border-gray-500';
+      case 'revoked':
+        return 'text-red-300 bg-red-500/20 border-red-500';
+      default:
+        return 'text-gray-300 bg-gray-500/20 border-gray-500';
     }
   };
 
@@ -139,7 +147,8 @@ export default function ConsentHistoryPage() {
           </button>
           <h1 className="text-4xl font-bold text-white mb-2">Consent Ledger History</h1>
           <p className="text-gray-300">
-            Complete version history of your consent preferences. Each update creates a new immutable entry.
+            Complete version history of your consent preferences. Each update creates a new
+            immutable entry.
           </p>
         </div>
 
@@ -182,7 +191,9 @@ export default function ConsentHistoryPage() {
                 return (
                   <div key={entry.id} className="relative pl-20">
                     {/* Timeline Dot */}
-                    <div className={`absolute left-6 w-5 h-5 rounded-full border-4 ${getStatusColor(entry.status)}`}></div>
+                    <div
+                      className={`absolute left-6 w-5 h-5 rounded-full border-4 ${getStatusColor(entry.status)}`}
+                    ></div>
 
                     {/* Entry Card */}
                     <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-500 transition-colors">
@@ -192,13 +203,13 @@ export default function ConsentHistoryPage() {
                             <h3 className="text-2xl font-bold text-white">
                               Version {entry.version}
                             </h3>
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(entry.status)}`}>
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusBadgeColor(entry.status)}`}
+                            >
                               {entry.status.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-gray-400 text-sm">
-                            {formatDate(entry.created_at)}
-                          </p>
+                          <p className="text-gray-400 text-sm">{formatDate(entry.created_at)}</p>
                         </div>
                       </div>
 
@@ -206,7 +217,9 @@ export default function ConsentHistoryPage() {
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
                         <div>
                           <div className="text-gray-400">Usage Permissions</div>
-                          <div className="text-white font-semibold">{permissions.usage}/5 Enabled</div>
+                          <div className="text-white font-semibold">
+                            {permissions.usage}/5 Enabled
+                          </div>
                         </div>
                         <div>
                           <div className="text-gray-400">AI Controls</div>
@@ -233,7 +246,11 @@ export default function ConsentHistoryPage() {
                         onClick={() => toggleExpanded(entry.version)}
                         className="text-purple-300 hover:text-purple-100 text-sm font-semibold flex items-center gap-2"
                       >
-                        <span className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}>▶</span>
+                        <span
+                          className={`transform transition-transform ${isExpanded ? 'rotate-90' : ''}`}
+                        >
+                          ▶
+                        </span>
                         {isExpanded ? 'Hide' : 'Show'} Full Policy
                       </button>
 
@@ -246,7 +263,9 @@ export default function ConsentHistoryPage() {
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               {Object.entries(entry.policy.usage).map(([key, value]) => (
                                 <div key={key} className="flex items-center gap-2">
-                                  <span className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                                  <span
+                                    className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
+                                  ></span>
                                   <span className="text-gray-300 capitalize">{key}</span>
                                   <span className="text-gray-500">{value ? '✓' : '✗'}</span>
                                 </div>
@@ -258,30 +277,63 @@ export default function ConsentHistoryPage() {
                           <div className="p-4 bg-black/30 rounded-lg">
                             <h4 className="text-white font-semibold mb-3">Commercial Terms</h4>
                             <div className="text-sm space-y-2 text-gray-300">
-                              <div>Payment Required: <span className="text-white">{entry.policy.commercial.paymentRequired ? 'Yes' : 'No'}</span></div>
+                              <div>
+                                Payment Required:{' '}
+                                <span className="text-white">
+                                  {entry.policy.commercial.paymentRequired ? 'Yes' : 'No'}
+                                </span>
+                              </div>
                               {entry.policy.commercial.minFee !== undefined && (
-                                <div>Minimum Fee: <span className="text-white">${entry.policy.commercial.minFee}</span></div>
+                                <div>
+                                  Minimum Fee:{' '}
+                                  <span className="text-white">
+                                    ${entry.policy.commercial.minFee}
+                                  </span>
+                                </div>
                               )}
                               {entry.policy.commercial.revenueShare !== undefined && (
-                                <div>Revenue Share: <span className="text-white">{entry.policy.commercial.revenueShare}%</span></div>
+                                <div>
+                                  Revenue Share:{' '}
+                                  <span className="text-white">
+                                    {entry.policy.commercial.revenueShare}%
+                                  </span>
+                                </div>
                               )}
                             </div>
                           </div>
 
                           {/* Constraints */}
-                          {(entry.policy.constraints.durationInDays || entry.policy.constraints.expiryDate || entry.policy.constraints.territory?.length) && (
+                          {(entry.policy.constraints.durationInDays ||
+                            entry.policy.constraints.expiryDate ||
+                            entry.policy.constraints.territory?.length) && (
                             <div className="p-4 bg-black/30 rounded-lg">
                               <h4 className="text-white font-semibold mb-3">Constraints</h4>
                               <div className="text-sm space-y-2 text-gray-300">
                                 {entry.policy.constraints.durationInDays && (
-                                  <div>Duration: <span className="text-white">{entry.policy.constraints.durationInDays} days</span></div>
+                                  <div>
+                                    Duration:{' '}
+                                    <span className="text-white">
+                                      {entry.policy.constraints.durationInDays} days
+                                    </span>
+                                  </div>
                                 )}
                                 {entry.policy.constraints.expiryDate && (
-                                  <div>Expiry: <span className="text-white">{entry.policy.constraints.expiryDate}</span></div>
+                                  <div>
+                                    Expiry:{' '}
+                                    <span className="text-white">
+                                      {entry.policy.constraints.expiryDate}
+                                    </span>
+                                  </div>
                                 )}
-                                {entry.policy.constraints.territory && entry.policy.constraints.territory.length > 0 && (
-                                  <div>Territory: <span className="text-white">{entry.policy.constraints.territory.join(', ')}</span></div>
-                                )}
+                                {entry.policy.constraints.territory &&
+                                  entry.policy.constraints.territory.length > 0 && (
+                                    <div>
+                                      Territory:{' '}
+                                      <span className="text-white">
+                                        {entry.policy.constraints.territory.join(', ')}
+                                      </span>
+                                    </div>
+                                  )}
                               </div>
                             </div>
                           )}
@@ -290,7 +342,10 @@ export default function ConsentHistoryPage() {
                           <div className="p-4 bg-black/30 rounded-lg">
                             <h4 className="text-white font-semibold mb-3">Attribution</h4>
                             <div className="text-sm text-gray-300">
-                              Attribution Required: <span className="text-white">{entry.policy.attributionRequired ? 'Yes' : 'No'}</span>
+                              Attribution Required:{' '}
+                              <span className="text-white">
+                                {entry.policy.attributionRequired ? 'Yes' : 'No'}
+                              </span>
                             </div>
                           </div>
 
@@ -300,8 +355,12 @@ export default function ConsentHistoryPage() {
                             <div className="grid grid-cols-2 gap-2 text-sm">
                               {Object.entries(entry.policy.aiControls).map(([key, value]) => (
                                 <div key={key} className="flex items-center gap-2">
-                                  <span className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}></span>
-                                  <span className="text-gray-300">{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                                  <span
+                                    className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
+                                  ></span>
+                                  <span className="text-gray-300">
+                                    {key.replace(/([A-Z])/g, ' $1').trim()}
+                                  </span>
                                   <span className="text-gray-500">{value ? '✓' : '✗'}</span>
                                 </div>
                               ))}
@@ -312,15 +371,22 @@ export default function ConsentHistoryPage() {
                           {(entry.ip_address || entry.user_agent) && (
                             <details className="group">
                               <summary className="cursor-pointer text-gray-400 hover:text-gray-200 text-xs list-none flex items-center gap-2">
-                                <span className="transform transition-transform group-open:rotate-90">▶</span>
+                                <span className="transform transition-transform group-open:rotate-90">
+                                  ▶
+                                </span>
                                 Technical Metadata
                               </summary>
                               <div className="mt-2 p-3 bg-black/50 rounded-lg text-xs">
                                 {entry.ip_address && (
-                                  <div className="text-gray-400">IP: <span className="text-gray-300">{entry.ip_address}</span></div>
+                                  <div className="text-gray-400">
+                                    IP: <span className="text-gray-300">{entry.ip_address}</span>
+                                  </div>
                                 )}
                                 {entry.user_agent && (
-                                  <div className="text-gray-400 mt-1">User Agent: <span className="text-gray-300">{entry.user_agent}</span></div>
+                                  <div className="text-gray-400 mt-1">
+                                    User Agent:{' '}
+                                    <span className="text-gray-300">{entry.user_agent}</span>
+                                  </div>
                                 )}
                               </div>
                             </details>

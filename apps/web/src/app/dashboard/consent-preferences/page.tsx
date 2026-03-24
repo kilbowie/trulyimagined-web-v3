@@ -3,30 +3,43 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+type PermissionLevel = 'allow' | 'require_approval' | 'deny';
+
 type ConsentPolicy = {
-  usage: {
-    streaming: boolean;
-    theatrical: boolean;
-    commercial: boolean;
-    educational: boolean;
-    archival: boolean;
+  mediaUsage: {
+    film: PermissionLevel;
+    television: PermissionLevel;
+    streaming: PermissionLevel;
+    gaming: PermissionLevel;
+    voiceReplication: PermissionLevel;
+    virtualReality: PermissionLevel;
+    socialMedia: PermissionLevel;
+    advertising: PermissionLevel;
+    merchandise: PermissionLevel;
+    livePerformance: PermissionLevel;
+  };
+  contentTypes: {
+    explicit: PermissionLevel;
+    political: PermissionLevel;
+    religious: PermissionLevel;
+    violence: PermissionLevel;
+    alcohol: PermissionLevel;
+    tobacco: PermissionLevel;
+    gambling: PermissionLevel;
+    pharmaceutical: PermissionLevel;
+    firearms: PermissionLevel;
+    adultContent: PermissionLevel;
+  };
+  territories: {
+    allowed: string[];
+    denied: string[];
   };
   commercial: {
     paymentRequired: boolean;
     minFee?: number;
     revenueShare?: number;
   };
-  constraints: {
-    durationInDays?: number;
-    expiryDate?: string;
-    territory?: string[];
-  };
   attributionRequired: boolean;
-  aiControls: {
-    trainingAllowed: boolean;
-    syntheticGenerationAllowed: boolean;
-    biometricAnalysisAllowed: boolean;
-  };
 };
 
 type ConsentLedgerEntry = {
@@ -39,6 +52,25 @@ type ConsentLedgerEntry = {
   created_at: string;
 };
 
+// Common territories for quick selection
+const COMMON_TERRITORIES = [
+  { code: 'US', name: 'United States' },
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'CN', name: 'China' },
+  { code: 'IN', name: 'India' },
+  { code: 'BR', name: 'Brazil' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'KR', name: 'South Korea' },
+  { code: 'NL', name: 'Netherlands' },
+];
+
 export default function ConsentPreferencesPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -48,29 +80,40 @@ export default function ConsentPreferencesPage() {
   const [currentConsent, setCurrentConsent] = useState<ConsentLedgerEntry | null>(null);
 
   const [policy, setPolicy] = useState<ConsentPolicy>({
-    usage: {
-      streaming: false,
-      theatrical: false,
-      commercial: false,
-      educational: false,
-      archival: false,
+    mediaUsage: {
+      film: 'require_approval',
+      television: 'require_approval',
+      streaming: 'require_approval',
+      gaming: 'require_approval',
+      voiceReplication: 'deny',
+      virtualReality: 'require_approval',
+      socialMedia: 'require_approval',
+      advertising: 'require_approval',
+      merchandise: 'require_approval',
+      livePerformance: 'require_approval',
+    },
+    contentTypes: {
+      explicit: 'deny',
+      political: 'require_approval',
+      religious: 'require_approval',
+      violence: 'require_approval',
+      alcohol: 'require_approval',
+      tobacco: 'deny',
+      gambling: 'deny',
+      pharmaceutical: 'require_approval',
+      firearms: 'deny',
+      adultContent: 'deny',
+    },
+    territories: {
+      allowed: [],
+      denied: [],
     },
     commercial: {
       paymentRequired: true,
       minFee: undefined,
       revenueShare: undefined,
     },
-    constraints: {
-      durationInDays: undefined,
-      expiryDate: undefined,
-      territory: [],
-    },
     attributionRequired: true,
-    aiControls: {
-      trainingAllowed: false,
-      syntheticGenerationAllowed: false,
-      biometricAnalysisAllowed: false,
-    },
   });
 
   const [reason, setReason] = useState('');
@@ -85,13 +128,13 @@ export default function ConsentPreferencesPage() {
       setLoading(true);
       setError(null);
       const res = await fetch('/api/consent-ledger/current');
-      
+
       if (!res.ok) {
         throw new Error('Failed to load consent preferences');
       }
 
       const data = await res.json();
-      
+
       if (data.current) {
         setCurrentConsent(data.current);
         setPolicy(data.current.policy);
@@ -124,7 +167,7 @@ export default function ConsentPreferencesPage() {
       const data = await res.json();
       setSuccess(`Consent updated successfully! Version ${data.entry.version} created.`);
       setReason('');
-      
+
       // Reload current consent
       await loadCurrentConsent();
     } catch (err) {
@@ -132,6 +175,80 @@ export default function ConsentPreferencesPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const PermissionSelector = ({
+    value,
+    onChange,
+    label,
+  }: {
+    value: PermissionLevel;
+    onChange: (level: PermissionLevel) => void;
+    label: string;
+  }) => (
+    <div className="flex items-center justify-between py-3 border-b border-white/10 last:border-0">
+      <span className="text-white font-medium">{label}</span>
+      <div className="flex gap-3">
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="radio"
+            checked={value === 'allow'}
+            onChange={() => onChange('allow')}
+            className="w-4 h-4"
+          />
+          <span className={`text-sm ${value === 'allow' ? 'text-green-300 font-semibold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+            Allow
+          </span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="radio"
+            checked={value === 'require_approval'}
+            onChange={() => onChange('require_approval')}
+            className="w-4 h-4"
+          />
+          <span className={`text-sm ${value === 'require_approval' ? 'text-yellow-300 font-semibold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+            Require Approval
+          </span>
+        </label>
+        <label className="flex items-center gap-2 cursor-pointer group">
+          <input
+            type="radio"
+            checked={value === 'deny'}
+            onChange={() => onChange('deny')}
+            className="w-4 h-4"
+          />
+          <span className={`text-sm ${value === 'deny' ? 'text-red-300 font-semibold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+            Deny
+          </span>
+        </label>
+      </div>
+    </div>
+  );
+
+  const toggleTerritory = (code: string, list: 'allowed' | 'denied') => {
+    setPolicy(prev => {
+      const newTerritories = { ...prev.territories };
+      const otherList = list === 'allowed' ? 'denied' : 'allowed';
+      
+      // Remove from other list if present
+      newTerritories[otherList] = newTerritories[otherList].filter(c => c !== code);
+      
+      // Toggle in current list
+      if (newTerritories[list].includes(code)) {
+        newTerritories[list] = newTerritories[list].filter(c => c !== code);
+      } else {
+        newTerritories[list] = [...newTerritories[list], code];
+      }
+      
+      return { ...prev, territories: newTerritories };
+    });
+  };
+
+  const getTerritoryStatus = (code: string): 'allowed' | 'denied' | 'neutral' => {
+    if (policy.territories.allowed.includes(code)) return 'allowed';
+    if (policy.territories.denied.includes(code)) return 'denied';
+    return 'neutral';
   };
 
   if (loading) {
@@ -144,7 +261,7 @@ export default function ConsentPreferencesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-8">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -153,13 +270,14 @@ export default function ConsentPreferencesPage() {
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-4xl font-bold text-white mb-2">Consent Preferences</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">Image & Likeness Consent Preferences</h1>
           <p className="text-gray-300">
-            Manage how your digital identity and data can be used. Each change creates a new version.
+            Control how your image and likeness can be used. Set non-negotiable boundaries for different media types and content.
           </p>
           {currentConsent && (
             <div className="mt-4 text-sm text-gray-400">
-              Current Version: <span className="text-purple-300 font-semibold">{currentConsent.version}</span>
+              Current Version:{' '}
+              <span className="text-purple-300 font-semibold">{currentConsent.version}</span>
               {' • '}
               Updated: {new Date(currentConsent.created_at).toLocaleDateString()}
             </div>
@@ -180,42 +298,133 @@ export default function ConsentPreferencesPage() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Usage Permissions */}
+          {/* Media Usage Categories */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Usage Permissions</h2>
+            <h2 className="text-2xl font-bold text-white mb-4">Media Usage Categories</h2>
             <p className="text-gray-300 mb-6 text-sm">
-              Select the types of usage you permit for your content and identity.
+              Control how your image and likeness can be used across different media types. Choose Allow for blanket approval, Require Approval for case-by-case review, or Deny to reject usage.
             </p>
-            <div className="space-y-4">
-              {Object.entries(policy.usage).map(([key, value]) => (
-                <label key={key} className="flex items-center gap-3 text-white cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={value}
-                    onChange={(e) => setPolicy({
-                      ...policy,
-                      usage: { ...policy.usage, [key]: e.target.checked }
-                    })}
-                    className="w-5 h-5 rounded border-gray-300"
-                  />
-                  <span className="capitalize">{key}</span>
-                </label>
-              ))}
+            <div className="space-y-1">
+              <PermissionSelector
+                label="Film / Theatrical"
+                value={policy.mediaUsage.film}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, film: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Television"
+                value={policy.mediaUsage.television}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, television: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Streaming Platforms"
+                value={policy.mediaUsage.streaming}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, streaming: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Gaming / Interactive Media"
+                value={policy.mediaUsage.gaming}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, gaming: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Voice Replication / AI Voice"
+                value={policy.mediaUsage.voiceReplication}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Virtual Reality / Metaverse"
+                value={policy.mediaUsage.virtualReality}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, virtualReality: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Social Media"
+                value={policy.mediaUsage.socialMedia}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, socialMedia: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Advertising / Commercials"
+                value={policy.mediaUsage.advertising}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, advertising: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Merchandise / Products"
+                value={policy.mediaUsage.merchandise}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, merchandise: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Live Performance / Events"
+                value={policy.mediaUsage.livePerformance}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    mediaUsage: { ...policy.mediaUsage, livePerformance: value },
+                  })
+                }
+              />
             </div>
           </div>
 
           {/* Commercial Terms */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-4">Commercial Terms</h2>
+            <p className="text-gray-300 mb-4 text-sm">
+              Set your commercial requirements for any usage of your image and likeness.
+            </p>
             <div className="space-y-4">
               <label className="flex items-center gap-3 text-white cursor-pointer">
                 <input
                   type="checkbox"
                   checked={policy.commercial.paymentRequired}
-                  onChange={(e) => setPolicy({
-                    ...policy,
-                    commercial: { ...policy.commercial, paymentRequired: e.target.checked }
-                  })}
+                  onChange={(e) =>
+                    setPolicy({
+                      ...policy,
+                      commercial: { ...policy.commercial, paymentRequired: e.target.checked },
+                    })
+                  }
                   className="w-5 h-5 rounded border-gray-300"
                 />
                 <span>Payment Required</span>
@@ -230,15 +439,17 @@ export default function ConsentPreferencesPage() {
                       min="0"
                       step="0.01"
                       value={policy.commercial.minFee || ''}
-                      onChange={(e) => setPolicy({
-                        ...policy,
-                        commercial: {
-                          ...policy.commercial,
-                          minFee: e.target.value ? parseFloat(e.target.value) : undefined
-                        }
-                      })}
+                      onChange={(e) =>
+                        setPolicy({
+                          ...policy,
+                          commercial: {
+                            ...policy.commercial,
+                            minFee: e.target.value ? parseFloat(e.target.value) : undefined,
+                          },
+                        })
+                      }
                       className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                      placeholder="e.g., 100.00"
+                      placeholder="e.g., 5000.00"
                     />
                   </div>
                   <div>
@@ -249,15 +460,17 @@ export default function ConsentPreferencesPage() {
                       max="100"
                       step="0.1"
                       value={policy.commercial.revenueShare || ''}
-                      onChange={(e) => setPolicy({
-                        ...policy,
-                        commercial: {
-                          ...policy.commercial,
-                          revenueShare: e.target.value ? parseFloat(e.target.value) : undefined
-                        }
-                      })}
+                      onChange={(e) =>
+                        setPolicy({
+                          ...policy,
+                          commercial: {
+                            ...policy.commercial,
+                            revenueShare: e.target.value ? parseFloat(e.target.value) : undefined,
+                          },
+                        })
+                      }
                       className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                      placeholder="e.g., 10.5"
+                      placeholder="e.g., 15.0"
                     />
                   </div>
                 </div>
@@ -265,58 +478,155 @@ export default function ConsentPreferencesPage() {
             </div>
           </div>
 
-          {/* Constraints */}
+          {/* Content Type Restrictions */}
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Constraints</h2>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-white mb-2">Duration (Days)</label>
-                <input
-                  type="number"
-                  min="1"
-                  value={policy.constraints.durationInDays || ''}
-                  onChange={(e) => setPolicy({
+            <h2 className="text-2xl font-bold text-white mb-4">Content Type Restrictions</h2>
+            <p className="text-gray-300 mb-6 text-sm">
+              Set permissions for different types of content. These restrictions apply across all media usage categories above.
+            </p>
+            <div className="space-y-1">
+              <PermissionSelector
+                label="Explicit Content"
+                value={policy.contentTypes.explicit}
+                onChange={(value) =>
+                  setPolicy({
                     ...policy,
-                    constraints: {
-                      ...policy.constraints,
-                      durationInDays: e.target.value ? parseInt(e.target.value) : undefined
-                    }
-                  })}
-                  className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                  placeholder="e.g., 365"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-2">Expiry Date</label>
-                <input
-                  type="date"
-                  value={policy.constraints.expiryDate || ''}
-                  onChange={(e) => setPolicy({
+                    contentTypes: { ...policy.contentTypes, explicit: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Political Content"
+                value={policy.contentTypes.political}
+                onChange={(value) =>
+                  setPolicy({
                     ...policy,
-                    constraints: {
-                      ...policy.constraints,
-                      expiryDate: e.target.value || undefined
-                    }
-                  })}
-                  className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                />
-              </div>
-              <div>
-                <label className="block text-white mb-2">Territory (Comma-separated countries)</label>
-                <input
-                  type="text"
-                  value={policy.constraints.territory?.join(', ') || ''}
-                  onChange={(e) => setPolicy({
+                    contentTypes: { ...policy.contentTypes, political: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Religious Content"
+                value={policy.contentTypes.religious}
+                onChange={(value) =>
+                  setPolicy({
                     ...policy,
-                    constraints: {
-                      ...policy.constraints,
-                      territory: e.target.value ? e.target.value.split(',').map(t => t.trim()) : []
-                    }
-                  })}
-                  className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-                  placeholder="e.g., USA, CAN, GBR"
-                />
-              </div>
+                    contentTypes: { ...policy.contentTypes, religious: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Violent Content"
+                value={policy.contentTypes.violence}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, violence: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Alcohol-Related Content"
+                value={policy.contentTypes.alcohol}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, alcohol: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Tobacco-Related Content"
+                value={policy.contentTypes.tobacco}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, tobacco: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Gambling-Related Content"
+                value={policy.contentTypes.gambling}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, gambling: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Pharmaceutical / Medical Content"
+                value={policy.contentTypes.pharmaceutical}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, pharmaceutical: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Firearms-Related Content"
+                value={policy.contentTypes.firearms}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, firearms: value },
+                  })
+                }
+              />
+              <PermissionSelector
+                label="Adult Content"
+                value={policy.contentTypes.adultContent}
+                onChange={(value) =>
+                  setPolicy({
+                    ...policy,
+                    contentTypes: { ...policy.contentTypes, adultContent: value },
+                  })
+                }
+              />
+            </div>
+          </div>
+
+          {/* Geographic Territories */}
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+            <h2 className="text-2xl font-bold text-white mb-4">Geographic Territories</h2>
+            <p className="text-gray-300 mb-6 text-sm">
+              Control usage by geographic region. Click "Allow" to add a country to your allowed list (green), or "Deny" to explicitly block usage in that territory (red). If no countries are in the allowed list, usage is permitted worldwide except for denied territories.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {COMMON_TERRITORIES.map((territory) => {
+                const status = getTerritoryStatus(territory.code);
+                return (
+                  <div key={territory.code} className="space-y-2">
+                    <div className="text-white font-semibold text-sm">{territory.name}</div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => toggleTerritory(territory.code, 'allowed')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          status === 'allowed'
+                            ? 'bg-green-600 text-white'
+                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                      >
+                        Allow
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTerritory(territory.code, 'denied')}
+                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                          status === 'denied'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                        }`}
+                      >
+                        Deny
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -327,60 +637,16 @@ export default function ConsentPreferencesPage() {
               <input
                 type="checkbox"
                 checked={policy.attributionRequired}
-                onChange={(e) => setPolicy({
-                  ...policy,
-                  attributionRequired: e.target.checked
-                })}
+                onChange={(e) =>
+                  setPolicy({
+                    ...policy,
+                    attributionRequired: e.target.checked,
+                  })
+                }
                 className="w-5 h-5 rounded border-gray-300"
               />
               <span>Attribution Required</span>
             </label>
-          </div>
-
-          {/* AI Controls */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">AI Controls</h2>
-            <p className="text-gray-300 mb-6 text-sm">
-              Control how your data can be used with AI systems.
-            </p>
-            <div className="space-y-4">
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.trainingAllowed}
-                  onChange={(e) => setPolicy({
-                    ...policy,
-                    aiControls: { ...policy.aiControls, trainingAllowed: e.target.checked }
-                  })}
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow AI Training</span>
-              </label>
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.syntheticGenerationAllowed}
-                  onChange={(e) => setPolicy({
-                    ...policy,
-                    aiControls: { ...policy.aiControls, syntheticGenerationAllowed: e.target.checked }
-                  })}
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow Synthetic Generation</span>
-              </label>
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.biometricAnalysisAllowed}
-                  onChange={(e) => setPolicy({
-                    ...policy,
-                    aiControls: { ...policy.aiControls, biometricAnalysisAllowed: e.target.checked }
-                  })}
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow Biometric Analysis</span>
-              </label>
-            </div>
           </div>
 
           {/* Reason */}

@@ -21,17 +21,17 @@ async function checkTables() {
         AND tablename IN ('consent_ledger', 'licenses', 'api_clients', 'license_usage_log')
       ORDER BY tablename
     `);
-    
+
     console.log('\n📊 Existing Consent Ledger Tables:\n');
     if (result.rows.length === 0) {
       console.log('   (none found)');
     } else {
-      result.rows.forEach(row => {
+      result.rows.forEach((row) => {
         console.log(`   ✓ ${row.tablename}`);
       });
     }
     console.log('');
-    
+
     // Check indexes
     const indexResult = await pool.query(`
       SELECT indexname
@@ -40,17 +40,17 @@ async function checkTables() {
         AND indexname LIKE '%consent%' OR indexname LIKE '%license%' OR indexname LIKE '%api_client%'
       ORDER BY indexname
     `);
-    
+
     console.log('📑 Existing Related Indexes:\n');
     if (indexResult.rows.length === 0) {
       console.log('   (none found)');
     } else {
-      indexResult.rows.forEach(row => {
+      indexResult.rows.forEach((row) => {
         console.log(`   • ${row.indexname}`);
       });
     }
     console.log('');
-    
+
     process.exit(0);
   } catch (error) {
     console.error('Error:', error);

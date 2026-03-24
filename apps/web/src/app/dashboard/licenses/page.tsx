@@ -52,13 +52,14 @@ export default function LicenseTrackerPage() {
     try {
       setLoading(true);
       setError(null);
-      
-      const url = activeFilter === 'all' 
-        ? '/api/licenses/actor'
-        : `/api/licenses/actor?status=${activeFilter}`;
-      
+
+      const url =
+        activeFilter === 'all'
+          ? '/api/licenses/actor'
+          : `/api/licenses/actor?status=${activeFilter}`;
+
       const res = await fetch(url);
-      
+
       if (!res.ok) {
         throw new Error('Failed to load licenses');
       }
@@ -75,11 +76,16 @@ export default function LicenseTrackerPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'text-green-400 bg-green-500/20 border-green-500';
-      case 'revoked': return 'text-red-400 bg-red-500/20 border-red-500';
-      case 'expired': return 'text-yellow-400 bg-yellow-500/20 border-yellow-500';
-      case 'suspended': return 'text-orange-400 bg-orange-500/20 border-orange-500';
-      default: return 'text-gray-400 bg-gray-500/20 border-gray-500';
+      case 'active':
+        return 'text-green-400 bg-green-500/20 border-green-500';
+      case 'revoked':
+        return 'text-red-400 bg-red-500/20 border-red-500';
+      case 'expired':
+        return 'text-yellow-400 bg-yellow-500/20 border-yellow-500';
+      case 'suspended':
+        return 'text-orange-400 bg-orange-500/20 border-orange-500';
+      default:
+        return 'text-gray-400 bg-gray-500/20 border-gray-500';
     }
   };
 
@@ -182,14 +188,14 @@ export default function LicenseTrackerPage() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1">
-                      {license.api_client_name}
-                    </h3>
+                    <h3 className="text-xl font-bold text-white mb-1">{license.api_client_name}</h3>
                     <p className="text-gray-400 text-sm">
                       Type: <span className="text-gray-300">{license.license_type}</span>
                     </p>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(license.status)}`}>
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(license.status)}`}
+                  >
                     {license.status.toUpperCase()}
                   </span>
                 </div>

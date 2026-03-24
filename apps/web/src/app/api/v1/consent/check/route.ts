@@ -1,13 +1,13 @@
 /**
  * POST /api/v1/consent/check
- * 
+ *
  * External API Enforcement Endpoint
- * 
+ *
  * This endpoint is called by external API clients to verify they have permission
  * to use an actor's data for a specific purpose.
- * 
+ *
  * Authentication: Requires API key + signed request
- * 
+ *
  * Request Body:
  * {
  *   "actorId": "uuid",
@@ -15,7 +15,7 @@
  *   "apiClientId": "uuid",
  *   "metadata": { ... }
  * }
- * 
+ *
  * Response:
  * {
  *   "decision": "allow" | "deny" | "conditional",
