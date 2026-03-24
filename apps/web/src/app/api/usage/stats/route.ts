@@ -7,22 +7,21 @@
  */
 
 import { NextResponse } from 'next/server';
-import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
+import { getCurrentUser, isAdmin } from '@/lib/auth';
 
 export async function GET() {
   try {
-    // 1. Authenticate (admin/staff only)
-    const session = await auth0.getSession();
-    if (!session?.user) {
+    // 1. Authenticate (admin only)
+    const user = await getCurrentUser();
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 2. Check if user has admin role (from Auth0 roles)
-    const roles = session.user['https://trulyimagined.com/roles'] || [];
-    const isAdmin = roles.includes('Admin') || roles.includes('Staff');
+    // 2. Check if user has admin role (from database)
+    const hasAdminRole = await isAdmin();
 
-    if (!isAdmin) {
+    if (!hasAdminRole) {
       return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 

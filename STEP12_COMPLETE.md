@@ -377,9 +377,14 @@ Platform-wide usage statistics (Admin/Staff only)
 
 ### Authorization
 
-- ✅ `/api/usage/stats` requires Admin or Staff role
+- ✅ `/api/usage/stats` requires Admin role
 - ✅ 403 Forbidden returned if unauthorized
-- ✅ Role-based access control using Auth0 roles
+- ✅ **Database-based role checking** using `isAdmin()` from `@/lib/auth`
+- ✅ Roles stored in PostgreSQL `user_profiles` table (not JWT tokens)
+- ✅ Single source of truth for role verification
+
+**Note:** Previously used Auth0 JWT roles. Migrated to database roles on March 24, 2026.  
+See [DATABASE_ROLES_COMPLETE.md](DATABASE_ROLES_COMPLETE.md) for details.
 
 ### Data Integrity
 
