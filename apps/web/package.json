@@ -19,6 +19,7 @@
     "@trulyimagined/utils": "workspace:*",
     "auth0": "^4.2.0",
     "did-resolver": "^4.1.0",
+    "jsonwebtoken": "^9.0.2",
     "next": "^14.1.0",
     "pg": "^8.11.3",
     "react": "^18.2.0",
@@ -27,6 +28,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.0",
     "@types/pg": "^8.11.0",
     "@types/react": "^18.2.48",

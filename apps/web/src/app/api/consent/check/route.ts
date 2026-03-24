@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { generateConsentProof } from '@/lib/consent-proof';
 
 /**
  * GET /api/consent/check?actorId={id}&consentType={type}&projectId={id}
@@ -9,12 +10,14 @@ import { query } from '@/lib/db';
  * - actorId: string (required)
  * - consentType: string (required)
  * - projectId: string (optional)
+ * - includeProof: 'true' | 'false' (optional, default: true) - Include JWT proof
  *
  * Returns:
  * {
  *   isGranted: boolean
  *   consent: { ... } | null
  *   latestAction: { action, timestamp, reason }
+ *   proof?: string (JWT - cryptographic proof of consent)
  * }
  */
 export async function GET(request: NextRequest) {
@@ -23,6 +26,7 @@ export async function GET(request: NextRequest) {
     const actorId = searchParams.get('actorId');
     const consentType = searchParams.get('consentType');
     const projectId = searchParams.get('projectId');
+    const includeProof = searchParams.get('includeProof') !== 'false'; // Default true
 
     // Validation
     if (!actorId || !consentType) {
@@ -80,6 +84,27 @@ export async function GET(request: NextRequest) {
       action: latestConsent.action,
       isExpired,
     });
+    // Generate cryptographic proof if consent is granted
+    let proof: string | undefined;
+    if (isGranted && !isExpired && includeProof) {
+      try {
+        proof = generateConsentProof({
+          consentId: latestConsent.id,
+          actorId: latestConsent.actor_id,
+          consentType: latestConsent.consent_type,
+          projectId: projectId || latestConsent.consent_scope?.projectId,
+          projectName: latestConsent.project_name,
+          scope: latestConsent.consent_scope,
+          grantedAt: latestConsent.created_at,
+          expiresAt: latestConsent.consent_scope?.duration?.endDate,
+        });
+
+        console.log('[CONSENT] JWT proof generated for consent:', latestConsent.id);
+      } catch (error) {
+        console.error('[CONSENT] Failed to generate JWT proof:', error);
+        // Continue without proof - don't fail the request
+      }
+    }
 
     return NextResponse.json({
       isGranted: isGranted && !isExpired,
@@ -105,6 +130,8 @@ export async function GET(request: NextRequest) {
             ? 'Consent revoked'
             : null,
       },
+      // Include JWT proof for cryptographic verification by external consumers
+      ...(proof ? { proof } : {}),
     });
   } catch (error: unknown) {
     console.error('[API] Check consent error:', error);
