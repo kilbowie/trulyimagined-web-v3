@@ -34,7 +34,7 @@ export interface ConsentPolicy {
     merchandise: PermissionLevel;
     livePerformance: PermissionLevel;
   };
-  
+
   // Content Type Restrictions
   contentTypes: {
     explicit: PermissionLevel;
@@ -48,20 +48,27 @@ export interface ConsentPolicy {
     firearms: PermissionLevel;
     adultContent: PermissionLevel;
   };
-  
+
   // Geographic Restrictions
   territories: {
     allowed: string[]; // ISO 3166-1 alpha-2 country codes
-    denied: string[];  // ISO 3166-1 alpha-2 country codes
+    denied: string[]; // ISO 3166-1 alpha-2 country codes
   };
-  
+
+  // AI Controls
+  aiControls: {
+    trainingAllowed: boolean;
+    syntheticGenerationAllowed: boolean;
+    biometricAnalysisAllowed: boolean;
+  };
+
   // Commercial Terms (preserved from original)
   commercial: {
     paymentRequired: boolean;
     minFee?: number;
     revenueShare?: number; // 0-100
   };
-  
+
   // Attribution (preserved from original)
   attributionRequired: boolean;
 }
@@ -288,21 +295,21 @@ export function evaluateMediaUsage(
   reason?: string;
 } {
   const permission = policy.mediaUsage[requestedUsage];
-  
+
   if (permission === 'deny') {
     return {
       permission: 'deny',
       reason: `Media usage "${requestedUsage}" is explicitly denied by actor consent`,
     };
   }
-  
+
   if (permission === 'require_approval') {
     return {
       permission: 'require_approval',
       reason: `Media usage "${requestedUsage}" requires explicit approval from actor`,
     };
   }
-  
+
   return { permission: 'allow' };
 }
 
@@ -317,21 +324,21 @@ export function evaluateContentType(
   reason?: string;
 } {
   const permission = policy.contentTypes[contentType];
-  
+
   if (permission === 'deny') {
     return {
       permission: 'deny',
       reason: `Content type "${contentType}" is explicitly denied by actor consent`,
     };
   }
-  
+
   if (permission === 'require_approval') {
     return {
       permission: 'require_approval',
       reason: `Content type "${contentType}" requires explicit approval from actor`,
     };
   }
-  
+
   return { permission: 'allow' };
 }
 
@@ -352,17 +359,17 @@ export function evaluateTerritory(
       reason: `Territory "${territoryCode}" is explicitly denied`,
     };
   }
-  
+
   // If allowed list is empty, allow all territories not in denied list
   if (policy.territories.allowed.length === 0) {
     return { allowed: true };
   }
-  
+
   // If allowed list has entries, only allow those territories
   if (policy.territories.allowed.includes(territoryCode)) {
     return { allowed: true };
   }
-  
+
   return {
     allowed: false,
     reason: `Territory "${territoryCode}" is not in the allowed list`,
@@ -388,7 +395,7 @@ export function evaluateConsentUsage(
     film_tv: 'television',
     voice_replication: 'voiceReplication',
   };
-  
+
   const mappedUsage = usageMap[requestedUsage];
   if (!mappedUsage) {
     return {
@@ -396,7 +403,7 @@ export function evaluateConsentUsage(
       reason: `Unknown usage type "${requestedUsage}"`,
     };
   }
-  
+
   const result = evaluateMediaUsage(policy, mappedUsage);
   return {
     allowed: result.permission === 'allow',
@@ -454,7 +461,12 @@ export function createDefaultPolicy(): ConsentPolicy {
     },
     territories: {
       allowed: [], // Empty = all territories allowed (except denied)
-      denied: [],  // Specific countries to exclude
+      denied: [], // Specific countries to exclude
+    },
+    aiControls: {
+      trainingAllowed: false,
+      syntheticGenerationAllowed: false,
+      biometricAnalysisAllowed: false,
     },
     commercial: {
       paymentRequired: true,

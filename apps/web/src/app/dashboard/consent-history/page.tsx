@@ -3,30 +3,48 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+type PermissionLevel = 'allow' | 'require_approval' | 'deny';
+
 type ConsentPolicy = {
-  usage: {
-    streaming: boolean;
-    theatrical: boolean;
-    commercial: boolean;
-    educational: boolean;
-    archival: boolean;
+  mediaUsage: {
+    film: PermissionLevel;
+    television: PermissionLevel;
+    streaming: PermissionLevel;
+    gaming: PermissionLevel;
+    voiceReplication: PermissionLevel;
+    virtualReality: PermissionLevel;
+    socialMedia: PermissionLevel;
+    advertising: PermissionLevel;
+    merchandise: PermissionLevel;
+    livePerformance: PermissionLevel;
+  };
+  contentTypes: {
+    explicit: PermissionLevel;
+    political: PermissionLevel;
+    religious: PermissionLevel;
+    violence: PermissionLevel;
+    alcohol: PermissionLevel;
+    tobacco: PermissionLevel;
+    gambling: PermissionLevel;
+    pharmaceutical: PermissionLevel;
+    firearms: PermissionLevel;
+    adultContent: PermissionLevel;
+  };
+  territories: {
+    allowed: string[];
+    denied: string[];
+  };
+  aiControls: {
+    trainingAllowed: boolean;
+    syntheticGenerationAllowed: boolean;
+    biometricAnalysisAllowed: boolean;
   };
   commercial: {
     paymentRequired: boolean;
     minFee?: number;
     revenueShare?: number;
   };
-  constraints: {
-    durationInDays?: number;
-    expiryDate?: string;
-    territory?: string[];
-  };
   attributionRequired: boolean;
-  aiControls: {
-    trainingAllowed: boolean;
-    syntheticGenerationAllowed: boolean;
-    biometricAnalysisAllowed: boolean;
-  };
 };
 
 type ConsentLedgerEntry = {
@@ -121,9 +139,14 @@ export default function ConsentHistoryPage() {
   };
 
   const countEnabledPermissions = (policy: ConsentPolicy) => {
-    const usageCount = Object.values(policy.usage).filter(Boolean).length;
-    const aiCount = Object.values(policy.aiControls).filter(Boolean).length;
-    return { usage: usageCount, ai: aiCount };
+    const mediaCount = Object.values(policy.mediaUsage || {}).filter(
+      (v) => v === 'allow'
+    ).length;
+    const contentAllowed = Object.values(policy.contentTypes || {}).filter(
+      (v) => v === 'allow'
+    ).length;
+    const aiCount = Object.values(policy.aiControls || {}).filter(Boolean).length;
+    return { media: mediaCount, content: contentAllowed, ai: aiCount };
   };
 
   if (loading) {
@@ -216,20 +239,20 @@ export default function ConsentHistoryPage() {
                       {/* Summary */}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4 text-sm">
                         <div>
-                          <div className="text-gray-400">Usage Permissions</div>
+                          <div className="text-gray-400">Media Usage Allowed</div>
                           <div className="text-white font-semibold">
-                            {permissions.usage}/5 Enabled
+                            {permissions.media}/10 Categories
                           </div>
                         </div>
                         <div>
-                          <div className="text-gray-400">AI Controls</div>
-                          <div className="text-white font-semibold">{permissions.ai}/3 Enabled</div>
+                          <div className="text-gray-400">Content Types Allowed</div>
+                          <div className="text-white font-semibold">
+                            {permissions.content}/10 Types
+                          </div>
                         </div>
                         <div>
-                          <div className="text-gray-400">Payment Required</div>
-                          <div className="text-white font-semibold">
-                            {entry.policy.commercial.paymentRequired ? 'Yes' : 'No'}
-                          </div>
+                          <div className="text-gray-400">AI Controls Enabled</div>
+                          <div className="text-white font-semibold">{permissions.ai}/3 Active</div>
                         </div>
                       </div>
 
@@ -257,21 +280,63 @@ export default function ConsentHistoryPage() {
                       {/* Full Policy Details */}
                       {isExpanded && (
                         <div className="mt-4 space-y-4">
-                          {/* Usage Permissions */}
-                          <div className="p-4 bg-black/30 rounded-lg">
-                            <h4 className="text-white font-semibold mb-3">Usage Permissions</h4>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              {Object.entries(entry.policy.usage).map(([key, value]) => (
-                                <div key={key} className="flex items-center gap-2">
-                                  <span
-                                    className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
-                                  ></span>
-                                  <span className="text-gray-300 capitalize">{key}</span>
-                                  <span className="text-gray-500">{value ? '✓' : '✗'}</span>
-                                </div>
-                              ))}
+                          {/* Media Usage Categories */}
+                          {entry.policy.mediaUsage && (
+                            <div className="p-4 bg-black/30 rounded-lg">
+                              <h4 className="text-white font-semibold mb-3">Media Usage Categories</h4>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                {Object.entries(entry.policy.mediaUsage).map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2">
+                                    <span
+                                      className={`w-2 h-2 rounded-full ${
+                                        value === 'allow'
+                                          ? 'bg-green-400'
+                                          : value === 'require_approval'
+                                          ? 'bg-yellow-400'
+                                          : 'bg-red-400'
+                                      }`}
+                                    ></span>
+                                    <span className="text-gray-300 capitalize">
+                                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                                    </span>
+                                    <span className="text-gray-400 text-xs">
+                                      ({value.replace('_', ' ')})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
+
+                          {/* Content Type Restrictions */}
+                          {entry.policy.contentTypes && (
+                            <div className="p-4 bg-black/30 rounded-lg">
+                              <h4 className="text-white font-semibold mb-3">
+                                Content Type Restrictions
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                {Object.entries(entry.policy.contentTypes).map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2">
+                                    <span
+                                      className={`w-2 h-2 rounded-full ${
+                                        value === 'allow'
+                                          ? 'bg-green-400'
+                                          : value === 'require_approval'
+                                          ? 'bg-yellow-400'
+                                          : 'bg-red-400'
+                                      }`}
+                                    ></span>
+                                    <span className="text-gray-300 capitalize">
+                                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                                    </span>
+                                    <span className="text-gray-400 text-xs">
+                                      ({value.replace('_', ' ')})
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
 
                           {/* Commercial Terms */}
                           <div className="p-4 bg-black/30 rounded-lg">
@@ -302,70 +367,69 @@ export default function ConsentHistoryPage() {
                             </div>
                           </div>
 
-                          {/* Constraints */}
-                          {(entry.policy.constraints.durationInDays ||
-                            entry.policy.constraints.expiryDate ||
-                            entry.policy.constraints.territory?.length) && (
+                          {/* Territories */}
+                          {entry.policy.territories && (
                             <div className="p-4 bg-black/30 rounded-lg">
-                              <h4 className="text-white font-semibold mb-3">Constraints</h4>
+                              <h4 className="text-white font-semibold mb-3">Geographic Territories</h4>
                               <div className="text-sm space-y-2 text-gray-300">
-                                {entry.policy.constraints.durationInDays && (
+                                {entry.policy.territories.allowed?.length > 0 && (
                                   <div>
-                                    Duration:{' '}
-                                    <span className="text-white">
-                                      {entry.policy.constraints.durationInDays} days
+                                    Allowed:{' '}
+                                    <span className="text-green-400">
+                                      {entry.policy.territories.allowed.join(', ')}
                                     </span>
                                   </div>
                                 )}
-                                {entry.policy.constraints.expiryDate && (
+                                {entry.policy.territories.denied?.length > 0 && (
                                   <div>
-                                    Expiry:{' '}
-                                    <span className="text-white">
-                                      {entry.policy.constraints.expiryDate}
+                                    Denied:{' '}
+                                    <span className="text-red-400">
+                                      {entry.policy.territories.denied.join(', ')}
                                     </span>
                                   </div>
                                 )}
-                                {entry.policy.constraints.territory &&
-                                  entry.policy.constraints.territory.length > 0 && (
-                                    <div>
-                                      Territory:{' '}
-                                      <span className="text-white">
-                                        {entry.policy.constraints.territory.join(', ')}
-                                      </span>
-                                    </div>
+                                {(!entry.policy.territories.allowed ||
+                                  entry.policy.territories.allowed.length === 0) &&
+                                  (!entry.policy.territories.denied ||
+                                    entry.policy.territories.denied.length === 0) && (
+                                    <div className="text-gray-400">Worldwide (no restrictions)</div>
                                   )}
                               </div>
                             </div>
                           )}
 
                           {/* Attribution */}
-                          <div className="p-4 bg-black/30 rounded-lg">
-                            <h4 className="text-white font-semibold mb-3">Attribution</h4>
-                            <div className="text-sm text-gray-300">
-                              Attribution Required:{' '}
-                              <span className="text-white">
-                                {entry.policy.attributionRequired ? 'Yes' : 'No'}
-                              </span>
+                          {entry.policy.attributionRequired !== undefined && (
+                            <div className="p-4 bg-black/30 rounded-lg">
+                              <h4 className="text-white font-semibold mb-3">Attribution</h4>
+                              <div className="text-sm text-gray-300">
+                                Attribution Required:{' '}
+                                <span className="text-white">
+                                  {entry.policy.attributionRequired ? 'Yes' : 'No'}
+                                </span>
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* AI Controls */}
-                          <div className="p-4 bg-black/30 rounded-lg">
-                            <h4 className="text-white font-semibold mb-3">AI Controls</h4>
-                            <div className="grid grid-cols-2 gap-2 text-sm">
-                              {Object.entries(entry.policy.aiControls).map(([key, value]) => (
-                                <div key={key} className="flex items-center gap-2">
-                                  <span
-                                    className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
-                                  ></span>
-                                  <span className="text-gray-300">
-                                    {key.replace(/([A-Z])/g, ' $1').trim()}
-                                  </span>
-                                  <span className="text-gray-500">{value ? '✓' : '✗'}</span>
-                                </div>
-                              ))}
+                          {entry.policy.aiControls && (
+                            <div className="p-4 bg-black/30 rounded-lg">
+                              <h4 className="text-white font-semibold mb-3">AI Controls</h4>
+                              <div className="grid grid-cols-2 gap-2 text-sm">
+                                {Object.entries(entry.policy.aiControls).map(([key, value]) => (
+                                  <div key={key} className="flex items-center gap-2">
+                                    <span
+                                      className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
+                                    ></span>
+                                    <span className="text-gray-300">
+                                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                                    </span>
+                                    <span className="text-gray-500">{value ? '✓' : '✗'}</span>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                          </div>
+                          )}
 
                           {/* Metadata */}
                           {(entry.ip_address || entry.user_agent) && (

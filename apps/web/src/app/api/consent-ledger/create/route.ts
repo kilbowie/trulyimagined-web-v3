@@ -53,6 +53,11 @@ const CreateConsentEntrySchema = z.object({
       allowed: z.array(z.string()),
       denied: z.array(z.string()),
     }),
+    aiControls: z.object({
+      trainingAllowed: z.boolean(),
+      syntheticGenerationAllowed: z.boolean(),
+      biometricAnalysisAllowed: z.boolean(),
+    }),
     commercial: z.object({
       paymentRequired: z.boolean(),
       minFee: z.number().optional(),

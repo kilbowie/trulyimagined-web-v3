@@ -52,10 +52,21 @@ export async function GET(request: NextRequest) {
     const current = await getLatestConsent(actorId);
     const history = includeHistory ? await getConsentHistory(actorId, 20) : [];
 
+    // 5. If current consent exists, count licenses using this version
+    let licensesOnCurrentVersion = 0;
+    if (current) {
+      const licenseCountResult = await query(
+        'SELECT COUNT(*) as count FROM licenses WHERE consent_ledger_id = $1',
+        [current.id]
+      );
+      licensesOnCurrentVersion = parseInt(licenseCountResult.rows[0].count);
+    }
+
     return NextResponse.json({
       current,
       history,
       actorId,
+      licensesOnCurrentVersion,
     });
   } catch (error) {
     console.error('[CONSENT LEDGER] Get current error:', error);
