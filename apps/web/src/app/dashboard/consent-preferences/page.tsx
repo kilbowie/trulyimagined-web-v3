@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import TerritoryMap, { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 
 type PermissionLevel = 'allow' | 'require_approval' | 'deny';
 
@@ -56,25 +57,6 @@ type ConsentLedgerEntry = {
   reason?: string;
   created_at: string;
 };
-
-// Common territories for quick selection
-const COMMON_TERRITORIES = [
-  { code: 'US', name: 'United States' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'CN', name: 'China' },
-  { code: 'IN', name: 'India' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'KR', name: 'South Korea' },
-  { code: 'NL', name: 'Netherlands' },
-];
 
 export default function ConsentPreferencesPage() {
   const router = useRouter();
@@ -310,6 +292,56 @@ export default function ConsentPreferencesPage() {
     return 'neutral';
   };
 
+  const handleContinentAction = (continent: string, action: 'allow' | 'deny' | 'clear') => {
+    const countries = COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT];
+    const countryCodes = countries.map((c) => c.code);
+
+    setPolicy((prev) => {
+      const newTerritories = { ...prev.territories };
+
+      if (action === 'allow') {
+        // Add all continent countries to allowed, remove from denied
+        newTerritories.allowed = Array.from(
+          new Set([...newTerritories.allowed, ...countryCodes])
+        );
+        newTerritories.denied = newTerritories.denied.filter((c) => !countryCodes.includes(c));
+      } else if (action === 'deny') {
+        // Add all continent countries to denied, remove from allowed
+        newTerritories.denied = Array.from(
+          new Set([...newTerritories.denied, ...countryCodes])
+        );
+        newTerritories.allowed = newTerritories.allowed.filter((c) => !countryCodes.includes(c));
+      } else if (action === 'clear') {
+        // Remove all continent countries from both lists
+        newTerritories.allowed = newTerritories.allowed.filter((c) => !countryCodes.includes(c));
+        newTerritories.denied = newTerritories.denied.filter((c) => !countryCodes.includes(c));
+      }
+
+      return { ...prev, territories: newTerritories };
+    });
+  };
+
+  const handleCountryClick = (countryCode: string) => {
+    const status = getTerritoryStatus(countryCode);
+
+    if (status === 'neutral') {
+      // First click: Add to allowed
+      toggleTerritory(countryCode, 'allowed');
+    } else if (status === 'allowed') {
+      // Second click: Move to denied
+      toggleTerritory(countryCode, 'denied');
+    } else {
+      // Third click: Remove from denied (back to neutral)
+      setPolicy((prev) => ({
+        ...prev,
+        territories: {
+          ...prev.territories,
+          denied: prev.territories.denied.filter((c) => c !== countryCode),
+        },
+      }));
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
@@ -418,363 +450,404 @@ export default function ConsentPreferencesPage() {
           <div className="flex-1">
             <form onSubmit={handleSubmit} className="space-y-8">
               {/* Media Usage Categories */}
-              <div id="media-usage" className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+              <div
+                id="media-usage"
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+              >
                 <h2 className="text-2xl font-bold text-white mb-4">Media Usage Categories</h2>
-            <p className="text-gray-300 mb-6 text-sm">
-              Control how your image and likeness can be used across different media types. Choose
-              Allow for blanket approval, Require Approval for case-by-case review, or Deny to
-              reject usage.
-            </p>
-            <div className="space-y-1">
-              <PermissionSelector
-                label="Film / Theatrical"
-                value={policy.mediaUsage.film}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, film: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Television"
-                value={policy.mediaUsage.television}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, television: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Streaming Platforms"
-                value={policy.mediaUsage.streaming}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, streaming: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Gaming / Interactive Media"
-                value={policy.mediaUsage.gaming}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, gaming: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Voice Replication / AI Voice"
-                value={policy.mediaUsage.voiceReplication}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Virtual Reality / Metaverse"
-                value={policy.mediaUsage.virtualReality}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, virtualReality: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Social Media"
-                value={policy.mediaUsage.socialMedia}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, socialMedia: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Advertising / Commercials"
-                value={policy.mediaUsage.advertising}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, advertising: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Merchandise / Products"
-                value={policy.mediaUsage.merchandise}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, merchandise: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Live Performance / Events"
-                value={policy.mediaUsage.livePerformance}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    mediaUsage: { ...policy.mediaUsage, livePerformance: value },
-                  })
-                }
-              />
-            </div>
-          </div>
+                <p className="text-gray-300 mb-6 text-sm">
+                  Control how your image and likeness can be used across different media types.
+                  Choose Allow for blanket approval, Require Approval for case-by-case review, or
+                  Deny to reject usage.
+                </p>
+                <div className="space-y-1">
+                  <PermissionSelector
+                    label="Film / Theatrical"
+                    value={policy.mediaUsage.film}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, film: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Television"
+                    value={policy.mediaUsage.television}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, television: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Streaming Platforms"
+                    value={policy.mediaUsage.streaming}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, streaming: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Gaming / Interactive Media"
+                    value={policy.mediaUsage.gaming}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, gaming: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Voice Replication / AI Voice"
+                    value={policy.mediaUsage.voiceReplication}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Virtual Reality / Metaverse"
+                    value={policy.mediaUsage.virtualReality}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, virtualReality: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Social Media"
+                    value={policy.mediaUsage.socialMedia}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, socialMedia: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Advertising / Commercials"
+                    value={policy.mediaUsage.advertising}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, advertising: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Merchandise / Products"
+                    value={policy.mediaUsage.merchandise}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, merchandise: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Live Performance / Events"
+                    value={policy.mediaUsage.livePerformance}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        mediaUsage: { ...policy.mediaUsage, livePerformance: value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
 
-          {/* Content Type Restrictions */}
-          <div id="content-types" className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Content Type Restrictions</h2>
-            <p className="text-gray-300 mb-6 text-sm">
-              Set permissions for different types of content. These restrictions apply across all
-              media usage categories above.
-            </p>
-            <div className="space-y-1">
-              <PermissionSelector
-                label="Explicit Content"
-                value={policy.contentTypes.explicit}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, explicit: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Political Content"
-                value={policy.contentTypes.political}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, political: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Religious Content"
-                value={policy.contentTypes.religious}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, religious: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Violent Content"
-                value={policy.contentTypes.violence}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, violence: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Alcohol-Related Content"
-                value={policy.contentTypes.alcohol}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, alcohol: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Tobacco-Related Content"
-                value={policy.contentTypes.tobacco}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, tobacco: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Gambling-Related Content"
-                value={policy.contentTypes.gambling}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, gambling: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Pharmaceutical / Medical Content"
-                value={policy.contentTypes.pharmaceutical}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, pharmaceutical: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Firearms-Related Content"
-                value={policy.contentTypes.firearms}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, firearms: value },
-                  })
-                }
-              />
-              <PermissionSelector
-                label="Adult Content"
-                value={policy.contentTypes.adultContent}
-                onChange={(value) =>
-                  setPolicy({
-                    ...policy,
-                    contentTypes: { ...policy.contentTypes, adultContent: value },
-                  })
-                }
-              />
-            </div>
-          </div>
+              {/* Content Type Restrictions */}
+              <div
+                id="content-types"
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+              >
+                <h2 className="text-2xl font-bold text-white mb-4">Content Type Restrictions</h2>
+                <p className="text-gray-300 mb-6 text-sm">
+                  Set permissions for different types of content. These restrictions apply across
+                  all media usage categories above.
+                </p>
+                <div className="space-y-1">
+                  <PermissionSelector
+                    label="Explicit Content"
+                    value={policy.contentTypes.explicit}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, explicit: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Political Content"
+                    value={policy.contentTypes.political}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, political: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Religious Content"
+                    value={policy.contentTypes.religious}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, religious: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Violent Content"
+                    value={policy.contentTypes.violence}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, violence: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Alcohol-Related Content"
+                    value={policy.contentTypes.alcohol}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, alcohol: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Tobacco-Related Content"
+                    value={policy.contentTypes.tobacco}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, tobacco: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Gambling-Related Content"
+                    value={policy.contentTypes.gambling}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, gambling: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Pharmaceutical / Medical Content"
+                    value={policy.contentTypes.pharmaceutical}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, pharmaceutical: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Firearms-Related Content"
+                    value={policy.contentTypes.firearms}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, firearms: value },
+                      })
+                    }
+                  />
+                  <PermissionSelector
+                    label="Adult Content"
+                    value={policy.contentTypes.adultContent}
+                    onChange={(value) =>
+                      setPolicy({
+                        ...policy,
+                        contentTypes: { ...policy.contentTypes, adultContent: value },
+                      })
+                    }
+                  />
+                </div>
+              </div>
 
-          {/* Geographic Territories */}
-          <div id="territories" className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">Geographic Territories</h2>
-            <p className="text-gray-300 mb-6 text-sm">
-              Control usage by geographic region. Click "Allow" to add a country to your allowed
-              list (green), or "Deny" to explicitly block usage in that territory (red). If no
-              countries are in the allowed list, usage is permitted worldwide except for denied
-              territories.
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {COMMON_TERRITORIES.map((territory) => {
-                const status = getTerritoryStatus(territory.code);
-                return (
-                  <div key={territory.code} className="space-y-2">
-                    <div className="text-white font-semibold text-sm">{territory.name}</div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={() => toggleTerritory(territory.code, 'allowed')}
-                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                          status === 'allowed'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                        }`}
-                      >
-                        Allow
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => toggleTerritory(territory.code, 'denied')}
-                        className={`flex-1 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                          status === 'denied'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-white/10 text-gray-300 hover:bg-white/20'
-                        }`}
-                      >
-                        Deny
-                      </button>
-                    </div>
+              {/* Geographic Territories */}
+              <div
+                id="territories"
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+              >
+                <h2 className="text-2xl font-bold text-white mb-4">Geographic Territories</h2>
+                <p className="text-gray-300 mb-6 text-sm">
+                  Control usage by geographic region. Click on countries on the map to toggle
+                  between Allowed (green), Denied (red), and Neutral (gray). Use continent controls
+                  below for bulk actions.
+                </p>
+
+                {/* World Map */}
+                <div className="mb-6">
+                  <TerritoryMap
+                    allowedCountries={policy.territories.allowed}
+                    deniedCountries={policy.territories.denied}
+                    onCountryClick={handleCountryClick}
+                  />
+                </div>
+
+                {/* Legend */}
+                <div className="flex items-center gap-6 mb-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-green-500 rounded"></div>
+                    <span className="text-gray-300">Allowed</span>
                   </div>
-                );
-              })}
-            </div>
-          </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 rounded"></div>
+                    <span className="text-gray-300">Denied</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-gray-700 rounded"></div>
+                    <span className="text-gray-300">Neutral</span>
+                  </div>
+                </div>
 
-          {/* AI Controls */}
-          <div id="ai-controls" className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4">AI Controls</h2>
-            <p className="text-gray-300 mb-6 text-sm">
-              Control how your image and likeness can be used with AI systems and technologies.
-            </p>
-            <div className="space-y-4">
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.trainingAllowed}
-                  onChange={(e) =>
-                    setPolicy({
-                      ...policy,
-                      aiControls: { ...policy.aiControls, trainingAllowed: e.target.checked },
-                    })
-                  }
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow AI Training</span>
-              </label>
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.syntheticGenerationAllowed}
-                  onChange={(e) =>
-                    setPolicy({
-                      ...policy,
-                      aiControls: {
-                        ...policy.aiControls,
-                        syntheticGenerationAllowed: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow Synthetic Generation</span>
-              </label>
-              <label className="flex items-center gap-3 text-white cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={policy.aiControls.biometricAnalysisAllowed}
-                  onChange={(e) =>
-                    setPolicy({
-                      ...policy,
-                      aiControls: {
-                        ...policy.aiControls,
-                        biometricAnalysisAllowed: e.target.checked,
-                      },
-                    })
-                  }
-                  className="w-5 h-5 rounded border-gray-300"
-                />
-                <span>Allow Biometric Analysis</span>
-              </label>
-            </div>
-          </div>
+                {/* Continent Controls */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-white">Quick Actions by Continent</h3>
+                  {Object.entries(COUNTRIES_BY_CONTINENT).map(([continent, countries]) => (
+                    <div
+                      key={continent}
+                      className="bg-black/30 rounded-lg p-4 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="text-white font-semibold">{continent}</div>
+                        <div className="text-gray-400 text-sm">{countries.length} countries</div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleContinentAction(continent, 'allow')}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                        >
+                          ALLOW ALL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleContinentAction(continent, 'deny')}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                        >
+                          DENY ALL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleContinentAction(continent, 'clear')}
+                          className="px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                        >
+                          CLEAR
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-          {/* Reason */}
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <label className="block text-white mb-2">
-              Reason for Update <span className="text-gray-400 text-sm">(Optional)</span>
-            </label>
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
-              rows={3}
-              placeholder="e.g., Updated commercial terms for new licensing model"
-            />
-          </div>
+              {/* AI Controls */}
+              <div
+                id="ai-controls"
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20"
+              >
+                <h2 className="text-2xl font-bold text-white mb-4">AI Controls</h2>
+                <p className="text-gray-300 mb-6 text-sm">
+                  Control how your image and likeness can be used with AI systems and technologies.
+                </p>
+                <div className="space-y-4">
+                  <label className="flex items-center gap-3 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={policy.aiControls.trainingAllowed}
+                      onChange={(e) =>
+                        setPolicy({
+                          ...policy,
+                          aiControls: { ...policy.aiControls, trainingAllowed: e.target.checked },
+                        })
+                      }
+                      className="w-5 h-5 rounded border-gray-300"
+                    />
+                    <span>Allow AI Training</span>
+                  </label>
+                  <label className="flex items-center gap-3 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={policy.aiControls.syntheticGenerationAllowed}
+                      onChange={(e) =>
+                        setPolicy({
+                          ...policy,
+                          aiControls: {
+                            ...policy.aiControls,
+                            syntheticGenerationAllowed: e.target.checked,
+                          },
+                        })
+                      }
+                      className="w-5 h-5 rounded border-gray-300"
+                    />
+                    <span>Allow Synthetic Generation</span>
+                  </label>
+                  <label className="flex items-center gap-3 text-white cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={policy.aiControls.biometricAnalysisAllowed}
+                      onChange={(e) =>
+                        setPolicy({
+                          ...policy,
+                          aiControls: {
+                            ...policy.aiControls,
+                            biometricAnalysisAllowed: e.target.checked,
+                          },
+                        })
+                      }
+                      className="w-5 h-5 rounded border-gray-300"
+                    />
+                    <span>Allow Biometric Analysis</span>
+                  </label>
+                </div>
+              </div>
 
-          {/* Submit Button */}
-          <div className="flex gap-4">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-8 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
-            >
-              {saving ? 'Saving...' : 'Update Consent Preferences'}
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push('/dashboard/consent-history')}
-              className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition-colors"
-            >
-              View History
-            </button>
-          </div>
-        </form>
+              {/* Reason */}
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
+                <label className="block text-white mb-2">
+                  Reason for Update <span className="text-gray-400 text-sm">(Optional)</span>
+                </label>
+                <textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
+                  rows={3}
+                  placeholder="e.g., Updated commercial terms for new licensing model"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex gap-4">
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-8 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                >
+                  {saving ? 'Saving...' : 'Update Consent Preferences'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/dashboard/consent-history')}
+                  className="px-8 py-3 bg-white/10 hover:bg-white/20 text-white rounded-lg font-semibold transition-colors"
+                >
+                  View History
+                </button>
+              </div>
+            </form>
           </div>
           {/* End Right Content */}
         </div>

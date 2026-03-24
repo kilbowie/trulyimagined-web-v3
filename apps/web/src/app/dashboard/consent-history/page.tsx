@@ -139,9 +139,7 @@ export default function ConsentHistoryPage() {
   };
 
   const countEnabledPermissions = (policy: ConsentPolicy) => {
-    const mediaCount = Object.values(policy.mediaUsage || {}).filter(
-      (v) => v === 'allow'
-    ).length;
+    const mediaCount = Object.values(policy.mediaUsage || {}).filter((v) => v === 'allow').length;
     const contentAllowed = Object.values(policy.contentTypes || {}).filter(
       (v) => v === 'allow'
     ).length;
@@ -283,7 +281,9 @@ export default function ConsentHistoryPage() {
                           {/* Media Usage Categories */}
                           {entry.policy.mediaUsage && (
                             <div className="p-4 bg-black/30 rounded-lg">
-                              <h4 className="text-white font-semibold mb-3">Media Usage Categories</h4>
+                              <h4 className="text-white font-semibold mb-3">
+                                Media Usage Categories
+                              </h4>
                               <div className="grid grid-cols-2 gap-2 text-sm">
                                 {Object.entries(entry.policy.mediaUsage).map(([key, value]) => (
                                   <div key={key} className="flex items-center gap-2">
@@ -292,8 +292,8 @@ export default function ConsentHistoryPage() {
                                         value === 'allow'
                                           ? 'bg-green-400'
                                           : value === 'require_approval'
-                                          ? 'bg-yellow-400'
-                                          : 'bg-red-400'
+                                            ? 'bg-yellow-400'
+                                            : 'bg-red-400'
                                       }`}
                                     ></span>
                                     <span className="text-gray-300 capitalize">
@@ -322,8 +322,8 @@ export default function ConsentHistoryPage() {
                                         value === 'allow'
                                           ? 'bg-green-400'
                                           : value === 'require_approval'
-                                          ? 'bg-yellow-400'
-                                          : 'bg-red-400'
+                                            ? 'bg-yellow-400'
+                                            : 'bg-red-400'
                                       }`}
                                     ></span>
                                     <span className="text-gray-300 capitalize">
@@ -370,7 +370,9 @@ export default function ConsentHistoryPage() {
                           {/* Territories */}
                           {entry.policy.territories && (
                             <div className="p-4 bg-black/30 rounded-lg">
-                              <h4 className="text-white font-semibold mb-3">Geographic Territories</h4>
+                              <h4 className="text-white font-semibold mb-3">
+                                Geographic Territories
+                              </h4>
                               <div className="text-sm space-y-2 text-gray-300">
                                 {entry.policy.territories.allowed?.length > 0 && (
                                   <div>
