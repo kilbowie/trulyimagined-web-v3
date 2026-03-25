@@ -33,7 +33,11 @@ export default async function ProfilePage() {
 
   const roleConfig: Record<
     string,
-    { icon: React.ReactNode; color: string; variant: 'secondary' | 'default' | 'outline' | 'destructive' }
+    {
+      icon: React.ReactNode;
+      color: string;
+      variant: 'secondary' | 'default' | 'outline' | 'destructive';
+    }
   > = {
     Actor: {
       icon: <UserCircle className="h-4 w-4" />,
@@ -82,9 +86,9 @@ export default async function ProfilePage() {
               </div>
               <p className="text-lg">{user.name || 'N/A'}</p>
             </div>
-            
+
             <Separator />
-            
+
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Mail className="h-4 w-4" />
@@ -92,9 +96,9 @@ export default async function ProfilePage() {
               </div>
               <p className="text-lg">{user.email}</p>
             </div>
-            
+
             <Separator />
-            
+
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <ShieldCheck className="h-4 w-4" />
@@ -133,7 +137,11 @@ export default async function ProfilePage() {
                   {roles.map((role) => {
                     const config = roleConfig[role];
                     return (
-                      <Badge key={role} variant={config?.variant || 'secondary'} className="text-sm py-1 px-3">
+                      <Badge
+                        key={role}
+                        variant={config?.variant || 'secondary'}
+                        className="text-sm py-1 px-3"
+                      >
                         <span className="mr-1.5">{config?.icon}</span>
                         {role}
                       </Badge>

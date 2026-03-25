@@ -25,7 +25,7 @@ interface SidebarProps {
 
 export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const pathname = usePathname();
-  
+
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
   const hasAdminRole = roles.includes('Admin');
@@ -123,7 +123,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
             .map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
-              
+
               return (
                 <Link
                   key={item.href}
@@ -156,7 +156,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 .map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname === item.href;
-                  
+
                   return (
                     <div key={item.href} className="relative">
                       <Link

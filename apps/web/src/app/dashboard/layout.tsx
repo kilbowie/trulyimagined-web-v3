@@ -8,11 +8,7 @@ import { Home } from 'lucide-react';
 /**
  * Dashboard Layout with Sidebar
  */
-export default async function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const user = await getCurrentUser();
 
   // Redirect to login if not authenticated
