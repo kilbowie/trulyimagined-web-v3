@@ -31,9 +31,7 @@ export default async function DashboardPage() {
     <div className="space-y-6">
       {/* Welcome Section */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">
-          Welcome back, {user.name || 'User'}!
-        </h2>
+        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.name || 'User'}!</h2>
         <p className="text-muted-foreground">
           Here's an overview of your identity and consent management
         </p>
@@ -142,7 +140,7 @@ export default async function DashboardPage() {
           </Card>
 
           <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
-            <Link href="/register-actor">
+            <Link href="/dashboard/register-identity">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
                   <span>Register Identity</span>

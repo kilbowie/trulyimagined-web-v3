@@ -52,7 +52,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     },
     {
       title: 'Register Identity',
-      href: '/register-actor',
+      href: '/dashboard/register-identity',
       icon: ShieldCheck,
       show: hasActorRole,
     },
