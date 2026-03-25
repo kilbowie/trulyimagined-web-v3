@@ -35,7 +35,11 @@ export default function AuthNav() {
   if (!user) {
     return (
       <nav className="flex items-center gap-3">
-        <Button variant="ghost" asChild className="hidden sm:flex text-slate-300 hover:text-white hover:bg-slate-800">
+        <Button
+          variant="ghost"
+          asChild
+          className="hidden sm:flex text-slate-300 hover:text-white hover:bg-slate-800"
+        >
           <Link href="/auth/login">Sign In</Link>
         </Button>
         <Button asChild>
@@ -58,7 +62,11 @@ export default function AuthNav() {
   return (
     <nav className="flex items-center gap-4">
       {/* Dashboard Link - Desktop */}
-      <Button variant="ghost" asChild className="hidden md:flex text-slate-300 hover:text-white hover:bg-slate-800">
+      <Button
+        variant="ghost"
+        asChild
+        className="hidden md:flex text-slate-300 hover:text-white hover:bg-slate-800"
+      >
         <Link href="/dashboard">
           <LayoutDashboard className="mr-2 h-4 w-4" />
           Dashboard
@@ -68,7 +76,10 @@ export default function AuthNav() {
       {/* User Menu Dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="flex items-center gap-2 px-2 text-slate-300 hover:text-white hover:bg-slate-800">
+          <Button
+            variant="ghost"
+            className="flex items-center gap-2 px-2 text-slate-300 hover:text-white hover:bg-slate-800"
+          >
             <Avatar className="h-8 w-8">
               <AvatarImage src={user.picture || undefined} alt={user.name || 'User'} />
               <AvatarFallback className="bg-primary text-primary-foreground text-xs">
@@ -79,9 +90,7 @@ export default function AuthNav() {
               <span className="text-sm font-medium leading-none">
                 {user.name || user.email?.split('@')[0]}
               </span>
-              {roles.length > 0 && (
-                <span className="text-xs text-slate-400">{roles[0]}</span>
-              )}
+              {roles.length > 0 && <span className="text-xs text-slate-400">{roles[0]}</span>}
             </div>
             <ChevronDown className="h-4 w-4 text-slate-400" />
           </Button>

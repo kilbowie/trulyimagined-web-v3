@@ -6,7 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import { Shield, Lock, FileCheck, CheckCircle, UserCheck, FileText, ArrowRight } from 'lucide-react';
+import {
+  Shield,
+  Lock,
+  FileCheck,
+  CheckCircle,
+  UserCheck,
+  FileText,
+  ArrowRight,
+} from 'lucide-react';
 
 export default async function Home() {
   // Check if user is authenticated and has a role
@@ -46,8 +54,8 @@ export default async function Home() {
 
               {/* Main Heading */}
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-5xl mx-auto leading-tight">
-                The Global Registry for{' '}
-                <span className="text-primary">Human Digital Identity</span> in AI
+                The Global Registry for <span className="text-primary">Human Digital Identity</span>{' '}
+                in AI
               </h1>
 
               {/* Subtitle */}
@@ -98,7 +106,8 @@ export default async function Home() {
         <section className="py-20 px-6 bg-white">
           <div className="max-w-6xl mx-auto text-center space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold">
-              We Are Not an AI Tool. We Are <span className="text-primary">Rights Infrastructure</span>.
+              We Are Not an AI Tool. We Are{' '}
+              <span className="text-primary">Rights Infrastructure</span>.
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Truly Imagined provides the foundational registry and compliance layer that enables
@@ -185,9 +194,7 @@ export default async function Home() {
                     <FileText className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle>Licensing Control</CardTitle>
-                  <CardDescription>
-                    Actor-owned preferences for AI usage
-                  </CardDescription>
+                  <CardDescription>Actor-owned preferences for AI usage</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <ul className="space-y-2 text-sm text-muted-foreground">
@@ -262,8 +269,8 @@ export default async function Home() {
                   <div className="space-y-2 pt-2">
                     <h4 className="text-xl font-semibold">License & Control</h4>
                     <p className="text-muted-foreground">
-                      License your likeness on your terms. Track usage, manage consents, and maintain
-                      full control through your dashboard.
+                      License your likeness on your terms. Track usage, manage consents, and
+                      maintain full control through your dashboard.
                     </p>
                   </div>
                 </div>
@@ -321,7 +328,9 @@ export default async function Home() {
         <footer className="py-8 px-6 border-t border-gray-200 bg-white">
           <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
             <p>Registry • Compliance • Auditability</p>
-            <p className="mt-2">© {new Date().getFullYear()} Truly Imagined. All rights reserved.</p>
+            <p className="mt-2">
+              © {new Date().getFullYear()} Truly Imagined. All rights reserved.
+            </p>
           </div>
         </footer>
       </main>
