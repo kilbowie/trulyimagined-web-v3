@@ -104,9 +104,7 @@ export function RegistrationForm({ userEmail, userName }: RegistrationFormProps)
     <Card>
       <CardHeader>
         <CardTitle>Register Your Identity</CardTitle>
-        <CardDescription>
-          Complete this form to create your unique Registry profile
-        </CardDescription>
+        <CardDescription>Complete this form to create your unique Registry profile</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -239,8 +237,8 @@ export function RegistrationForm({ userEmail, userName }: RegistrationFormProps)
           {/* Privacy Notice */}
           <div className="text-xs text-muted-foreground bg-muted p-3 rounded-lg">
             <p>
-              By registering, you confirm that the information provided is accurate and you agree
-              to the TrulyImagined Terms of Service and Privacy Policy. Your Registry ID will be
+              By registering, you confirm that the information provided is accurate and you agree to
+              the TrulyImagined Terms of Service and Privacy Policy. Your Registry ID will be
               permanently associated with your account.
             </p>
           </div>

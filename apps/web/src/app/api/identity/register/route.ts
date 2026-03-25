@@ -51,10 +51,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is already registered
-    const existingActor = await query(
-      'SELECT id FROM actors WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const existingActor = await query('SELECT id FROM actors WHERE auth0_user_id = $1', [user.sub]);
 
     if (existingActor.rows.length > 0) {
       return NextResponse.json(
@@ -70,10 +67,9 @@ export async function POST(request: NextRequest) {
 
     // Ensure Registry ID is unique
     while (attempts < maxAttempts) {
-      const existing = await query(
-        'SELECT registry_id FROM actors WHERE registry_id = $1',
-        [registryId]
-      );
+      const existing = await query('SELECT registry_id FROM actors WHERE registry_id = $1', [
+        registryId,
+      ]);
 
       if (existing.rows.length === 0) {
         break; // Unique ID found

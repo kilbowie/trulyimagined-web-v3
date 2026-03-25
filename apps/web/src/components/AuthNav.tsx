@@ -2,9 +2,22 @@
 
 import { useUser } from '@auth0/nextjs-auth0/client';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { User, LayoutDashboard, LogOut, Loader2, ChevronDown } from 'lucide-react';
 
 /**
  * Navigation component with auth-aware login/logout buttons
+ * Uses shadcn UI components for modern design
  */
 export default function AuthNav() {
   const { user, isLoading } = useUser();
@@ -12,48 +25,116 @@ export default function AuthNav() {
   if (isLoading) {
     return (
       <nav className="flex items-center gap-4">
-        <div className="h-8 w-20 bg-gray-200 animate-pulse rounded"></div>
+        <Button variant="ghost" disabled>
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </Button>
       </nav>
     );
   }
 
   if (!user) {
     return (
-      <nav className="flex items-center gap-4">
-        <a
-          href="/auth/login"
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-        >
-          Log In
-        </a>
+      <nav className="flex items-center gap-3">
+        <Button variant="ghost" asChild className="hidden sm:flex text-slate-300 hover:text-white hover:bg-slate-800">
+          <Link href="/auth/login">Sign In</Link>
+        </Button>
+        <Button asChild>
+          <Link href="/auth/login">Get Started</Link>
+        </Button>
       </nav>
     );
   }
 
   const roles = user['https://trulyimagined.com/roles'] || [];
+  const initials = user.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : user.email?.charAt(0).toUpperCase() || 'U';
 
   return (
-    <nav className="flex items-center gap-6">
-      <div className="flex items-center gap-2">
-        {user.picture && (
-          <img src={user.picture} alt={user.name || 'User'} className="w-8 h-8 rounded-full" />
-        )}
-        <div className="flex flex-col">
-          <span className="text-sm font-medium">{user.name || user.email}</span>
-          {roles.length > 0 && <span className="text-xs text-gray-500">{roles.join(', ')}</span>}
-        </div>
-      </div>
+    <nav className="flex items-center gap-4">
+      {/* Dashboard Link - Desktop */}
+      <Button variant="ghost" asChild className="hidden md:flex text-slate-300 hover:text-white hover:bg-slate-800">
+        <Link href="/dashboard">
+          <LayoutDashboard className="mr-2 h-4 w-4" />
+          Dashboard
+        </Link>
+      </Button>
 
-      <Link href="/dashboard" className="text-sm hover:text-blue-600 transition">
-        Dashboard
-      </Link>
+      {/* User Menu Dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="flex items-center gap-2 px-2 text-slate-300 hover:text-white hover:bg-slate-800">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={user.picture || undefined} alt={user.name || 'User'} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <div className="hidden md:flex flex-col items-start">
+              <span className="text-sm font-medium leading-none">
+                {user.name || user.email?.split('@')[0]}
+              </span>
+              {roles.length > 0 && (
+                <span className="text-xs text-slate-400">{roles[0]}</span>
+              )}
+            </div>
+            <ChevronDown className="h-4 w-4 text-slate-400" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>
+            <div className="flex flex-col space-y-1">
+              <p className="text-sm font-medium">{user.name || 'User'}</p>
+              <p className="text-xs text-muted-foreground">{user.email}</p>
+            </div>
+          </DropdownMenuLabel>
 
-      <a
-        href="/auth/logout"
-        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 transition text-sm"
-      >
-        Log Out
-      </a>
+          {roles.length > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5">
+                <div className="flex flex-wrap gap-1">
+                  {roles.map((role) => (
+                    <Badge key={role} variant="secondary" className="text-xs">
+                      {role}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard" className="cursor-pointer">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Dashboard
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link href="/dashboard/profile" className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              Profile
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <a href="/auth/logout" className="cursor-pointer text-destructive">
+              <LogOut className="mr-2 h-4 w-4" />
+              Log Out
+            </a>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </nav>
   );
 }

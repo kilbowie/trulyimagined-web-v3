@@ -17,14 +17,14 @@ async function testSchema() {
 
   try {
     console.log('🔍 Checking database connection...');
-    
+
     // Test connection
     const connectionTest = await pool.query('SELECT NOW()');
     console.log('✅ Database connected successfully');
     console.log(`   Time: ${connectionTest.rows[0].now}`);
 
     console.log('\n🔍 Checking actors table schema...');
-    
+
     // Check if actors table exists
     const tableCheck = await pool.query(`
       SELECT EXISTS (
@@ -51,18 +51,26 @@ async function testSchema() {
     `);
 
     console.log('\n📋 actors table columns:');
-    columnsQuery.rows.forEach(col => {
+    columnsQuery.rows.forEach((col) => {
       const nullable = col.is_nullable === 'YES' ? '(nullable)' : '(required)';
       console.log(`   - ${col.column_name}: ${col.data_type} ${nullable}`);
     });
 
     // Check specific required columns
-    const requiredColumns = ['id', 'auth0_user_id', 'email', 'first_name', 'last_name', 'registry_id', 'location'];
-    const actualColumns = columnsQuery.rows.map(c => c.column_name);
-    
+    const requiredColumns = [
+      'id',
+      'auth0_user_id',
+      'email',
+      'first_name',
+      'last_name',
+      'registry_id',
+      'location',
+    ];
+    const actualColumns = columnsQuery.rows.map((c) => c.column_name);
+
     console.log('\n🔍 Verifying required columns...');
     let missingColumns = [];
-    requiredColumns.forEach(col => {
+    requiredColumns.forEach((col) => {
       if (actualColumns.includes(col)) {
         console.log(`   ✅ ${col}`);
       } else {
@@ -83,14 +91,15 @@ async function testSchema() {
     console.log(`\n📊 Existing actors: ${actorCount.rows[0].count}`);
 
     if (parseInt(actorCount.rows[0].count) > 0) {
-      const sampleActor = await pool.query('SELECT id, email, registry_id, verification_status FROM actors LIMIT 1');
+      const sampleActor = await pool.query(
+        'SELECT id, email, registry_id, verification_status FROM actors LIMIT 1'
+      );
       console.log('   Sample actor:');
       console.log(`   - ID: ${sampleActor.rows[0].id}`);
       console.log(`   - Email: ${sampleActor.rows[0].email}`);
       console.log(`   - Registry ID: ${sampleActor.rows[0].registry_id}`);
       console.log(`   - Status: ${sampleActor.rows[0].verification_status}`);
     }
-
   } catch (error) {
     console.error('\n❌ Error:', error.message);
     console.error('   Details:', error);

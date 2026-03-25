@@ -144,9 +144,7 @@ export default async function IdentityRegistrationPage() {
             <Shield className="h-5 w-5" />
             About Your Registry Profile
           </CardTitle>
-          <CardDescription>
-            Your unique identity in the TrulyImagined platform
-          </CardDescription>
+          <CardDescription>Your unique identity in the TrulyImagined platform</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
