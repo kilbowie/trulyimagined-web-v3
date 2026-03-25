@@ -250,7 +250,9 @@ export default function ConsentHistoryPage() {
                         </div>
                         <div>
                           <div className="text-gray-500">AI Controls Enabled</div>
-                          <div className="text-gray-900 font-semibold">{permissions.ai}/3 Active</div>
+                          <div className="text-gray-900 font-semibold">
+                            {permissions.ai}/3 Active
+                          </div>
                         </div>
                       </div>
 

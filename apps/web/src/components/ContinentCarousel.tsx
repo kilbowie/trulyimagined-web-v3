@@ -43,8 +43,7 @@ export default function ContinentCarousel({
   return (
     <div className="w-full space-y-3">
       {continents.map((continent) => {
-        const countries =
-          COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT];
+        const countries = COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT];
         const isExpanded = expandedContinent === continent;
         const allowedCount = getContinentAllowedCount(continent);
         const deniedCount = getContinentDeniedCount(continent);
@@ -61,9 +60,7 @@ export default function ContinentCarousel({
               className="w-full bg-gradient-to-r from-purple-600/30 to-blue-600/30 p-4 flex items-center justify-between hover:from-purple-600/40 hover:to-blue-600/40 transition-all"
             >
               <div className="flex items-center gap-4">
-                <span className="text-2xl text-white">
-                  {isExpanded ? '▼' : '▶'}
-                </span>
+                <span className="text-2xl text-white">{isExpanded ? '▼' : '▶'}</span>
                 <div className="text-left">
                   <h3 className="text-xl font-bold text-white">{continent}</h3>
                   <p className="text-gray-300 text-sm">
@@ -101,9 +98,7 @@ export default function ContinentCarousel({
             {/* Accordion Content */}
             {isExpanded && (
               <div className="p-6 bg-black/30">
-                <h4 className="text-white font-semibold mb-4">
-                  Select Countries in {continent}
-                </h4>
+                <h4 className="text-white font-semibold mb-4">Select Countries in {continent}</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                   {countries.map((country) => {
                     const status = getCountryStatus(country.code);
@@ -116,8 +111,8 @@ export default function ContinentCarousel({
                           status === 'allowed'
                             ? 'bg-green-600 border-green-400 text-white'
                             : status === 'denied'
-                            ? 'bg-red-600 border-red-400 text-white'
-                            : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400'
+                              ? 'bg-red-600 border-red-400 text-white'
+                              : 'bg-gray-700 border-gray-600 text-gray-300 hover:border-gray-400'
                         }`}
                       >
                         {country.name}
@@ -133,4 +128,3 @@ export default function ContinentCarousel({
     </div>
   );
 }
-
