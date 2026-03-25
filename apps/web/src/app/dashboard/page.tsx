@@ -2,6 +2,8 @@ import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
+import { query } from '@/lib/db';
+import { queries } from '@database/queries-v3';
 import Link from 'next/link';
 import {
   TrendingUp,
@@ -27,11 +29,25 @@ export default async function DashboardPage() {
   const roles = await getUserRoles();
   const hasActorRole = roles.includes('Actor');
 
+  // Fetch actor data to get stage name
+  let displayName = user.name || 'User';
+  if (hasActorRole) {
+    try {
+      const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+      if (actorResult.rows && actorResult.rows.length > 0) {
+        const actor = actorResult.rows[0];
+        displayName = actor.stage_name || actor.first_name || user.name || 'User';
+      }
+    } catch (error) {
+      console.error('Failed to fetch actor data:', error);
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.name || 'User'}!</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {displayName}!</h2>
         <p className="text-muted-foreground">
           Here's an overview of your identity and consent management
         </p>

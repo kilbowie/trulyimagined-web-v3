@@ -6,8 +6,24 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { UserCircle, Shield, CheckCircle, Edit, Camera, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  UserCircle,
+  Shield,
+  CheckCircle,
+  Edit,
+  Camera,
+  ShieldCheck,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -60,7 +76,7 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [isHeadshotSelectorOpen, setIsHeadshotSelectorOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  
+
   const [editForm, setEditForm] = useState({
     firstName: actor?.first_name || '',
     lastName: actor?.last_name || '',
@@ -266,7 +282,10 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                         <DialogContent className="max-w-4xl">
                           <div className="relative">
                             <img
-                              src={headshots[selectedHeadshotIndex]?.s3_url || actorProfile.profileImage}
+                              src={
+                                headshots[selectedHeadshotIndex]?.s3_url ||
+                                actorProfile.profileImage
+                              }
                               alt="Headshot"
                               className="w-full max-h-[70vh] object-contain"
                             />
@@ -311,8 +330,11 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                           </div>
                         </DialogContent>
                       </Dialog>
-                      
-                      <Dialog open={isHeadshotSelectorOpen} onOpenChange={setIsHeadshotSelectorOpen}>
+
+                      <Dialog
+                        open={isHeadshotSelectorOpen}
+                        onOpenChange={setIsHeadshotSelectorOpen}
+                      >
                         <DialogTrigger asChild>
                           <Button
                             size="sm"
@@ -328,14 +350,19 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                             <DialogTitle>Select Headshot</DialogTitle>
                             <DialogDescription>
                               Choose from your uploaded headshots or{' '}
-                              <Link href="/dashboard/upload-media" className="text-primary underline">
+                              <Link
+                                href="/dashboard/upload-media"
+                                className="text-primary underline"
+                              >
                                 upload new ones
                               </Link>
                             </DialogDescription>
                           </DialogHeader>
                           {headshots.length === 0 ? (
                             <div className="text-center py-8">
-                              <p className="text-muted-foreground mb-4">No headshots uploaded yet</p>
+                              <p className="text-muted-foreground mb-4">
+                                No headshots uploaded yet
+                              </p>
                               <Button asChild>
                                 <Link href="/dashboard/upload-media">
                                   <Camera className="mr-2 h-4 w-4" />
@@ -378,7 +405,7 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                         </DialogContent>
                       </Dialog>
                     </div>
-                    
+
                     {/* Secondary Headshots Thumbnails */}
                     {secondaryHeadshots.length > 0 && (
                       <div className="grid grid-cols-3 gap-2">
@@ -402,7 +429,7 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                         ))}
                       </div>
                     )}
-                    
+
                     <p className="text-xs text-muted-foreground text-center">
                       {headshots.length === 0
                         ? 'No headshots uploaded'
@@ -479,13 +506,15 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                 </CardHeader>
                 <CardContent>
                   {actorProfile.bio ? (
-                    <p className="text-base leading-relaxed whitespace-pre-wrap">{actorProfile.bio}</p>
+                    <p className="text-base leading-relaxed whitespace-pre-wrap">
+                      {actorProfile.bio}
+                    </p>
                   ) : (
                     <div className="text-center py-8 text-muted-foreground">
                       <p className="text-sm">No biography added yet</p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
+                      <Button
+                        variant="outline"
+                        size="sm"
                         className="mt-4"
                         onClick={() => setIsEditDialogOpen(true)}
                       >

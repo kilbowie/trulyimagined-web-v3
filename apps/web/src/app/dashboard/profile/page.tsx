@@ -32,7 +32,7 @@ export default async function ProfilePage() {
 
   // Fetch actor data from database
   const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
-  
+
   let actor = null;
   let headshots = [];
 
@@ -44,12 +44,5 @@ export default async function ProfilePage() {
     headshots = headshotsResult.rows || [];
   }
 
-  return (
-    <ProfileClient 
-      user={user} 
-      roles={roles} 
-      actor={actor} 
-      headshots={headshots}
-    />
-  );
+  return <ProfileClient user={user} roles={roles} actor={actor} headshots={headshots} />;
 }

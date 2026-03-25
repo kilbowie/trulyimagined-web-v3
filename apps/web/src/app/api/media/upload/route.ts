@@ -11,14 +11,14 @@ import { uploadToS3, generateS3Key, validateFileType, validateFileSize } from '@
 export async function POST(request: NextRequest) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Get actor record
     const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
-    
+
     if (!actorResult.rows || actorResult.rows.length === 0) {
       return NextResponse.json(
         { error: 'Actor profile not found. Please register your identity first.' },
@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const mediaType = formData.get('mediaType') as 'headshot' | 'audio_reel' | 'video_reel';
-    const title = formData.get('title') as string || null;
-    const photoCredit = formData.get('photoCredit') as string || null;
-    const description = formData.get('description') as string || null;
+    const title = (formData.get('title') as string) || null;
+    const photoCredit = (formData.get('photoCredit') as string) || null;
+    const description = (formData.get('description') as string) || null;
 
     // Validate inputs
     if (!file) {
@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         actor.id,
         'headshot',
       ]);
-      
+
       if (!existingHeadshotsResult.rows || existingHeadshotsResult.rows.length === 0) {
         isPrimary = true;
         displayOrder = 0;
@@ -107,18 +107,18 @@ export async function POST(request: NextRequest) {
 
     // Create database record
     const mediaRecord = await query(queries.actorMedia.create, [
-      actor.id,           // actor_id
-      mediaType,          // media_type
-      file.name,          // file_name
-      s3Key,              // s3_key
-      uploadResult.url,   // s3_url
-      file.size,          // file_size_bytes
-      file.type,          // mime_type
-      title,              // title
-      photoCredit,        // photo_credit
-      description,        // description
-      isPrimary,          // is_primary
-      displayOrder,       // display_order
+      actor.id, // actor_id
+      mediaType, // media_type
+      file.name, // file_name
+      s3Key, // s3_key
+      uploadResult.url, // s3_url
+      file.size, // file_size_bytes
+      file.type, // mime_type
+      title, // title
+      photoCredit, // photo_credit
+      description, // description
+      isPrimary, // is_primary
+      displayOrder, // display_order
     ]);
 
     return NextResponse.json({

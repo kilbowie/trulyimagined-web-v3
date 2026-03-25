@@ -30,11 +30,11 @@ export default function UploadMediaPage() {
     success: false,
     error: null,
   });
-  
+
   const [title, setTitle] = useState('');
   const [photoCredit, setPhotoCredit] = useState('');
   const [description, setDescription] = useState('');
-  
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mediaTypeConfig = {
@@ -69,7 +69,7 @@ export default function UploadMediaPage() {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    
+
     if (!file) return;
 
     // Create preview for images
@@ -130,7 +130,7 @@ export default function UploadMediaPage() {
       setTitle('');
       setPhotoCredit('');
       setDescription('');
-      
+
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
@@ -193,9 +193,10 @@ export default function UploadMediaPage() {
                   disabled={config.comingSoon}
                   className={`
                     relative p-6 rounded-lg border-2 transition-all text-left
-                    ${isSelected
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:border-primary/50'
+                    ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-border hover:border-primary/50'
                     }
                     ${config.comingSoon ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
                   `}
@@ -206,7 +207,7 @@ export default function UploadMediaPage() {
                   </div>
                   <p className="text-sm text-muted-foreground">{config.description}</p>
                   <p className="text-xs text-muted-foreground mt-2">Max size: {config.maxSize}</p>
-                  
+
                   {config.comingSoon && (
                     <Badge variant="secondary" className="absolute top-4 right-4">
                       Coming Soon
@@ -243,7 +244,8 @@ export default function UploadMediaPage() {
                   <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-sm font-medium mb-1">Click to upload or drag and drop</p>
                   <p className="text-xs text-muted-foreground">
-                    {mediaTypeConfig[mediaType].accept.split(',').join(', ')} (max {mediaTypeConfig[mediaType].maxSize})
+                    {mediaTypeConfig[mediaType].accept.split(',').join(', ')} (max{' '}
+                    {mediaTypeConfig[mediaType].maxSize})
                   </p>
                 </div>
               ) : (

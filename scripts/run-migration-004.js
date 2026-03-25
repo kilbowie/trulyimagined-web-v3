@@ -32,7 +32,6 @@ async function runMigration() {
     console.log('   - title, photo_credit, description');
     console.log('   - is_primary, display_order');
     console.log('   - Indexes and triggers created');
-
   } catch (error) {
     console.error('❌ Migration failed:', error.message);
     console.error(error);

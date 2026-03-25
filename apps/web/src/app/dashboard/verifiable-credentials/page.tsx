@@ -1,6 +1,7 @@
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { VerifiableCredentialsCard } from '@/components/VerifiableCredentials';
+import { Shield } from 'lucide-react';
 
 /**
  * Verifiable Credentials Page
@@ -24,8 +25,13 @@ export default async function VerifiableCredentialsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Verifiable Credentials</h2>
-        <p className="text-muted-foreground">Manage your W3C-compliant digital credentials</p>
+        <h2 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+          <Shield className="h-8 w-8" />
+          Verifiable Credentials
+        </h2>
+        <p className="text-muted-foreground mt-2">
+          Manage your W3C-compliant digital credentials
+        </p>
       </div>
 
       <VerifiableCredentialsCard />

@@ -18,15 +18,17 @@ Instead of requiring production AWS credentials during development, we've implem
 ### Setup Instructions
 
 1. **Enable Development Mode** (already configured in `.env.local`):
+
    ```bash
    USE_MOCK_S3=true
    ```
 
 2. **Run the Test Headshot Seed**:
+
    ```bash
    node scripts/seed-test-headshot.js
    ```
-   
+
    This will:
    - Copy `c:\Users\adamr\Downloads\a-r-greene_headshot.webp` to `apps/web/public/dev-uploads/`
    - Create a database record with metadata:
@@ -36,6 +38,7 @@ Instead of requiring production AWS credentials during development, we've implem
    - Set it as the primary headshot (display_order=0)
 
 3. **Start Development Server**:
+
    ```bash
    cd apps/web
    pnpm dev
@@ -51,6 +54,7 @@ Instead of requiring production AWS credentials during development, we've implem
 ## File Structure
 
 ### Development Mode Files
+
 ```
 apps/web/public/dev-uploads/
 ├── actors_1_headshots_1234567890_a-r-greene_headshot.webp
@@ -58,7 +62,9 @@ apps/web/public/dev-uploads/
 ```
 
 ### Database Records
+
 The `actor_media` table stores metadata with `s3_url` pointing to local URLs:
+
 - **Production**: `https://trimg-actor-media.s3.eu-west-1.amazonaws.com/actors/1/headshots/...`
 - **Development**: `/dev-uploads/actors_1_headshots_1234567890_filename.webp`
 
@@ -109,6 +115,7 @@ When ready to deploy to production:
    - Configure CORS for Next.js origin
 
 2. **Update Environment Variables**:
+
    ```bash
    USE_MOCK_S3=false
    AWS_ACCESS_KEY_ID=<your-production-key>
@@ -131,6 +138,7 @@ When ready to deploy to production:
 ## Architecture Notes
 
 ### S3 Library Features
+
 - **Automatic mode detection**: Checks `DEV_MODE` flag
 - **Consistent interface**: Same API for dev and production
 - **File validation**: Type checking (image/jpeg, png, webp)
@@ -138,13 +146,16 @@ When ready to deploy to production:
 - **Sanitized keys**: Replaces slashes with underscores for local storage
 
 ### Database Schema
+
 The `actor_media` table supports:
+
 - **Multiple media types**: headshot, audio_reel, video_reel
 - **Primary constraint**: Only one primary per media type per actor
 - **Display order**: 0=primary, 1=secondary, 2=tertiary1, 3=tertiary2
 - **Soft delete**: `deleted_at` column (S3 files deleted immediately)
 
 ### API Endpoints
+
 - `POST /api/media/upload` - Upload new media
 - `GET /api/media?type=headshot` - Get media by type
 - `PUT /api/media/[id]` - Update media metadata
@@ -155,24 +166,30 @@ The `actor_media` table supports:
 ## Troubleshooting
 
 ### Error: "No actors found in database"
+
 Run the seed script to create an actor:
+
 ```bash
 node scripts/seed-test-headshot.js
 ```
 
 ### Error: "File not found"
+
 Ensure the source file exists:
+
 ```
 c:\Users\adamr\Downloads\a-r-greene_headshot.webp
 ```
 
 ### Files not displaying
+
 1. Check `USE_MOCK_S3=true` in `.env.local`
 2. Verify files exist in `apps/web/public/dev-uploads/`
 3. Check browser console for 404 errors
 4. Restart dev server: `pnpm dev`
 
 ### Can't upload new files
+
 1. Check actor record exists in database
 2. Verify user has Actor role in Auth0
 3. Check file type (must be jpeg, png, or webp for headshots)

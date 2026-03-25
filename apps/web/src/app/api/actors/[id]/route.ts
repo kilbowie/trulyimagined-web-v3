@@ -7,13 +7,10 @@ import { queries } from '@database/queries-v3';
  * PUT /api/actors/[id]
  * Update actor profile information
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getCurrentUser();
-    
+
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -23,7 +20,7 @@ export async function PUT(
 
     // Get actor record to verify ownership
     const actorResult = await query(queries.actors.getById, [actorId]);
-    
+
     if (!actorResult.rows || actorResult.rows.length === 0) {
       return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
     }
@@ -52,9 +49,6 @@ export async function PUT(
     });
   } catch (error) {
     console.error('Update actor error:', error);
-    return NextResponse.json(
-      { error: 'Failed to update actor profile' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to update actor profile' }, { status: 500 });
   }
 }

@@ -43,6 +43,7 @@ Instead of blocking development on AWS setup, we implemented a development mode 
 ## Test Results
 
 ✅ **Seed Script Execution**:
+
 ```
 🌱 Seeding test headshot...
 ✓ Found actor: test-usage-fe3bafed-d138-417c-86c9-6c613cf8efda@example.com
@@ -54,7 +55,7 @@ Instead of blocking development on AWS setup, we implemented a development mode 
    Photo Credit: Michael Shelford
    Description: Main headshot.
    File Size: 467228 bytes
-   
+
 ✅ Test headshot seeded successfully!
 ```
 
@@ -63,10 +64,12 @@ Instead of blocking development on AWS setup, we implemented a development mode 
 There's a dev server already running on port 3000. Either:
 
 **Option 1**: Use the existing dev server
+
 - Navigate to: http://localhost:3000/dashboard/profile
 - You should see the seeded headshot with metadata
 
 **Option 2**: Restart the dev server
+
 1. Stop the existing process manually (Ctrl+C in the terminal running it)
 2. Run: `cd apps/web && pnpm dev`
 3. Navigate to: http://localhost:3000/dashboard/profile
@@ -76,7 +79,6 @@ There's a dev server already running on port 3000. Either:
 1. **View Profile**:
    - ✅ Primary headshot displays with title "Adam Ross Greene 001"
    - ✅ Photo credit shows "Michael Shelford"
-   
 2. **Gallery Modal**:
    - Click primary headshot → Gallery opens
    - Navigate with chevron buttons (if multiple headshots)
@@ -104,6 +106,7 @@ There's a dev server already running on port 3000. Either:
 When ready to deploy with real S3:
 
 ### Prerequisites
+
 1. **Create S3 Bucket**:
    - AWS Console → S3 → Create bucket
    - Name: `trimg-actor-media`
@@ -112,6 +115,7 @@ When ready to deploy with real S3:
    - Enable versioning (optional)
 
 2. **Configure CORS**:
+
    ```json
    [
      {
@@ -131,6 +135,7 @@ When ready to deploy with real S3:
    - `s3:ListBucket`
 
 ### Deployment Steps
+
 1. Set `USE_MOCK_S3=false` in production environment
 2. Verify AWS credentials are set correctly
 3. Test upload flow in production
@@ -139,6 +144,7 @@ When ready to deploy with real S3:
 ## Summary
 
 ✅ **All functionality implemented and tested**:
+
 - Database schema (actor_media table)
 - API endpoints (upload, get, update, delete, set-primary)
 - Upload UI with drag-drop and metadata forms
@@ -150,12 +156,14 @@ When ready to deploy with real S3:
 - Test seed script with your headshot
 
 ✅ **Development workflow ready**:
+
 - No AWS credentials needed for development
 - Local file system simulates S3
 - All other content and styling preserved
 - Ready for production S3 when deployed
 
 ✅ **No blockers for continued development**:
+
 - Can test and develop all features locally
 - Production S3 setup can be done during deployment phase
 - Code automatically switches between dev/prod modes
@@ -163,11 +171,13 @@ When ready to deploy with real S3:
 ## Files Changed/Created
 
 ### Modified
+
 - [apps/web/src/lib/s3.ts](apps/web/src/lib/s3.ts) - Added dev mode support
 - [.env.local](.env.local) - Added USE_MOCK_S3=true and AWS_S3_BUCKET_NAME
 - [apps/web/.env.example](apps/web/.env.example) - Added USE_MOCK_S3 documentation
 
 ### Created
+
 - [scripts/seed-test-headshot.js](scripts/seed-test-headshot.js) - Test data seeding
 - [MEDIA_DEV_GUIDE.md](MEDIA_DEV_GUIDE.md) - Complete development guide
 - [This file] - Resolution summary

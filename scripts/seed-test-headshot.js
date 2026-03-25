@@ -17,14 +17,14 @@ const pool = new Pool({
 
 async function seedTestHeadshot() {
   const client = await pool.connect();
-  
+
   try {
     console.log('🌱 Seeding test headshot...\n');
 
     // 1. Get the actor by auth0_user_id (you'll need to replace this with your actual Auth0 user ID)
     // For now, let's get the first actor
     const actorResult = await client.query('SELECT id, email FROM actors LIMIT 1');
-    
+
     if (actorResult.rows.length === 0) {
       console.error('❌ No actors found in database. Please create an actor first.');
       return;
@@ -47,7 +47,7 @@ async function seedTestHeadshot() {
     // 3. Copy the local file to dev-uploads directory
     const sourceFile = 'c:\\Users\\adamr\\Downloads\\a-r-greene_headshot.webp';
     const devUploadsDir = path.join(__dirname, '..', 'apps', 'web', 'public', 'dev-uploads');
-    
+
     if (!fs.existsSync(devUploadsDir)) {
       fs.mkdirSync(devUploadsDir, { recursive: true });
     }
@@ -96,18 +96,18 @@ async function seedTestHeadshot() {
     const localUrl = `/dev-uploads/${localFileName}`;
 
     const result = await client.query(insertQuery, [
-      actor.id,                           // actor_id
-      'headshot',                         // media_type
-      'a-r-greene_headshot.webp',        // file_name
-      s3Key,                              // s3_key
-      localUrl,                           // s3_url (local dev URL)
-      fileSize,                           // file_size_bytes
-      'image/webp',                       // mime_type
-      'Adam Ross Greene 001',             // title
-      'Michael Shelford',                 // photo_credit
-      'Main headshot.',                   // description
-      true,                               // is_primary
-      0,                                  // display_order
+      actor.id, // actor_id
+      'headshot', // media_type
+      'a-r-greene_headshot.webp', // file_name
+      s3Key, // s3_key
+      localUrl, // s3_url (local dev URL)
+      fileSize, // file_size_bytes
+      'image/webp', // mime_type
+      'Adam Ross Greene 001', // title
+      'Michael Shelford', // photo_credit
+      'Main headshot.', // description
+      true, // is_primary
+      0, // display_order
     ]);
 
     console.log(`✓ Created media record with ID: ${result.rows[0].id}`);
@@ -119,13 +119,12 @@ async function seedTestHeadshot() {
     console.log(`   Local URL: ${localUrl}`);
     console.log(`   S3 Key: ${s3Key}`);
     console.log(`   File Size: ${fileSize} bytes`);
-    
+
     console.log('\n✅ Test headshot seeded successfully!');
     console.log('\n💡 To view in app:');
     console.log('   1. Make sure USE_MOCK_S3=true in your .env.local');
     console.log('   2. Run: pnpm dev');
     console.log('   3. Navigate to: http://localhost:3000/dashboard/profile');
-
   } catch (error) {
     console.error('❌ Error seeding test headshot:', error);
     throw error;

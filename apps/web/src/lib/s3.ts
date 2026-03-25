@@ -1,4 +1,9 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import fs from 'fs';
 import path from 'path';
@@ -7,13 +12,15 @@ const DEV_MODE = process.env.NODE_ENV === 'development' && process.env.USE_MOCK_
 const DEV_UPLOAD_DIR = path.join(process.cwd(), 'public', 'dev-uploads');
 
 // Initialize S3 client (only if not in dev mode)
-const s3Client = DEV_MODE ? null : new S3Client({
-  region: process.env.AWS_REGION || 'eu-west-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
-  },
-});
+const s3Client = DEV_MODE
+  ? null
+  : new S3Client({
+      region: process.env.AWS_REGION || 'eu-west-1',
+      credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+      },
+    });
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET_NAME || 'trimg-actor-media';
 
@@ -36,11 +43,11 @@ export async function uploadToS3(params: {
     if (DEV_MODE) {
       const filePath = path.join(DEV_UPLOAD_DIR, params.key.replace(/\//g, '_'));
       fs.writeFileSync(filePath, params.body);
-      
+
       // Return local URL
       const localUrl = `/dev-uploads/${params.key.replace(/\//g, '_')}`;
       console.log('[DEV] Saved file locally:', localUrl);
-      
+
       return {
         success: true,
         url: localUrl,
@@ -75,7 +82,9 @@ export async function uploadToS3(params: {
     };
   } catch (error) {
     console.error('S3 upload error:', error);
-    throw new Error(`Failed to upload to S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to upload to S3: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -109,7 +118,9 @@ export async function deleteFromS3(key: string): Promise<{ success: boolean }> {
     return { success: true };
   } catch (error) {
     console.error('S3 delete error:', error);
-    throw new Error(`Failed to delete from S3: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to delete from S3: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -138,25 +149,34 @@ export async function getSignedS3Url(key: string, expiresIn: number = 3600): Pro
     return signedUrl;
   } catch (error) {
     console.error('S3 signed URL error:', error);
-    throw new Error(`Failed to generate signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Failed to generate signed URL: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
 /**
  * Generate S3 key for actor media
  */
-export function generateS3Key(actorId: string, mediaType: 'headshots' | 'audio' | 'video', fileName: string): string {
+export function generateS3Key(
+  actorId: string,
+  mediaType: 'headshots' | 'audio' | 'video',
+  fileName: string
+): string {
   // Clean filename to remove special characters
   const cleanFileName = fileName.replace(/[^a-zA-Z0-9.-]/g, '_');
   const timestamp = Date.now();
-  
+
   return `actors/${actorId}/${mediaType}/${timestamp}-${cleanFileName}`;
 }
 
 /**
  * Validate file type based on media type
  */
-export function validateFileType(file: File, mediaType: 'headshot' | 'audio_reel' | 'video_reel'): boolean {
+export function validateFileType(
+  file: File,
+  mediaType: 'headshot' | 'audio_reel' | 'video_reel'
+): boolean {
   const allowedTypes: Record<string, string[]> = {
     headshot: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'],
     audio_reel: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg'],
@@ -169,7 +189,10 @@ export function validateFileType(file: File, mediaType: 'headshot' | 'audio_reel
 /**
  * Validate file size (in bytes)
  */
-export function validateFileSize(file: File, mediaType: 'headshot' | 'audio_reel' | 'video_reel'): boolean {
+export function validateFileSize(
+  file: File,
+  mediaType: 'headshot' | 'audio_reel' | 'video_reel'
+): boolean {
   const maxSizes: Record<string, number> = {
     headshot: 10 * 1024 * 1024, // 10MB for images
     audio_reel: 50 * 1024 * 1024, // 50MB for audio
