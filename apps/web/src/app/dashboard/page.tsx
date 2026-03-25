@@ -3,11 +3,30 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
 import { VerifiableCredentialsCard } from '@/components/VerifiableCredentials';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import {
+  UserCircle,
+  Shield,
+  Settings,
+  FileText,
+  ScrollText,
+  History,
+  ShieldCheck,
+  Users,
+  Building,
+  Wrench,
+  Home,
+  CheckCircle2,
+  AlertCircle,
+} from 'lucide-react';
 
 /**
  * Protected Dashboard Page
  *
- * Shows user info and role-based access
+ * Modern dashboard with shadcn/ui components
  */
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -23,265 +42,311 @@ export default async function DashboardPage() {
   const hasAdminRole = roles.includes('Admin');
   const hasEnterpriseRole = roles.includes('Enterprise');
 
+  const roleConfig: Record<string, { icon: React.ReactNode; color: string; variant: any }> = {
+    Actor: {
+      icon: <UserCircle className="h-4 w-4" />,
+      color: 'text-purple-600',
+      variant: 'secondary',
+    },
+    Agent: {
+      icon: <Users className="h-4 w-4" />,
+      color: 'text-blue-600',
+      variant: 'default',
+    },
+    Enterprise: {
+      icon: <Building className="h-4 w-4" />,
+      color: 'text-green-600',
+      variant: 'outline',
+    },
+    Admin: {
+      icon: <Wrench className="h-4 w-4" />,
+      color: 'text-red-600',
+      variant: 'destructive',
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Dashboard</h1>
-          <Link href="/" className="px-4 py-2 text-gray-600 hover:text-gray-900 transition-colors">
-            ← Home
-          </Link>
-        </div>
-
-        {/* User Profile Card */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">User Profile</h2>
-
-          <div className="space-y-2">
-            <div>
-              <span className="font-medium">Name:</span> {user.name || 'N/A'}
-            </div>
-            <div>
-              <span className="font-medium">Email:</span> {user.email}
-            </div>
-            <div>
-              <span className="font-medium">Email Verified:</span>{' '}
-              {user.email_verified ? '✅ Yes' : '❌ No'}
-            </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <div className="border-b">
+        <div className="container flex h-16 items-center px-4">
+          <div className="flex items-center gap-2">
+            <Shield className="h-6 w-6 text-primary" />
+            <h1 className="text-xl font-semibold">TrulyImagined</h1>
+          </div>
+          <div className="ml-auto flex items-center gap-4">
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/">
+                <Home className="mr-2 h-4 w-4" />
+                Home
+              </Link>
+            </Button>
           </div>
         </div>
+      </div>
 
-        {/* Roles & Permissions Card */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-semibold mb-4">Roles & Permissions</h2>
-
-          {roles.length > 0 ? (
-            <div className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {roles.map((role) => {
-                  const roleConfig: Record<string, { emoji: string; color: string }> = {
-                    Actor: {
-                      emoji: '🎭',
-                      color: 'bg-purple-100 text-purple-800 border-purple-200',
-                    },
-                    Agent: { emoji: '👔', color: 'bg-blue-100 text-blue-800 border-blue-200' },
-                    Enterprise: {
-                      emoji: '🏢',
-                      color: 'bg-green-100 text-green-800 border-green-200',
-                    },
-                    Admin: { emoji: '⚙️', color: 'bg-red-100 text-red-800 border-red-200' },
-                  };
-
-                  const config = roleConfig[role] || {
-                    emoji: '👤',
-                    color: 'bg-gray-100 text-gray-800 border-gray-200',
-                  };
-
-                  return (
-                    <div
-                      key={role}
-                      className={`inline-flex items-center px-4 py-2 rounded-lg border ${config.color} font-medium`}
-                    >
-                      <span className="mr-2">{config.emoji}</span>
-                      {role}
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="pt-4 border-t border-gray-200">
-                <p className="text-sm text-gray-600 mb-2">
-                  <strong>Your access level:</strong>
-                </p>
-                <ul className="text-sm text-gray-600 space-y-1 ml-4">
-                  {hasActorRole && <li>• Register identity and manage consent</li>}
-                  {hasAgentRole && <li>• Manage actor clients and licensing</li>}
-                  {hasEnterpriseRole && <li>• Request licenses and view usage</li>}
-                  {hasAdminRole && <li>• Full system administration access</li>}
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-gray-500">No roles found in your session</p>
-
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-sm text-red-800 mb-3">
-                  <strong>⚠️ Roles are missing from your JWT token</strong>
-                </p>
-                <p className="text-sm text-red-700 mb-4">
-                  This usually means the Auth0 Action isn't set up correctly.
-                </p>
-                <Link
-                  href="/debug-roles"
-                  className="inline-block px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium"
-                >
-                  Debug Roles Issue →
-                </Link>
-              </div>
-            </div>
-          )}
+      <div className="container py-6 px-4 space-y-6">
+        {/* Welcome Section */}
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Welcome back, {user.name || 'User'}</h2>
+          <p className="text-muted-foreground">
+            Manage your identity, consents, and credentials from your dashboard
+          </p>
         </div>
 
-        {/* Role-Specific Actions */}
-        {roles.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
+        {/* User Profile & Roles Grid */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Profile Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <UserCircle className="h-5 w-5" />
+                Profile
+              </CardTitle>
+              <CardDescription>Your account information</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Name</span>
+                <span className="text-sm">{user.name || 'N/A'}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Email</span>
+                <span className="text-sm">{user.email}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between items-center">
+                <span className="text-sm font-medium text-muted-foreground">Verified</span>
+                <div className="flex items-center gap-1">
+                  {user.email_verified ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-600">Yes</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm text-yellow-600">No</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Roles Card */}
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Roles & Permissions
+              </CardTitle>
+              <CardDescription>Your access levels and capabilities</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {roles.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {roles.map((role) => {
+                      const config = roleConfig[role];
+                      return (
+                        <Badge key={role} variant={config?.variant || 'secondary'}>
+                          <span className="mr-1.5">{config?.icon}</span>
+                          {role}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Your capabilities:</p>
+                    <ul className="text-sm text-muted-foreground space-y-1 ml-4">
+                      {hasActorRole && <li>• Register identity and manage consent</li>}
+                      {hasAgentRole && <li>• Manage actor clients and licensing</li>}
+                      {hasEnterpriseRole && <li>• Request licenses and view usage</li>}
+                      {hasAdminRole && <li>• Full system administration access</li>}
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground">No roles found in your session</p>
+                  <Card className="border-destructive bg-destructive/5">
+                    <CardContent className="pt-6 space-y-3">
+                      <p className="text-sm font-medium text-destructive">
+                        ⚠️ Roles are missing from your JWT token
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        This usually means the Auth0 Action isn't set up correctly.
+                      </p>
+                      <Button variant="destructive" size="sm" asChild>
+                        <Link href="/debug-roles">Debug Roles Issue →</Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions */}
+        {roles.length > 0 && (
+          <>
+            <div>
+              <h3 className="text-2xl font-semibold tracking-tight mb-4">Quick Actions</h3>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {/* Actor Actions */}
               {hasActorRole && (
                 <>
-                  <Link
-                    href="/register-actor"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">🎭</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Register Identity</h3>
-                        <p className="text-sm text-gray-600">
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/register-actor">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg group-hover:text-primary">
+                          <UserCircle className="h-5 w-5" />
+                          Register Identity
+                        </CardTitle>
+                        <CardDescription>
                           Add your profile to the Identity Registry
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/consents"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">✅</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Manage Consents</h3>
-                        <p className="text-sm text-gray-600">
-                          View and manage your identity usage permissions
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/consent-preferences"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">⚙️</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Consent Preferences</h3>
-                        <p className="text-sm text-gray-600">
+                        </CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/consent-preferences">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg group-hover:text-primary">
+                          <Settings className="h-5 w-5" />
+                          Consent Preferences
+                        </CardTitle>
+                        <CardDescription>
                           Update your consent policy and usage permissions
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/licenses"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">📜</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">License Tracker</h3>
-                        <p className="text-sm text-gray-600">
+                        </CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/licenses">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg group-hover:text-primary">
+                          <ScrollText className="h-5 w-5" />
+                          License Tracker
+                        </CardTitle>
+                        <CardDescription>
                           Monitor licenses granted to API clients
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/consent-history"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start">
-                      <span className="text-2xl mr-3">📋</span>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-1">Consent Ledger History</h3>
-                        <p className="text-sm text-gray-600">
+                        </CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/consent-history">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-lg group-hover:text-primary">
+                          <History className="h-5 w-5" />
+                          Consent History
+                        </CardTitle>
+                        <CardDescription>
                           View complete version history of your consent
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                  <Link
-                    href="/dashboard/verify-identity"
-                    className="block p-4 border-2 border-purple-200 rounded-lg hover:border-purple-400 hover:bg-purple-50 transition-all"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start flex-1">
-                        <span className="text-2xl mr-3">🔐</span>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900 mb-1">Verify Identity</h3>
-                          <p className="text-sm text-gray-600 mb-2">
-                            Link external providers to increase verification level
-                          </p>
-                          {hasActorRole && <ConfidenceScoreBadge />}
+                        </CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/verify-identity">
+                      <CardHeader>
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <CardTitle className="flex items-center gap-2 text-lg group-hover:text-primary">
+                              <ShieldCheck className="h-5 w-5" />
+                              Verify Identity
+                            </CardTitle>
+                            <CardDescription>
+                              Link external providers to increase verification level
+                            </CardDescription>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  </Link>
+                        {hasActorRole && (
+                          <div className="mt-2">
+                            <ConfidenceScoreBadge />
+                          </div>
+                        )}
+                      </CardHeader>
+                    </Link>
+                  </Card>
                 </>
               )}
 
               {/* Agent Actions */}
               {hasAgentRole && (
-                <div className="block p-4 border-2 border-blue-200 rounded-lg bg-gray-50">
-                  <div className="flex items-start">
-                    <span className="text-2xl mr-3">👔</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Agent Dashboard</h3>
-                      <p className="text-sm text-gray-500">Coming soon...</p>
-                    </div>
-                  </div>
-                </div>
+                <Card className="opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-5 w-5" />
+                      Agent Dashboard
+                    </CardTitle>
+                    <CardDescription>Coming soon...</CardDescription>
+                  </CardHeader>
+                </Card>
               )}
 
               {/* Enterprise Actions */}
               {hasEnterpriseRole && (
-                <div className="block p-4 border-2 border-green-200 rounded-lg bg-gray-50">
-                  <div className="flex items-start">
-                    <span className="text-2xl mr-3">🏢</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">License Requests</h3>
-                      <p className="text-sm text-gray-500">Coming soon...</p>
-                    </div>
-                  </div>
-                </div>
+                <Card className="opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Building className="h-5 w-5" />
+                      License Requests
+                    </CardTitle>
+                    <CardDescription>Coming soon...</CardDescription>
+                  </CardHeader>
+                </Card>
               )}
 
               {/* Admin Actions */}
               {hasAdminRole && (
-                <div className="block p-4 border-2 border-red-200 rounded-lg bg-gray-50">
-                  <div className="flex items-start">
-                    <span className="text-2xl mr-3">⚙️</span>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">Admin Panel</h3>
-                      <p className="text-sm text-gray-500">Coming soon...</p>
-                    </div>
-                  </div>
-                </div>
+                <Card className="opacity-60">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Wrench className="h-5 w-5" />
+                      Admin Panel
+                    </CardTitle>
+                    <CardDescription>Coming soon...</CardDescription>
+                  </CardHeader>
+                </Card>
               )}
             </div>
-          </div>
+          </>
         )}
 
         {/* Verifiable Credentials (for users with verified identity) */}
         {hasActorRole && (
-          <div className="mt-6">
+          <div>
             <VerifiableCredentialsCard />
           </div>
         )}
 
         {/* Debug Links (Admin only) */}
         {hasAdminRole && (
-          <div className="mt-6 text-center text-sm text-gray-500">
-            <Link href="/debug-roles" className="hover:text-gray-700 underline">
-              Debug Roles
-            </Link>
-            {' • '}
-            <Link href="/auth/profile" className="hover:text-gray-700 underline">
-              View Raw Profile
-            </Link>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Developer Tools</CardTitle>
+            </CardHeader>
+            <CardContent className="flex gap-4">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/debug-roles">Debug Roles</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/auth/profile">View Raw Profile</Link>
+              </Button>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>

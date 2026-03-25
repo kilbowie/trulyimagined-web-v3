@@ -349,6 +349,14 @@ Object.entries(ISO_CODE_MAP).forEach(([twoDigit, threeDigit]) => {
   ISO_CODE_REVERSE[threeDigit] = twoDigit;
 });
 
+// Calculate total countries in our database
+export const getTotalCountries = () => {
+  return Object.values(COUNTRIES_BY_CONTINENT).reduce(
+    (total, countries) => total + countries.length,
+    0
+  );
+};
+
 interface Geography {
   id: string;
   rsmKey: string;
@@ -388,8 +396,13 @@ export default function TerritoryMap({
     }
   };
 
+  const totalCountries = getTotalCountries();
+  const allowedCount = allowedCountries.length;
+  const deniedCount = deniedCountries.length;
+  const selectedCount = allowedCount + deniedCount;
+
   return (
-    <div className="w-full bg-gray-900 rounded-lg p-4 border border-white/20">
+    <div className="w-full bg-gray-900 rounded-lg p-4 border border-white/20 relative">
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{
@@ -402,33 +415,51 @@ export default function TerritoryMap({
       >
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
-            geographies.map((geo) => (
-              <Geography
-                key={geo.rsmKey}
-                geography={geo}
-                fill={getCountryFill(geo)}
-                stroke="#1f2937"
-                strokeWidth={0.5}
-                style={{
-                  default: {
-                    outline: 'none',
-                  },
-                  hover: {
-                    fill: '#6366f1',
-                    outline: 'none',
-                    cursor: 'pointer',
-                  },
-                  pressed: {
-                    fill: '#4f46e5',
-                    outline: 'none',
-                  },
-                }}
-                onClick={() => handleGeographyClick(geo)}
-              />
-            ))
+            geographies.map((geo) => {
+              const fillColor = getCountryFill(geo);
+              return (
+                <Geography
+                  key={`${geo.rsmKey}-${fillColor}`}
+                  geography={geo}
+                  fill={fillColor}
+                  stroke="#1f2937"
+                  strokeWidth={0.5}
+                  style={{
+                    default: {
+                      outline: 'none',
+                    },
+                    hover: {
+                      fill: '#6366f1',
+                      outline: 'none',
+                      cursor: 'pointer',
+                    },
+                    pressed: {
+                      fill: '#4f46e5',
+                      outline: 'none',
+                    },
+                  }}
+                  onClick={() => handleGeographyClick(geo)}
+                />
+              );
+            })
           }
         </Geographies>
       </ComposableMap>
+
+      {/* Statistics Display */}
+      <div className="mt-4 flex items-center gap-6 text-sm font-semibold">
+        <div className="flex items-center gap-2">
+          <span className="text-green-400">{allowedCount} ALLOWED</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-red-400">{deniedCount} DENIED</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-white">
+            {selectedCount}/{totalCountries} TOTAL
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
