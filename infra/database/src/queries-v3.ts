@@ -289,6 +289,93 @@ export const queries = {
       LIMIT $3 OFFSET $4;
     `,
   },
+
+  // ===========================================
+  // ACTOR MEDIA (Headshots, Audio, Video Reels)
+  // ===========================================
+
+  actorMedia: {
+    create: `
+      INSERT INTO actor_media (
+        actor_id, media_type, file_name, s3_key, s3_url, file_size_bytes, mime_type,
+        title, photo_credit, description, is_primary, display_order
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *;
+    `,
+
+    getById: `
+      SELECT * FROM actor_media 
+      WHERE id = $1 AND deleted_at IS NULL;
+    `,
+
+    getByActor: `
+      SELECT * FROM actor_media 
+      WHERE actor_id = $1 AND deleted_at IS NULL
+      ORDER BY display_order ASC, uploaded_at DESC;
+    `,
+
+    getByActorAndType: `
+      SELECT * FROM actor_media 
+      WHERE actor_id = $1 AND media_type = $2 AND deleted_at IS NULL
+      ORDER BY display_order ASC, uploaded_at DESC;
+    `,
+
+    getPrimary: `
+      SELECT * FROM actor_media 
+      WHERE actor_id = $1 AND media_type = $2 AND is_primary = TRUE AND deleted_at IS NULL
+      LIMIT 1;
+    `,
+
+    getHeadshots: `
+      SELECT * FROM actor_media 
+      WHERE actor_id = $1 AND media_type = 'headshot' AND deleted_at IS NULL
+      ORDER BY display_order ASC, uploaded_at DESC;
+    `,
+
+    update: `
+      UPDATE actor_media 
+      SET title = COALESCE($2, title),
+          photo_credit = COALESCE($3, photo_credit),
+          description = COALESCE($4, description),
+          is_primary = COALESCE($5, is_primary),
+          display_order = COALESCE($6, display_order)
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *;
+    `,
+
+    updateDisplayOrder: `
+      UPDATE actor_media 
+      SET display_order = $2
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *;
+    `,
+
+    clearPrimary: `
+      UPDATE actor_media 
+      SET is_primary = FALSE
+      WHERE actor_id = $1 AND media_type = $2 AND deleted_at IS NULL;
+    `,
+
+    setPrimary: `
+      UPDATE actor_media 
+      SET is_primary = TRUE, display_order = 0
+      WHERE id = $1 AND deleted_at IS NULL
+      RETURNING *;
+    `,
+
+    softDelete: `
+      UPDATE actor_media 
+      SET deleted_at = NOW()
+      WHERE id = $1
+      RETURNING *;
+    `,
+
+    hardDelete: `
+      DELETE FROM actor_media 
+      WHERE id = $1
+      RETURNING *;
+    `,
+  },
 };
 
 export default queries;

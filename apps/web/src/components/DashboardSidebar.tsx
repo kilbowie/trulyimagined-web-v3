@@ -15,6 +15,7 @@ import {
   Users,
   Building,
   Wrench,
+  Upload,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -42,6 +43,12 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       title: 'Profile',
       href: '/dashboard/profile',
       icon: UserCircle,
+      show: hasActorRole,
+    },
+    {
+      title: 'Upload Media',
+      href: '/dashboard/upload-media',
+      icon: Upload,
       show: hasActorRole,
     },
     {
