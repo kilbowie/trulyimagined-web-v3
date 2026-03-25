@@ -36,10 +36,16 @@ export default async function DashboardPage() {
       const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
       if (actorResult.rows && actorResult.rows.length > 0) {
         const actor = actorResult.rows[0];
-        displayName = actor.stage_name || actor.first_name || user.name || 'User';
+        // Use stage_name if available, otherwise fall back to first_name
+        if (actor.stage_name && actor.stage_name.trim()) {
+          displayName = actor.stage_name;
+        } else if (actor.first_name && actor.first_name.trim()) {
+          displayName = actor.first_name;
+        }
       }
     } catch (error) {
       console.error('Failed to fetch actor data:', error);
+      // Keep default displayName on error
     }
   }
 

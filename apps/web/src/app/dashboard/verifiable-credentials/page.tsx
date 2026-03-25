@@ -29,9 +29,7 @@ export default async function VerifiableCredentialsPage() {
           <Shield className="h-8 w-8" />
           Verifiable Credentials
         </h2>
-        <p className="text-muted-foreground mt-2">
-          Manage your W3C-compliant digital credentials
-        </p>
+        <p className="text-muted-foreground mt-2">Manage your W3C-compliant digital credentials</p>
       </div>
 
       <VerifiableCredentialsCard />

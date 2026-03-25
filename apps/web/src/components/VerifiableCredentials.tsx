@@ -85,19 +85,21 @@ export function VerifiableCredentialsCard() {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to issue credential');
-      }
+      const data = await response.json();
 
-      await response.json();
+      if (!response.ok) {
+        // Show specific error message from API
+        throw new Error(data.error || 'Failed to issue credential');
+      }
 
       // Refresh credentials list
       await fetchCredentials();
 
       alert('✅ Credential issued successfully!');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to issue credential');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to issue credential';
+      setError(errorMessage);
+      alert('❌ ' + errorMessage);
     } finally {
       setIssuing(false);
     }
@@ -201,18 +203,13 @@ export function VerifiableCredentialsCard() {
               W3C-compliant digital credentials you can share with verifiers
             </CardDescription>
           </div>
-          <Button
-            onClick={issueNewCredential}
-            disabled={issuing}
-            variant="default"
-          >
+          <Button onClick={issueNewCredential} disabled={issuing} variant="default">
             <FileText className="h-4 w-4 mr-2" />
             {issuing ? 'Issuing...' : 'Issue Credential'}
           </Button>
         </div>
       </CardHeader>
       <CardContent>
-
         {error && (
           <div className="mb-4 p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
             <AlertCircle className="h-4 w-4 text-destructive mt-0.5" />
@@ -229,11 +226,7 @@ export function VerifiableCredentialsCard() {
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               Issue a verifiable credential to prove your verified identity to third parties
             </p>
-            <Button
-              onClick={issueNewCredential}
-              disabled={issuing}
-              size="lg"
-            >
+            <Button onClick={issueNewCredential} disabled={issuing} size="lg">
               <FileText className="h-4 w-4 mr-2" />
               {issuing ? 'Issuing...' : 'Issue Your First Credential'}
             </Button>
@@ -249,9 +242,7 @@ export function VerifiableCredentialsCard() {
                 <Card
                   key={metadata.id}
                   className={`transition-all ${
-                    isActive
-                      ? 'border-green-500/50 bg-green-50/50'
-                      : 'opacity-75'
+                    isActive ? 'border-green-500/50 bg-green-50/50' : 'opacity-75'
                   }`}
                 >
                   <CardHeader>
@@ -266,11 +257,7 @@ export function VerifiableCredentialsCard() {
                               Active
                             </Badge>
                           )}
-                          {metadata.isRevoked && (
-                            <Badge variant="destructive">
-                              Revoked
-                            </Badge>
-                          )}
+                          {metadata.isRevoked && <Badge variant="destructive">Revoked</Badge>}
                           {isExpired && !metadata.isRevoked && (
                             <Badge variant="secondary" className="bg-orange-600 text-white">
                               Expired
@@ -280,8 +267,9 @@ export function VerifiableCredentialsCard() {
 
                         <div className="text-sm text-muted-foreground space-y-1 mt-2">
                           <p>
-                            <strong>Issued:</strong> {new Date(metadata.issuedAt).toLocaleDateString()}{' '}
-                            at {new Date(metadata.issuedAt).toLocaleTimeString()}
+                            <strong>Issued:</strong>{' '}
+                            {new Date(metadata.issuedAt).toLocaleDateString()} at{' '}
+                            {new Date(metadata.issuedAt).toLocaleTimeString()}
                           </p>
                           {metadata.expiresAt && (
                             <p>
@@ -305,12 +293,7 @@ export function VerifiableCredentialsCard() {
                           <Download className="h-4 w-4 mr-1" />
                           Download
                         </Button>
-                        <Button
-                          asChild
-                          variant="secondary"
-                          size="sm"
-                          title="View details"
-                        >
+                        <Button asChild variant="secondary" size="sm" title="View details">
                           <Link href={`/dashboard/credentials/${metadata.id}`}>
                             <Eye className="h-4 w-4 mr-1" />
                             View
@@ -366,8 +349,8 @@ export function VerifiableCredentialsCard() {
           <CardContent className="space-y-2">
             <p className="text-sm text-muted-foreground">
               These credentials are W3C-compliant, cryptographically signed proofs of your verified
-              identity. You can share them with third parties who can verify their authenticity without
-              contacting us.
+              identity. You can share them with third parties who can verify their authenticity
+              without contacting us.
             </p>
             <p className="text-sm text-muted-foreground">
               <strong>Standards:</strong> W3C VC Data Model 1.1, DID Core 1.0, Ed25519Signature2020
