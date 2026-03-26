@@ -1,0 +1,113 @@
+{
+  "mcpServer": "aws",
+  "version": "1.0.0",
+  "description": "AWS MCP Server configuration for Truly Imagined v3",
+  "provider": "@modelcontextprotocol/server-aws",
+  "capabilities": {
+    "rds": {
+      "enabled": true,
+      "operations": ["describe", "list", "getMetrics"],
+      "resources": ["truly-imagined-db"]
+    },
+    "lambda": {
+      "enabled": true,
+      "operations": ["describe", "list", "getLogs", "getMetrics"],
+      "resources": [
+        "identity-service",
+        "consent-service",
+        "licensing-service"
+      ]
+    },
+    "s3": {
+      "enabled": true,
+      "operations": ["list", "get", "getMetadata"],
+      "buckets": ["truly-imagined-media", "truly-imagined-documents"]
+    },
+    "secretsManager": {
+      "enabled": true,
+      "operations": ["get", "describe", "list"],
+      "prefix": "trulyimagined/"
+    },
+    "cloudWatch": {
+      "enabled": true,
+      "operations": ["getMetrics", "getAlarms", "getLogs"],
+      "logGroups": [
+        "/aws/lambda/identity-service",
+        "/aws/lambda/consent-service",
+        "/aws/lambda/licensing-service",
+        "/aws/rds/truly-imagined-db"
+      ]
+    },
+    "costExplorer": {
+      "enabled": true,
+      "operations": ["getCost", "getForecast"]
+    }
+  },
+  "configuration": {
+    "region": "us-east-1",
+    "readOnly": true,
+    "maxResults": 100,
+    "timeout": 30000
+  },
+  "security": {
+    "iamUser": "trulyimagined-mcp",
+    "policyDocument": "aws-iam-policy.json",
+    "mfaRequired": false,
+    "ipWhitelist": []
+  },
+  "usage": {
+    "examples": {
+      "rds": [
+        "Show status of truly-imagined-db RDS instance",
+        "List all database connections",
+        "Check RDS storage usage and available space"
+      ],
+      "lambda": [
+        "Show recent errors from identity-service Lambda",
+        "Get logs from consent-service in the last hour",
+        "List all Lambda functions with their memory usage"
+      ],
+      "s3": [
+        "List objects in truly-imagined-media bucket",
+        "Check total storage used across all S3 buckets",
+        "Show recent uploads to /headshots folder"
+      ],
+      "secrets": [
+        "List all secrets in trulyimagined/ prefix",
+        "Get value of trulyimagined/database/password (if permitted)",
+        "Check when secrets were last rotated"
+      ],
+      "cloudwatch": [
+        "Show CloudWatch alarms in alarm state",
+        "Get Lambda invocation metrics for last 24 hours",
+        "Search logs for 'ERROR' in identity-service"
+      ],
+      "costs": [
+        "What's my AWS spending this month?",
+        "Show cost breakdown by service",
+        "Forecast next month's AWS costs"
+      ]
+    },
+    "bestPractices": [
+      "Always specify time ranges for log queries to avoid rate limits",
+      "Use CloudWatch Insights for complex log analysis",
+      "Check costs weekly to catch unexpected spending",
+      "Monitor RDS storage usage to avoid running out of space",
+      "Review Lambda errors daily for security issues"
+    ]
+  },
+  "troubleshooting": {
+    "accessDenied": {
+      "cause": "IAM policy missing required permissions",
+      "solution": "Verify IAM policy matches aws-iam-policy.json"
+    },
+    "rateLimitExceeded": {
+      "cause": "Too many AWS API calls in short period",
+      "solution": "Wait 60 seconds and retry. Consider caching results."
+    },
+    "regionMismatch": {
+      "cause": "Resource exists in different region",
+      "solution": "Verify AWS_REGION=us-east-1 in configuration"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "trulyimagined-mcp-servers",
+  "version": "1.0.0",
+  "description": "MCP Server implementations for Truly Imagined v3",
+  "type": "module",
+  "scripts": {
+    "start:aws": "node --loader ts-node/esm aws-mcp-server.ts",
+    "start:vercel": "node --loader ts-node/esm vercel-mcp-server.ts",
+    "test": "echo \"MCP servers run via Claude Desktop\" && exit 0",
+    "lint": "eslint . --ext .ts",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "aws",
+    "vercel",
+    "claude-desktop"
+  ],
+  "author": "Truly Imagined",
+  "license": "PRIVATE",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.5.0",
+    "@aws-sdk/client-rds": "^3.705.0",
+    "@aws-sdk/client-lambda": "^3.705.0",
+    "@aws-sdk/client-s3": "^3.705.0",
+    "@aws-sdk/client-secrets-manager": "^3.705.0",
+    "@aws-sdk/client-cloudwatch-logs": "^3.705.0",
+    "@aws-sdk/client-cost-explorer": "^3.705.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

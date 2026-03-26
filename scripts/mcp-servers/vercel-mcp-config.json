@@ -1,0 +1,140 @@
+{
+  "mcpServer": "vercel",
+  "version": "1.0.0",
+  "description": "Vercel MCP Server configuration for Truly Imagined v3",
+  "provider": "@modelcontextprotocol/server-vercel",
+  "capabilities": {
+    "deployments": {
+      "enabled": true,
+      "operations": ["create", "list", "get", "cancel"],
+      "environments": ["production", "preview", "development"]
+    },
+    "projects": {
+      "enabled": true,
+      "operations": ["get", "list", "update"],
+      "projects": ["trulyimagined-web"]
+    },
+    "environmentVariables": {
+      "enabled": true,
+      "operations": ["list", "create", "update", "delete"],
+      "environments": ["production", "preview", "development"]
+    },
+    "domains": {
+      "enabled": true,
+      "operations": ["list", "get", "verify"],
+      "domains": ["trulyimagined.com", "*.trulyimagined.com"]
+    },
+    "logs": {
+      "enabled": true,
+      "operations": ["get", "stream"],
+      "types": ["build", "runtime", "edge"]
+    },
+    "analytics": {
+      "enabled": true,
+      "operations": ["getWebVitals", "getTopPages", "getErrors"],
+      "metrics": ["FCP", "LCP", "CLS", "FID", "TTFB"]
+    }
+  },
+  "configuration": {
+    "projectId": "prj_xxxxxxxxxxxxxxxx",
+    "teamId": "team_xxxxxxxxxxxxxxxx",
+    "defaultBranch": "main",
+    "autoDeployPreview": true,
+    "timeout": 60000
+  },
+  "security": {
+    "tokenScope": "project",
+    "allowedOperations": ["read", "deploy", "env:update"],
+    "ipWhitelist": [],
+    "requireApproval": {
+      "production": true,
+      "preview": false
+    }
+  },
+  "usage": {
+    "examples": {
+      "deployments": [
+        "Deploy the latest commit to production",
+        "Show recent deployments for trulyimagined-web",
+        "Check status of deployment dep_xxxxxxxxxxxxxx",
+        "List all preview deployments",
+        "Cancel deployment in progress"
+      ],
+      "environments": [
+        "Show all environment variables for production",
+        "Add NEXT_PUBLIC_FEATURE_FLAG=true to preview",
+        "List differences between staging and production env vars",
+        "Update DATABASE_URL for all environments"
+      ],
+      "domains": [
+        "List all domains for trulyimagined-web",
+        "Check DNS configuration for www.trulyimagined.com",
+        "Verify SSL certificate status"
+      ],
+      "logs": [
+        "Show build logs for latest deployment",
+        "Get runtime errors from production",
+        "Stream edge function logs in real-time"
+      ],
+      "analytics": [
+        "Show Core Web Vitals for homepage",
+        "Which pages have the slowest LCP?",
+        "Get error rate for the last 7 days",
+        "Compare Web Vitals before and after latest deploy"
+      ]
+    },
+    "bestPractices": [
+      "Always deploy to preview before production",
+      "Check Web Vitals after each deployment",
+      "Use environment variables for feature flags",
+      "Monitor build times to catch performance regressions",
+      "Set up domain redirects for SEO (www → non-www)"
+    ]
+  },
+  "integrations": {
+    "github": {
+      "enabled": true,
+      "repository": "adamr-github/trulyimagined-web-v3",
+      "autoDeployBranches": ["main", "staging"],
+      "commentPreviews": true
+    },
+    "notifications": {
+      "email": true,
+      "slack": false,
+      "discord": false
+    }
+  },
+  "performance": {
+    "targetMetrics": {
+      "FCP": "< 1.8s",
+      "LCP": "< 2.5s",
+      "CLS": "< 0.1",
+      "FID": "< 100ms",
+      "TTFB": "< 600ms"
+    },
+    "budgets": {
+      "javascript": "200kb",
+      "css": "50kb",
+      "images": "1mb",
+      "fonts": "100kb"
+    }
+  },
+  "troubleshooting": {
+    "deploymentFailed": {
+      "cause": "Build error or failed tests",
+      "solution": "Check build logs. Run 'pnpm build' locally to reproduce."
+    },
+    "envVarMissing": {
+      "cause": "Environment variable not set for target environment",
+      "solution": "Add variable via Vercel dashboard or MCP command"
+    },
+    "domainNotVerified": {
+      "cause": "DNS records not configured correctly",
+      "solution": "Check DNS configuration matches Vercel requirements"
+    },
+    "slowPerformance": {
+      "cause": "Bundle size increased or slow API responses",
+      "solution": "Check Web Vitals. Run 'pnpm analyze' to inspect bundle."
+    }
+  }
+}

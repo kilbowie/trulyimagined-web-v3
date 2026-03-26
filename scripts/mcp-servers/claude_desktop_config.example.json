@@ -1,0 +1,30 @@
+{
+  "mcpServers": {
+    "aws-trulyimagined": {
+      "command": "node",
+      "args": [
+        "--loader",
+        "ts-node/esm",
+        "/ABSOLUTE/PATH/TO/PROJECT/scripts/mcp-servers/aws-mcp-server.ts"
+      ],
+      "env": {
+        "AWS_ACCESS_KEY_ID": "AKIAXXXXXXXXXXXXXXXX",
+        "AWS_SECRET_ACCESS_KEY": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "AWS_REGION": "us-east-1"
+      }
+    },
+    "vercel-trulyimagined": {
+      "command": "node",
+      "args": [
+        "--loader",
+        "ts-node/esm",
+        "/ABSOLUTE/PATH/TO/PROJECT/scripts/mcp-servers/vercel-mcp-server.ts"
+      ],
+      "env": {
+        "VERCEL_TOKEN": "vercel_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+        "VERCEL_PROJECT_ID": "prj_xxxxxxxxxxxxxxxx",
+        "VERCEL_TEAM_ID": "team_xxxxxxxxxxxxxxxx"
+      }
+    }
+  }
+}
