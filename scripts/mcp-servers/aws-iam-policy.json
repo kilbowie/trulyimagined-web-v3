@@ -52,10 +52,7 @@
         "s3:GetObjectVersion",
         "s3:ListBucketVersions"
       ],
-      "Resource": [
-        "arn:aws:s3:::truly-imagined-*",
-        "arn:aws:s3:::truly-imagined-*/*"
-      ]
+      "Resource": ["arn:aws:s3:::truly-imagined-*", "arn:aws:s3:::truly-imagined-*/*"]
     },
     {
       "Sid": "MCPSecretsManagerReadOnly",
@@ -91,22 +88,13 @@
     {
       "Sid": "MCPCostExplorerReadOnly",
       "Effect": "Allow",
-      "Action": [
-        "ce:GetCostAndUsage",
-        "ce:GetCostForecast",
-        "ce:GetDimensionValues",
-        "ce:GetTags"
-      ],
+      "Action": ["ce:GetCostAndUsage", "ce:GetCostForecast", "ce:GetDimensionValues", "ce:GetTags"],
       "Resource": "*"
     },
     {
       "Sid": "MCPAPIGatewayReadOnly",
       "Effect": "Allow",
-      "Action": [
-        "apigateway:GET",
-        "apigateway:HEAD",
-        "apigateway:OPTIONS"
-      ],
+      "Action": ["apigateway:GET", "apigateway:HEAD", "apigateway:OPTIONS"],
       "Resource": [
         "arn:aws:apigateway:us-east-1::/restapis",
         "arn:aws:apigateway:us-east-1::/restapis/*"
@@ -121,10 +109,7 @@
         "iam:ListAttachedUserPolicies",
         "iam:ListAttachedRolePolicies"
       ],
-      "Resource": [
-        "arn:aws:iam::*:user/trulyimagined-mcp",
-        "arn:aws:iam::*:role/trulyimagined-*"
-      ]
+      "Resource": ["arn:aws:iam::*:user/trulyimagined-mcp", "arn:aws:iam::*:role/trulyimagined-*"]
     }
   ]
 }

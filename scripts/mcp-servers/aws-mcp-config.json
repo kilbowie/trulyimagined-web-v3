@@ -12,11 +12,7 @@
     "lambda": {
       "enabled": true,
       "operations": ["describe", "list", "getLogs", "getMetrics"],
-      "resources": [
-        "identity-service",
-        "consent-service",
-        "licensing-service"
-      ]
+      "resources": ["identity-service", "consent-service", "licensing-service"]
     },
     "s3": {
       "enabled": true,

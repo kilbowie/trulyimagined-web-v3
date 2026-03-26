@@ -2,27 +2,24 @@
 
 /**
  * Vercel MCP Server Script
- * 
+ *
  * This script initializes the Vercel MCP server for Claude Desktop integration.
  * It provides deployment automation and monitoring capabilities.
- * 
+ *
  * Usage:
  *   node vercel-mcp-server.js
- * 
+ *
  * Environment Variables Required:
  *   - VERCEL_TOKEN: Vercel API token (scoped to project)
  *   - VERCEL_PROJECT_ID: Project ID (optional, for default project)
  *   - VERCEL_TEAM_ID: Team ID (optional, for team projects)
- * 
+ *
  * @see vercel-mcp-config.json for server configuration
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // Configuration
 const VERCEL_TOKEN = process.env.VERCEL_TOKEN!;
@@ -31,10 +28,7 @@ const VERCEL_PROJECT_ID = process.env.VERCEL_PROJECT_ID;
 const VERCEL_API_BASE = 'https://api.vercel.com';
 
 // Helper function to make Vercel API requests
-async function vercelRequest(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<any> {
+async function vercelRequest(endpoint: string, options: RequestInit = {}): Promise<any> {
   const url = new URL(endpoint, VERCEL_API_BASE);
   if (VERCEL_TEAM_ID) {
     url.searchParams.set('teamId', VERCEL_TEAM_ID);
@@ -269,9 +263,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           limit: String(args.limit || 20),
           ...(args.state && { state: args.state }),
         });
-        const data = await vercelRequest(
-          `/v6/deployments?${params}&projectId=${projectId}`
-        );
+        const data = await vercelRequest(`/v6/deployments?${params}&projectId=${projectId}`);
         return {
           content: [
             {
@@ -322,12 +314,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'cancel_deployment': {
-        const data = await vercelRequest(
-          `/v12/deployments/${args.deploymentId}/cancel`,
-          {
-            method: 'PATCH',
-          }
-        );
+        const data = await vercelRequest(`/v12/deployments/${args.deploymentId}/cancel`, {
+          method: 'PATCH',
+        });
         return {
           content: [
             {

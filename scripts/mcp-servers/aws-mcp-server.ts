@@ -2,28 +2,25 @@
 
 /**
  * AWS MCP Server Script
- * 
+ *
  * This script initializes the AWS MCP server for Claude Desktop integration.
  * It provides read-only access to AWS resources for infrastructure monitoring.
- * 
+ *
  * Usage:
  *   node aws-mcp-server.js
- * 
+ *
  * Environment Variables Required:
  *   - AWS_ACCESS_KEY_ID: IAM user access key
- *   - AWS_SECRET_ACCESS_KEY: IAM user secret key  
+ *   - AWS_SECRET_ACCESS_KEY: IAM user secret key
  *   - AWS_REGION: AWS region (default: us-east-1)
- * 
+ *
  * @see aws-iam-policy.json for required IAM permissions
  * @see aws-mcp-config.json for server configuration
  */
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 
 // AWS SDK v3 imports
 import { RDSClient, DescribeDBInstancesCommand } from '@aws-sdk/client-rds';
@@ -39,10 +36,7 @@ import {
   DescribeLogGroupsCommand,
   FilterLogEventsCommand,
 } from '@aws-sdk/client-cloudwatch-logs';
-import {
-  CostExplorerClient,
-  GetCostAndUsageCommand,
-} from '@aws-sdk/client-cost-explorer';
+import { CostExplorerClient, GetCostAndUsageCommand } from '@aws-sdk/client-cost-explorer';
 
 // Configuration
 const AWS_REGION = process.env.AWS_REGION || 'us-east-1';

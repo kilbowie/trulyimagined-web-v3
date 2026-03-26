@@ -13,6 +13,7 @@ MCP servers enable AI agents (like Claude Desktop) to interact with external ser
 **Purpose:** Manage AWS infrastructure (RDS, Lambda, S3, Secrets Manager, CloudWatch)
 
 **Capabilities:**
+
 - Query RDS database status and execute read-only queries
 - View Lambda function logs and metrics
 - List S3 bucket contents and check storage usage
@@ -21,6 +22,7 @@ MCP servers enable AI agents (like Claude Desktop) to interact with external ser
 - Check cost and billing information
 
 **Setup Required:**
+
 1. Create IAM user: `trulyimagined-mcp` (see `aws-iam-policy.json`)
 2. Generate access keys in AWS Console
 3. Add credentials to `.env.local` or Claude Desktop config
@@ -31,6 +33,7 @@ MCP servers enable AI agents (like Claude Desktop) to interact with external ser
 **Purpose:** Automate Vercel deployments and manage environments
 
 **Capabilities:**
+
 - Trigger deployments from AI context
 - Check deployment status and build logs
 - Manage environment variables across environments
@@ -39,6 +42,7 @@ MCP servers enable AI agents (like Claude Desktop) to interact with external ser
 - Roll back deployments if needed
 
 **Setup Required:**
+
 1. Generate Vercel API token: https://vercel.com/account/tokens
 2. Link project: `npx vercel link` in `apps/web`
 3. Add token to `.env.local` or Claude Desktop config
@@ -106,6 +110,7 @@ VERCEL_PROJECT_ID=prj_xxxxxxxxxxxxxxxx
 #### Test AWS MCP
 
 Open Claude Desktop and try:
+
 ```
 List all RDS instances in the Truly Imagined project
 Show recent Lambda errors from the identity-service function
@@ -115,6 +120,7 @@ Check S3 bucket size for truly-imagined-media
 #### Test Vercel MCP
 
 Open Claude Desktop and try:
+
 ```
 Show recent deployments for trulyimagined-web
 Check build status of the latest production deployment
@@ -145,22 +151,26 @@ View Core Web Vitals for the homepage
 ### AWS MCP Issues
 
 **Problem:** "Access Denied" errors
+
 - **Solution:** Check IAM policy includes necessary permissions (see `aws-iam-policy.json`)
 - **Solution:** Verify AWS credentials are correct in `.env.local`
 - **Solution:** Ensure region is set correctly (us-east-1)
 
 **Problem:** "Rate limit exceeded"
+
 - **Solution:** AWS CloudWatch has API limits. Wait 1 minute and retry
 - **Solution:** Consider using CloudWatch Insights for complex queries
 
 ### Vercel MCP Issues
 
 **Problem:** "Project not found"
+
 - **Solution:** Run `npx vercel link` in `apps/web` directory
 - **Solution:** Verify `VERCEL_PROJECT_ID` matches your project
 - **Solution:** Check token has correct scope (Team > Project)
 
 **Problem:** "Deployment failed"
+
 - **Solution:** Check build logs in Vercel dashboard
 - **Solution:** Verify environment variables are set correctly
 - **Solution:** Ensure GitHub integration is active
@@ -239,6 +249,7 @@ Consider adding more MCP servers when:
 ## Support
 
 For issues specific to:
+
 - **MCP Protocol:** https://github.com/modelcontextprotocol/servers/issues
 - **AWS Services:** AWS Support or Stack Overflow
 - **Vercel Platform:** Vercel Support or Discord

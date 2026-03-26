@@ -15,6 +15,7 @@ Model Context Protocol (MCP) servers have been successfully implemented for the 
 ### 1. AWS MCP Server (`scripts/mcp-servers/aws-mcp-server.ts`)
 
 **Capabilities:**
+
 - ✅ RDS database monitoring and status checks
 - ✅ Lambda function logs and metrics
 - ✅ S3 bucket operations (list, get metadata)
@@ -23,6 +24,7 @@ Model Context Protocol (MCP) servers have been successfully implemented for the 
 - ✅ Cost Explorer integration for spending analysis
 
 **Tools Available:**
+
 - `describe_rds_instances` - List and inspect RDS instances
 - `list_lambda_functions` - View Lambda details and configurations
 - `list_s3_buckets` - Browse S3 buckets and objects
@@ -34,6 +36,7 @@ Model Context Protocol (MCP) servers have been successfully implemented for the 
 ### 2. Vercel MCP Server (`scripts/mcp-servers/vercel-mcp-server.ts`)
 
 **Capabilities:**
+
 - ✅ Deployment management (create, list, cancel)
 - ✅ Environment variable management
 - ✅ Domain configuration and verification
@@ -41,6 +44,7 @@ Model Context Protocol (MCP) servers have been successfully implemented for the 
 - ✅ Web Vitals and performance analytics
 
 **Tools Available:**
+
 - `list_deployments` - Show recent deployments
 - `get_deployment` - Get deployment details
 - `create_deployment` - Trigger new deployments
@@ -72,6 +76,7 @@ scripts/mcp-servers/
 ### AWS Security
 
 **IAM Policy:** Least-privilege access implemented
+
 - ✅ Read-only operations for most services
 - ✅ Scoped to `us-east-1` region
 - ✅ Resource-level restrictions on S3/Secrets Manager
@@ -79,6 +84,7 @@ scripts/mcp-servers/
 - ✅ Separate IAM user (`trulyimagined-mcp`)
 
 **Protections:**
+
 - Credentials stored outside version control
 - MFA recommended on IAM user
 - 90-day key rotation policy
@@ -87,12 +93,14 @@ scripts/mcp-servers/
 ### Vercel Security
 
 **Token Scoping:**
+
 - ✅ Project-level scope (not account-level)
 - ✅ 90-day expiration policy
 - ✅ Minimal required permissions
 - ✅ Separate tokens for dev/prod
 
 **Protections:**
+
 - Tokens stored securely in Claude Desktop config
 - No version control exposure
 - Regular token rotation schedule
@@ -101,6 +109,7 @@ scripts/mcp-servers/
 ## Documentation Provided
 
 ### 1. README.md (`scripts/mcp-servers/README.md`)
+
 - Overview of both MCP servers
 - Installation instructions
 - Usage examples for common tasks
@@ -109,6 +118,7 @@ scripts/mcp-servers/
 - Maintenance schedule
 
 ### 2. SETUP_GUIDE.md (`scripts/mcp-servers/SETUP_GUIDE.md`)
+
 - Step-by-step setup instructions (30-60 minutes)
 - IAM user creation and policy attachment
 - Vercel token generation
@@ -117,6 +127,7 @@ scripts/mcp-servers/
 - Common issues and solutions
 
 ### 3. Configuration Files
+
 - `aws-iam-policy.json` - Ready-to-use IAM policy
 - `aws-mcp-config.json` - Server capability documentation
 - `vercel-mcp-config.json` - Vercel server configuration
@@ -139,6 +150,7 @@ scripts/mcp-servers/
    - Add to `.env.local`
 
 3. **Install Dependencies:**
+
    ```bash
    cd scripts/mcp-servers
    pnpm install
@@ -168,12 +180,14 @@ scripts/mcp-servers/
 ### Time Savings (Estimated)
 
 **Before MCP:**
+
 - AWS Console navigation: ~5-10 min per task
 - Vercel dashboard checking: ~3-5 min per task
 - Log searching: ~10-15 min per investigation
 - Cost analysis: ~20-30 min monthly
 
 **After MCP:**
+
 - Natural language queries: ~30-60 seconds
 - Instant cost breakdowns
 - Quick log filtering
@@ -196,6 +210,7 @@ scripts/mcp-servers/
 ### Dependencies Installed
 
 **AWS SDK v3 Clients:**
+
 - `@aws-sdk/client-rds` (3.705.0)
 - `@aws-sdk/client-lambda` (3.705.0)
 - `@aws-sdk/client-s3` (3.705.0)
@@ -204,9 +219,11 @@ scripts/mcp-servers/
 - `@aws-sdk/client-cost-explorer` (3.705.0)
 
 **MCP SDK:**
+
 - `@modelcontextprotocol/sdk` (0.5.0)
 
 **Development:**
+
 - TypeScript 5.7.2
 - ts-node 10.9.2
 - Node.js 18+ required
@@ -214,17 +231,20 @@ scripts/mcp-servers/
 ### Architecture Design
 
 **MCP Protocol:**
+
 - Stdio-based communication (stdin/stdout)
 - JSON-RPC message format
 - Tool-based interaction model
 
 **AWS Integration:**
+
 - AWS SDK v3 (modular imports)
 - Async/await error handling
 - Region-scoped operations
 - Credential management via environment
 
 **Vercel Integration:**
+
 - REST API (fetch-based)
 - Bearer token authentication
 - Team-scoped requests
@@ -233,18 +253,21 @@ scripts/mcp-servers/
 ## Maintenance Requirements
 
 ### Monthly (10 minutes)
+
 - Review AWS CloudWatch logs for errors
 - Check Vercel deployment success rate
 - Update MCP server dependencies
 - Review AWS cost trends
 
 ### Quarterly (30 minutes)
+
 - Rotate AWS access keys
 - Regenerate Vercel API token
 - Review IAM policy permissions
 - Test all MCP server functionality
 
 ### Annual (1 hour)
+
 - Audit AWS resources for cost optimization
 - Review Vercel plan and usage
 - Consider expanding MCP servers

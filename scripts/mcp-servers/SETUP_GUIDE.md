@@ -64,6 +64,12 @@ AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 AWS_REGION=us-east-1
 ```
 
+# Added below instead of reccomended above
+
+AWS_MCP_REGION=eu-west-1
+AWS_MCP_ACCESS_KEY_ID=AKIAxxxxxxxxxxxxxxxxxxxxxxxxxx
+AWS_MCP_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
 ### Step 5: Install AWS SDK Dependencies
 
 ```bash
@@ -72,6 +78,7 @@ pnpm install
 ```
 
 This will install:
+
 - `@modelcontextprotocol/sdk`
 - `@aws-sdk/client-rds`
 - `@aws-sdk/client-lambda`
@@ -154,16 +161,19 @@ Press Ctrl+C to stop.
 ### Step 1: Locate Claude Desktop Config
 
 **macOS:**
+
 ```bash
 ~/Library/Application Support/Claude/claude_desktop_config.json
 ```
 
 **Windows:**
+
 ```
 %APPDATA%\Claude\claude_desktop_config.json
 ```
 
 **Linux:**
+
 ```bash
 ~/.config/Claude/claude_desktop_config.json
 ```
@@ -206,6 +216,7 @@ Create or edit the file to include:
 ```
 
 **Replace:**
+
 - `/ABSOLUTE/PATH/TO/` with your actual project path
 - All `xxx` placeholders with your actual credentials
 
@@ -280,17 +291,20 @@ Expected: Environment variable names (values hidden)
 ### AWS MCP Issues
 
 **"Access Denied" errors:**
+
 1. Verify IAM policy is attached correctly
 2. Check AWS region is `us-east-1`
 3. Ensure credentials in Claude config are correct
 4. Try `aws sts get-caller-identity` in terminal to verify keys work
 
 **"Rate limit exceeded":**
+
 1. AWS API limits reached (especially CloudWatch)
 2. Wait 60 seconds and retry
 3. Consider reducing query frequency
 
 **"Resource not found":**
+
 1. Verify resource exists in `us-east-1` region
 2. Check spelling of resource names (case-sensitive)
 3. IAM user may not have permission to see resource
@@ -298,16 +312,19 @@ Expected: Environment variable names (values hidden)
 ### Vercel MCP Issues
 
 **"Authentication failed":**
+
 1. Verify token is not expired (check Vercel dashboard)
 2. Ensure token has project-level scope
 3. Check token is correctly copied (no extra spaces)
 
 **"Project not found":**
+
 1. Run `npx vercel link` in `apps/web`
 2. Verify `VERCEL_PROJECT_ID` matches dashboard
 3. Ensure token has access to the team/project
 
 **"Deployment failed":**
+
 1. Check build logs in Vercel dashboard
 2. Verify GitHub integration is active
 3. Ensure environment variables are set correctly
@@ -315,6 +332,7 @@ Expected: Environment variable names (values hidden)
 ### Claude Desktop Issues
 
 **MCP servers not showing:**
+
 1. Check Claude Desktop logs:
    - macOS: `~/Library/Logs/Claude/`
    - Windows: `%APPDATA%\Claude\Logs\`
@@ -323,6 +341,7 @@ Expected: Environment variable names (values hidden)
 4. Check JSON syntax is valid (use JSONLint.com)
 
 **Servers timing out:**
+
 1. Check internet connection
 2. Verify AWS/Vercel APIs are accessible
 3. Try running MCP servers manually to see errors
@@ -334,6 +353,7 @@ Expected: Environment variable names (values hidden)
 ### AWS Credentials
 
 ✅ **DO:**
+
 - Rotate access keys every 90 days
 - Use least-privilege IAM policy
 - Enable MFA on IAM user
@@ -341,6 +361,7 @@ Expected: Environment variable names (values hidden)
 - Store credentials in secure password manager
 
 ❌ **DON'T:**
+
 - Use root account credentials
 - Grant write permissions unless necessary
 - Share credentials between team members
@@ -350,6 +371,7 @@ Expected: Environment variable names (values hidden)
 ### Vercel Tokens
 
 ✅ **DO:**
+
 - Use project-scoped tokens (not account-level)
 - Set token expiration (90 days recommended)
 - Use different tokens for dev/prod
@@ -357,6 +379,7 @@ Expected: Environment variable names (values hidden)
 - Monitor token usage in Vercel dashboard
 
 ❌ **DON'T:**
+
 - Share tokens between team members
 - Use tokens with broader scope than needed
 - Store tokens in version control
@@ -429,6 +452,7 @@ After successful setup:
 ## Support
 
 For issues:
+
 - **MCP Protocol:** https://github.com/modelcontextprotocol/servers/issues
 - **AWS Services:** AWS Support or Stack Overflow
 - **Vercel Platform:** Vercel Support or Discord
