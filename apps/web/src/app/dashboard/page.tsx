@@ -5,13 +5,7 @@ import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
 import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 import Link from 'next/link';
-import {
-  TrendingUp,
-  FileText,
-  ShieldCheck,
-  Activity,
-  ArrowUpRight,
-} from 'lucide-react';
+import { TrendingUp, FileText, ShieldCheck, Activity, ArrowUpRight } from 'lucide-react';
 
 /**
  * Dashboard Home Page

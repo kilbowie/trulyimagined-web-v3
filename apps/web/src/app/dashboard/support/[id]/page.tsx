@@ -509,9 +509,7 @@ export default function TicketDetailPage() {
                       </span>
                     </div>
                     <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                        {message.message}
-                      </ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.message}</ReactMarkdown>
                     </div>
                   </div>
                 </div>
@@ -527,126 +525,126 @@ export default function TicketDetailPage() {
               <div className="space-y-3">
                 {/* Text Formatting Toolbar */}
                 <div className="flex items-center gap-1 border-b pb-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('**')}
-                      title="Bold"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Bold className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('_')}
-                      title="Italic"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Italic className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('`')}
-                      title="Code"
-                      className="h-8 w-8 p-0"
-                    >
-                      <Code className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('- ', '', true)}
-                      title="Bullet list"
-                      className="h-8 w-8 p-0"
-                    >
-                      <List className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('1. ', '', true)}
-                      title="Numbered list"
-                      className="h-8 w-8 p-0"
-                    >
-                      <ListOrdered className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={sending}
-                      onClick={() => handleTextFormat('[', '](url)')}
-                      title="Link"
-                      className="h-8 w-8 p-0"
-                    >
-                      <LinkIcon className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="relative">
-                    <Textarea
-                      ref={textareaRef}
-                      placeholder="Type your message... (Ctrl+Enter to send, supports Markdown formatting)"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={handleKeyDown}
-                      rows={6}
-                      maxLength={10000}
-                      disabled={sending}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute bottom-2 right-2"
-                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      disabled={sending}
-                      data-emoji-button
-                    >
-                      <Smile className="h-5 w-5" />
-                    </Button>
-                  </div>
-                  {showEmojiPicker && (
-                    <div className="absolute z-50 right-0 emoji-picker-container">
-                      <EmojiPicker onEmojiClick={handleEmojiClick} />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {newMessage.length} / 10,000 characters
-                    </p>
-                    {isAdmin && (
-                      <label className="flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={isInternalNote}
-                          onChange={(e) => setIsInternalNote(e.target.checked)}
-                          className="rounded"
-                        />
-                        Internal note (admin only)
-                      </label>
-                    )}
-                  </div>
-                  <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
-                    {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    <Send className="mr-2 h-4 w-4" />
-                    Send Message
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('**')}
+                    title="Bold"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Bold className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('_')}
+                    title="Italic"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Italic className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('`')}
+                    title="Code"
+                    className="h-8 w-8 p-0"
+                  >
+                    <Code className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('- ', '', true)}
+                    title="Bullet list"
+                    className="h-8 w-8 p-0"
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('1. ', '', true)}
+                    title="Numbered list"
+                    className="h-8 w-8 p-0"
+                  >
+                    <ListOrdered className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={sending}
+                    onClick={() => handleTextFormat('[', '](url)')}
+                    title="Link"
+                    className="h-8 w-8 p-0"
+                  >
+                    <LinkIcon className="h-4 w-4" />
                   </Button>
                 </div>
-              </>
-            )}
+
+                <div className="relative">
+                  <Textarea
+                    ref={textareaRef}
+                    placeholder="Type your message... (Ctrl+Enter to send, supports Markdown formatting)"
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    rows={6}
+                    maxLength={10000}
+                    disabled={sending}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute bottom-2 right-2"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    disabled={sending}
+                    data-emoji-button
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                </div>
+                {showEmojiPicker && (
+                  <div className="absolute z-50 right-0 emoji-picker-container">
+                    <EmojiPicker onEmojiClick={handleEmojiClick} />
+                  </div>
+                )}
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {newMessage.length} / 10,000 characters
+                  </p>
+                  {isAdmin && (
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={isInternalNote}
+                        onChange={(e) => setIsInternalNote(e.target.checked)}
+                        className="rounded"
+                      />
+                      Internal note (admin only)
+                    </label>
+                  )}
+                </div>
+                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
+                  {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Send className="mr-2 h-4 w-4" />
+                  Send Message
+                </Button>
+              </div>
+            </>
+          )}
 
           {ticket.status === 'closed' && (
             <Alert className="mt-4">
