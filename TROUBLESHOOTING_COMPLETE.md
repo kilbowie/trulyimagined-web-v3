@@ -7,11 +7,13 @@
 **Problem**: Hydration mismatch when fetching stage name from database in server component
 
 **Root Cause**: The original code had inconsistent fallback logic that could cause different values between server and client renders:
+
 ```typescript
 displayName = actor.stage_name || actor.first_name || user.name || 'User';
 ```
 
 **Solution**: Improved the logic to be more explicit and stable:
+
 ```typescript
 if (actor.stage_name && actor.stage_name.trim()) {
   displayName = actor.stage_name;
@@ -21,6 +23,7 @@ if (actor.stage_name && actor.stage_name.trim()) {
 ```
 
 **Changes Made**:
+
 - [apps/web/src/app/dashboard/page.tsx](apps/web/src/app/dashboard/page.tsx) - Improved stage name fallback logic with explicit trim checks
 - Added proper error handling for database query failures
 
@@ -29,20 +32,24 @@ if (actor.stage_name && actor.stage_name.trim()) {
 **Problem**: Credential issuance failing for users without identity links
 
 **Root Cause**: The `/api/credentials/issue` endpoint requires:
+
 1. `user_profiles` record with `profile_completed = TRUE`
 2. At least one active `identity_links` record
 
-**Diagnosis**: 
+**Diagnosis**:
+
 - Agent profile: Missing identity link (❌)
 - Admin profile: Missing identity link (❌)
 - Actor profile: Had identity link (✅)
 
-**Solution**: 
+**Solution**:
+
 1. Created diagnostic script: [scripts/check-user-profile.js](scripts/check-user-profile.js)
 2. Created fix script: [scripts/fix-user-profiles.js](scripts/fix-user-profiles.js)
 3. Added Mock KYC identity links for all completed profiles
 
 **Results**:
+
 ```
 ✅ Agent profile: Now has Mock KYC identity link (high verification)
 ✅ Admin profile: Now has Mock KYC identity link (high verification)
@@ -52,6 +59,7 @@ if (actor.stage_name && actor.stage_name.trim()) {
 ### 3. ✅ Improved Error Handling
 
 **Changes Made**:
+
 - [apps/web/src/components/VerifiableCredentials.tsx](apps/web/src/components/VerifiableCredentials.tsx)
 - Added alert dialog for credential issuance errors
 - Display specific error messages from API (e.g., "Profile incomplete", "No verified identity")
@@ -62,11 +70,13 @@ if (actor.stage_name && actor.stage_name.trim()) {
 ### ✅ All Profiles Can Now Issue Credentials
 
 Run verification:
+
 ```bash
 node scripts/check-user-profile.js
 ```
 
 Output:
+
 ```
 📊 Found 3 user profile(s):
 
@@ -83,6 +93,7 @@ Output:
 ### Testing Checklist
 
 #### Dashboard Page (/)
+
 - [x] No compilation errors
 - [x] No hydration errors
 - [x] Stage name displays correctly when set
@@ -91,6 +102,7 @@ Output:
 - [x] Handles database errors gracefully
 
 #### Verifiable Credentials Page (/dashboard/verifiable-credentials)
+
 - [x] No compilation errors
 - [x] Loads without errors
 - [x] Can issue new credentials
@@ -130,6 +142,7 @@ Navigate to: http://localhost:3000/dashboard
 **Expected**: "Welcome back, {stageName}!" (or first name/username if no stage name)
 
 **Test Scenarios**:
+
 - Actor with stage name → Shows stage name
 - Actor without stage name → Shows first name
 - Non-actor user → Shows Auth0 name
@@ -139,6 +152,7 @@ Navigate to: http://localhost:3000/dashboard
 Navigate to: http://localhost:3000/dashboard/verifiable-credentials
 
 **Test Steps**:
+
 1. Click "Issue Credential" button
 2. Wait for issuance to complete
 3. Verify credential appears in list
@@ -148,6 +162,7 @@ Navigate to: http://localhost:3000/dashboard/verifiable-credentials
 7. Test Revoke button → Marks credential as revoked
 
 **Expected Results**:
+
 - ✅ Credential issues successfully
 - ✅ Shows "Active" badge with green styling
 - ✅ Displays issuance date and time
@@ -175,6 +190,7 @@ psql $DATABASE_URL -c "UPDATE user_profiles SET profile_completed = TRUE WHERE e
 ### Identity Links Table
 
 The `identity_links` table requires these columns:
+
 - `user_profile_id` (UUID, references user_profiles)
 - `provider` (VARCHAR) - e.g., "Mock KYC", "Stripe Identity"
 - `provider_user_id` (VARCHAR) - External provider ID
@@ -187,6 +203,7 @@ The `identity_links` table requires these columns:
 ### Current State
 
 All three user profiles now have:
+
 - ✅ `profile_completed = TRUE`
 - ✅ At least one active identity link
 - ✅ Can issue W3C Verifiable Credentials
@@ -196,10 +213,11 @@ All three user profiles now have:
 ### Before Production Deployment
 
 1. **Replace Mock Identity Links** with real verification:
+
    ```sql
    -- Remove mock links
    DELETE FROM identity_links WHERE provider = 'Mock KYC';
-   
+
    -- Users will need to complete real identity verification
    -- via Stripe Identity, Onfido, or other KYC provider
    ```
@@ -218,15 +236,19 @@ All three user profiles now have:
 ## Scripts Reference
 
 ### Check User Profiles
+
 ```bash
 node scripts/check-user-profile.js
 ```
+
 Shows which profiles can issue credentials and why.
 
 ### Fix User Profiles (Development Only)
+
 ```bash
 node scripts/fix-user-profiles.js
 ```
+
 Adds Mock KYC identity links to all completed profiles (for development/testing only).
 
 ## Summary
@@ -236,6 +258,6 @@ Adds Mock KYC identity links to all completed profiles (for development/testing 
 ✅ **Error handling**: Improved with specific error messages  
 ✅ **Testing scripts**: Created for diagnosis and fixes  
 ✅ **All profiles**: Can now issue credentials  
-✅ **shadcn UI**: Properly integrated in credentials page  
+✅ **shadcn UI**: Properly integrated in credentials page
 
 All content and functionality preserved. Ready for testing!

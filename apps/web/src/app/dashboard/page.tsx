@@ -69,9 +69,9 @@ export default async function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">Active</div>
-              <p className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground">
                 <ConfidenceScoreBadge />
-              </p>
+              </div>
             </CardContent>
           </Card>
 

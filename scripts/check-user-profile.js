@@ -75,24 +75,32 @@ async function checkUserProfile() {
         console.log('      ❌ No identity links found');
       } else {
         linksResult.rows.forEach((link, idx) => {
-          console.log(`      ${idx + 1}. ${link.provider} - Level: ${link.verification_level} - Active: ${link.is_active ? '✅' : '❌'}`);
+          console.log(
+            `      ${idx + 1}. ${link.provider} - Level: ${link.verification_level} - Active: ${link.is_active ? '✅' : '❌'}`
+          );
         });
       }
 
       // Check if this profile can issue credentials
-      const canIssue = profile.profile_completed && linksResult.rows.some(link => link.is_active);
+      const canIssue = profile.profile_completed && linksResult.rows.some((link) => link.is_active);
       console.log(`   Can Issue Credentials: ${canIssue ? '✅ YES' : '❌ NO'}`);
 
       if (!canIssue) {
         console.log('\n   ⚠️  To enable credential issuance:');
         if (!profile.profile_completed) {
           console.log('      • Set profile_completed = TRUE');
-          console.log(`        UPDATE user_profiles SET profile_completed = TRUE WHERE id = '${profile.id}';`);
+          console.log(
+            `        UPDATE user_profiles SET profile_completed = TRUE WHERE id = '${profile.id}';`
+          );
         }
-        if (!linksResult.rows.some(link => link.is_active)) {
+        if (!linksResult.rows.some((link) => link.is_active)) {
           console.log('      • Add an active identity link:');
-          console.log(`        INSERT INTO identity_links (user_profile_id, provider, verification_level, assurance_level, is_active, verified_at)`);
-          console.log(`        VALUES ('${profile.id}', 'Stripe Identity', 'high', 'high', TRUE, NOW());`);
+          console.log(
+            `        INSERT INTO identity_links (user_profile_id, provider, verification_level, assurance_level, is_active, verified_at)`
+          );
+          console.log(
+            `        VALUES ('${profile.id}', 'Stripe Identity', 'high', 'high', TRUE, NOW());`
+          );
         }
       }
 
@@ -111,11 +119,10 @@ async function checkUserProfile() {
     if (credentialsResult.rows.length === 0) {
       console.log('   (none)');
     } else {
-      credentialsResult.rows.forEach(row => {
+      credentialsResult.rows.forEach((row) => {
         console.log(`   ${row.credential_type}: ${row.count}`);
       });
     }
-
   } catch (error) {
     console.error('❌ Error:', error);
     throw error;

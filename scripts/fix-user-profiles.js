@@ -59,16 +59,7 @@ async function fixUserProfiles() {
             is_active, 
             verified_at
           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-          [
-            profile.id,
-            'Mock KYC',
-            `mock-${profile.id}`,
-            'kyc',
-            'high',
-            'high',
-            true,
-            new Date(),
-          ]
+          [profile.id, 'Mock KYC', `mock-${profile.id}`, 'kyc', 'high', 'high', true, new Date()]
         );
 
         console.log(`   ✅ Identity link added for ${profile.username || profile.email}`);
@@ -79,7 +70,6 @@ async function fixUserProfiles() {
 
     console.log('\n✅ All profiles fixed!');
     console.log('\n💡 All completed profiles can now issue credentials.');
-
   } catch (error) {
     console.error('❌ Error:', error);
     throw error;
