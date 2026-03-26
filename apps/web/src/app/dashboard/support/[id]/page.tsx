@@ -21,13 +21,21 @@ import {
   ArrowLeft,
   Send,
   Clock,
-  User,
   Shield,
   Loader2,
   AlertCircle,
   CheckCircle2,
   XCircle,
+  Smile,
 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
+
+interface EmojiClickData {
+  emoji: string;
+  [key: string]: unknown;
+}
 
 interface Message {
   id: string;
@@ -66,8 +74,10 @@ export default function TicketDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (ticketId) {
@@ -79,6 +89,19 @@ export default function TicketDetailPage() {
     // Scroll to bottom when messages change
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [ticket?.messages]);
+
+  useEffect(() => {
+    // Close emoji picker when clicking outside
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (showEmojiPicker && !target.closest('.emoji-picker-container') && !target.closest('[data-emoji-button]')) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showEmojiPicker]);
 
   const fetchTicket = async () => {
     try {
@@ -97,6 +120,34 @@ export default function TicketDetailPage() {
       console.error('[FETCH_TICKET_ERROR]', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEmojiClick = (emojiData: EmojiClickData) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const before = newMessage.substring(0, startPos);
+    const after = newMessage.substring(endPos);
+    const newValue = before + emojiData.emoji + after;
+
+    setNewMessage(newValue);
+    setShowEmojiPicker(false);
+
+    // Set cursor position after emoji
+    setTimeout(() => {
+      textarea.focus();
+      const newCursorPos = startPos + emojiData.emoji.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && e.ctrlKey) {
+      e.preventDefault();
+      sendMessage();
     }
   };
 
@@ -378,7 +429,7 @@ export default function TicketDetailPage() {
             {ticket.messages.length} {ticket.messages.length === 1 ? 'message' : 'messages'}
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="relative">
           <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4">
             {ticket.messages.map((message, index) => (
               <div key={message.id}>
@@ -419,14 +470,34 @@ export default function TicketDetailPage() {
               <Separator className="my-6" />
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Textarea
-                    placeholder="Type your message..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    rows={4}
-                    maxLength={10000}
-                    disabled={sending}
-                  />
+                  <div className="relative">
+                    <Textarea
+                      ref={textareaRef}
+                      placeholder="Type your message... (Ctrl+Enter to send)"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      rows={4}
+                      maxLength={10000}
+                      disabled={sending}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute bottom-2 right-2"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      disabled={sending}
+                      data-emoji-button
+                    >
+                      <Smile className="h-5 w-5" />
+                    </Button>
+                  </div>
+                  {showEmojiPicker && (
+                    <div className="absolute z-50 right-0 emoji-picker-container">
+                      <EmojiPicker onEmojiClick={handleEmojiClick} />
+                    </div>
+                  )}
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">
                       {newMessage.length} / 10,000 characters
