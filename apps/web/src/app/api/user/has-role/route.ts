@@ -9,7 +9,7 @@ import { auth0 } from '@/lib/auth0';
  *
  * GET /api/user/has-role
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     // Get user session
     const session = await auth0.getSession();

@@ -9,7 +9,7 @@ import { sendSupportTicketCreatedEmail } from '@/lib/email';
  * - Users see their own tickets
  * - Admins see all tickets
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {

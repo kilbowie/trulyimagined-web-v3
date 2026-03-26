@@ -12,7 +12,7 @@
  */
 
 import { pool } from '@/lib/db';
-import type { PoolClient } from 'pg';
+// import type { PoolClient } from 'pg';
 
 // ===========================================
 // TYPES
@@ -178,10 +178,10 @@ export async function createConsentEntry(
  */
 export async function revokeConsentEntry(
   actorId: string,
-  reason: string,
-  revokedBy: string,
-  ipAddress?: string,
-  userAgent?: string
+  _reason: string,
+  _revokedBy: string,
+  _ipAddress?: string,
+  _userAgent?: string
 ): Promise<void> {
   const client = await pool.connect();
 

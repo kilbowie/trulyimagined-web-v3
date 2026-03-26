@@ -7,7 +7,6 @@ import { queries } from '@database/queries-v3';
 import Link from 'next/link';
 import {
   TrendingUp,
-  TrendingDown,
   FileText,
   ShieldCheck,
   Activity,

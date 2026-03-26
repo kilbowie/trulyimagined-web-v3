@@ -1,5 +1,5 @@
 import { auth0 } from '@/lib/auth0';
-import { headers } from 'next/headers';
+// import { headers } from 'next/headers';
 
 /**
  * Comprehensive Auth0 Roles Diagnostic Page

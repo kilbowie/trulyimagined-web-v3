@@ -64,7 +64,7 @@ const ConsentCheckRequestSchema = z.object({
   metadata: z.record(z.unknown()).optional(),
 });
 
-type ConsentCheckRequest = z.infer<typeof ConsentCheckRequestSchema>;
+type _ConsentCheckRequest = z.infer<typeof ConsentCheckRequestSchema>;
 
 // ===========================================
 // HELPER FUNCTIONS

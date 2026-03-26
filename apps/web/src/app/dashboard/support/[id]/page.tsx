@@ -27,8 +27,17 @@ import {
   CheckCircle2,
   XCircle,
   Smile,
+  Bold,
+  Italic,
+  List,
+  ListOrdered,
+  Code,
+  Link as LinkIcon,
+  Calendar,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const EmojiPicker = dynamic(() => import('emoji-picker-react'), { ssr: false });
 
@@ -51,7 +60,7 @@ interface Ticket {
   id: string;
   ticket_number: number;
   subject: string;
-  status: 'open' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed';
+  status: 'open' | 'in_progress' | 'waiting_on_user' | 'resolved' | 'closed' | 'scheduled';
   priority: 'low' | 'medium' | 'high' | 'critical';
   created_at: string;
   updated_at: string;
@@ -94,7 +103,11 @@ export default function TicketDetailPage() {
     // Close emoji picker when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (showEmojiPicker && !target.closest('.emoji-picker-container') && !target.closest('[data-emoji-button]')) {
+      if (
+        showEmojiPicker &&
+        !target.closest('.emoji-picker-container') &&
+        !target.closest('[data-emoji-button]')
+      ) {
         setShowEmojiPicker(false);
       }
     };
@@ -149,6 +162,42 @@ export default function TicketDetailPage() {
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const handleTextFormat = (format: string, wrapper?: string, isPrefix?: boolean) => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const selectedText = newMessage.substring(startPos, endPos);
+    const before = newMessage.substring(0, startPos);
+    const after = newMessage.substring(endPos);
+
+    let newValue = '';
+    let newCursorPos = startPos;
+
+    if (isPrefix) {
+      // For prefix formats like bullets, quotes
+      newValue = before + format + selectedText + after;
+      newCursorPos = startPos + format.length + selectedText.length;
+    } else if (wrapper) {
+      // For link format
+      newValue = before + format + selectedText + wrapper + after;
+      newCursorPos = startPos + format.length + selectedText.length;
+    } else {
+      // For wrapping formats like bold, italic
+      newValue = before + format + selectedText + format + after;
+      newCursorPos = startPos + format.length + selectedText.length;
+    }
+
+    setNewMessage(newValue);
+
+    // Set cursor position
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
   };
 
   const sendMessage = async () => {
@@ -241,6 +290,7 @@ export default function TicketDetailPage() {
       open: AlertCircle,
       in_progress: Clock,
       waiting_on_user: Clock,
+      scheduled: Calendar,
       resolved: CheckCircle2,
       closed: XCircle,
     };
@@ -252,6 +302,7 @@ export default function TicketDetailPage() {
       open: 'text-blue-500',
       in_progress: 'text-yellow-500',
       waiting_on_user: 'text-orange-500',
+      scheduled: 'text-purple-500',
       resolved: 'text-green-500',
       closed: 'text-gray-500',
     };
@@ -401,6 +452,7 @@ export default function TicketDetailPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="waiting_on_user">Waiting on User</SelectItem>
                     <SelectItem value="resolved">Resolved</SelectItem>
@@ -456,7 +508,11 @@ export default function TicketDetailPage() {
                         {formatTimestamp(message.created_at)}
                       </span>
                     </div>
-                    <p className="text-sm whitespace-pre-wrap">{message.message}</p>
+                    <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.message}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -468,16 +524,85 @@ export default function TicketDetailPage() {
           {ticket.status !== 'closed' && (
             <>
               <Separator className="my-6" />
-              <div className="space-y-4">
-                <div className="space-y-2">
+              <div className="space-y-3">
+                {/* Text Formatting Toolbar */}
+                <div className="flex items-center gap-1 border-b pb-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('**')}
+                      title="Bold"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('_')}
+                      title="Italic"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('`')}
+                      title="Code"
+                      className="h-8 w-8 p-0"
+                    >
+                      <Code className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('- ', '', true)}
+                      title="Bullet list"
+                      className="h-8 w-8 p-0"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('1. ', '', true)}
+                      title="Numbered list"
+                      className="h-8 w-8 p-0"
+                    >
+                      <ListOrdered className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={sending}
+                      onClick={() => handleTextFormat('[', '](url)')}
+                      title="Link"
+                      className="h-8 w-8 p-0"
+                    >
+                      <LinkIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+
                   <div className="relative">
                     <Textarea
                       ref={textareaRef}
-                      placeholder="Type your message... (Ctrl+Enter to send)"
+                      placeholder="Type your message... (Ctrl+Enter to send, supports Markdown formatting)"
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      rows={4}
+                      rows={6}
                       maxLength={10000}
                       disabled={sending}
                     />
@@ -514,15 +639,14 @@ export default function TicketDetailPage() {
                       </label>
                     )}
                   </div>
+                  <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
+                    {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Send className="mr-2 h-4 w-4" />
+                    Send Message
+                  </Button>
                 </div>
-                <Button onClick={sendMessage} disabled={sending || !newMessage.trim()}>
-                  {sending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Message
-                </Button>
-              </div>
-            </>
-          )}
+              </>
+            )}
 
           {ticket.status === 'closed' && (
             <Alert className="mt-4">
