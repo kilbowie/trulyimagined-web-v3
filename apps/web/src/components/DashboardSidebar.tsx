@@ -16,6 +16,7 @@ import {
   Building,
   Wrench,
   Upload,
+  Headphones,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -192,6 +193,22 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
           </>
         )}
       </nav>
+
+      {/* Support Link - Always visible at bottom */}
+      <div className="border-t border-slate-800 p-4">
+        <Link
+          href="/dashboard/support"
+          className={cn(
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+            pathname?.startsWith('/dashboard/support')
+              ? 'bg-slate-800 text-white'
+              : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+          )}
+        >
+          <Headphones className="h-4 w-4" />
+          <span>Support</span>
+        </Link>
+      </div>
 
       {/* User Info at Bottom */}
       <div className="border-t border-slate-800 p-4">

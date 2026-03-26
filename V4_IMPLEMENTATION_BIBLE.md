@@ -29,7 +29,9 @@
 ## 🎯 Vision & Architecture Philosophy
 
 ### Core Mission
+
 Build a **production-grade, modular, standards-compliant identity orchestration platform** that enables:
+
 - Actors to register verified identities
 - Agents to manage talent with consent
 - Verifiable credentials issuance (W3C standard)
@@ -37,6 +39,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 - Consent-based data sharing with audit trail
 
 ### Core Principles
+
 1. **Security First**: Encryption, audit trails, compliance-ready from day 1
 2. **Cost-Optimized**: Use free tiers aggressively, upgrade only when needed
 3. **Standards-Aligned**: OIDC, OAuth2, W3C VC, DIDs, GDPR Article 30
@@ -44,6 +47,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 5. **Incremental**: Ship MVP, iterate based on user feedback
 
 ### Non-Negotiables
+
 - ✅ **Vercel** - Frontend hosting (edge network, auto-deploy)
 - ✅ **AWS** - Backend infrastructure (RDS, Lambda, S3, CloudWatch)
 - ✅ **Stripe** - Payments & Identity verification
@@ -51,6 +55,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 - ✅ **GitHub** - Version control, CI/CD
 
 ### Architecture Pattern
+
 ```
 ┌─────────────────────────────────────────────────┐
 │           USERS (Actors, Agents, Admins)        │
@@ -88,20 +93,20 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 
 ### **Tier 0: Launch Now** 🔴 **REQUIRED** - Week 1
 
-| Category | Service | Cost | Purpose | Setup Time |
-|----------|---------|------|---------|------------|
-| **Version Control** | GitHub Free/Pro | $0-7/mo | Code hosting, CI/CD | ✅ Have |
-| **Authentication** | Auth0 Essentials | $35/mo | OIDC/OAuth2 | ✅ Have |
-| **Payments & ID Verify** | Stripe | Variable | Payments + Stripe Identity | ✅ Have |
-| **Backend Infra** | AWS (RDS/Lambda/S3) | $100-250/mo | Database, serverless, storage | ✅ Have |
-| **Frontend Hosting** | Vercel Pro | $20/mo | Edge CDN, auto-deploy | 30 min |
-| **Error Tracking** | Sentry Free | $0/mo | Real-time error alerts | 30 min |
-| **Email Service** | Resend Free | $0/mo | Transactional emails | 1 hr |
-| **Security Scanning** | Snyk Free + Dependabot | $0/mo | Vulnerability scanning | 30 min |
-| **UI Components** | shadcn/ui + Radix | $0 | Design system | 1-2 hrs |
-| **CI/CD Orchestration** | GitHub MCP | $0 | Automated deployments | 1 hr |
-| **Infrastructure Mgmt** | AWS MCP | $0 | Manage RDS/Lambda/S3 | 1-2 hrs |
-| **Deployment Automation** | Vercel MCP | $0 | Deploy frontend | 30 min |
+| Category                  | Service                | Cost        | Purpose                       | Setup Time |
+| ------------------------- | ---------------------- | ----------- | ----------------------------- | ---------- |
+| **Version Control**       | GitHub Free/Pro        | $0-7/mo     | Code hosting, CI/CD           | ✅ Have    |
+| **Authentication**        | Auth0 Essentials       | $35/mo      | OIDC/OAuth2                   | ✅ Have    |
+| **Payments & ID Verify**  | Stripe                 | Variable    | Payments + Stripe Identity    | ✅ Have    |
+| **Backend Infra**         | AWS (RDS/Lambda/S3)    | $100-250/mo | Database, serverless, storage | ✅ Have    |
+| **Frontend Hosting**      | Vercel Pro             | $20/mo      | Edge CDN, auto-deploy         | 30 min     |
+| **Error Tracking**        | Sentry Free            | $0/mo       | Real-time error alerts        | 30 min     |
+| **Email Service**         | Resend Free            | $0/mo       | Transactional emails          | 1 hr       |
+| **Security Scanning**     | Snyk Free + Dependabot | $0/mo       | Vulnerability scanning        | 30 min     |
+| **UI Components**         | shadcn/ui + Radix      | $0          | Design system                 | 1-2 hrs    |
+| **CI/CD Orchestration**   | GitHub MCP             | $0          | Automated deployments         | 1 hr       |
+| **Infrastructure Mgmt**   | AWS MCP                | $0          | Manage RDS/Lambda/S3          | 1-2 hrs    |
+| **Deployment Automation** | Vercel MCP             | $0          | Deploy frontend               | 30 min     |
 
 **Tier 0 Total:** $155-312/month (including existing services)  
 **Setup Time:** 8-12 hours
@@ -110,12 +115,12 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 
 ### **Tier 1: Post-Launch** 🟠 **HIGH PRIORITY** - Week 2-3
 
-| Category | Service | Cost | Purpose | When to Add |
-|----------|---------|------|---------|-------------|
-| **Product Analytics** | PostHog Cloud Free | $0/mo | User behavior tracking | Week 2 (once live) |
-| **Documentation** | Notion Personal | $0/mo | Internal wiki, runbooks | Week 1 (alongside dev) |
-| **Monitoring** | AWS CloudWatch | $0-3/mo | Infrastructure metrics | ✅ Included in AWS |
-| **Log Aggregation** | CloudWatch Logs | $0.50/GB | Centralized logging | ✅ Included in AWS |
+| Category              | Service            | Cost     | Purpose                 | When to Add            |
+| --------------------- | ------------------ | -------- | ----------------------- | ---------------------- |
+| **Product Analytics** | PostHog Cloud Free | $0/mo    | User behavior tracking  | Week 2 (once live)     |
+| **Documentation**     | Notion Personal    | $0/mo    | Internal wiki, runbooks | Week 1 (alongside dev) |
+| **Monitoring**        | AWS CloudWatch     | $0-3/mo  | Infrastructure metrics  | ✅ Included in AWS     |
+| **Log Aggregation**   | CloudWatch Logs    | $0.50/GB | Centralized logging     | ✅ Included in AWS     |
 
 **Tier 1 Total:** $0-3/month  
 **Setup Time:** 3-4 hours
@@ -124,12 +129,12 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 
 ### **Tier 2: Growth Phase** 🟡 **MEDIUM PRIORITY** - Month 2+
 
-| Category | Service | Cost | When to Add |
-|----------|---------|------|-------------|
-| **Customer Support** | Crisp Free | $0/mo | When >5 support emails/week |
-| **Infrastructure as Code** | Terraform Cloud Free | $0/mo | When AWS console clicks annoy you |
-| **Better Log Search** | BetterStack Free | $0/mo | If CloudWatch search frustrates you |
-| **Auth User Management** | Auth0 MCP | $0 | When managing many users/roles |
+| Category                   | Service              | Cost  | When to Add                         |
+| -------------------------- | -------------------- | ----- | ----------------------------------- |
+| **Customer Support**       | Crisp Free           | $0/mo | When >5 support emails/week         |
+| **Infrastructure as Code** | Terraform Cloud Free | $0/mo | When AWS console clicks annoy you   |
+| **Better Log Search**      | BetterStack Free     | $0/mo | If CloudWatch search frustrates you |
+| **Auth User Management**   | Auth0 MCP            | $0    | When managing many users/roles      |
 
 **Tier 2 Total:** $0/month (all free tiers)
 
@@ -138,6 +143,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 ### **Services to SKIP for MVP**
 
 ❌ **Not Needed Yet:**
+
 - Datadog/New Relic ($15-31/mo) - CloudWatch sufficient
 - Intercom ($74/mo) - Use email support
 - Vanta/Drata ($200-1000/mo) - DIY compliance
@@ -152,6 +158,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 ### **Essential Accounts (Setup Week 1)**
 
 #### **1. GitHub Account**
+
 - **URL:** https://github.com
 - **Plan:** Free (2,000 Actions minutes/mo) or Pro ($7/mo for 3,000 minutes)
 - **Required For:** Version control, CI/CD, Dependabot
@@ -162,6 +169,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   4. Save token as `GITHUB_TOKEN`
 
 #### **2. Auth0 Account**
+
 - **URL:** https://auth0.com
 - **Plan:** Essentials ($35/mo, 1,000 MAUs)
 - **Required For:** User authentication, JWT validation, OIDC
@@ -173,6 +181,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   5. Save credentials: `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_CLIENT_SECRET`
 
 #### **3. Stripe Account**
+
 - **URL:** https://stripe.com
 - **Plan:** Pay-per-transaction (2.9% + 30¢)
 - **Required For:** Payments + Stripe Identity verification
@@ -184,6 +193,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   5. Save: `STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`
 
 #### **4. AWS Account**
+
 - **URL:** https://aws.amazon.com
 - **Plan:** Pay-as-you-go (~$100-250/mo for RDS + Lambda + S3)
 - **Required For:** RDS PostgreSQL, Lambda functions, S3 storage
@@ -195,6 +205,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   5. Save: `DATABASE_URL`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET_NAME`
 
 #### **5. Vercel Account**
+
 - **URL:** https://vercel.com
 - **Plan:** Hobby ($0) → Pro ($20/mo at launch)
 - **Required For:** Frontend hosting, edge CDN, auto-deploy
@@ -206,6 +217,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   5. Save: `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`
 
 #### **6. Sentry Account**
+
 - **URL:** https://sentry.io
 - **Plan:** Free (5,000 errors/mo)
 - **Required For:** Error tracking, performance monitoring
@@ -216,6 +228,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   4. Save: `SENTRY_DSN`, `SENTRY_AUTH_TOKEN`
 
 #### **7. Resend Account**
+
 - **URL:** https://resend.com
 - **Plan:** Free (100 emails/day = 3,000/mo)
 - **Required For:** Transactional emails (welcome, verification, credential issued)
@@ -226,6 +239,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   4. Save: `RESEND_API_KEY`
 
 #### **8. Snyk Account**
+
 - **URL:** https://snyk.io
 - **Plan:** Free (200 tests/mo)
 - **Required For:** Dependency vulnerability scanning
@@ -240,6 +254,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 ### **Post-Launch Accounts (Setup Week 2+)**
 
 #### **9. PostHog Account**
+
 - **URL:** https://app.posthog.com
 - **Plan:** Free (1M events/mo)
 - **Required For:** Product analytics, session replay, feature flags
@@ -250,6 +265,7 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
   4. Save: `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `POSTHOG_API_KEY`
 
 #### **10. Notion Account**
+
 - **URL:** https://notion.so
 - **Plan:** Free (Personal plan)
 - **Required For:** Internal documentation, runbooks, system architecture
@@ -264,11 +280,13 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 ### **Optional Accounts (Add When Needed)**
 
 #### **11. Crisp Account** (When support volume increases)
+
 - **URL:** https://crisp.chat
 - **Plan:** Free (2 operators)
 - **Required For:** Customer support chat widget
 
 #### **12. Terraform Cloud** (When infrastructure scales)
+
 - **URL:** https://app.terraform.io
 - **Plan:** Free (<500 resources)
 - **Required For:** Infrastructure as Code
@@ -516,6 +534,7 @@ npx @sentry/wizard@latest -i nextjs
 ```
 
 **File: `apps/web/sentry.client.config.ts`**
+
 ```typescript
 import * as Sentry from '@sentry/nextjs';
 
@@ -523,14 +542,14 @@ Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
   environment: process.env.NODE_ENV,
   enabled: process.env.SENTRY_ENABLED === 'true',
-  
+
   // Performance monitoring
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0,
-  
+
   // Session replay for debugging
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  
+
   integrations: [
     new Sentry.BrowserTracing(),
     new Sentry.Replay({
@@ -538,16 +557,14 @@ Sentry.init({
       blockAllMedia: true,
     }),
   ],
-  
+
   // Ignore common errors
-  ignoreErrors: [
-    'ResizeObserver loop limit exceeded',
-    'Non-Error promise rejection captured',
-  ],
+  ignoreErrors: ['ResizeObserver loop limit exceeded', 'Non-Error promise rejection captured'],
 });
 ```
 
 **File: `apps/web/sentry.server.config.ts`**
+
 ```typescript
 import * as Sentry from '@sentry/nextjs';
 
@@ -555,9 +572,9 @@ Sentry.init({
   dsn: process.env.SENTRY_DSN,
   environment: process.env.NODE_ENV,
   enabled: process.env.SENTRY_ENABLED === 'true',
-  
+
   tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 0,
-  
+
   // Attach user context
   beforeSend(event, hint) {
     // Don't send PII in error messages
@@ -571,6 +588,7 @@ Sentry.init({
 ```
 
 **Usage in Code:**
+
 ```typescript
 // Capture errors manually
 import * as Sentry from '@sentry/nextjs';
@@ -597,6 +615,7 @@ Sentry.addBreadcrumb({
 ```
 
 **Verification:**
+
 ```bash
 # Test Sentry integration
 curl -X POST http://localhost:3000/api/sentry-test
@@ -631,6 +650,7 @@ echo "GITHUB_TOKEN=ghp_your_token_here" >> apps/web/.env.local
 ```
 
 **File: `scripts/mcp-servers/github.ts`** (optional wrapper)
+
 ```typescript
 import { GitHubMCPServer } from '@modelcontextprotocol/server-github';
 
@@ -663,6 +683,7 @@ export async function triggerDeploy(environment: 'staging' | 'production') {
 ```
 
 **File: `.github/workflows/deploy.yml`**
+
 ```yaml
 name: Deploy to Vercel
 
@@ -686,48 +707,48 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: pnpm/action-setup@v2
         with:
           version: 8
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
           cache: 'pnpm'
-      
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      
+
       - name: Type check
         run: pnpm type-check
-      
+
       - name: Lint
         run: pnpm lint
-      
+
       - name: Run tests
         run: pnpm test
-  
+
   security-scan:
     runs-on: ubuntu-latest
     needs: test
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Snyk scan
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high
-  
+
   deploy:
     runs-on: ubuntu-latest
     needs: [test, security-scan]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
@@ -735,7 +756,7 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
-      
+
       - name: Notify Sentry of deployment
         run: |
           curl -X POST https://sentry.io/api/0/organizations/YOUR_ORG/releases/ \
@@ -745,6 +766,7 @@ jobs:
 ```
 
 **Required GitHub Secrets:**
+
 ```bash
 # Add these in: GitHub repo > Settings > Secrets and variables > Actions
 
@@ -756,6 +778,7 @@ SENTRY_AUTH_TOKEN=your_sentry_token
 ```
 
 **Verification:**
+
 ```bash
 # Trigger workflow manually
 gh workflow run deploy.yml -f environment=staging
@@ -783,6 +806,7 @@ pnpm add -w @aws-sdk/client-mcp @aws-sdk/client-rds @aws-sdk/client-lambda @aws-
 ```
 
 **File: `infra/iam/mcp-user-policy.json`**
+
 ```json
 {
   "Version": "2012-10-17",
@@ -790,10 +814,7 @@ pnpm add -w @aws-sdk/client-mcp @aws-sdk/client-rds @aws-sdk/client-lambda @aws-
     {
       "Sid": "RDSReadOnly",
       "Effect": "Allow",
-      "Action": [
-        "rds:Describe*",
-        "rds:ListTagsForResource"
-      ],
+      "Action": ["rds:Describe*", "rds:ListTagsForResource"],
       "Resource": "*"
     },
     {
@@ -819,10 +840,7 @@ pnpm add -w @aws-sdk/client-mcp @aws-sdk/client-rds @aws-sdk/client-lambda @aws-
         "s3:DeleteObject",
         "s3:GetBucketLocation"
       ],
-      "Resource": [
-        "arn:aws:s3:::trimg-actor-media-*",
-        "arn:aws:s3:::trimg-actor-media-*/*"
-      ]
+      "Resource": ["arn:aws:s3:::trimg-actor-media-*", "arn:aws:s3:::trimg-actor-media-*/*"]
     },
     {
       "Sid": "CloudWatchLogs",
@@ -848,10 +866,7 @@ pnpm add -w @aws-sdk/client-mcp @aws-sdk/client-rds @aws-sdk/client-lambda @aws-
     {
       "Sid": "CloudWatchMetrics",
       "Effect": "Allow",
-      "Action": [
-        "cloudwatch:GetMetricStatistics",
-        "cloudwatch:ListMetrics"
-      ],
+      "Action": ["cloudwatch:GetMetricStatistics", "cloudwatch:ListMetrics"],
       "Resource": "*"
     }
   ]
@@ -859,6 +874,7 @@ pnpm add -w @aws-sdk/client-mcp @aws-sdk/client-rds @aws-sdk/client-lambda @aws-
 ```
 
 **Save IAM credentials:**
+
 ```bash
 # Add to .env.local
 AWS_ACCESS_KEY_ID=AKIA_your_key
@@ -867,9 +883,14 @@ AWS_REGION=eu-west-1
 ```
 
 **File: `scripts/mcp-servers/aws.ts`**
+
 ```typescript
 import { RDSClient, DescribeDBInstancesCommand } from '@aws-sdk/client-rds';
-import { LambdaClient, InvokeFunctionCommand, UpdateFunctionCodeCommand } from '@aws-sdk/client-lambda';
+import {
+  LambdaClient,
+  InvokeFunctionCommand,
+  UpdateFunctionCodeCommand,
+} from '@aws-sdk/client-lambda';
 import { S3Client, ListObjectsV2Command, PutObjectCommand } from '@aws-sdk/client-s3';
 import { CloudWatchLogsClient, FilterLogEventsCommand } from '@aws-sdk/client-cloudwatch-logs';
 
@@ -915,7 +936,7 @@ export async function listS3Objects(bucketName: string, prefix?: string) {
 const cwLogsClient = new CloudWatchLogsClient({ region });
 
 export async function queryLogs(logGroup: string, filterPattern: string, hours: number = 1) {
-  const startTime = Date.now() - (hours * 60 * 60 * 1000);
+  const startTime = Date.now() - hours * 60 * 60 * 1000;
   const command = new FilterLogEventsCommand({
     logGroupName: logGroup,
     filterPattern: filterPattern,
@@ -937,6 +958,7 @@ export async function getLambdaErrors(functionName: string) {
 ```
 
 **Verification:**
+
 ```bash
 # Test AWS MCP connection
 node -e "require('./scripts/mcp-servers/aws').getRDSStatus().then(console.log)"
@@ -973,6 +995,7 @@ npx vercel project ls
 ```
 
 **File: `scripts/mcp-servers/vercel.ts`**
+
 ```typescript
 import { VercelClient } from '@vercel/client';
 
@@ -1002,7 +1025,11 @@ export async function getDeploymentStatus(deploymentId: string) {
 }
 
 // Update environment variable
-export async function updateEnvVar(key: string, value: string, target: 'production' | 'preview' | 'development') {
+export async function updateEnvVar(
+  key: string,
+  value: string,
+  target: 'production' | 'preview' | 'development'
+) {
   return await client.createProjectEnvVar(projectId, {
     key: key,
     value: value,
@@ -1026,6 +1053,7 @@ export async function listDeployments(limit: number = 10) {
 ```
 
 **Verification:**
+
 ```bash
 # Deploy from CLI
 npx vercel --prod
@@ -1065,6 +1093,7 @@ RESEND_FROM_NAME=Truly Imagined
 ```
 
 **File: `apps/web/src/lib/email.ts`**
+
 ```typescript
 import { Resend } from 'resend';
 
@@ -1146,7 +1175,11 @@ export async function sendWelcomeEmail(userEmail: string, userName: string) {
 }
 
 // Identity verification completed
-export async function sendVerificationCompleteEmail(userEmail: string, userName: string, verificationLevel: string) {
+export async function sendVerificationCompleteEmail(
+  userEmail: string,
+  userName: string,
+  verificationLevel: string
+) {
   const subject = '✅ Identity Verification Complete';
   const html = `
     <!DOCTYPE html>
@@ -1170,7 +1203,11 @@ export async function sendVerificationCompleteEmail(userEmail: string, userName:
 }
 
 // Credential issued notification
-export async function sendCredentialIssuedEmail(userEmail: string, userName: string, credentialId: string) {
+export async function sendCredentialIssuedEmail(
+  userEmail: string,
+  userName: string,
+  credentialId: string
+) {
   const subject = '🎫 Verifiable Credential Issued';
   const html = `
     <!DOCTYPE html>
@@ -1194,7 +1231,12 @@ export async function sendCredentialIssuedEmail(userEmail: string, userName: str
 }
 
 // Consent request notification
-export async function sendConsentRequestEmail(userEmail: string, userName: string, requesterName: string, purposes: string[]) {
+export async function sendConsentRequestEmail(
+  userEmail: string,
+  userName: string,
+  requesterName: string,
+  purposes: string[]
+) {
   const subject = '🔐 Consent Request Received';
   const html = `
     <!DOCTYPE html>
@@ -1205,7 +1247,7 @@ export async function sendConsentRequestEmail(userEmail: string, userName: strin
         <p>Hi ${userName},</p>
         <p><strong>${requesterName}</strong> has requested your consent to access your data for the following purposes:</p>
         <ul>
-          ${purposes.map(p => `<li>${p}</li>`).join('')}
+          ${purposes.map((p) => `<li>${p}</li>`).join('')}
         </ul>
         <p>Please review this request and grant or deny consent from your dashboard.</p>
         <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard/consent-preferences" style="display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">
@@ -1224,6 +1266,7 @@ export { sendEmail };
 ```
 
 **Email Templates Location:**
+
 ```
 apps/web/src/emails/
 ├── welcome.tsx (React Email template)
@@ -1233,6 +1276,7 @@ apps/web/src/emails/
 ```
 
 **Verification:**
+
 ```bash
 # Send test email
 node -e "
@@ -1277,6 +1321,7 @@ npx shadcn-ui@latest add skeleton
 ```
 
 **File: `components.json`** (Config)
+
 ```json
 {
   "$schema": "https://ui.shadcn.com/schema.json",
@@ -1297,16 +1342,14 @@ npx shadcn-ui@latest add skeleton
 ```
 
 **File: `apps/web/tailwind.config.js`**
+
 ```javascript
 const { fontFamily } = require('tailwindcss/defaultTheme');
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
-  content: [
-    './src/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+  content: ['./src/**/*.{js,ts,jsx,tsx,mdx}', './app/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     container: {
       center: true,
@@ -1380,6 +1423,7 @@ module.exports = {
 ```
 
 **shadcn MCP Integration (Optional):**
+
 ```bash
 # Install shadcn MCP for component generation
 pnpm add -w @shadcn/mcp
@@ -1393,6 +1437,7 @@ pnpm add -w @shadcn/mcp
 **Example Custom Component:**
 
 **File: `apps/web/src/components/ActorProfileCard.tsx`**
+
 ```typescript
 'use client';
 
@@ -1477,6 +1522,7 @@ export function ActorProfileCard({
 ```
 
 **Verification:**
+
 - All pages use consistent shadcn components
 - Proper accessibility (aria-labels, keyboard navigation)
 - Responsive design (mobile-first)
@@ -1502,6 +1548,7 @@ export function ActorProfileCard({
 ```
 
 **File: `.github/dependabot.yml`**
+
 ```yaml
 version: 2
 updates:
@@ -1523,7 +1570,7 @@ updates:
       include: 'scope'
     # Auto-merge minor and patch updates
     # (requires GitHub Actions workflow)
-    
+
   # Check GitHub Actions
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -1551,6 +1598,7 @@ updates:
 ```
 
 **File: `.github/workflows/security-scan.yml`**
+
 ```yaml
 name: Security Scan
 
@@ -1568,14 +1616,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --severity-threshold=high --file=package.json
-      
+
       - name: Upload result to GitHub Code Scanning
         uses: github/codeql-action/upload-sarif@v2
         with:
@@ -1585,17 +1633,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-      
+
       - name: Run npm audit
         run: npm audit --audit-level=high
         continue-on-error: true
 ```
 
 **Verification:**
+
 ```bash
 # Local security check
 pnpm audit
@@ -1629,6 +1678,7 @@ pnpm add -w posthog-js posthog-node
 ```
 
 **File: `apps/web/src/lib/posthog.ts`** (Client)
+
 ```typescript
 'use client';
 
@@ -1673,7 +1723,7 @@ export function usePostHog() {
 // Identify user (call after login)
 export function identifyUser(userId: string, properties?: Record<string, any>) {
   if (!ENABLED) return;
-  
+
   posthog.identify(userId, {
     ...properties,
     $set: {
@@ -1686,7 +1736,7 @@ export function identifyUser(userId: string, properties?: Record<string, any>) {
 // Track event
 export function trackEvent(eventName: string, properties?: Record<string, any>) {
   if (!ENABLED) return;
-  
+
   posthog.capture(eventName, properties);
 }
 
@@ -1700,6 +1750,7 @@ export { posthog };
 ```
 
 **File: `apps/web/src/app/providers.tsx`** (Add PostHog Provider)
+
 ```typescript
 'use client';
 
@@ -1722,24 +1773,26 @@ export function Providers({ children }: { children: ReactNode }) {
 **Track Key Events:**
 
 **File: `apps/web/src/app/api/identity/register/route.ts`**
+
 ```typescript
 import { trackEvent } from '@/lib/posthog';
 
 export async function POST(request: Request) {
   // ... registration logic ...
-  
+
   // Track registration
   trackEvent('user_registered', {
     user_id: userId,
     role: role,
     email_domain: email.split('@')[1],
   });
-  
+
   return Response.json({ success: true });
 }
 ```
 
 **Track Verification:**
+
 ```typescript
 // Track identity verification started
 trackEvent('verification_started', {
@@ -1757,6 +1810,7 @@ trackEvent('verification_completed', {
 ```
 
 **Track Credential Issuance:**
+
 ```typescript
 trackEvent('credential_issued', {
   user_id: userId,
@@ -1766,6 +1820,7 @@ trackEvent('credential_issued', {
 ```
 
 **Verification:**
+
 ```bash
 # Check PostHog dashboard:
 # https://app.posthog.com/project/YOUR_PROJECT/events
@@ -1832,6 +1887,7 @@ trackEvent('credential_issued', {
 ```
 
 **Optional: Notion MCP Integration**
+
 ```bash
 # If you want AI to read/write Notion docs
 
@@ -1855,6 +1911,7 @@ pnpm add -w @notionhq/client
 ```
 
 **Verification:**
+
 - Create sample runbook
 - Test: Can you find deployment steps quickly?
 - Test: Can you update metrics dashboard from Stripe/AWS data?
@@ -1864,7 +1921,9 @@ pnpm add -w @notionhq/client
 ## 🎲 Mock Data Strategy
 
 ### **Purpose**
+
 Provide realistic mock data for development so you can:
+
 - Test UI/UX without hitting real APIs
 - Develop offline
 - Avoid API rate limits
@@ -1873,6 +1932,7 @@ Provide realistic mock data for development so you can:
 ### **Mock Data Configuration**
 
 **File: `apps/web/.env.local`** (Development)
+
 ```bash
 # Enable mock data in development
 USE_MOCK_DATA=true
@@ -1899,6 +1959,7 @@ MOCK_S3_DIRECTORY=./mock-s3-storage
 ### **Mock Data Implementation**
 
 **File: `apps/web/src/lib/mocks/index.ts`**
+
 ```typescript
 export const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true';
 export const USE_MOCK_S3 = process.env.USE_MOCK_S3 === 'true';
@@ -1912,6 +1973,7 @@ export * from './consent';
 ```
 
 **File: `apps/web/src/lib/mocks/actors.ts`**
+
 ```typescript
 export const MOCK_ACTORS = [
   {
@@ -1971,19 +2033,20 @@ export const MOCK_ACTORS = [
 ];
 
 export function getMockActorById(id: string) {
-  return MOCK_ACTORS.find(actor => actor.id === id) || null;
+  return MOCK_ACTORS.find((actor) => actor.id === id) || null;
 }
 
 export function getMockActorByEmail(email: string) {
-  return MOCK_ACTORS.find(actor => actor.email === email) || null;
+  return MOCK_ACTORS.find((actor) => actor.email === email) || null;
 }
 
 export function getMockActorByAuth0Id(auth0UserId: string) {
-  return MOCK_ACTORS.find(actor => actor.auth0_user_id === auth0UserId) || null;
+  return MOCK_ACTORS.find((actor) => actor.auth0_user_id === auth0UserId) || null;
 }
 ```
 
 **File: `apps/web/src/lib/mocks/credentials.ts`**
+
 ```typescript
 export const MOCK_CREDENTIALS = [
   {
@@ -2002,36 +2065,36 @@ export const MOCK_CREDENTIALS = [
     credential_json: {
       '@context': [
         'https://www.w3.org/2018/credentials/v1',
-        'https://trulyimagined.com/contexts/v1'
+        'https://trulyimagined.com/contexts/v1',
       ],
-      'type': ['VerifiableCredential', 'ActorCredential'],
-      'issuer': 'did:web:trulyimagined.com',
-      'issuanceDate': '2026-03-20T14:30:00Z',
-      'expirationDate': '2027-03-20T14:30:00Z',
-      'credentialSubject': {
-        'id': 'did:web:trulyimagined.com:users:actor-1',
-        'type': 'Actor',
-        'email': 'actor1@test.com',
-        'legalName': 'Emma Jane Thompson',
-        'professionalName': 'Emma T.',
-        'verificationLevel': 'high',
-        'nationality': 'GB',
+      type: ['VerifiableCredential', 'ActorCredential'],
+      issuer: 'did:web:trulyimagined.com',
+      issuanceDate: '2026-03-20T14:30:00Z',
+      expirationDate: '2027-03-20T14:30:00Z',
+      credentialSubject: {
+        id: 'did:web:trulyimagined.com:users:actor-1',
+        type: 'Actor',
+        email: 'actor1@test.com',
+        legalName: 'Emma Jane Thompson',
+        professionalName: 'Emma T.',
+        verificationLevel: 'high',
+        nationality: 'GB',
       },
-      'credentialStatus': {
-        'id': 'https://trulyimagined.com/status/1#0',
-        'type': 'BitstringStatusListEntry',
-        'statusPurpose': 'revocation',
-        'statusListIndex': '0',
-        'statusListCredential': 'https://trulyimagined.com/status/1'
+      credentialStatus: {
+        id: 'https://trulyimagined.com/status/1#0',
+        type: 'BitstringStatusListEntry',
+        statusPurpose: 'revocation',
+        statusListIndex: '0',
+        statusListCredential: 'https://trulyimagined.com/status/1',
       },
-      'proof': {
-        'type': 'Ed25519Signature2020',
-        'created': '2026-03-20T14:30:00Z',
-        'verificationMethod': 'did:web:trulyimagined.com#key-1',
-        'proofPurpose': 'assertionMethod',
-        'proofValue': 'z5Vx...MockSignature...'
-      }
-    }
+      proof: {
+        type: 'Ed25519Signature2020',
+        created: '2026-03-20T14:30:00Z',
+        verificationMethod: 'did:web:trulyimagined.com#key-1',
+        proofPurpose: 'assertionMethod',
+        proofValue: 'z5Vx...MockSignature...',
+      },
+    },
   },
   {
     id: 'cred-2',
@@ -2046,16 +2109,19 @@ export const MOCK_CREDENTIALS = [
     revoked_at: '2026-03-25T09:00:00Z',
     verification_method: 'did:web:trulyimagined.com#key-1',
     proof_type: 'Ed25519Signature2020',
-    credential_json: { /* Similar structure */ }
+    credential_json: {
+      /* Similar structure */
+    },
   },
 ];
 
 export function getMockCredentialsByUserId(userId: string) {
-  return MOCK_CREDENTIALS.filter(cred => cred.user_profile_id === userId);
+  return MOCK_CREDENTIALS.filter((cred) => cred.user_profile_id === userId);
 }
 ```
 
 **File: `apps/web/src/lib/mocks/verification.ts`**
+
 ```typescript
 export const MOCK_VERIFICATION_SESSIONS = [
   {
@@ -2101,6 +2167,7 @@ export const MOCK_VERIFICATION_SESSIONS = [
 ```
 
 **File: `apps/web/src/lib/mocks/consent.ts`**
+
 ```typescript
 export const MOCK_CONSENT_LOGS = [
   {
@@ -2147,6 +2214,7 @@ export const MOCK_CONSENT_LOGS = [
 ### **Using Mock Data in APIs**
 
 **File: `apps/web/src/app/api/credentials/list/route.ts`**
+
 ```typescript
 import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
@@ -2155,11 +2223,11 @@ import { query } from '@/lib/db';
 
 export async function GET() {
   const user = await getCurrentUser();
-  
+
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
-  
+
   // Use mock data in development
   if (USE_MOCK_DATA) {
     const mockCredentials = getMockCredentialsByUserId('actor-1');
@@ -2168,13 +2236,12 @@ export async function GET() {
       credentials: mockCredentials,
     });
   }
-  
+
   // Real implementation
-  const result = await query(
-    'SELECT * FROM verifiable_credentials WHERE user_profile_id = $1',
-    [user.profileId]
-  );
-  
+  const result = await query('SELECT * FROM verifiable_credentials WHERE user_profile_id = $1', [
+    user.profileId,
+  ]);
+
   return NextResponse.json({
     success: true,
     credentials: result.rows,
@@ -2187,6 +2254,7 @@ export async function GET() {
 ### **Mock S3 Storage**
 
 **File: `apps/web/src/lib/storage.ts`**
+
 ```typescript
 import { S3Client, PutObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 import fs from 'fs/promises';
@@ -2213,7 +2281,7 @@ export async function uploadFile(key: string, body: Buffer, contentType: string)
     console.log(`📁 [MOCK S3] Uploaded: ${key}`);
     return { key, url: `file://${filePath}` };
   }
-  
+
   // Real S3 upload
   const command = new PutObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
@@ -2236,7 +2304,7 @@ export async function downloadFile(key: string): Promise<Buffer> {
     console.log(`📁 [MOCK S3] Downloaded: ${key}`);
     return buffer;
   }
-  
+
   // Real S3 download
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET_NAME!,
@@ -2256,6 +2324,7 @@ export async function downloadFile(key: string): Promise<Buffer> {
 ### **Mock Stripe Webhooks**
 
 **File: `apps/web/src/lib/stripe-mock.ts`**
+
 ```typescript
 export function createMockVerificationSession(userId: string) {
   return {
@@ -2318,10 +2387,11 @@ export function createMockVerificationCompletedEvent(sessionId: string) {
 ### **Mock Data Seeder Script**
 
 **File: `scripts/seed-mock-data.js`**
+
 ```javascript
 /**
  * Seed mock data into development database
- * 
+ *
  * Usage: node scripts/seed-mock-data.js
  */
 
@@ -2374,7 +2444,7 @@ const MOCK_ACTORS = [
 
 async function seedActors() {
   console.log('🌱 Seeding mock actors...');
-  
+
   for (const actor of MOCK_ACTORS) {
     try {
       // Insert user_profile
@@ -2386,14 +2456,14 @@ async function seedActors() {
         RETURNING id`,
         [actor.auth0_user_id, actor.email, actor.username, actor.role, actor.profile_completed]
       );
-      
+
       if (profileResult.rows.length === 0) {
         console.log(`  ⏭️  Skipping ${actor.email} (already exists)`);
         continue;
       }
-      
+
       const profileId = profileResult.rows[0].id;
-      
+
       // Insert actor details
       await pool.query(
         `INSERT INTO actors (
@@ -2411,9 +2481,9 @@ async function seedActors() {
           actor.nationality,
         ]
       );
-      
+
       console.log(`  ✅ Created: ${actor.email} (${actor.stage_name})`);
-      
+
       // Add identity link if profile completed
       if (actor.profile_completed) {
         await pool.query(
@@ -2434,9 +2504,9 @@ async function seedActors() {
 
 async function main() {
   console.log('🚀 Starting mock data seeder...\n');
-  
+
   await seedActors();
-  
+
   console.log('\n✅ Mock data seeding complete!');
   process.exit(0);
 }
@@ -2448,6 +2518,7 @@ main().catch((error) => {
 ```
 
 **Run seeder:**
+
 ```bash
 node scripts/seed-mock-data.js
 ```
@@ -2480,6 +2551,7 @@ status_list_bits
 ### **No Schema Changes Needed for V4**
 
 Your database schema is already production-ready. Focus on:
+
 1. ✅ Keep existing migrations
 2. ✅ Add indexes for performance (if missing)
 3. ✅ Test backup/restore procedures
@@ -2487,56 +2559,58 @@ Your database schema is already production-ready. Focus on:
 ### **Recommended Indexes (If Not Already Present)**
 
 **File: `infra/database/migrations/005_add_performance_indexes.sql`**
+
 ```sql
 -- Performance indexes for common queries
 
 -- User lookups
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_auth0_id 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_auth0_id
 ON user_profiles(auth0_user_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_email 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_user_profiles_email
 ON user_profiles(email);
 
 -- Actor lookups
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_actors_user_profile_id 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_actors_user_profile_id
 ON actors(user_profile_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_actors_stage_name 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_actors_stage_name
 ON actors(stage_name);
 
 -- Credential queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_user_profile 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_user_profile
 ON verifiable_credentials(user_profile_id);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_issued_at 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_issued_at
 ON verifiable_credentials(issued_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_not_revoked 
-ON verifiable_credentials(user_profile_id) 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_credentials_not_revoked
+ON verifiable_credentials(user_profile_id)
 WHERE is_revoked = FALSE;
 
 -- Identity links
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_identity_links_active 
-ON identity_links(user_profile_id) 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_identity_links_active
+ON identity_links(user_profile_id)
 WHERE is_active = TRUE;
 
 -- Consent log (audit trail)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_consent_log_user 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_consent_log_user
 ON consent_log(user_id, granted_at DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_consent_log_not_revoked 
-ON consent_log(user_id) 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_consent_log_not_revoked
+ON consent_log(user_id)
 WHERE revoked = FALSE;
 
 -- Usage tracking
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_tracking_timestamp 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_tracking_timestamp
 ON usage_tracking(timestamp DESC);
 
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_tracking_user 
+CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_usage_tracking_user
 ON usage_tracking(user_id, timestamp DESC);
 ```
 
 **Run migration:**
+
 ```bash
 psql $DATABASE_URL -f infra/database/migrations/005_add_performance_indexes.sql
 ```
@@ -2605,6 +2679,7 @@ GET  /api/usage/stats                      - Get usage statistics (admin)
 ## 🧪 Testing Strategy
 
 ### **Unit Tests**
+
 ```bash
 # Test individual functions
 pnpm test
@@ -2614,6 +2689,7 @@ pnpm test --coverage
 ```
 
 ### **Integration Tests**
+
 ```bash
 # Test API endpoints
 pnpm test:integration
@@ -2623,6 +2699,7 @@ node tests/integration/credentials.test.js
 ```
 
 ### **E2E Tests**
+
 ```bash
 # Test full user journeys with Playwright
 pnpm test:e2e
@@ -2631,6 +2708,7 @@ pnpm test:e2e
 ```
 
 ### **Load Testing**
+
 ```bash
 # Simulate 100 concurrent users
 pnpm test:load
@@ -2641,6 +2719,7 @@ pnpm test:load
 ## 🚢 Deployment Procedures
 
 ### **Development to Staging**
+
 ```bash
 # 1. Merge feature branch to develop
 git checkout develop
@@ -2655,6 +2734,7 @@ git push origin develop
 ```
 
 ### **Staging to Production**
+
 ```bash
 # 1. Create release PR
 git checkout main
@@ -2683,11 +2763,13 @@ curl https://trulyimagined.com/api/health
 ## 📊 Monitoring & Observability
 
 ### **Error Tracking (Sentry)**
+
 - **Dashboard:** https://sentry.io/organizations/YOUR_ORG/issues/
 - **Alerts:** Email when error rate > 1% or new error types
 - **Check:** Daily review of errors
 
 ### **Product Analytics (PostHog)**
+
 - **Dashboard:** https://app.posthog.com/project/YOUR_PROJECT
 - **Key Metrics:**
   - Daily/Monthly Active Users
@@ -2697,6 +2779,7 @@ curl https://trulyimagined.com/api/health
 - **Check:** Weekly review
 
 ### **Infrastructure (AWS CloudWatch)**
+
 - **RDS Metrics:** CPU, connections, storage
 - **Lambda Metrics:** Invocations, errors, duration
 - **S3 Metrics:** Storage usage, request count
@@ -2707,6 +2790,7 @@ curl https://trulyimagined.com/api/health
 ## 🔒 Security & Compliance
 
 ### **Security Checklist**
+
 - ✅ HTTPS everywhere (Vercel auto-provides)
 - ✅ Auth0 JWT validation on all protected routes
 - ✅ Database field encryption (AES-256-GCM)
@@ -2719,6 +2803,7 @@ curl https://trulyimagined.com/api/health
 - ✅ CSRF protection (Auth0 SDK handles)
 
 ### **GDPR Compliance**
+
 - ✅ Consent logs (append-only audit trail)
 - ✅ Right to access (API to export user data)
 - ✅ Right to erasure (soft delete user records)
@@ -2787,6 +2872,7 @@ curl https://trulyimagined.com/api/health
 ### **When Things Go Wrong**
 
 **Error Spike Detected:**
+
 1. Check Sentry dashboard for recent errors
 2. Check CloudWatch logs for Lambda errors
 3. Check Vercel deployment status
@@ -2794,6 +2880,7 @@ curl https://trulyimagined.com/api/health
 5. Roll back if necessary: `vercel rollback`
 
 **Database Down:**
+
 1. Check AWS RDS console (status, events)
 2. Check VPC security groups (allow traffic)
 3. Check database credentials (rotate if needed)
@@ -2801,6 +2888,7 @@ curl https://trulyimagined.com/api/health
 5. Restore from backup if corrupted
 
 **Deployment Failed:**
+
 1. Check GitHub Actions logs
 2. Check Vercel build logs
 3. Verify environment variables set correctly
@@ -2812,6 +2900,7 @@ curl https://trulyimagined.com/api/health
 ## 📚 Additional Resources
 
 ### **Documentation Links**
+
 - [Sentry Docs](https://docs.sentry.io/platforms/javascript/guides/nextjs/)
 - [PostHog Docs](https://posthog.com/docs)
 - [Resend Docs](https://resend.com/docs)
@@ -2820,6 +2909,7 @@ curl https://trulyimagined.com/api/health
 - [shadcn/ui Docs](https://ui.shadcn.com/)
 
 ### **Your Internal Docs**
+
 - [Technical Architecture](TECHNICAL_ARCHITECTURE.md)
 - [Production Readiness](PRODUCTION_READINESS_ASSESSMENT.md)
 - [MCP Feasibility Assessment](MCP_FEASIBILITY_ASSESSMENT.md)
@@ -2831,4 +2921,3 @@ curl https://trulyimagined.com/api/health
 This document should be kept up-to-date as implementation progresses. Update revision date at top when making changes.
 
 **Next Action:** Begin Week 1 implementation (Core Infrastructure setup)
-
