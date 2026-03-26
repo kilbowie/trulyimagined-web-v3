@@ -1,6 +1,6 @@
 /**
  * Resend Email Service
- * 
+ *
  * Handles all transactional emails:
  * - Welcome emails
  * - Identity verification notifications
@@ -61,7 +61,9 @@ async function sendEmail(options: SendEmailOptions) {
       bcc,
     });
 
-    console.log(`📧 Email sent successfully: ${subject} to ${Array.isArray(to) ? to.join(', ') : to}`);
+    console.log(
+      `📧 Email sent successfully: ${subject} to ${Array.isArray(to) ? to.join(', ') : to}`
+    );
     return data;
   } catch (error) {
     console.error('[EMAIL ERROR]', error);
@@ -74,7 +76,7 @@ async function sendEmail(options: SendEmailOptions) {
  */
 export async function sendWelcomeEmail(userEmail: string, userName: string, role: string) {
   const subject = `Welcome to Truly Imagined! 🎭`;
-  
+
   const html = `
     <!DOCTYPE html>
     <html lang="en">

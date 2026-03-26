@@ -20,10 +20,9 @@ export async function GET(request: NextRequest) {
     const isAdmin = roles.includes('Admin');
 
     // Get user's profile ID
-    const profileResult = await query(
-      'SELECT id FROM user_profiles WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
+      user.sub,
+    ]);
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
@@ -68,7 +67,10 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('[SUPPORT_TICKETS_LIST_ERROR]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch tickets', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch tickets',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -90,10 +92,7 @@ export async function POST(request: NextRequest) {
 
     // Validation
     if (!subject || !message) {
-      return NextResponse.json(
-        { error: 'Subject and message are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Subject and message are required' }, { status: 400 });
     }
 
     if (subject.length > 255) {
@@ -104,17 +103,13 @@ export async function POST(request: NextRequest) {
     }
 
     if (!['low', 'medium', 'high', 'critical'].includes(priority)) {
-      return NextResponse.json(
-        { error: 'Invalid priority level' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid priority level' }, { status: 400 });
     }
 
     // Get user's profile ID
-    const profileResult = await query(
-      'SELECT id FROM user_profiles WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
+      user.sub,
+    ]);
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
@@ -166,7 +161,10 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('[SUPPORT_TICKET_CREATE_ERROR]', error);
     return NextResponse.json(
-      { error: 'Failed to create ticket', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to create ticket',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

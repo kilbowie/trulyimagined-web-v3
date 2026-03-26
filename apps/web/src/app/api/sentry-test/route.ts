@@ -4,7 +4,7 @@ import * as Sentry from '@sentry/nextjs';
 /**
  * GET /api/sentry-test
  * Test endpoint to verify Sentry error tracking is working
- * 
+ *
  * Usage:
  * 1. Ensure SENTRY_ENABLED=true in .env.local
  * 2. Visit http://localhost:3000/api/sentry-test
@@ -23,7 +23,9 @@ export async function GET() {
 
   // Trigger a test error
   try {
-    throw new Error('[TEST ERROR] This is a test error from Sentry test endpoint. If you see this in Sentry, error tracking is working correctly! 🎉');
+    throw new Error(
+      '[TEST ERROR] This is a test error from Sentry test endpoint. If you see this in Sentry, error tracking is working correctly! 🎉'
+    );
   } catch (error) {
     // Capture the error with additional context
     Sentry.captureException(error, {

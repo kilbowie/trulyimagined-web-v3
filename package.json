@@ -17,7 +17,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "clean": "pnpm -r clean && rm -rf node_modules",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "test:resend": "node scripts/test-resend.js"
   },
   "devDependencies": {
     "@aws-sdk/client-secrets-manager": "^3.515.0",

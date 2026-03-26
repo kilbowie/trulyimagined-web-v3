@@ -187,12 +187,6 @@ importers:
         specifier: ^5.3.3
         version: 5.9.3
 
-  apps/web/.next:
-    dependencies:
-      '@sentry/nextjs':
-        specifier: ^10.46.0
-        version: 10.46.0(@opentelemetry/context-async-hooks@2.6.1)(@opentelemetry/core@2.6.1)(@opentelemetry/sdk-trace-base@2.6.1)(next@14.2.35)(react@18.3.1)(webpack@5.105.4)
-
   infra/database:
     dependencies:
       '@trulyimagined/types':

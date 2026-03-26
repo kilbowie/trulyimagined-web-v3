@@ -7,11 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Send, Clock, User, Shield, Loader2, AlertCircle, CheckCircle2, XCircle } from 'lucide-react';
+import {
+  ArrowLeft,
+  Send,
+  Clock,
+  User,
+  Shield,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+} from 'lucide-react';
 
 interface Message {
   id: string;
@@ -369,13 +385,17 @@ export default function TicketDetailPage() {
                 {index > 0 && <Separator className="my-4" />}
                 <div className="flex gap-3">
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className={message.is_internal_note ? 'bg-yellow-100' : 'bg-slate-100'}>
+                    <AvatarFallback
+                      className={message.is_internal_note ? 'bg-yellow-100' : 'bg-slate-100'}
+                    >
                       {getInitials(message.user_email, message.user_username)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">{message.user_username || message.user_email}</span>
+                      <span className="font-medium text-sm">
+                        {message.user_username || message.user_email}
+                      </span>
                       {message.is_internal_note && (
                         <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
                           Internal Note

@@ -50,11 +50,12 @@ export const config = {
   matcher: [
     /*
      * Match all request paths except:
+     * - monitoring (Sentry tunnel route)
      * - _next/static (static files)
      * - _next/image (image optimization)
      * - favicon.ico (favicon file)
      * - sitemap.xml, robots.txt (public files)
      */
-    '/((?!_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
+    '/((?!monitoring|_next/static|_next/image|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
 };

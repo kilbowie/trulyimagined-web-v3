@@ -1,5 +1,6 @@
 // Sentry Edge Runtime Configuration
-// This runs on Vercel Edge Runtime (middleware, edge functions)
+// Edge runtime (middleware, edge API routes, edge functions)
+// Follows official Next.js SDK pattern: https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -13,8 +14,14 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     environment: process.env.NODE_ENV,
     enabled: SENTRY_ENABLED,
 
-    // Reduced sample rate for edge runtime (to minimize overhead)
-    tracesSampleRate: IS_PRODUCTION ? 0.05 : 0,
+    // Send user context (IP addresses, user agent, etc.)
+    sendDefaultPii: true,
+
+    // Performance Monitoring: 100% in dev, 5% in production (reduced for edge performance)
+    tracesSampleRate: IS_PRODUCTION ? 0.05 : 1.0,
+
+    // Enable structured logging (Sentry Logs product)
+    enableLogs: true,
 
     // Scrub PII before sending
     beforeSend(event) {
@@ -34,7 +41,5 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     },
   });
 } else if (!SENTRY_DSN) {
-  console.warn(
-    '[SENTRY] Not initialized: Missing NEXT_PUBLIC_SENTRY_DSN environment variable'
-  );
+  console.warn('[SENTRY] Not initialized: Missing NEXT_PUBLIC_SENTRY_DSN environment variable');
 }

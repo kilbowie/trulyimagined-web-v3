@@ -7,10 +7,7 @@ import { sendSupportTicketResponseEmail, sendSupportTicketCreatedEmail } from '@
  * POST /api/support/tickets/[id]/messages
  * Add a message to a ticket
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -23,10 +20,7 @@ export async function POST(
 
     // Validation
     if (!message || message.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
     if (message.length > 10000) {
@@ -37,10 +31,9 @@ export async function POST(
     }
 
     // Get user's profile ID
-    const profileResult = await query(
-      'SELECT id FROM user_profiles WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
+      user.sub,
+    ]);
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
@@ -89,18 +82,14 @@ export async function POST(
 
     // Update ticket status if user responded
     if (!isAdmin && ticket.status === 'waiting_on_user') {
-      await query(
-        `UPDATE support_tickets SET status = 'open' WHERE id = $1`,
-        [ticketId]
-      );
+      await query(`UPDATE support_tickets SET status = 'open' WHERE id = $1`, [ticketId]);
     }
 
     // If admin responded, set status to waiting_on_user (optional behavior)
     if (isAdmin && !is_internal_note && ticket.status === 'open') {
-      await query(
-        `UPDATE support_tickets SET status = 'waiting_on_user' WHERE id = $1`,
-        [ticketId]
-      );
+      await query(`UPDATE support_tickets SET status = 'waiting_on_user' WHERE id = $1`, [
+        ticketId,
+      ]);
     }
 
     // Send email notifications
@@ -113,7 +102,7 @@ export async function POST(
            WHERE up.id = $1`,
           [ticket.user_id]
         );
-        
+
         if (userResult.rows.length > 0) {
           const ticketUser = userResult.rows[0];
           // Get user email from Auth0 ID would require another query or passing it
@@ -154,7 +143,10 @@ export async function POST(
   } catch (error) {
     console.error('[SUPPORT_MESSAGE_CREATE_ERROR]', error);
     return NextResponse.json(
-      { error: 'Failed to add message', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to add message',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

@@ -7,6 +7,7 @@ This document guides you through testing and deploying the newly implemented MCP
 ## 📍 Current Status
 
 ✅ **Completed (Ready to Test)**
+
 - Support ticket system (database schema + API + UI)
 - Sentry error tracking (client/server/edge configs)
 - GitHub Actions CI/CD pipeline
@@ -15,6 +16,7 @@ This document guides you through testing and deploying the newly implemented MCP
 - shadcn/ui components (select, skeleton, alert)
 
 🔄 **Needs Configuration**
+
 - Database migration (support tickets schema)
 - Sentry DSN and authentication
 - GitHub Actions secrets
@@ -22,6 +24,7 @@ This document guides you through testing and deploying the newly implemented MCP
 - Email template testing
 
 ⏳ **Pending Implementation** (from V4 Bible)
+
 - AWS MCP infrastructure management
 - Vercel MCP deployment automation
 - PostHog analytics
@@ -46,10 +49,11 @@ psql $env:DATABASE_URL -f infra/database/migrations/008_support_tickets.sql
 ```
 
 **Verify migration:**
+
 ```sql
 -- Check tables created
-SELECT table_name FROM information_schema.tables 
-WHERE table_schema = 'public' 
+SELECT table_name FROM information_schema.tables
+WHERE table_schema = 'public'
 AND table_name LIKE 'support_%';
 
 -- Expected output:
@@ -78,6 +82,7 @@ pnpm dev
 ```
 
 **Test as User:**
+
 1. Navigate to http://localhost:3000/dashboard/support
 2. Click "Create New Ticket"
 3. Fill in subject, select priority, add message
@@ -88,6 +93,7 @@ pnpm dev
 8. Verify reply appears in conversation
 
 **Test as Admin:**
+
 1. Ensure your Auth0 user has "Admin" role (see `GRANT_ADMIN_ACCESS.md`)
 2. Navigate to /dashboard/support
 3. Verify you see all tickets (not just yours)
@@ -100,6 +106,7 @@ pnpm dev
 10. Verify internal note has yellow badge
 
 **Expected Results:**
+
 - ✅ Tickets create successfully
 - ✅ Messages post correctly
 - ✅ Status updates work
@@ -115,6 +122,7 @@ pnpm dev
 ### 1. Sentry Error Tracking ⏱️ 10 minutes
 
 **Setup:**
+
 1. Create account: https://sentry.io/signup/
 2. Create new project:
    - Platform: **Next.js**
@@ -122,7 +130,28 @@ pnpm dev
    - Alert frequency: **On every new issue**
 3. Copy the DSN from project settings
 
+**Configuration Complete** (following official Next.js SDK pattern):
+
+- ✅ `instrumentation.ts` - Server-side registration hook
+- ✅ `sentry.client.config.ts` - Browser runtime (with router transition tracking)
+- ✅ `sentry.server.config.ts` - Node.js server runtime
+- ✅ `sentry.edge.config.ts` - Edge runtime
+- ✅ `src/app/global-error.tsx` - Root error boundary
+- ✅ `next.config.js` - Wrapped with `withSentryConfig()`, tunnel route at `/monitoring`
+- ✅ `src/middleware.ts` - Excludes `/monitoring` from auth
+
+**Features Enabled**:
+
+- Error monitoring across all runtimes (client/server/edge)
+- Performance tracing (100% dev, 10% prod server, 5% edge)
+- Session replay (10% normal sessions, 100% error sessions)
+- Structured logging (`enableLogs: true`)
+- Ad-blocker bypass via tunnel route (`/monitoring`)
+- Automatic unhandled request error capture (`onRequestError` hook)
+- App Router navigation tracking (`onRouterTransitionStart` export)
+
 **Add to `.env.local`:**
+
 ```bash
 SENTRY_DSN=https://xxxxxxxxx@oxxxxxxxxxx.ingest.sentry.io/xxxxxxx
 NEXT_PUBLIC_SENTRY_DSN=https://xxxxxxxxx@oxxxxxxxxxx.ingest.sentry.io/xxxxxxx
@@ -132,6 +161,7 @@ SENTRY_PROJECT=trulyimagined-web
 ```
 
 **Test:**
+
 ```powershell
 # Start dev server
 pnpm dev
@@ -145,6 +175,7 @@ pnpm dev
 
 **Production (Vercel):**
 Add the same environment variables in Vercel dashboard:
+
 - Settings → Environment Variables → Add each variable
 - Apply to: Production, Preview, Development
 
@@ -155,6 +186,7 @@ Add the same environment variables in Vercel dashboard:
 ### 2. Resend Email Service ⏱️ 15 minutes
 
 **Setup:**
+
 1. Create account: https://resend.com/signup
 2. Generate API key:
    - Dashboard → API Keys → Create API Key
@@ -166,6 +198,7 @@ Add the same environment variables in Vercel dashboard:
    - Configure DNS records (SPF, DKIM, MX)
 
 **Add to `.env.local`:**
+
 ```bash
 # Resend Configuration
 RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
@@ -183,6 +216,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 **Test with Mock Mode:**
+
 ```powershell
 # Enable mock mode in .env.local
 USE_MOCK_EMAILS=true
@@ -192,6 +226,7 @@ USE_MOCK_EMAILS=true
 ```
 
 **Test with Real Emails:**
+
 ```bash
 # Disable mock mode
 USE_MOCK_EMAILS=false
@@ -201,6 +236,7 @@ USE_MOCK_EMAILS=false
 ```
 
 **Production Configuration:**
+
 1. Add custom domain in Resend (required for good deliverability)
 2. Update environment variables:
    ```bash
@@ -211,6 +247,7 @@ USE_MOCK_EMAILS=false
 3. Add to Vercel environment variables
 
 **Email Templates Included:**
+
 - Welcome email (new user registration)
 - Identity verification complete
 - Credential issued
@@ -231,7 +268,9 @@ Repository → Settings → Secrets and variables → Actions → New repository
 **Required Secrets:**
 
 #### **Vercel Deployment**
+
 Get these from Vercel CLI or dashboard:
+
 ```powershell
 # Install Vercel CLI
 pnpm add -g vercel
@@ -246,11 +285,13 @@ vercel whoami  # Get your Vercel org
 ```
 
 Add to GitHub:
+
 - `VERCEL_TOKEN`: Personal access token from Vercel dashboard → Settings → Tokens
 - `VERCEL_ORG_ID`: Team/org slug from Vercel (e.g., `kilbowie-consulting`)
 - `VERCEL_PROJECT_ID`: Project ID from `.vercel/project.json`
 
 #### **Sentry Release Tracking**
+
 ```bash
 SENTRY_AUTH_TOKEN=sntrys_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 SENTRY_ORG=your-sentry-org-slug
@@ -258,18 +299,22 @@ SENTRY_PROJECT=trulyimagined-web
 ```
 
 Get auth token: Sentry dashboard → Settings → Auth Tokens → Create New Token
+
 - Scopes: `project:read`, `project:releases`, `org:read`
 
 #### **Snyk Security Scanning**
+
 ```bash
 SNYK_TOKEN=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
 ```
 
 Get token:
+
 1. Create account: https://snyk.io/signup
 2. Dashboard → Settings → General → API Token
 
 **Test Workflows:**
+
 ```powershell
 # Make a small change and push to develop branch
 git checkout -b test/ci-pipeline
@@ -289,15 +334,17 @@ git push origin test/ci-pipeline
 Ensure consistent design across all dashboard pages.
 
 **Pages to Check:**
+
 - `/dashboard` - Overview
 - `/dashboard/profile` - User profile
 - `/dashboard/verifiable-credentials` - Credentials list
-- `/dashboard/consent` - Consent management  
+- `/dashboard/consent` - Consent management
 - `/dashboard/usage` - Usage tracking (if exists)
 - `/dashboard/support` - Support tickets ✅ (NEW - already using shadcn)
 - `/dashboard/admin` - Admin panel (if exists)
 
 **Checklist for Each Page:**
+
 - [ ] Uses shadcn components (Button, Card, Input, etc.)
 - [ ] Color scheme matches slate theme
 - [ ] Spacing consistent (p-6, gap-4 patterns)
@@ -309,11 +356,12 @@ Ensure consistent design across all dashboard pages.
 
 **Fix Non-Compliant Pages:**
 Replace raw HTML with shadcn components:
+
 ```tsx
 // ❌ Before
 <button className="px-4 py-2 bg-blue-500">Click</button>
 
-// ✅ After  
+// ✅ After
 <Button>Click</Button>
 ```
 
@@ -324,6 +372,7 @@ Replace raw HTML with shadcn components:
 Required for infrastructure management via MCP server.
 
 **What It Enables:**
+
 - Query RDS database status from Claude Desktop
 - Check Lambda function logs
 - List S3 objects
@@ -331,6 +380,7 @@ Required for infrastructure management via MCP server.
 - Manage AWS resources programmatically
 
 **Setup Steps:** (Do Later)
+
 1. Create IAM user: `trulyimagined-mcp`
 2. Create least-privilege policy (see V4_IMPLEMENTATION_BIBLE.md)
 3. Generate access keys
@@ -352,6 +402,7 @@ Required for infrastructure management via MCP server.
 Required for deployment automation via MCP server.
 
 **What It Enables:**
+
 - Deploy from Claude Desktop
 - Check deployment status
 - Manage environment variables
@@ -359,6 +410,7 @@ Required for deployment automation via MCP server.
 - Roll back deployments
 
 **Setup Steps:** (Do Later)
+
 1. Generate Vercel API token: https://vercel.com/account/tokens
 2. Link project: `npx vercel link` in apps/web
 3. Add to `.env.local`:
@@ -379,6 +431,7 @@ Required for deployment automation via MCP server.
 Required for product analytics and feature flags.
 
 **What It Enables:**
+
 - User behavior tracking
 - Feature usage analytics
 - A/B testing
@@ -386,6 +439,7 @@ Required for product analytics and feature flags.
 - Funnel analysis
 
 **Setup Steps:** (Do Later)
+
 1. Create account: https://app.posthog.com/signup
 2. Create project
 3. Install SDK:
@@ -409,6 +463,7 @@ Required for product analytics and feature flags.
 Before deploying to production:
 
 ### Infrastructure
+
 - [ ] Database migration run successfully
 - [ ] All tables and indexes created
 - [ ] SSL certificate installed (if custom domain)
@@ -416,6 +471,7 @@ Before deploying to production:
 - [ ] Domain DNS configured
 
 ### Services
+
 - [ ] Sentry DSN configured and tested
 - [ ] Resend API key configured
 - [ ] Custom email domain verified (or using onboarding@resend.dev)
@@ -424,6 +480,7 @@ Before deploying to production:
 - [ ] All CI/CD tests passing
 
 ### Testing
+
 - [ ] Support ticket creation works
 - [ ] Support ticket messages post correctly
 - [ ] Role-based access verified (user vs admin)
@@ -432,12 +489,14 @@ Before deploying to production:
 - [ ] Security scans passing (Snyk, npm audit)
 
 ### Monitoring
+
 - [ ] Sentry alerts configured
 - [ ] GitHub Actions notifications enabled
 - [ ] Resend bounce rate < 2%
 - [ ] Database backup strategy confirmed
 
 ### Documentation
+
 - [ ] SENTRY_SETUP.md reviewed
 - [ ] RESEND_SETUP.md reviewed
 - [ ] V4_IMPLEMENTATION_BIBLE.md familiar
@@ -448,29 +507,34 @@ Before deploying to production:
 ## 🐛 Troubleshooting
 
 ### Support Tickets Not Showing
+
 - **Check**: Database migration ran? Run query: `SELECT * FROM support_tickets;`
 - **Check**: User has profile? Run query: `SELECT * FROM user_profiles WHERE auth0_user_id = 'auth0|xxx';`
 - **Check**: Browser console for errors?
 
-### Emails Not Sending  
+### Emails Not Sending
+
 - **Check**: `RESEND_API_KEY` set in environment?
 - **Check**: `USE_MOCK_EMAILS=false` in production?
 - **Check**: Admin emails configured?
 - **Check**: Resend dashboard for errors?
 
 ### Sentry Not Capturing Errors
+
 - **Check**: `SENTRY_DSN` set in environment?
 - **Check**: `SENTRY_ENABLED=true`?
 - **Check**: Visit `/api/sentry-test` to trigger test error?
 - **Check**: Sentry project DSN matches environment variable?
 
 ### GitHub Actions Failing
+
 - **Check**: All secrets added to repository?
 - **Check**: Vercel project linked correctly?
 - **Check**: Snyk token has correct permissions?
 - **Check**: Actions tab for detailed error logs?
 
 ### shadcn Components Not Found
+
 - **Run**: `cd apps/web && npx shadcn@latest add select skeleton alert badge card`
 - **Check**: Files exist in `apps/web/src/components/ui/`?
 - **Check**: `components.json` exists in `apps/web/`?
@@ -490,22 +554,16 @@ Before deploying to production:
 ## 🎯 Recommended Order
 
 **This Week:**
+
 1. ✅ Run database migration (2 min)
 2. ✅ Test support system (5 min)
 3. ✅ Configure Sentry (10 min)
 4. ✅ Configure Resend (15 min)
 5. ✅ Test email notifications (5 min)
 
-**Next Week:**
-6. ✅ Add GitHub Actions secrets (20 min)
-7. ✅ Test CI/CD pipeline (10 min)
-8. ✅ Audit shadcn styling (30 min)
-9. ✅ Fix any style inconsistencies (varies)
+**Next Week:** 6. ✅ Add GitHub Actions secrets (20 min) 7. ✅ Test CI/CD pipeline (10 min) 8. ✅ Audit shadcn styling (30 min) 9. ✅ Fix any style inconsistencies (varies)
 
-**Future:**
-10. AWS MCP setup (when needed for infrastructure management)
-11. Vercel MCP setup (when needed for deployment automation)
-12. PostHog analytics (when ready for usage tracking)
+**Future:** 10. AWS MCP setup (when needed for infrastructure management) 11. Vercel MCP setup (when needed for deployment automation) 12. PostHog analytics (when ready for usage tracking)
 
 ---
 

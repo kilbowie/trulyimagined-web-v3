@@ -6,10 +6,7 @@ import { query } from '@/lib/db';
  * GET /api/support/tickets/[id]
  * Get a specific ticket with all messages
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -19,10 +16,9 @@ export async function GET(
     const ticketId = params.id;
 
     // Get user's profile ID
-    const profileResult = await query(
-      'SELECT id FROM user_profiles WHERE auth0_user_id = $1',
-      [user.sub]
-    );
+    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
+      user.sub,
+    ]);
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
@@ -33,10 +29,9 @@ export async function GET(
     const isAdmin = roles.includes('Admin');
 
     // Get ticket details
-    const ticketResult = await query(
-      `SELECT * FROM support_tickets_with_user WHERE id = $1`,
-      [ticketId]
-    );
+    const ticketResult = await query(`SELECT * FROM support_tickets_with_user WHERE id = $1`, [
+      ticketId,
+    ]);
 
     if (ticketResult.rows.length === 0) {
       return NextResponse.json({ error: 'Ticket not found' }, { status: 404 });
@@ -79,7 +74,10 @@ export async function GET(
   } catch (error) {
     console.error('[SUPPORT_TICKET_GET_ERROR]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch ticket', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to fetch ticket',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }
@@ -89,10 +87,7 @@ export async function GET(
  * PATCH /api/support/tickets/[id]
  * Update ticket status/assignment (Admin only)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -168,7 +163,10 @@ export async function PATCH(
   } catch (error) {
     console.error('[SUPPORT_TICKET_UPDATE_ERROR]', error);
     return NextResponse.json(
-      { error: 'Failed to update ticket', details: error instanceof Error ? error.message : 'Unknown error' },
+      {
+        error: 'Failed to update ticket',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
       { status: 500 }
     );
   }

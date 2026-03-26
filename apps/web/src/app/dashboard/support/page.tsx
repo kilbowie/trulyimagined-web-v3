@@ -8,11 +8,33 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Plus, MessageCircle, Clock, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  Plus,
+  MessageCircle,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  Loader2,
+} from 'lucide-react';
 
 interface Ticket {
   id: string;
@@ -90,7 +112,7 @@ export default function SupportPage() {
         setIsCreateDialogOpen(false);
         setNewTicket({ subject: '', message: '', priority: 'medium' });
         fetchTickets();
-        
+
         // Navigate to the new ticket
         router.push(`/dashboard/support/${data.ticket.id}`);
       } else {
@@ -161,7 +183,7 @@ export default function SupportPage() {
           </div>
           <Skeleton className="h-10 w-32" />
         </div>
-        
+
         <div className="space-y-4">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
@@ -183,9 +205,7 @@ export default function SupportPage() {
         <div>
           <h1 className="text-3xl font-bold">Support Tickets</h1>
           <p className="text-muted-foreground mt-1">
-            {isAdmin 
-              ? 'Manage all support requests' 
-              : 'Get help from our support team'}
+            {isAdmin ? 'Manage all support requests' : 'Get help from our support team'}
           </p>
         </div>
 
@@ -310,18 +330,15 @@ export default function SupportPage() {
                       {ticket.message_count > 0 && (
                         <span className="flex items-center gap-1">
                           <MessageCircle className="h-3 w-3" />
-                          {ticket.message_count} {ticket.message_count === 1 ? 'message' : 'messages'}
+                          {ticket.message_count}{' '}
+                          {ticket.message_count === 1 ? 'message' : 'messages'}
                         </span>
                       )}
                       {isAdmin && ticket.user_email && (
-                        <span className="text-xs">
-                          User: {ticket.user_email}
-                        </span>
+                        <span className="text-xs">User: {ticket.user_email}</span>
                       )}
                       {ticket.assigned_to_username && (
-                        <span className="text-xs">
-                          Assigned: {ticket.assigned_to_username}
-                        </span>
+                        <span className="text-xs">Assigned: {ticket.assigned_to_username}</span>
                       )}
                     </CardDescription>
                   </div>

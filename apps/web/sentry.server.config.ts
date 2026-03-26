@@ -1,5 +1,6 @@
 // Sentry Server Configuration
-// This runs on the Next.js server
+// Node.js server runtime (API routes, server components, server actions)
+// Follows official Next.js SDK pattern: https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -13,20 +14,20 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     environment: process.env.NODE_ENV,
     enabled: SENTRY_ENABLED,
 
-    // Performance Monitoring
-    tracesSampleRate: IS_PRODUCTION ? 0.1 : 0,
+    // Send user context (IP addresses, user agent, etc.)
+    sendDefaultPii: true,
 
-    // Integrations
-    integrations: [
-      new Sentry.Integrations.Http({ tracing: true }),
-    ],
+    // Performance Monitoring: 100% in dev, 10% in production
+    tracesSampleRate: IS_PRODUCTION ? 0.1 : 1.0,
+
+    // Attach local variable values to stack frames for better debugging
+    includeLocalVariables: true,
+
+    // Enable structured logging (Sentry Logs product)
+    enableLogs: true,
 
     // Ignore common errors
-    ignoreErrors: [
-      'ECONNREFUSED',
-      'ENOTFOUND',
-      'ETIMEDOUT',
-    ],
+    ignoreErrors: ['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT'],
 
     // Scrub PII before sending
     beforeSend(event, hint) {
@@ -40,7 +41,7 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
       // Remove sensitive request data
       if (event.request) {
         delete event.request.cookies;
-        
+
         // Scrub authorization headers
         if (event.request.headers) {
           delete event.request.headers.Authorization;
@@ -60,7 +61,5 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     },
   });
 } else if (!SENTRY_DSN) {
-  console.warn(
-    '[SENTRY] Not initialized: Missing SENTRY_DSN environment variable'
-  );
+  console.warn('[SENTRY] Not initialized: Missing SENTRY_DSN environment variable');
 }

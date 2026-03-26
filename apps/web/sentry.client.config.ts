@@ -1,5 +1,6 @@
-// Sentry Client Configuration
-// This runs in the browser
+// Sentry Client-Side Instrumentation
+// Browser runtime configuration for error monitoring, tracing, and session replay
+// Follows official Next.js SDK pattern: https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from '@sentry/nextjs';
 
@@ -13,23 +14,28 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     environment: process.env.NODE_ENV,
     enabled: SENTRY_ENABLED,
 
-    // Performance Monitoring
-    tracesSampleRate: IS_PRODUCTION ? 0.1 : 0, // 10% in production, 0% in development
-    
-    // Session Replay for debugging
-    replaysSessionSampleRate: 0.1, // Sample 10% of sessions
-    replaysOnErrorSampleRate: 1.0, // Always capture replays on errors
-    
+    // Send user context (IP addresses, user agent, etc.)
+    sendDefaultPii: true,
+
+    // Performance Monitoring: 100% in dev, 10% in production
+    tracesSampleRate: IS_PRODUCTION ? 0.1 : 1.0,
+
+    // Session Replay: 10% of all sessions, 100% of sessions with errors
+    replaysSessionSampleRate: 0.1,
+    replaysOnErrorSampleRate: 1.0,
+
+    // Enable structured logging (Sentry Logs product)
+    enableLogs: true,
+
     integrations: [
-      new Sentry.BrowserTracing({
-        // Trace navigation and interactions
-        tracePropagationTargets: ['localhost', /^https:\/\/trulyimagined\.com/],
+      Sentry.replayIntegration({
+        // Privacy controls for session replays
+        maskAllText: false, // Allow text to be readable (adjust for compliance)
+        blockAllMedia: false, // Allow media to be recorded (adjust for privacy)
+        maskAllInputs: true, // Always mask input fields
       }),
-      new Sentry.Replay({
-        // Mask sensitive data in session replays
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
+      // Optional: User feedback widget
+      // Sentry.feedbackIntegration({ colorScheme: "system" }),
     ],
 
     // Ignore common non-critical errors
@@ -75,7 +81,9 @@ if (SENTRY_ENABLED && SENTRY_DSN) {
     },
   });
 } else if (!SENTRY_DSN) {
-  console.warn(
-    '[SENTRY] Not initialized: Missing NEXT_PUBLIC_SENTRY_DSN environment variable'
-  );
+  console.warn('[SENTRY] Not initialized: Missing NEXT_PUBLIC_SENTRY_DSN environment variable');
 }
+
+// Hook into App Router navigation transitions
+// Automatically traces client-side route changes
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
