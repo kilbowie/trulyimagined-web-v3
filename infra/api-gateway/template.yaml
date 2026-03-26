@@ -54,9 +54,19 @@ Resources:
       Cors:
         AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
         AllowHeaders: "'Content-Type,Authorization'"
-        AllowOrigin: "'*'" # Update with your domain in production
+        AllowOrigin: "'https://trulyimagined.com'" # Restrict to production domain
       Auth:
         DefaultAuthorizer: NONE # We'll handle Auth0 in functions
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          # Stage-level throttling: 50 steady-state requests/second, burst up to 100
+          ThrottlingBurstLimit: 100
+          ThrottlingRateLimit: 50
+          # Logging for audit trail
+          LoggingLevel: INFO
+          DataTraceEnabled: false # Do not log full request/response bodies (PII risk)
+          MetricsEnabled: true
 
   # ========================================
   # Identity Service Lambda (Step 5: Identity Registry MVP)

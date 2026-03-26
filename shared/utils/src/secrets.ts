@@ -32,15 +32,19 @@ export type SecretName =
   | 'staging/stripe-webhook-secret';
 
 // Environment variable fallback mapping
+// Maps Secrets Manager path → local .env.local variable name
+// IMPORTANT: verifiable-credentials.ts reads ISSUER_ED25519_PRIVATE_KEY directly;
+// consent-proof.ts reads CONSENT_SIGNING_PRIVATE_KEY directly.
+// These must match the actual env var names used in the consuming code.
 const ENV_FALLBACK_MAP: Record<SecretName, string> = {
   'prod/encryption-key': 'ENCRYPTION_KEY',
-  'prod/vc-issuer-key': 'VC_ISSUER_PRIVATE_KEY',
+  'prod/vc-issuer-key': 'ISSUER_ED25519_PRIVATE_KEY',
   'prod/consent-key': 'CONSENT_SIGNING_PRIVATE_KEY',
   'prod/auth0-client-secret': 'AUTH0_CLIENT_SECRET',
   'prod/stripe-secret-key': 'STRIPE_SECRET_KEY',
   'prod/stripe-webhook-secret': 'STRIPE_WEBHOOK_SECRET',
   'staging/encryption-key': 'ENCRYPTION_KEY',
-  'staging/vc-issuer-key': 'VC_ISSUER_PRIVATE_KEY',
+  'staging/vc-issuer-key': 'ISSUER_ED25519_PRIVATE_KEY',
   'staging/consent-key': 'CONSENT_SIGNING_PRIVATE_KEY',
   'staging/auth0-client-secret': 'AUTH0_CLIENT_SECRET',
   'staging/stripe-secret-key': 'STRIPE_SECRET_KEY',
