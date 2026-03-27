@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { notFound } from 'next/navigation';
 
 export default function AuthDebugPage() {
+  // Prevent access in production
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   const [results, setResults] = useState<any>({
     health: null,
     login: null,

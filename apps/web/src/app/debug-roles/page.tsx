@@ -1,5 +1,5 @@
 import { getCurrentUser, getUserRoles, getUserProfile } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+import { redirect, notFound } from 'next/navigation';
 
 /**
  * Roles Debug Page
@@ -7,6 +7,11 @@ import { redirect } from 'next/navigation';
  * Shows raw user session data to diagnose role assignment issues
  */
 export default async function DebugRolesPage() {
+  // Prevent access in production
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   const user = await getCurrentUser();
 
   if (!user) {
