@@ -36,7 +36,10 @@ import { decryptJSON } from '@trulyimagined/utils';
 // GET /api/credentials/[credentialId]
 // ===========================================
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ credentialId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ credentialId: string }> }
+) {
   try {
     const { credentialId } = await params;
 

@@ -25,7 +25,10 @@ import { generateDidDocument } from '@/lib/verifiable-credentials';
 // GET /users/[userId]/did.json
 // ===========================================
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ userId: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
   try {
     const { userId } = await params;
 

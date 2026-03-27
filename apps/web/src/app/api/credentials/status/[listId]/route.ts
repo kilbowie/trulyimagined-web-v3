@@ -45,9 +45,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { pool } from '@/lib/db';
 import { getStatusListCredential } from '@/lib/status-list-manager';
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ listId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ listId: string }> }
+) {
   try {
-    const { listId } = await params ;
+    const { listId } = await params;
 
     // Optional: Support timestamp query parameter for historical status
     const timestamp = request.nextUrl.searchParams.get('timestamp');

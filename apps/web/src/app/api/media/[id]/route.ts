@@ -66,7 +66,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
  * DELETE /api/media/[id]
  * Delete media (soft delete in DB, hard delete from S3)
  */
-export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await getCurrentUser();
 

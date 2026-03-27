@@ -1,15 +1,42 @@
 import { Pool, QueryResult } from 'pg';
 
+// Parse DATABASE_URL and remove sslmode parameter to avoid conflicts
+let connectionString = process.env.DATABASE_URL;
+if (connectionString && connectionString.includes('?sslmode=')) {
+  connectionString = connectionString.replace(/\?sslmode=\w+/, '');
+}
+
+// Parse connection URL
+const dbUrl = connectionString
+  ? new URL(connectionString.replace('postgresql://', 'postgres://'))
+  : null;
+
 // Initialize PostgreSQL connection pool
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false, // Required for AWS RDS connections
-  },
-  max: 20, // Maximum number of clients in the pool
-  idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-  connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-});
+const pool = new Pool(
+  dbUrl
+    ? {
+        host: dbUrl.hostname,
+        port: parseInt(dbUrl.port) || 5432,
+        database: dbUrl.pathname.split('/')[1],
+        user: dbUrl.username,
+        password: decodeURIComponent(dbUrl.password),
+        ssl: {
+          rejectUnauthorized: false, // Required for AWS RDS self-signed certificates
+        },
+        max: 20, // Maximum number of clients in the pool
+        idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
+        connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+      }
+    : {
+        connectionString: process.env.DATABASE_URL,
+        ssl: {
+          rejectUnauthorized: false,
+        },
+        max: 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 2000,
+      }
+);
 
 /**
  * Execute a SQL query

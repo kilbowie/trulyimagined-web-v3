@@ -54,7 +54,10 @@ interface ConsentResponse {
  *   pagination: { limit, offset, total, hasMore }
  * }
  */
-export async function GET(request: NextRequest, { params }: { params: Promise<{ actorId: string }> }) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ actorId: string }> }
+) {
   try {
     // Get Auth0 session
     const session = await auth0.getSession();
