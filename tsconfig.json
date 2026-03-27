@@ -22,7 +22,8 @@
     "paths": {
       "@trulyimagined/types": ["./shared/types/src"],
       "@trulyimagined/utils": ["./shared/utils/src"],
-      "@trulyimagined/middleware": ["./shared/middleware/src"]
+      "@trulyimagined/middleware": ["./shared/middleware/src"],
+      "@trulyimagined/database": ["./infra/database/src"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "build"]

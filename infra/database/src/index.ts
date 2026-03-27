@@ -6,3 +6,4 @@
 
 export { DatabaseClient, db } from './client';
 export * from './queries';
+export * from './queries-v3';

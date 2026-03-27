@@ -1,6 +1,5 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
-import { DatabaseClient } from '@trulyimagined/database/src/client';
-import { queries } from '@trulyimagined/database/src/queries-v3';
+import { DatabaseClient, queries } from '@trulyimagined/database';
 
 /**
  * Licensing Service - Lambda Handler
