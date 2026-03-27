@@ -10,15 +10,15 @@ import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
 
-export async function GET(req: Request, { params }: { params: { actorId: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ actorId: string }> }) {
   try {
     // 1. Authenticate
-    const session = await auth0.getSession();
+   const session = await auth0.getSession();
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { actorId } = params;
+    const { actorId } = await params;
 
     // 2. Parse query parameters
     const url = new URL(req.url);

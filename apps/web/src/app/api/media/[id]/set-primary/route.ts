@@ -7,7 +7,7 @@ import { queries } from '@database/queries-v3';
  * PUT /api/media/[id]/set-primary
  * Set a headshot as primary and update display orders
  */
-export async function PUT(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
 
@@ -15,7 +15,7 @@ export async function PUT(_request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const mediaId = params.id;
+    const { id: mediaId } = await params;
 
     // Get actor record
     const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);

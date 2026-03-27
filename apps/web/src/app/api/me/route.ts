@@ -9,7 +9,7 @@ import { auth0 } from '@/lib/auth0';
  * Returns the current user's profile and roles
  * Requires authentication
  */
-export const GET = auth0.withApiAuthRequired(async function handler() {
+export const GET = auth0.withApiAuthRequired(async function handler(): Promise<NextResponse<any>> {
   try {
     const session = await auth0.getSession();
     
@@ -41,4 +41,4 @@ export const GET = auth0.withApiAuthRequired(async function handler() {
       { status: 500 }
     );
   }
-});
+}) as any; // Type assertion needed for Auth0 wrapper compatibility with Next.js 15

@@ -54,7 +54,7 @@ interface ConsentResponse {
  *   pagination: { limit, offset, total, hasMore }
  * }
  */
-export async function GET(request: NextRequest, { params }: { params: { actorId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ actorId: string }> }) {
   try {
     // Get Auth0 session
     const session = await auth0.getSession();
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest, { params }: { params: { actorId:
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const actorId = params.actorId;
+    const { actorId } = await params;
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '100');
     const offset = parseInt(searchParams.get('offset') || '0');

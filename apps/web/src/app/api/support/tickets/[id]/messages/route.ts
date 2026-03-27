@@ -7,14 +7,14 @@ import { sendSupportTicketResponseEmail, sendSupportTicketCreatedEmail } from '@
  * POST /api/support/tickets/[id]/messages
  * Add a message to a ticket
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const ticketId = params.id;
+    const { id: ticketId } = await params;
     const body = await request.json();
     const { message, is_internal_note = false } = body;
 

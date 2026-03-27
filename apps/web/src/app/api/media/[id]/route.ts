@@ -8,7 +8,7 @@ import { deleteFromS3 } from '@/lib/s3';
  * PUT /api/media/[id]
  * Update media metadata (title, photo_credit, description)
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
 
@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const mediaId = params.id;
+    const { id: mediaId } = await params;
     const body = await request.json();
 
     // Get actor record
@@ -66,7 +66,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
  * DELETE /api/media/[id]
  * Delete media (soft delete in DB, hard delete from S3)
  */
-export async function DELETE(_request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
 
@@ -74,7 +74,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: { id: 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const mediaId = params.id;
+    const { id: mediaId } = await params;
 
     // Get actor record
     const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);

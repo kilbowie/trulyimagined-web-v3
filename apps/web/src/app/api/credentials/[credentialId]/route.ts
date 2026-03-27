@@ -36,9 +36,9 @@ import { decryptJSON } from '@trulyimagined/utils';
 // GET /api/credentials/[credentialId]
 // ===========================================
 
-export async function GET(request: NextRequest, { params }: { params: { credentialId: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ credentialId: string }> }) {
   try {
-    const credentialId = params.credentialId;
+    const { credentialId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -175,10 +175,10 @@ export async function GET(request: NextRequest, { params }: { params: { credenti
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { credentialId: string } }
+  { params }: { params: Promise<{ credentialId: string }> }
 ) {
   try {
-    const credentialId = params.credentialId;
+    const { credentialId } = await params;
 
     // Validate UUID format
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

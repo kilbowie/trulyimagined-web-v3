@@ -9,7 +9,7 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@auth0/nextjs-auth0/client';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 
 interface UsageRecord {
   id: string;
@@ -46,9 +46,11 @@ interface ActorUsageData {
   };
 }
 
-export default function ActorUsagePage({ params }: { params: { actorId: string } }) {
+export default function ActorUsagePage() {
   const { user, isLoading } = useUser();
   const router = useRouter();
+  const params = useParams();
+  const actorId = params.actorId as string;
   const [data, setData] = useState<ActorUsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -59,14 +61,14 @@ export default function ActorUsagePage({ params }: { params: { actorId: string }
       return;
     }
 
-    if (user && params.actorId) {
+    if (user && actorId) {
       fetchActorUsage();
     }
-  }, [user, isLoading, params.actorId, router]);
+  }, [user, isLoading, actorId, router]);
 
   async function fetchActorUsage() {
     try {
-      const response = await fetch(`/api/usage/actor/${params.actorId}`);
+      const response = await fetch(`/api/usage/actor/${actorId}`);
 
       if (!response.ok) {
         if (response.status === 404) {

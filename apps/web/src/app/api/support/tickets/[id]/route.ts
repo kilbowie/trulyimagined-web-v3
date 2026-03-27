@@ -6,14 +6,14 @@ import { query } from '@/lib/db';
  * GET /api/support/tickets/[id]
  * Get a specific ticket with all messages
  */
-export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const ticketId = params.id;
+    const { id: ticketId } = await params;
 
     // Get user's profile ID
     const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
  * PATCH /api/support/tickets/[id]
  * Update ticket status/assignment (Admin only)
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Forbidden - Admin only' }, { status: 403 });
     }
 
-    const ticketId = params.id;
+    const { id: ticketId } = await params;
     const body = await request.json();
     const { status, priority, assigned_to } = body;
 

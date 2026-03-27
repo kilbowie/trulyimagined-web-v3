@@ -7,7 +7,7 @@ import { queries } from '@database/queries-v3';
  * PUT /api/actors/[id]
  * Update actor profile information
  */
-export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
 
@@ -15,7 +15,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const actorId = params.id;
+    const { id: actorId } = await params;
     const body = await request.json();
 
     // Get actor record to verify ownership
