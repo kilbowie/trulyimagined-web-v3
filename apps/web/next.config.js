@@ -4,7 +4,7 @@ const nextConfig = {
   swcMinify: true,
   transpilePackages: ['@trulyimagined/types', '@trulyimagined/utils', '@trulyimagined/middleware'],
   typescript: {
-    ignoreBuildErrors: true, // Temporary: ignore TypeScript errors during build
+    ignoreBuildErrors: false, // Enable TypeScript checks during build
   },
   eslint: {
     ignoreDuringBuilds: false, // Keep ESLint active

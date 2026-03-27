@@ -1,4 +1,5 @@
 import { auth0 } from '@/lib/auth0';
+import { notFound } from 'next/navigation';
 // import { headers } from 'next/headers';
 
 /**
@@ -7,6 +8,11 @@ import { auth0 } from '@/lib/auth0';
  * This page checks EVERYTHING to diagnose why roles aren't working
  */
 export default async function SuperDebugPage() {
+  // Prevent access in production
+  if (process.env.NODE_ENV === 'production') {
+    notFound();
+  }
+
   const session = await auth0.getSession();
   const user = session?.user;
 
@@ -251,6 +257,7 @@ export default async function SuperDebugPage() {
                     <a
                       href="https://manage.auth0.com/"
                       target="_blank"
+                      rel="noopener noreferrer"
                       className="text-blue-600 underline"
                     >
                       Auth0 Dashboard
