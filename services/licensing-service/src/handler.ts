@@ -174,7 +174,7 @@ async function getLicenseRequests(event: APIGatewayProxyEvent) {
     headers: corsHeaders,
     body: JSON.stringify({
       actorId,
-      requests: result.rows.map((req) => ({
+      requests: result.rows.map((req: Record<string, unknown>) => ({
         id: req.id,
         requesterName: req.requester_name,
         requesterEmail: req.requester_email,
