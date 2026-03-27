@@ -28,7 +28,10 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "../../infra/database/src/**/*.ts"
+    "../../infra/database/src/**/*.ts",
+        "../../shared/types/src/**/*.ts",
+        "../../shared/utils/src/**/*.ts",
+        "../../shared/middleware/src/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }
