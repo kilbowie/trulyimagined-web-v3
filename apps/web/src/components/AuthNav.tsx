@@ -49,7 +49,7 @@ export default function AuthNav() {
     );
   }
 
-  const roles = user['https://trulyimagined.com/roles'] || [];
+  const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
   const initials = user.name
     ? user.name
         .split(' ')
