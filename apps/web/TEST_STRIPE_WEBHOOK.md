@@ -18,24 +18,29 @@
 ## Local Development Testing
 
 ### Step 1: Start Your Next.js Dev Server
+
 ```powershell
 cd apps/web
 pnpm dev
 ```
+
 Your app should be running on `http://localhost:3000`
 
 ### Step 2: Start Stripe Webhook Forwarding (NEW TERMINAL)
+
 ```powershell
 # In a NEW terminal window
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 **Expected Output:**
+
 ```
 > Ready! Your webhook signing secret is whsec_xxxxxxxxxxxxx (^C to quit)
 ```
 
 ### Step 3: Copy the Webhook Secret
+
 1. Copy the `whsec_xxxxxxxxxxxxx` value from the Stripe CLI output
 2. Add it to your `.env.local` file:
    ```
@@ -44,6 +49,7 @@ stripe listen --forward-to localhost:3000/api/webhooks/stripe
 3. Restart your Next.js dev server (Ctrl+C and `pnpm dev` again)
 
 ### Step 4: Test the Webhook
+
 In a **third terminal**, trigger test events:
 
 ```powershell
@@ -61,7 +67,9 @@ stripe trigger identity.verification_session.canceled
 ```
 
 ### Step 5: Check Your Terminal Logs
+
 You should see in your Next.js terminal:
+
 ```
 [STRIPE WEBHOOK] Received event: { type: 'identity.verification_session.verified', id: 'evt_xxxxx' }
 [STRIPE WEBHOOK] Processing verified session: { sessionId: 'vs_xxxxx', ... }
@@ -72,6 +80,7 @@ You should see in your Next.js terminal:
 ## Testing Real Identity Verification Flow
 
 1. **Create a verification session** via your app or API:
+
    ```bash
    curl -X POST http://localhost:3000/api/verification/start \
      -H "Content-Type: application/json" \
@@ -119,23 +128,28 @@ When ready for production:
 ## Troubleshooting
 
 ### "Missing stripe-signature header"
+
 - Make sure you're using Stripe CLI's `stripe listen` command
 - The header is automatically added by Stripe CLI
 
 ### "Webhook signature verification failed"
+
 - Check that `STRIPE_WEBHOOK_SECRET` in `.env.local` matches the CLI output
 - Restart your Next.js dev server after updating `.env.local`
 
 ### "STRIPE_WEBHOOK_SECRET not configured"
+
 - Ensure the environment variable is set in `.env.local`
 - Check there are no typos in the variable name
 
 ### No events showing up
+
 - Verify Stripe CLI is still running (`stripe listen`)
 - Check your Next.js app is running on port 3000
 - Look for error messages in the Stripe CLI terminal
 
 ### Events firing but not processing
+
 - Check your Next.js terminal for error messages
 - Verify database connection is working
 - Check that `user_profile_id` is in the session metadata

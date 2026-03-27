@@ -66,6 +66,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_51SlJYRFa07CvMgcY...
 ```
 
 **Features:**
+
 - ✅ Free to use
 - ✅ Unlimited test verifications
 - ✅ Special test documents work
@@ -81,6 +82,7 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_51SlJYRFa07CvMgcY...
 ```
 
 **Features:**
+
 - ⚠️ Charges real money ($1.50-$3.00 per verification)
 - ⚠️ Processes real customer data
 - ✅ Production-ready
@@ -121,6 +123,7 @@ curl -X POST http://localhost:3000/api/verification/start `
 ```
 
 **Expected Response:**
+
 ```json
 {
   "success": true,
@@ -166,6 +169,7 @@ stripe trigger identity.verification_session.verified
 ```
 
 **Check Database:**
+
 ```sql
 SELECT * FROM identity_links WHERE provider = 'stripe-identity' ORDER BY created_at DESC LIMIT 1;
 ```
@@ -198,6 +202,7 @@ curl http://localhost:3000/api/identity/resolution `
 ```
 
 **Expected Response:**
+
 ```json
 {
   "confidenceScore": 95,
@@ -239,7 +244,7 @@ stripe trigger identity.verification_session.canceled
 
 ## Future: Billing & Subscriptions
 
-*Note: Billing features are planned for Phase 2. This section will be updated when implemented.*
+_Note: Billing features are planned for Phase 2. This section will be updated when implemented._
 
 ### Test Card Numbers (Future Use)
 
@@ -283,6 +288,7 @@ stripe subscriptions create \
 ### Issue 1: "STRIPE_SECRET_KEY environment variable is not set"
 
 **Solution:**
+
 ```powershell
 # Check .env.local exists
 ls .env.local
@@ -300,12 +306,14 @@ pnpm dev
 **Cause:** Using live keys in test mode or vice versa
 
 **Solution:**
+
 - Ensure `STRIPE_SECRET_KEY` starts with `sk_test_` for local dev
 - Ensure `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` starts with `pk_test_`
 
 ### Issue 3: Webhook Events Not Arriving
 
 **Checklist:**
+
 ```powershell
 # 1. Is Stripe CLI running?
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
@@ -324,6 +332,7 @@ pnpm dev
 ### Issue 4: Database Connection Failed During Webhook
 
 **Solution:**
+
 ```powershell
 # Test database connection
 cd apps/web
@@ -394,11 +403,12 @@ psql $DATABASE_URL -c "SELECT * FROM identity_links WHERE provider = 'stripe-ide
 ## Local Development Workflow
 
 1. **Morning Setup** (once per day):
+
    ```powershell
    # Terminal 1: Start dev server
    cd apps/web
    pnpm dev
-   
+
    # Terminal 2: Start webhook forwarding
    stripe listen --forward-to localhost:3000/api/webhooks/stripe
    ```
