@@ -228,7 +228,7 @@ export async function requireConsent(
       },
     });
 
-    const data = await response.json();
+    const data = await response.json() as { error?: string; isGranted: boolean; latestAction?: { reason?: string } };
 
     if (!response.ok) {
       throw new Error(`Consent check failed: ${data.error || 'Unknown error'}`);
