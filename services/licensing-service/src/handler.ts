@@ -75,7 +75,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 /**
  * Request a license from an actor
  */
-async function requestLicense(event: APIGateway ProxyEvent) {
+async function requestLicense(event: APIGatewayProxyEvent) {
   try {
     const body = JSON.parse(event.body || '{}');
     const {
