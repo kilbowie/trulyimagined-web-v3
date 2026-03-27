@@ -71,6 +71,12 @@ export interface ConsentPolicy {
 
   // Attribution (preserved from original)
   attributionRequired: boolean;
+
+    // Optional constraints (territory/expiry metadata)
+    constraints?: {
+          territory?: string;
+          expiryDate?: string;
+    };
 }
 
 export interface ConsentLedgerEntry {
