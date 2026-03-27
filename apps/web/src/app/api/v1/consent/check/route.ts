@@ -303,8 +303,8 @@ export async function POST(request: NextRequest) {
         required: policy.attributionRequired,
       },
       constraints: {
-        territory: policy.constraints.territory,
-        expiryDate: policy.constraints.expiryDate,
+        territory: policy.constraints?.territory,
+        expiryDate: policy.constraints?.expiryDate,
       },
       meta: {
         responseTime: `${responseTime}ms`,

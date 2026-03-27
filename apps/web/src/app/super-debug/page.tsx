@@ -129,7 +129,7 @@ export default async function SuperDebugPage() {
           className={`rounded-lg border-2 p-6 ${
             severity === 'success'
               ? 'bg-green-50 border-green-500'
-              : severity === 'warning'
+              : (severity as 'success' | 'warning' | 'error') === 'warning'
                 ? 'bg-yellow-50 border-yellow-500'
                 : 'bg-red-50 border-red-500'
           }`}
@@ -139,7 +139,7 @@ export default async function SuperDebugPage() {
             className={`text-lg ${
               severity === 'success'
                 ? 'text-green-800'
-                : severity === 'warning'
+                : (severity as 'success' | 'warning' | 'error') === 'warning'
                   ? 'text-yellow-800'
                   : 'text-red-800'
             }`}

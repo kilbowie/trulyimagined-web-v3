@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Bold, Italic, List, ListOrdered, Quote, Code, Link as LinkIcon } from 'lucide-react';
 
 interface TextFormattingToolbarProps {
-  onFormat: (format: string, wrapper?: string) => void;
+  onFormat: (format: string, wrapper?: string, isPrefix?: boolean) => void;
   disabled?: boolean;
 }
 
