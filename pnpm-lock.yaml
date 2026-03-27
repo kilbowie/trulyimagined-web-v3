@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  d3-color: ^3.1.0
+  picomatch@2: 2.3.2
+  picomatch@4: 4.0.4
+
 importers:
 
   .:
@@ -12,19 +17,19 @@ importers:
         specifier: ^3.515.0
         version: 3.1015.0
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@typescript-eslint/eslint-plugin':
-        specifier: ^6.19.0
+        specifier: ^6.21.0
         version: 6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.1)(typescript@5.9.3)
       '@typescript-eslint/parser':
-        specifier: ^6.19.0
+        specifier: ^6.21.0
         version: 6.21.0(eslint@8.57.1)(typescript@5.9.3)
       dotenv:
         specifier: ^17.3.1
         version: 17.3.1
       eslint:
-        specifier: ^8.56.0
+        specifier: ^8.57.0
         version: 8.57.1
       eslint-config-prettier:
         specifier: ^9.1.0
@@ -36,13 +41,13 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       pg:
-        specifier: ^8.11.3
+        specifier: ^8.13.0
         version: 8.20.0
       prettier:
-        specifier: ^3.2.4
+        specifier: ^3.5.0
         version: 3.8.1
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   apps/web:
@@ -123,19 +128,19 @@ importers:
         specifier: ^9.0.2
         version: 9.0.3
       lucide-react:
-        specifier: ^1.6.0
-        version: 1.6.0(react@18.3.1)
+        specifier: ^1.7.0
+        version: 1.7.0(react@18.3.1)
       next:
-        specifier: ^14.1.0
+        specifier: ^14.2.35
         version: 14.2.35(@babel/core@7.29.0)(@opentelemetry/api@1.9.1)(react-dom@18.3.1)(react@18.3.1)
       pg:
-        specifier: ^8.11.3
+        specifier: ^8.13.0
         version: 8.20.0
       react:
-        specifier: ^18.2.0
+        specifier: ^18.3.1
         version: 18.3.1
       react-dom:
-        specifier: ^18.2.0
+        specifier: ^18.3.1
         version: 18.3.1(react@18.3.1)
       react-markdown:
         specifier: ^10.1.0
@@ -172,37 +177,37 @@ importers:
         specifier: ^9.0.5
         version: 9.0.10
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
       '@types/react':
-        specifier: ^18.2.48
+        specifier: ^18.3.0
         version: 18.3.28
       '@types/react-dom':
-        specifier: ^18.2.18
+        specifier: ^18.3.0
         version: 18.3.7(@types/react@18.3.28)
       '@types/react-simple-maps':
         specifier: ^3.0.6
         version: 3.0.6
       autoprefixer:
-        specifier: ^10.4.17
+        specifier: ^10.4.21
         version: 10.4.27(postcss@8.5.8)
       eslint:
-        specifier: ^8.56.0
+        specifier: ^8.57.0
         version: 8.57.1
       eslint-config-next:
-        specifier: ^14.1.0
+        specifier: ^14.2.0
         version: 14.2.35(eslint@8.57.1)(typescript@5.9.3)
       postcss:
-        specifier: ^8.4.33
+        specifier: ^8.5.0
         version: 8.5.8
       tailwindcss:
-        specifier: ^3.4.1
+        specifier: ^3.4.17
         version: 3.4.19
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   infra/database:
@@ -248,7 +253,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       pg:
-        specifier: ^8.11.3
+        specifier: ^8.13.0
         version: 8.20.0
       uuid:
         specifier: ^9.0.1
@@ -261,16 +266,16 @@ importers:
         specifier: ^8.10.132
         version: 8.10.161
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
       '@types/uuid':
-        specifier: ^9.0.7
+        specifier: ^9.0.8
         version: 9.0.8
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   services/identity-service:
@@ -291,7 +296,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       pg:
-        specifier: ^8.11.3
+        specifier: ^8.13.0
         version: 8.20.0
       uuid:
         specifier: ^9.0.1
@@ -304,16 +309,16 @@ importers:
         specifier: ^8.10.132
         version: 8.10.161
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
       '@types/uuid':
-        specifier: ^9.0.7
+        specifier: ^9.0.8
         version: 9.0.8
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   services/licensing-service:
@@ -334,7 +339,7 @@ importers:
         specifier: ^1.0.7
         version: 1.0.7
       pg:
-        specifier: ^8.11.3
+        specifier: ^8.13.0
         version: 8.20.0
       uuid:
         specifier: ^9.0.1
@@ -347,16 +352,16 @@ importers:
         specifier: ^8.10.132
         version: 8.10.161
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@types/pg':
         specifier: ^8.11.0
         version: 8.20.0
       '@types/uuid':
-        specifier: ^9.0.7
+        specifier: ^9.0.8
         version: 9.0.8
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   shared/middleware:
@@ -381,19 +386,19 @@ importers:
         specifier: ^9.0.5
         version: 9.0.10
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   shared/types:
     devDependencies:
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
   shared/utils:
@@ -409,13 +414,13 @@ importers:
         version: 9.0.1
     devDependencies:
       '@types/node':
-        specifier: ^20.11.0
+        specifier: ^20.19.0
         version: 20.19.37
       '@types/uuid':
-        specifier: ^9.0.7
+        specifier: ^9.0.8
         version: 9.0.8
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.8.0
         version: 5.9.3
 
 packages:
@@ -3064,10 +3069,10 @@ packages:
       '@rollup/pluginutils': 5.3.0(rollup@4.60.0)
       commondir: 1.0.1
       estree-walker: 2.0.2
-      fdir: 6.5.0(picomatch@4.0.3)
+      fdir: 6.5.0(picomatch@4.0.4)
       is-reference: 1.2.1
       magic-string: 0.30.21
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       rollup: 4.60.0
     dev: false
 
@@ -3082,7 +3087,7 @@ packages:
     dependencies:
       '@types/estree': 1.0.8
       estree-walker: 2.0.2
-      picomatch: 4.0.3
+      picomatch: 4.0.4
       rollup: 4.60.0
     dev: false
 
@@ -4827,7 +4832,7 @@ packages:
     engines: {node: '>= 8'}
     dependencies:
       normalize-path: 3.0.0
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   /arg@4.1.3:
     resolution: {integrity: sha512-58S9QDqG0Xx27YwPSt9fJxivjYl432YCwfDMfZ+71RAqUrZef7LrKQZ3LHLOwCS4FLNBplP533Zx895SeOCHvA==}
@@ -5313,8 +5318,9 @@ packages:
       internmap: 1.0.1
     dev: false
 
-  /d3-color@2.0.0:
-    resolution: {integrity: sha512-SPXi0TSKPD4g9tw0NMZFnR95XVgUZiBH+uUTqQuDu1OsE2zomHU7ho0FISciaPvosimixwHFl3WHLGabv6dDgQ==}
+  /d3-color@3.1.0:
+    resolution: {integrity: sha512-zg/chbXyeBtMQ1LbD/WSoW2DpC3I0mpmPdW+ynRTj/x2DAWYrIY7qeZIHidozwV24m4iavr15lNwIwLxRmOxhA==}
+    engines: {node: '>=12'}
     dev: false
 
   /d3-dispatch@2.0.0:
@@ -5341,7 +5347,7 @@ packages:
   /d3-interpolate@2.0.1:
     resolution: {integrity: sha512-c5UhwwTs/yybcmTpAVqwSFl6vrQ8JZJoT5F7xNFK9pymv5C0Ymcc9/LIJHtYIggg/yS9YHw8i8O8tgb9pupjeQ==}
     dependencies:
-      d3-color: 2.0.0
+      d3-color: 3.1.0
     dev: false
 
   /d3-selection@2.0.0:
@@ -5357,7 +5363,7 @@ packages:
     peerDependencies:
       d3-selection: '2'
     dependencies:
-      d3-color: 2.0.0
+      d3-color: 3.1.0
       d3-dispatch: 2.0.0
       d3-ease: 2.0.0
       d3-interpolate: 2.0.1
@@ -6091,16 +6097,16 @@ packages:
     dependencies:
       reusify: 1.1.0
 
-  /fdir@6.5.0(picomatch@4.0.3):
+  /fdir@6.5.0(picomatch@4.0.4):
     resolution: {integrity: sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==}
     engines: {node: '>=12.0.0'}
     peerDependencies:
-      picomatch: ^3 || ^4
+      picomatch: 4.0.4
     peerDependenciesMeta:
       picomatch:
         optional: true
     dependencies:
-      picomatch: 4.0.3
+      picomatch: 4.0.4
 
   /file-entry-cache@6.0.1:
     resolution: {integrity: sha512-7Gps/XWymbLk2QLYK4NzpMOrYjMhdIxXuIvy2QBsLE6ljuodKvdkWs/cpyJJ3CVIVpH0Oi1Hvg1ovbMzLdFBBg==}
@@ -7077,8 +7083,8 @@ packages:
       lodash.clonedeep: 4.5.0
       lru-cache: 11.2.7
 
-  /lucide-react@1.6.0(react@18.3.1):
-    resolution: {integrity: sha512-YxLKVCOF5ZDI1AhKQE5IBYMY9y/Nr4NT15+7QEWpsTSVCdn4vmZhww+6BP76jWYjQx8rSz1Z+gGme1f+UycWEw==}
+  /lucide-react@1.7.0(react@18.3.1):
+    resolution: {integrity: sha512-yI7BeItCLZJTXikmK4KNUGCKoGzSvbKlfCvw44bU4fXAL6v3gYS4uHD1jzsLkfwODYwI6Drw5Tu9Z5ulDe0TSg==}
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
     dependencies:
@@ -7546,7 +7552,7 @@ packages:
     engines: {node: '>=8.6'}
     dependencies:
       braces: 3.0.3
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   /mime-db@1.52.0:
     resolution: {integrity: sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==}
@@ -7943,12 +7949,12 @@ packages:
   /picocolors@1.1.1:
     resolution: {integrity: sha512-xceH2snhtb5M9liqDsmEw56le376mTZkEX/jEb/RxNFyegNul7eNslCXP9FDj/Lcu0X8KEyMceP2ntpaHrDEVA==}
 
-  /picomatch@2.3.1:
-    resolution: {integrity: sha512-JU3teHTNjmE2VCGFzuY8EXzCDVwEqB2a8fsIvwaStHhAWJEeVd1o1QD80CU6+ZdEXXSLbSsuLwJjkCBWqRQUVA==}
+  /picomatch@2.3.2:
+    resolution: {integrity: sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==}
     engines: {node: '>=8.6'}
 
-  /picomatch@4.0.3:
-    resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
+  /picomatch@4.0.4:
+    resolution: {integrity: sha512-QP88BAKvMam/3NxH6vj2o21R6MjxZUAd6nlwAS/pnGvN9IVLocLHxGYIzFhg6fUQ+5th6P4dv4eW9jX3DSIj7A==}
     engines: {node: '>=12'}
 
   /pify@2.3.0:
@@ -8246,7 +8252,7 @@ packages:
     resolution: {integrity: sha512-hOS089on8RduqdbhvQ5Z37A0ESjsqz6qnRcffsMU3495FuTdqSm+7bhJ29JvIOsBDEEnan5DPu9t3To9VRlMzA==}
     engines: {node: '>=8.10.0'}
     dependencies:
-      picomatch: 2.3.1
+      picomatch: 2.3.2
 
   /reflect.getprototypeof@1.0.10:
     resolution: {integrity: sha512-00o4I+DVrefhv+nX0ulyi3biSHCPDe+yLv5o/p6d/UVlirijB8E16FtfwSAi4g3tcqrQ4lRAqQSoFEZJehYEcw==}
@@ -8966,8 +8972,8 @@ packages:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
     engines: {node: '>=12.0.0'}
     dependencies:
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
 
   /to-regex-range@5.0.1:
     resolution: {integrity: sha512-65P7iz6X5yEr1cwcgvQxbbIw7Uk3gOy5dIdtZ4rDveLqhrdJP+Li/Hx6tyK0NEb+2GCyneCMJiGqrADCSNk8sQ==}
