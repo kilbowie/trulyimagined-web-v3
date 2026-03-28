@@ -73,7 +73,7 @@ export async function GET(_request: NextRequest) {
         [profile.id]
       );
       counts.openSupportTickets = parseInt(openTicketsResult.rows[0].count) || 0;
-      
+
       // For the red notification, consider any open tickets
       const urgentTicketsResult = await query(
         `SELECT COUNT(*) as count 

@@ -50,7 +50,7 @@ const pool = new Pool(
 export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
   const start = Date.now();
   let client;
-  
+
   try {
     client = await pool.connect();
     const result = await client.query(text, params);

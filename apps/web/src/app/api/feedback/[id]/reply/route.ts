@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
-import { sendSupportTicketResponseEmail } from '@/lib/email';
+import { sendFeedbackResponseEmail } from '@/lib/email';
 
 /**
  * POST /api/feedback/[id]/reply
@@ -34,17 +34,15 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     // Validate UUID
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(feedbackId)) {
       return NextResponse.json({ error: 'Invalid feedback ID' }, { status: 400 });
     }
 
     // Get feedback details
-    const feedbackResult = await query(
-      'SELECT * FROM user_feedback_with_details WHERE id = $1',
-      [feedbackId]
-    );
+    const feedbackResult = await query('SELECT * FROM user_feedback_with_details WHERE id = $1', [
+      feedbackId,
+    ]);
 
     if (feedbackResult.rows.length === 0) {
       return NextResponse.json({ error: 'Feedback not found' }, { status: 404 });
@@ -94,14 +92,12 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     // Mark feedback as read
     await query('UPDATE user_feedback SET is_read = true WHERE id = $1', [feedbackId]);
 
-    // Send email notification to user
+    // Send email notification to user (no admin notification for feedback replies)
     try {
-      await sendSupportTicketResponseEmail(
+      await sendFeedbackResponseEmail(
         feedback.user_email,
         feedback.user_username || feedback.user_professional_name || 'User',
-        ticket.ticket_number.toString(),
-        ticketSubject,
-        message.trim()
+        feedback.topic
       );
     } catch (emailError) {
       console.error('[FEEDBACK_REPLY_EMAIL_ERROR]', emailError);

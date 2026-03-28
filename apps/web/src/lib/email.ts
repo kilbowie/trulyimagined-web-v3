@@ -363,6 +363,52 @@ export async function sendSupportTicketResponseEmail(
 }
 
 /**
+ * Response to user feedback notification (sent to user when admin replies)
+ */
+export async function sendFeedbackResponseEmail(
+  userEmail: string,
+  userName: string,
+  feedbackTopic: string
+) {
+  const subject = `💬 Response to Your Feedback`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; }
+        .highlight { background: #f9fafb; padding: 20px; border-left: 4px solid #4F46E5; margin: 20px 0; border-radius: 4px; }
+        .button { display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>💬 A Response to Your Feedback is Waiting</h2>
+        <p>Hi ${userName},</p>
+        <p>Thank you for your feedback about <strong>"${feedbackTopic}"</strong>.</p>
+        
+        <div class="highlight">
+          <p><strong>Our team has responded to your feedback and created a support ticket so we can continue the conversation.</strong></p>
+        </div>
+
+        <center>
+          <a href="${APP_URL}/dashboard/support" class="button">View Response in Dashboard →</a>
+        </center>
+
+        <p>You can view the full response and reply directly from your support dashboard.</p>
+        <p>Best regards,<br>Support Team</p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  return await sendEmail({ to: userEmail, subject, html });
+}
+
+/**
  * User feedback notification (to admins)
  */
 export async function sendFeedbackNotificationEmail(

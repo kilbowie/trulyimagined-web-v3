@@ -25,8 +25,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { is_read, admin_notes } = body;
 
     // Validate UUID
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     if (!uuidRegex.test(feedbackId)) {
       return NextResponse.json({ error: 'Invalid feedback ID' }, { status: 400 });
     }

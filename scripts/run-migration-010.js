@@ -34,7 +34,10 @@ async function runMigration() {
     console.log('🔄 Running migration 010: Link Feedback to Support Tickets...\n');
 
     // Read migration SQL
-    const sql = fs.readFileSync('infra/database/migrations/010_feedback_support_linkage.sql', 'utf8');
+    const sql = fs.readFileSync(
+      'infra/database/migrations/010_feedback_support_linkage.sql',
+      'utf8'
+    );
 
     // Execute migration
     await client.query(sql);
@@ -42,7 +45,6 @@ async function runMigration() {
     console.log('✅ Migration 010 completed successfully!');
     console.log('   - Added feedback_id column to support_tickets table');
     console.log('   - Created index on feedback_id column');
-
   } catch (error) {
     console.error('❌ Migration failed:', error);
     throw error;

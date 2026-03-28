@@ -21,7 +21,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Angry, Frown, Meh, Smile, Heart, Search, Filter, Mail, Check, Loader2 } from 'lucide-react';
+import {
+  Angry,
+  Frown,
+  Meh,
+  Smile,
+  Heart,
+  Search,
+  Filter,
+  Mail,
+  Check,
+  Loader2,
+} from 'lucide-react';
 
 interface FeedbackItem {
   id: string;
@@ -449,7 +460,7 @@ export default function FeedbackDashboard() {
                   <div className="prose prose-sm max-w-none">
                     <p className="whitespace-pre-wrap text-sm">{item.feedback_text}</p>
                   </div>
-                  
+
                   {/* Action Buttons */}
                   <div className="flex gap-2 mt-4 pt-4 border-t">
                     {!item.is_read && (
@@ -517,7 +528,8 @@ export default function FeedbackDashboard() {
                   disabled={replySubmitting}
                 />
                 <p className="text-xs text-muted-foreground">
-                  This will create a support ticket titled: &quot;Feedback - {selectedFeedback.topic} -{' '}
+                  This will create a support ticket titled: &quot;Feedback -{' '}
+                  {selectedFeedback.topic} -{' '}
                   {new Date(selectedFeedback.created_at).toLocaleDateString()}&quot;
                 </p>
               </div>
@@ -543,7 +555,10 @@ export default function FeedbackDashboard() {
             >
               Cancel
             </Button>
-            <Button onClick={handleSubmitReply} disabled={replySubmitting || replyMessage.trim().length < 10}>
+            <Button
+              onClick={handleSubmitReply}
+              disabled={replySubmitting || replyMessage.trim().length < 10}
+            >
               {replySubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {replySubmitting ? 'Sending...' : 'Send Reply'}
             </Button>

@@ -80,6 +80,7 @@ export default function TicketDetailPage() {
   const [sending, setSending] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
@@ -125,6 +126,7 @@ export default function TicketDetailPage() {
       if (data.success) {
         setTicket(data.ticket);
         setIsAdmin(data.isAdmin || false);
+        setCurrentUserId(data.currentUserId || null);
       } else {
         setError(data.error || 'Failed to load ticket');
       }
@@ -483,46 +485,49 @@ export default function TicketDetailPage() {
         </CardHeader>
         <CardContent className="relative">
           <div className="space-y-4 max-h-[500px] overflow-y-auto pr-4">
-            {ticket.messages.map((message, index) => (
-              <div key={message.id}>
-                {index > 0 && <Separator className="my-4" />}
-                <div className="flex gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback
-                      className={message.is_internal_note ? 'bg-yellow-100' : 'bg-slate-100'}
-                    >
-                      {getInitials(message.user_email, message.user_username)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm">
-                        {message.user_username || message.user_email}
-                      </span>
-                      {message.is_internal_note && (
-                        <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
-                          Internal Note
-                        </Badge>
-                      )}
-                      <span className="text-xs text-muted-foreground">
-                        {formatTimestamp(message.created_at)}
-                      </span>
-                    </div>
-                    <div className="text-sm prose prose-sm max-w-none dark:prose-invert">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.message}</ReactMarkdown>
+            {ticket.messages.map((message, index) => {
+              const isCurrentUser = currentUserId && message.user_id === currentUserId;
+              return (
+                <div key={message.id}>
+                  {index > 0 && <Separator className="my-4" />}
+                  <div className={`flex gap-3 ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback
+                        className={message.is_internal_note ? 'bg-yellow-100' : 'bg-slate-100'}
+                      >
+                        {getInitials(message.user_email, message.user_username)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`flex-1 space-y-1 ${isCurrentUser ? 'text-right' : ''}`}>
+                      <div className={`flex items-center gap-2 ${isCurrentUser ? 'flex-row-reverse justify-start' : ''}`}>
+                        <span className="font-medium text-sm">
+                          {message.user_username || message.user_email}
+                        </span>
+                        {message.is_internal_note && (
+                          <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
+                            Internal Note
+                          </Badge>
+                        )}
+                        <span className="text-xs text-muted-foreground">
+                          {formatTimestamp(message.created_at)}
+                        </span>
+                      </div>
+                      <div className={`text-sm prose prose-sm max-w-none dark:prose-invert ${isCurrentUser ? 'ml-auto' : ''}`}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.message}</ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Reply Form */}
           {ticket.status !== 'closed' && (
             <>
-              <Separator className="my-6" />
-              <div className="space-y-3">
+              <Separator className="my-8" />
+              <div className="space-y-3 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800">
                 {/* Text Formatting Toolbar */}
                 <div className="flex items-center gap-1 border-b pb-2">
                   <Button

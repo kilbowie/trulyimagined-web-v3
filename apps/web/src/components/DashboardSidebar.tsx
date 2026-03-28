@@ -369,8 +369,8 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                               <Icon className="h-4 w-4" />
                               <span className="flex-1">{item.title}</span>
                               {item.badge > 0 && (
-                                <Badge 
-                                  variant="destructive" 
+                                <Badge
+                                  variant="destructive"
                                   className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
                                 >
                                   {item.badge > 99 ? '99+' : item.badge}
@@ -445,7 +445,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
           <Headphones className="h-4 w-4" />
           <span className="flex-1">Support</span>
           {notificationCounts.unreadSupport > 0 && (
-            <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+            <div className="absolute top-1/2 -translate-y-1/2 right-2 h-3 w-3 rounded-full bg-red-500 animate-pulse" />
           )}
         </Link>
       </div>
@@ -633,7 +633,11 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               className="bg-primary hover:bg-primary/90"
             >
               {feedbackSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {feedbackSuccess ? 'Submitted!' : feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
+              {feedbackSuccess
+                ? 'Submitted!'
+                : feedbackSubmitting
+                  ? 'Submitting...'
+                  : 'Submit Feedback'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -70,6 +70,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         messages: messagesResult.rows,
       },
       isAdmin,
+      currentUserId: profileId,
     });
   } catch (error) {
     console.error('[SUPPORT_TICKET_GET_ERROR]', error);
