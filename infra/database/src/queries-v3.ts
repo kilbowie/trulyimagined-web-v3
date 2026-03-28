@@ -376,6 +376,84 @@ export const queries = {
       RETURNING *;
     `,
   },
+
+  // ===========================================
+  // USER FEEDBACK
+  // ===========================================
+
+  feedback: {
+    create: `
+      INSERT INTO user_feedback (
+        user_id, topic, feedback_text, sentiment
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING *;
+    `,
+
+    getById: `
+      SELECT * FROM user_feedback_with_details 
+      WHERE id = $1;
+    `,
+
+    getAll: `
+      SELECT * FROM user_feedback_with_details
+      ORDER BY created_at DESC
+      LIMIT $1 OFFSET $2;
+    `,
+
+    getByFilters: `
+      SELECT * FROM user_feedback_with_details
+      WHERE 
+        ($1::varchar IS NULL OR topic = $1)
+        AND ($2::varchar IS NULL OR sentiment = $2)
+        AND ($3::boolean IS NULL OR is_read = $3)
+      ORDER BY created_at DESC
+      LIMIT $4 OFFSET $5;
+    `,
+
+    getByUser: `
+      SELECT * FROM user_feedback
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT $2 OFFSET $3;
+    `,
+
+    markAsRead: `
+      UPDATE user_feedback
+      SET is_read = TRUE
+      WHERE id = $1
+      RETURNING *;
+    `,
+
+    updateAdminNotes: `
+      UPDATE user_feedback
+      SET admin_notes = $2
+      WHERE id = $1
+      RETURNING *;
+    `,
+
+    getStats: `
+      SELECT 
+        COUNT(*) as total_feedback,
+        COUNT(*) FILTER (WHERE is_read = FALSE) as unread_count,
+        COUNT(DISTINCT user_id) as unique_users,
+        COUNT(*) FILTER (WHERE sentiment = 'angry') as angry_count,
+        COUNT(*) FILTER (WHERE sentiment = 'sad') as sad_count,
+        COUNT(*) FILTER (WHERE sentiment = 'neutral') as neutral_count,
+        COUNT(*) FILTER (WHERE sentiment = 'happy') as happy_count,
+        COUNT(*) FILTER (WHERE sentiment = 'love') as love_count
+      FROM user_feedback;
+    `,
+
+    getTopicBreakdown: `
+      SELECT 
+        topic,
+        COUNT(*) as count,
+        COUNT(*) FILTER (WHERE is_read = FALSE) as unread_count
+      FROM user_feedback
+      GROUP BY topic
+      ORDER BY count DESC;
+    `,
+  },
 };
 
 export default queries;

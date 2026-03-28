@@ -96,16 +96,35 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   ];
 
   const handleSubmitFeedback = async () => {
-    // TODO: Implement feedback submission
-    console.log('Feedback submitted:', {
-      topic: feedbackTopic,
-      text: feedbackText,
-      emoji: selectedEmoji,
-    });
-    // Reset and close
-    setFeedbackText('');
-    setSelectedEmoji(null);
-    setFeedbackDialogOpen(false);
+    try {
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          topic: feedbackTopic,
+          text: feedbackText,
+          emoji: selectedEmoji,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit feedback');
+      }
+
+      // Reset and close
+      setFeedbackText('');
+      setSelectedEmoji(null);
+      setFeedbackDialogOpen(false);
+
+      // Optional: Show success message
+      console.log('Feedback submitted successfully!');
+    } catch (error) {
+      console.error('[FEEDBACK_SUBMIT_ERROR]', error);
+      // Optional: Show error message to user
+      alert('Failed to submit feedback. Please try again.');
+    }
   };
 
   // Standalone navigation items
@@ -186,6 +205,18 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         },
       ],
     },
+    {
+      groupTitle: 'Admin',
+      show: hasAdminRole,
+      items: [
+        {
+          title: 'User Feedback',
+          href: '/dashboard/admin/feedback',
+          icon: MessageCircle,
+          show: hasAdminRole,
+        },
+      ],
+    },
   ];
 
   const documentItems = [
@@ -201,13 +232,6 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       href: '/dashboard/enterprise',
       icon: Building,
       show: hasEnterpriseRole,
-      comingSoon: true,
-    },
-    {
-      title: 'Admin Panel',
-      href: '/dashboard/admin',
-      icon: Wrench,
-      show: hasAdminRole,
       comingSoon: true,
     },
   ];
@@ -551,9 +575,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 <p className="font-medium">Light</p>
                 <p className="text-xs text-slate-400">Bright and clear interface</p>
               </div>
-              {theme === 'light' && (
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-              )}
+              {theme === 'light' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>
 
             <button
@@ -573,9 +595,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 <p className="font-medium">Dark</p>
                 <p className="text-xs text-slate-400">Easy on the eyes</p>
               </div>
-              {theme === 'dark' && (
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-              )}
+              {theme === 'dark' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>
 
             <button
@@ -595,9 +615,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 <p className="font-medium">System</p>
                 <p className="text-xs text-slate-400">Match your device settings</p>
               </div>
-              {theme === 'system' && (
-                <div className="h-2 w-2 rounded-full bg-blue-500" />
-              )}
+              {theme === 'system' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>
           </div>
         </DialogContent>

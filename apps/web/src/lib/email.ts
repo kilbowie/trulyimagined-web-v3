@@ -362,4 +362,75 @@ export async function sendSupportTicketResponseEmail(
   return await sendEmail({ to: userEmail, subject, html });
 }
 
+/**
+ * User feedback notification (to admins)
+ */
+export async function sendFeedbackNotificationEmail(
+  userEmail: string,
+  userName: string,
+  topic: string,
+  feedbackText: string,
+  sentiment: string | null
+) {
+  const sentimentEmoji = {
+    angry: '😠',
+    sad: '☹️',
+    neutral: '😐',
+    happy: '😊',
+    love: '❤️',
+  }[sentiment || 'neutral'] || '💭';
+
+  const emailSubject = `${sentimentEmoji} New User Feedback: ${topic}`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; background: white; }
+        .sentiment { display: inline-block; padding: 6px 14px; border-radius: 6px; font-weight: 600; font-size: 14px; margin: 8px 0; }
+        .sentiment-angry { background: #fee2e2; color: #b91c1c; }
+        .sentiment-sad { background: #fed7aa; color: #c2410c; }
+        .sentiment-neutral { background: #fef3c7; color: #92400e; }
+        .sentiment-happy { background: #d1fae5; color: #065f46; }
+        .sentiment-love { background: #fce7f3; color: #be185d; }
+        .topic-badge { display: inline-block; padding: 4px 12px; background: #e0e7ff; color: #3730a3; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        .feedback-box { background: #f9fafb; padding: 20px; border-left: 4px solid #4F46E5; margin: 20px 0; border-radius: 4px; white-space: pre-wrap; }
+        .button { display: inline-block; padding: 12px 24px; background: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 16px 0; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h2>💬 New User Feedback</h2>
+        <p><strong>From:</strong> ${userName} (${userEmail})</p>
+        <p><strong>Topic:</strong> <span class="topic-badge">${topic}</span></p>
+        ${sentiment ? `<p><strong>Sentiment:</strong> <span class="sentiment sentiment-${sentiment}">${sentimentEmoji} ${sentiment.charAt(0).toUpperCase() + sentiment.slice(1)}</span></p>` : ''}
+        
+        <h3>Feedback:</h3>
+        <div class="feedback-box">${feedbackText}</div>
+
+        <center>
+          <a href="${APP_URL}/dashboard/admin/feedback" class="button">View All Feedback →</a>
+        </center>
+
+        <p style="color: #6b7280; font-size: 13px; margin-top: 24px;">
+          This feedback was submitted through the dashboard feedback form.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const adminEmails = process.env.ADMIN_EMAILS?.split(',') || ['admin@trulyimagined.com'];
+
+  return await sendEmail({
+    to: adminEmails,
+    subject: emailSubject,
+    html,
+    replyTo: userEmail,
+  });
+}
+
 export { sendEmail };
