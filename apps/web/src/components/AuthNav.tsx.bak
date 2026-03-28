@@ -37,18 +37,7 @@ export default function AuthNav() {
 
   if (isLoading) {
     return (
-      <nav className="flex items-center gap-4">
-        <Button variant="ghost" disabled>
-          <Loader2 className="h-4 w-4 animate-spin" />
-        </Button>
-      </nav>
-    );
-  }
-
-  if (!user) {
-    return (
-      <nav className="flex items-center gap-3">
-        {/* Theme Toggle */}
+      <n{/* Theme Toggle */}
         {mounted && (
           <Button
             variant="ghost"
@@ -64,6 +53,17 @@ export default function AuthNav() {
             <span className="sr-only">Toggle theme</span>
           </Button>
         )}
+        av className="flex items-center gap-4">
+        <Button variant="ghost" disabled>
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </Button>
+      </nav>
+    );
+  }
+
+  if (!user) {
+    return (
+      <nav className="flex items-center gap-3">
         <Button
           variant="ghost"
           asChild
@@ -74,23 +74,7 @@ export default function AuthNav() {
         <Button asChild>
           <Link href="/auth/login">Get Started</Link>
         </Button>
-      </nav>
-    );
-  }
-
-  const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
-  const initials = user.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-        .slice(0, 2)
-    : user.email?.charAt(0).toUpperCase() || 'U';
-
-  return (
-    <nav className="flex items-center gap-4">
-      {/* Theme Toggle */}
+      </naTheme Toggle */}
       {mounted && (
         <Button
           variant="ghost"
@@ -107,6 +91,22 @@ export default function AuthNav() {
         </Button>
       )}
 
+      {/* v>
+    );
+  }
+
+  const roles = (user['https://trulyimagined.com/roles'] as string[]) || [];
+  const initials = user.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2)
+    : user.email?.charAt(0).toUpperCase() || 'U';
+
+  return (
+    <nav className="flex items-center gap-4">
       {/* Dashboard Link - Desktop */}
       <Button
         variant="ghost"

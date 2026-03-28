@@ -44,7 +44,7 @@ export default async function Home() {
 
       <main className="min-h-screen">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 px-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
+        <section className="relative pt-32 pb-20 px-6 bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="max-w-6xl mx-auto">
             <div className="text-center space-y-8">
               {/* Badge */}
@@ -103,7 +103,7 @@ export default async function Home() {
         </section>
 
         {/* Value Proposition */}
-        <section className="py-20 px-6 bg-white">
+        <section className="py-20 px-6 bg-white dark:bg-slate-950">
           <div className="max-w-6xl mx-auto text-center space-y-6">
             <h2 className="text-3xl md:text-4xl font-bold">
               We Are Not an AI Tool. We Are{' '}
@@ -118,7 +118,7 @@ export default async function Home() {
         </section>
 
         {/* How It Works - Combined with Infrastructure */}
-        <section className="py-20 px-6 bg-slate-50">
+        <section className="py-20 px-6 bg-slate-50 dark:bg-slate-900">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
@@ -280,7 +280,7 @@ export default async function Home() {
         </section>
 
         {/* Final CTA */}
-        <section className="py-20 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+        <section className="py-20 px-6 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent dark:from-primary/20 dark:via-primary/10">
           <div className="max-w-4xl mx-auto text-center space-y-8">
             <h2 className="text-3xl md:text-4xl font-bold">
               Ready to Control Your Digital Identity?
@@ -325,7 +325,7 @@ export default async function Home() {
         </section>
 
         {/* Footer */}
-        <footer className="py-8 px-6 border-t border-gray-200 bg-white">
+        <footer className="py-8 px-6 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950">
           <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
             <p>Registry • Compliance • Auditability</p>
             <p className="mt-2">

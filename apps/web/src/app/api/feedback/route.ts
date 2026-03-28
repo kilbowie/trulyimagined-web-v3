@@ -110,7 +110,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (text.length > 5000) {
-      return NextResponse.json({ error: 'Feedback must be less than 5000 characters' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Feedback must be less than 5000 characters' },
+        { status: 400 }
+      );
     }
 
     const validTopics = [
@@ -134,9 +137,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get user's profile ID
-    const profileResult = await query('SELECT id, username, email FROM user_profiles WHERE auth0_user_id = $1', [
-      user.sub,
-    ]);
+    const profileResult = await query(
+      'SELECT id, username, email FROM user_profiles WHERE auth0_user_id = $1',
+      [user.sub]
+    );
 
     if (profileResult.rows.length === 0) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });

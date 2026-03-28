@@ -1,21 +1,34 @@
 /**
  * Run Database Migration 009 - User Feedback
- * 
+ *
  * This script runs the user feedback migration.
  */
+
+// Load environment variables from .env.local
+require('dotenv').config({ path: require('path').join(__dirname, '../apps/web/.env.local') });
 
 const { Client } = require('pg');
 const fs = require('fs').promises;
 const path = require('path');
 
 async function runMigration() {
+  // Parse DATABASE_URL to get connection details  
+  let connectionString = process.env.DATABASE_URL;
+  
+  if (!connectionString) {
+    throw new Error('DATABASE_URL environment variable is not set');
+  }
+
+  // Remove sslmode parameter if present to avoid conflicts
+  if (connectionString.includes('?sslmode=')) {
+    connectionString = connectionString.replace(/\?sslmode=\w+/, '');
+  }
+
   const client = new Client({
-    host: process.env.PGHOST,
-    port: process.env.PGPORT || 5432,
-    database: process.env.PGDATABASE,
-    user: process.env.PGUSER,
-    password: process.env.PGPASSWORD,
-    ssl: process.env.PGSSLMODE === 'require' ? { rejectUnauthorized: false } : undefined,
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false, // Required for AWS RDS self-signed certificates
+    },
   });
 
   try {
@@ -24,7 +37,10 @@ async function runMigration() {
     console.log('✅ Connected successfully\n');
 
     // Read migration file
-    const migrationPath = path.join(__dirname, '../infra/database/migrations/009_user_feedback.sql');
+    const migrationPath = path.join(
+      __dirname,
+      '../infra/database/migrations/009_user_feedback.sql'
+    );
     console.log(`📖 Reading migration: ${migrationPath}`);
     const sql = await fs.readFile(migrationPath, 'utf8');
 
@@ -61,7 +77,6 @@ async function runMigration() {
     views.rows.forEach((row) => {
       console.log(`  ✓ ${row.table_name}`);
     });
-
   } catch (error) {
     console.error('❌ Migration failed:', error);
     throw error;

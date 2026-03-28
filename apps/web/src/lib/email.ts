@@ -372,13 +372,14 @@ export async function sendFeedbackNotificationEmail(
   feedbackText: string,
   sentiment: string | null
 ) {
-  const sentimentEmoji = {
-    angry: '😠',
-    sad: '☹️',
-    neutral: '😐',
-    happy: '😊',
-    love: '❤️',
-  }[sentiment || 'neutral'] || '💭';
+  const sentimentEmoji =
+    {
+      angry: '😠',
+      sad: '☹️',
+      neutral: '😐',
+      happy: '😊',
+      love: '❤️',
+    }[sentiment || 'neutral'] || '💭';
 
   const emailSubject = `${sentimentEmoji} New User Feedback: ${topic}`;
 

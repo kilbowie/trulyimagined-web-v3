@@ -49,7 +49,7 @@ export default function FeedbackDashboard() {
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [topicBreakdown, setTopicBreakdown] = useState<TopicBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Filters
   const [selectedTopic, setSelectedTopic] = useState<string>('all');
   const [selectedSentiment, setSelectedSentiment] = useState<string>('all');
@@ -68,14 +68,14 @@ export default function FeedbackDashboard() {
     try {
       setLoading(true);
       const params = new URLSearchParams();
-      
+
       if (selectedTopic !== 'all') params.append('topic', selectedTopic);
       if (selectedSentiment !== 'all') params.append('sentiment', selectedSentiment);
       if (unreadOnly) params.append('unread', 'true');
-      
+
       const response = await fetch(`/api/feedback?${params}`);
       const data = await response.json();
-      
+
       if (data.success) {
         setFeedback(data.feedback);
         setStats(data.stats);
@@ -228,7 +228,7 @@ export default function FeedbackDashboard() {
               {Object.entries(sentimentIcons).map(([key, { icon: Icon, color, bg, label }]) => {
                 const count = stats[`${key}_count` as keyof FeedbackStats] as number;
                 const percentage = String(getSentimentPercentage(count));
-                
+
                 return (
                   <div key={key} className="flex items-center gap-3">
                     <div className={`p-2 rounded-lg ${bg}`}>

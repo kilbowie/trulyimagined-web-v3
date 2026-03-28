@@ -20,9 +20,7 @@ export default async function AdminFeedbackPage() {
     return (
       <div className="max-w-2xl mx-auto mt-12">
         <div className="p-8 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-muted-foreground">
-            Admin role required to view user feedback.
-          </p>
+          <p className="text-muted-foreground">Admin role required to view user feedback.</p>
         </div>
       </div>
     );

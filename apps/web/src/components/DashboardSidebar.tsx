@@ -78,6 +78,8 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const [feedbackText, setFeedbackText] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
 
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
@@ -96,6 +98,26 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   ];
 
   const handleSubmitFeedback = async () => {
+    // Reset states
+    setFeedbackError(null);
+    setFeedbackSuccess(false);
+
+    // Validation
+    if (!feedbackText.trim()) {
+      setFeedbackError('Please enter your feedback');
+      return;
+    }
+
+    if (feedbackText.trim().length < 10) {
+      setFeedbackError('Feedback must be at least 10 characters');
+      return;
+    }
+
+    if (feedbackText.length > 5000) {
+      setFeedbackError('Feedback must be less than 5000 characters');
+      return;
+    }
+
     try {
       const response = await fetch('/api/feedback', {
         method: 'POST',
@@ -104,26 +126,33 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         },
         body: JSON.stringify({
           topic: feedbackTopic,
-          text: feedbackText,
+          text: feedbackText.trim(),
           emoji: selectedEmoji,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to submit feedback');
+        throw new Error(data.error || 'Failed to submit feedback');
       }
 
-      // Reset and close
-      setFeedbackText('');
-      setSelectedEmoji(null);
-      setFeedbackDialogOpen(false);
+      // Show success message
+      setFeedbackSuccess(true);
 
-      // Optional: Show success message
-      console.log('Feedback submitted successfully!');
+      // Reset form after a delay
+      setTimeout(() => {
+        setFeedbackText('');
+        setSelectedEmoji(null);
+        setFeedbackTopic('General');
+        setFeedbackSuccess(false);
+        setFeedbackDialogOpen(false);
+      }, 2000);
     } catch (error) {
       console.error('[FEEDBACK_SUBMIT_ERROR]', error);
-      // Optional: Show error message to user
-      alert('Failed to submit feedback. Please try again.');
+      setFeedbackError(
+        error instanceof Error ? error.message : 'Failed to submit feedback. Please try again.'
+      );
     }
   };
 
@@ -526,19 +555,43 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 ))}
               </div>
             </div>
+
+            {/* Error Message */}
+            {feedbackError && (
+              <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+                <p className="text-sm text-red-400">{feedbackError}</p>
+              </div>
+            )}
+
+            {/* Success Message */}
+            {feedbackSuccess && (
+              <div className="rounded-lg bg-green-500/10 border border-green-500/20 p-3">
+                <p className="text-sm text-green-400">
+                  ✓ Feedback submitted successfully! Thank you.
+                </p>
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setFeedbackDialogOpen(false)}
+              onClick={() => {
+                setFeedbackDialogOpen(false);
+                setFeedbackError(null);
+                setFeedbackSuccess(false);
+              }}
               className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmitFeedback}
-              disabled={!feedbackText.trim()}
+              disabled={feedbackSuccess || !feedbackText.trim()}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {feedbackSuccess ? 'Submitted!' : 'Submit Feedback'}
+            </Button>
               className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Submit Feedback
