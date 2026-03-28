@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
   Shield,
@@ -29,6 +30,8 @@ import {
   Meh,
   Heart,
   ThumbsUp,
+  MoreVertical,
+  Angry,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -69,10 +72,12 @@ interface SidebarProps {
 
 export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const pathname = usePathname();
+  const { theme, setTheme } = useTheme();
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [feedbackTopic, setFeedbackTopic] = useState('General');
   const [feedbackText, setFeedbackText] = useState('');
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const [themeDialogOpen, setThemeDialogOpen] = useState(false);
 
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
@@ -355,7 +360,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       <div className="border-t border-slate-800 p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700">
+            <button className="group flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800">
                 <UserCircle className="h-5 w-5 text-slate-400" />
               </div>
@@ -365,6 +370,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                   {roles.length > 0 ? roles.join(', ') : 'No roles'}
                 </p>
               </div>
+              <MoreVertical className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -382,7 +388,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 <span>Account</span>
               </Link>
             </DropdownMenuItem>
-            
+
             <DropdownMenuItem
               onClick={() => setFeedbackDialogOpen(true)}
               className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
@@ -391,15 +397,12 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               <span>Feedback</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800">
-              <div className="flex items-center gap-2 flex-1">
-                <Monitor className="h-4 w-4" />
-                <span>Theme</span>
-              </div>
-              <div className="flex gap-1">
-                <Sun className="h-3 w-3 text-slate-500" />
-                <Moon className="h-3 w-3 text-slate-500" />
-              </div>
+            <DropdownMenuItem
+              onClick={() => setThemeDialogOpen(true)}
+              className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+            >
+              <Monitor className="h-4 w-4" />
+              <span>Theme</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem asChild>
@@ -475,11 +478,11 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               <label className="text-sm font-medium text-slate-300">How do you feel?</label>
               <div className="flex gap-2">
                 {[
-                  { icon: Heart, value: 'love', color: 'text-red-400', label: 'Love it' },
-                  { icon: Smile, value: 'happy', color: 'text-green-400', label: 'Happy' },
-                  { icon: Meh, value: 'neutral', color: 'text-yellow-400', label: 'Neutral' },
+                  { icon: Angry, value: 'angry', color: 'text-red-600', label: 'Angry' },
                   { icon: Frown, value: 'sad', color: 'text-orange-400', label: 'Sad' },
-                  { icon: ThumbsUp, value: 'thumbsup', color: 'text-blue-400', label: 'Thumbs up' },
+                  { icon: Meh, value: 'neutral', color: 'text-yellow-400', label: 'Neutral' },
+                  { icon: Smile, value: 'happy', color: 'text-green-400', label: 'Happy' },
+                  { icon: Heart, value: 'love', color: 'text-pink-400', label: 'Love' },
                 ].map(({ icon: Icon, value, color, label }) => (
                   <button
                     key={value}
@@ -517,6 +520,86 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               Submit Feedback
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Theme Dialog */}
+      <Dialog open={themeDialogOpen} onOpenChange={setThemeDialogOpen}>
+        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Choose Theme</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              Select your preferred theme for the application.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 py-4">
+            <button
+              onClick={() => {
+                setTheme('light');
+                setThemeDialogOpen(false);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
+                theme === 'light'
+                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
+                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+              )}
+            >
+              <Sun className="h-5 w-5 text-yellow-400" />
+              <div className="flex-1 text-left">
+                <p className="font-medium">Light</p>
+                <p className="text-xs text-slate-400">Bright and clear interface</p>
+              </div>
+              {theme === 'light' && (
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setTheme('dark');
+                setThemeDialogOpen(false);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
+                theme === 'dark'
+                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
+                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+              )}
+            >
+              <Moon className="h-5 w-5 text-blue-400" />
+              <div className="flex-1 text-left">
+                <p className="font-medium">Dark</p>
+                <p className="text-xs text-slate-400">Easy on the eyes</p>
+              </div>
+              {theme === 'dark' && (
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+              )}
+            </button>
+
+            <button
+              onClick={() => {
+                setTheme('system');
+                setThemeDialogOpen(false);
+              }}
+              className={cn(
+                'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
+                theme === 'system'
+                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
+                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+              )}
+            >
+              <Monitor className="h-5 w-5 text-slate-400" />
+              <div className="flex-1 text-left">
+                <p className="font-medium">System</p>
+                <p className="text-xs text-slate-400">Match your device settings</p>
+              </div>
+              {theme === 'system' && (
+                <div className="h-2 w-2 rounded-full bg-blue-500" />
+              )}
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
