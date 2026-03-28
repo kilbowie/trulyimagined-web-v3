@@ -56,11 +56,7 @@ export default function AuthNav() {
             onClick={toggleTheme}
             className="text-slate-300 hover:text-white hover:bg-slate-800"
           >
-            {theme === 'dark' ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
+            {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             <span className="sr-only">Toggle theme</span>
           </Button>
         )}
@@ -98,11 +94,7 @@ export default function AuthNav() {
           onClick={toggleTheme}
           className="text-slate-300 hover:text-white hover:bg-slate-800"
         >
-          {theme === 'dark' ? (
-            <Sun className="h-5 w-5" />
-          ) : (
-            <Moon className="h-5 w-5" />
-          )}
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           <span className="sr-only">Toggle theme</span>
         </Button>
       )}

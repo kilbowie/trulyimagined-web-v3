@@ -592,10 +592,6 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
             >
               {feedbackSuccess ? 'Submitted!' : 'Submit Feedback'}
             </Button>
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Submit Feedback
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

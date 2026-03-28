@@ -12,9 +12,9 @@ const fs = require('fs').promises;
 const path = require('path');
 
 async function runMigration() {
-  // Parse DATABASE_URL to get connection details  
+  // Parse DATABASE_URL to get connection details
   let connectionString = process.env.DATABASE_URL;
-  
+
   if (!connectionString) {
     throw new Error('DATABASE_URL environment variable is not set');
   }
