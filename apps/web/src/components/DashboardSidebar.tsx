@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
@@ -32,6 +32,7 @@ import {
   ThumbsUp,
   MoreVertical,
   Angry,
+  Loader2,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -80,11 +81,36 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const [themeDialogOpen, setThemeDialogOpen] = useState(false);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
   const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [notificationCounts, setNotificationCounts] = useState({
+    unreadFeedback: 0,
+    unreadSupport: 0,
+  });
 
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
   const hasAdminRole = roles.includes('Admin');
   const hasEnterpriseRole = roles.includes('Enterprise');
+
+  // Fetch notification counts
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const response = await fetch('/api/notifications/counts');
+        const data = await response.json();
+        if (data.success) {
+          setNotificationCounts(data.counts);
+        }
+      } catch (error) {
+        console.error('[FETCH_NOTIFICATIONS_ERROR]', error);
+      }
+    };
+
+    fetchNotifications();
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const feedbackTopics = [
     'General',
@@ -119,6 +145,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     }
 
     try {
+      setFeedbackSubmitting(true);
       const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
@@ -146,6 +173,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         setSelectedEmoji(null);
         setFeedbackTopic('General');
         setFeedbackSuccess(false);
+        setFeedbackSubmitting(false);
         setFeedbackDialogOpen(false);
       }, 2000);
     } catch (error) {
@@ -153,6 +181,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       setFeedbackError(
         error instanceof Error ? error.message : 'Failed to submit feedback. Please try again.'
       );
+      setFeedbackSubmitting(false);
     }
   };
 
@@ -243,6 +272,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
           href: '/dashboard/admin/feedback',
           icon: MessageCircle,
           show: hasAdminRole,
+          badge: notificationCounts.unreadFeedback,
         },
       ],
     },
@@ -337,7 +367,15 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                               )}
                             >
                               <Icon className="h-4 w-4" />
-                              <span>{item.title}</span>
+                              <span className="flex-1">{item.title}</span>
+                              {item.badge > 0 && (
+                                <Badge 
+                                  variant="destructive" 
+                                  className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
+                                >
+                                  {item.badge > 99 ? '99+' : item.badge}
+                                </Badge>
+                              )}
                             </Link>
                           );
                         })}
@@ -398,14 +436,17 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         <Link
           href="/dashboard/support"
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors relative',
             pathname?.startsWith('/dashboard/support')
               ? 'bg-slate-800 text-white'
               : 'text-slate-400 hover:bg-slate-900 hover:text-white'
           )}
         >
           <Headphones className="h-4 w-4" />
-          <span>Support</span>
+          <span className="flex-1">Support</span>
+          {notificationCounts.unreadSupport > 0 && (
+            <div className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+          )}
         </Link>
       </div>
 
@@ -581,16 +622,18 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 setFeedbackError(null);
                 setFeedbackSuccess(false);
               }}
-              className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700"
+              disabled={feedbackSubmitting}
+              className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmitFeedback}
-              disabled={feedbackSuccess || !feedbackText.trim()}
+              disabled={feedbackSuccess || feedbackSubmitting || !feedbackText.trim()}
               className="bg-primary hover:bg-primary/90"
             >
-              {feedbackSuccess ? 'Submitted!' : 'Submit Feedback'}
+              {feedbackSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {feedbackSuccess ? 'Submitted!' : feedbackSubmitting ? 'Submitting...' : 'Submit Feedback'}
             </Button>
           </DialogFooter>
         </DialogContent>

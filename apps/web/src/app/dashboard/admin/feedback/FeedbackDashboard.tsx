@@ -12,7 +12,16 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Angry, Frown, Meh, Smile, Heart, Search, Filter } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Angry, Frown, Meh, Smile, Heart, Search, Filter, Mail, Check, Loader2 } from 'lucide-react';
 
 interface FeedbackItem {
   id: string;
@@ -56,6 +65,13 @@ export default function FeedbackDashboard() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [unreadOnly, setUnreadOnly] = useState(false);
 
+  // Reply dialog state
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
+  const [replyMessage, setReplyMessage] = useState('');
+  const [replySubmitting, setReplySubmitting] = useState(false);
+  const [replyError, setReplyError] = useState<string | null>(null);
+
   const sentimentIcons = {
     angry: { icon: Angry, color: 'text-red-600', bg: 'bg-red-50', label: 'Angry' },
     sad: { icon: Frown, color: 'text-orange-500', bg: 'bg-orange-50', label: 'Sad' },
@@ -91,6 +107,75 @@ export default function FeedbackDashboard() {
   useEffect(() => {
     fetchFeedback();
   }, [selectedTopic, selectedSentiment, unreadOnly]);
+
+  const handleMarkAsRead = async (feedbackId: string) => {
+    try {
+      const response = await fetch(`/api/feedback/${feedbackId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_read: true }),
+      });
+
+      if (response.ok) {
+        // Update local state
+        setFeedback((prev) =>
+          prev.map((item) => (item.id === feedbackId ? { ...item, is_read: true } : item))
+        );
+        // Refresh stats
+        fetchFeedback();
+      }
+    } catch (error) {
+      console.error('[MARK_AS_READ_ERROR]', error);
+    }
+  };
+
+  const handleOpenReply = (item: FeedbackItem) => {
+    setSelectedFeedback(item);
+    setReplyMessage('');
+    setReplyError(null);
+    setReplyDialogOpen(true);
+  };
+
+  const handleSubmitReply = async () => {
+    if (!selectedFeedback) return;
+
+    if (replyMessage.trim().length < 10) {
+      setReplyError('Reply must be at least 10 characters');
+      return;
+    }
+
+    try {
+      setReplySubmitting(true);
+      setReplyError(null);
+
+      const response = await fetch(`/api/feedback/${selectedFeedback.id}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: replyMessage.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send reply');
+      }
+
+      // Close dialog and refresh
+      setReplyDialogOpen(false);
+      setReplyMessage('');
+      setSelectedFeedback(null);
+      fetchFeedback();
+    } catch (error) {
+      console.error('[REPLY_SUBMIT_ERROR]', error);
+      setReplyError(error instanceof Error ? error.message : 'Failed to send reply');
+    } finally {
+      setReplySubmitting(false);
+    }
+  };
 
   const filteredFeedback = feedback.filter((item) => {
     if (!searchQuery) return true;
@@ -364,12 +449,107 @@ export default function FeedbackDashboard() {
                   <div className="prose prose-sm max-w-none">
                     <p className="whitespace-pre-wrap text-sm">{item.feedback_text}</p>
                   </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex gap-2 mt-4 pt-4 border-t">
+                    {!item.is_read && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleMarkAsRead(item.id)}
+                        className="gap-2"
+                      >
+                        <Check className="h-4 w-4" />
+                        Mark as Read
+                      </Button>
+                    )}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleOpenReply(item)}
+                      className="gap-2"
+                    >
+                      <Mail className="h-4 w-4" />
+                      Reply
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             );
           })
         )}
       </div>
+
+      {/* Reply Dialog */}
+      <Dialog open={replyDialogOpen} onOpenChange={setReplyDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Reply to Feedback</DialogTitle>
+            <DialogDescription>
+              Your response will create a support ticket and notify the user via email.
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedFeedback && (
+            <div className="space-y-4">
+              {/* Original Feedback */}
+              <div className="p-4 bg-muted rounded-lg">
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-semibold">
+                      {selectedFeedback.user_professional_name || selectedFeedback.user_username}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{selectedFeedback.user_email}</p>
+                  </div>
+                  <Badge>{selectedFeedback.topic}</Badge>
+                </div>
+                <p className="text-sm whitespace-pre-wrap mt-2">{selectedFeedback.feedback_text}</p>
+              </div>
+
+              {/* Reply Message */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Reply</label>
+                <Textarea
+                  value={replyMessage}
+                  onChange={(e) => setReplyMessage(e.target.value)}
+                  placeholder="Type your response here..."
+                  className="min-h-[150px]"
+                  disabled={replySubmitting}
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will create a support ticket titled: &quot;Feedback - {selectedFeedback.topic} -{' '}
+                  {new Date(selectedFeedback.created_at).toLocaleDateString()}&quot;
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {replyError && (
+                <div className="rounded-lg bg-red-500/10 border border-red-500/20 p-3">
+                  <p className="text-sm text-red-600 dark:text-red-400">{replyError}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setReplyDialogOpen(false);
+                setReplyMessage('');
+                setReplyError(null);
+              }}
+              disabled={replySubmitting}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleSubmitReply} disabled={replySubmitting || replyMessage.trim().length < 10}>
+              {replySubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {replySubmitting ? 'Sending...' : 'Send Reply'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

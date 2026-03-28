@@ -25,7 +25,8 @@ const pool = new Pool(
         },
         max: 20, // Maximum number of clients in the pool
         idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-        connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
+        connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
+        statement_timeout: 10000, // Cancel queries that take longer than 10 seconds
       }
     : {
         connectionString: process.env.DATABASE_URL,
@@ -34,7 +35,8 @@ const pool = new Pool(
         },
         max: 20,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 2000,
+        connectionTimeoutMillis: 10000,
+        statement_timeout: 10000,
       }
 );
 
@@ -47,9 +49,10 @@ const pool = new Pool(
  */
 export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
   const start = Date.now();
-  const client = await pool.connect();
-
+  let client;
+  
   try {
+    client = await pool.connect();
     const result = await client.query(text, params);
     const duration = Date.now() - start;
 
@@ -61,13 +64,18 @@ export async function query(text: string, params?: unknown[]): Promise<QueryResu
 
     return result;
   } catch (error) {
+    const duration = Date.now() - start;
     console.error('[DB] Query error', {
       text: text.substring(0, 100),
+      duration: `${duration}ms`,
       error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
     });
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
 
