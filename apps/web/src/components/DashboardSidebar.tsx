@@ -19,6 +19,12 @@ import {
   Headphones,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 interface SidebarProps {
   userName?: string;
@@ -33,7 +39,8 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const hasAdminRole = roles.includes('Admin');
   const hasEnterpriseRole = roles.includes('Enterprise');
 
-  const navigationItems = [
+  // Standalone navigation items
+  const standaloneItems = [
     {
       title: 'Home',
       href: '/dashboard',
@@ -52,41 +59,63 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       icon: Upload,
       show: hasActorRole,
     },
+  ];
+
+  // Grouped navigation items
+  const groupedNavigationItems = [
     {
-      title: 'Verifiable Credentials',
-      href: '/dashboard/verifiable-credentials',
-      icon: FileText,
+      groupTitle: 'Consent',
       show: hasActorRole,
+      items: [
+        {
+          title: 'Consent Preferences',
+          href: '/dashboard/consent-preferences',
+          icon: Settings,
+          show: hasActorRole,
+        },
+        {
+          title: 'Consent History',
+          href: '/dashboard/consent-history',
+          icon: History,
+          show: hasActorRole,
+        },
+      ],
     },
     {
-      title: 'Register Identity',
-      href: '/dashboard/register-identity',
-      icon: ShieldCheck,
+      groupTitle: 'Identity',
       show: hasActorRole,
+      items: [
+        {
+          title: 'Register Identity',
+          href: '/dashboard/register-identity',
+          icon: ShieldCheck,
+          show: hasActorRole,
+        },
+        {
+          title: 'Verify Identity',
+          href: '/dashboard/verify-identity',
+          icon: ShieldCheck,
+          show: hasActorRole,
+        },
+        {
+          title: 'Verifiable Credentials',
+          href: '/dashboard/verifiable-credentials',
+          icon: FileText,
+          show: hasActorRole,
+        },
+      ],
     },
     {
-      title: 'Consent Preferences',
-      href: '/dashboard/consent-preferences',
-      icon: Settings,
+      groupTitle: 'Licensing',
       show: hasActorRole,
-    },
-    {
-      title: 'License Tracker',
-      href: '/dashboard/licenses',
-      icon: ScrollText,
-      show: hasActorRole,
-    },
-    {
-      title: 'Consent History',
-      href: '/dashboard/consent-history',
-      icon: History,
-      show: hasActorRole,
-    },
-    {
-      title: 'Verify Identity',
-      href: '/dashboard/verify-identity',
-      icon: ShieldCheck,
-      show: hasActorRole,
+      items: [
+        {
+          title: 'License Tracker',
+          href: '/dashboard/licenses',
+          icon: ScrollText,
+          show: hasActorRole,
+        },
+      ],
     },
   ];
 
@@ -124,9 +153,9 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-        {/* Main Navigation */}
+        {/* Standalone Navigation Items */}
         <div className="space-y-1">
-          {navigationItems
+          {standaloneItems
             .filter((item) => item.show)
             .map((item) => {
               const Icon = item.icon;
@@ -148,6 +177,54 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 </Link>
               );
             })}
+        </div>
+
+        {/* Grouped Navigation Items */}
+        <div className="pt-4">
+          <Accordion type="multiple" className="space-y-1">
+            {groupedNavigationItems
+              .filter((group) => group.show)
+              .map((group) => {
+                const visibleItems = group.items.filter((item) => item.show);
+                if (visibleItems.length === 0) return null;
+
+                return (
+                  <AccordionItem
+                    key={group.groupTitle}
+                    value={group.groupTitle}
+                    className="border-b-0"
+                  >
+                    <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">
+                      {group.groupTitle}
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-2">
+                      <div className="space-y-1">
+                        {visibleItems.map((item) => {
+                          const Icon = item.icon;
+                          const isActive = pathname === item.href;
+
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              className={cn(
+                                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                                isActive
+                                  ? 'bg-slate-800 text-white'
+                                  : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                              <span>{item.title}</span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+          </Accordion>
         </div>
 
         {/* Documents Section */}
