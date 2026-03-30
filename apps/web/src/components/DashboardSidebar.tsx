@@ -298,16 +298,12 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-slate-950 text-white">
       {/* Logo/Brand */}
-      <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-6">
-        {/* Temporary fallback: Use Shield icon until R2 is configured */}
-        <Shield className="h-6 w-6 text-blue-400" />
-        {/* TODO: Uncomment when R2 public access is configured
+      <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
         <img
-          src="https://assets.trulyimagined.com/logo.png"
+          src="/logo.png"
           alt="Truly Imagined Logo"
           className="h-7 w-auto"
         />
-        */}
         <span className="text-lg font-semibold">TrulyImagined</span>
       </div>
 

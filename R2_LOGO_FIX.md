@@ -37,6 +37,7 @@ Proxy: Enabled (orange cloud)
 ```
 
 **Important:** The domain `assets.trulyimagined.com` must be:
+
 - On Cloudflare DNS (same account or zone)
 - Have the CNAME record pointing to R2
 - Have "Proxied" enabled (orange cloud)
@@ -90,6 +91,7 @@ Wait 5-10 minutes for DNS propagation if you just configured the custom domain.
 ### Temporary Fix 1: Use Cloudflare Images
 
 If you have Cloudflare Images:
+
 1. Upload logo to Cloudflare Images
 2. Get the delivery URL (format: `https://imagedelivery.net/[account-hash]/[image-id]/public`)
 3. Update logo references
@@ -106,12 +108,13 @@ Upload logo to Next.js public folder:
    - Cached by Vercel CDN
 
 **Code changes needed:**
+
 ```tsx
 // Instead of:
-src="https://assets.trulyimagined.com/logo.png"
+src = 'https://assets.trulyimagined.com/logo.png';
 
 // Use:
-src="/logo.png"
+src = '/logo.png';
 ```
 
 ### Temporary Fix 3: Use Data URI or SVG
@@ -152,7 +155,7 @@ Convert PNG to inline SVG or base64 data URI for instant loading without externa
 curl -I https://assets.trulyimagined.com/logo.png
 
 # Expected response:
-# HTTP/2 200 
+# HTTP/2 200
 # content-type: image/png
 # ...
 ```
@@ -180,6 +183,7 @@ curl -I https://assets.trulyimagined.com/logo.png
 ## Need Help?
 
 If still experiencing issues:
+
 1. Check R2 bucket region compatibility
 2. Verify billing/account status
 3. Contact Cloudflare support with:
