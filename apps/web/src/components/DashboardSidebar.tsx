@@ -6,7 +6,6 @@ import { useState, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 import {
-  Shield,
   UserCircle,
   Settings,
   ScrollText,
@@ -298,8 +297,12 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-slate-950 text-white">
       {/* Logo/Brand */}
-      <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-6">
-        <Shield className="h-6 w-6 text-blue-400" />
+      <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
+        <img
+          src="https://assets.trulyimagined.com/logo.png"
+          alt="Truly Imagined Logo"
+          className="h-7 w-auto"
+        />
         <span className="text-lg font-semibold">TrulyImagined</span>
       </div>
 
