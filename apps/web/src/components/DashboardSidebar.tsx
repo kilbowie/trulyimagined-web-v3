@@ -298,14 +298,13 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   return (
     <div className="flex h-screen w-64 flex-col border-r bg-slate-950 text-white">
       {/* Logo/Brand */}
-      <div className="flex h-16 items-center gap-3 border-b border-slate-800 px-6">
-        <img
-          src="/logo.png"
-          alt="Truly Imagined Logo"
-          className="h-7 w-auto"
+      <Link href="/" className="flex h-16 items-center justify-center border-b border-slate-800 px-6">
+        <img 
+          src="/logo.svg" 
+          alt="Truly Imagined Logo" 
+          className="h-8 w-auto transition-transform duration-200 hover:scale-110 cursor-pointer"
         />
-        <span className="text-lg font-semibold">TrulyImagined</span>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
