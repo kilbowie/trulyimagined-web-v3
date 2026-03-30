@@ -9,10 +9,12 @@
 ## Quick Fix (5 minutes)
 
 ### Step 1: Log into Auth0 Dashboard
+
 1. Go to: https://manage.auth0.com/
 2. Select your tenant: **kilbowieconsulting.uk.auth0.com**
 
 ### Step 2: Update Application Settings
+
 1. Click **Applications** → **Applications** in left sidebar
 2. Find and click your application (likely named "Truly Imagined - Development")
 3. Go to **Settings** tab
@@ -26,6 +28,7 @@ http://localhost:3000/api/auth/callback
 ```
 
 **If you already have other URLs**, separate them with commas:
+
 ```
 http://localhost:3000/api/auth/callback,
 https://yourdomain.com/api/auth/callback
@@ -48,11 +51,13 @@ http://localhost:3000
 ```
 
 ### Step 6: Save Changes
+
 - Scroll to bottom
 - Click **Save Changes** button
 - Wait for confirmation
 
 ### Step 7: Test
+
 1. Restart your dev server: `pnpm dev`
 2. Go to http://localhost:3000
 3. Click **Sign In** or **Get Started**
@@ -65,6 +70,7 @@ http://localhost:3000
 For a full production setup, here are all the URLs you should configure:
 
 ### Development:
+
 ```
 Allowed Callback URLs:
 http://localhost:3000/api/auth/callback
@@ -77,6 +83,7 @@ http://localhost:3000
 ```
 
 ### Production (when you deploy):
+
 ```
 Allowed Callback URLs:
 http://localhost:3000/api/auth/callback,
@@ -123,6 +130,7 @@ https://your-vercel-app.vercel.app
 ### Error: "Invalid state"
 
 This means the OAuth state parameter doesn't match. Fix:
+
 1. Clear all browser cookies for localhost:3000
 2. Restart your dev server
 3. Try login again in incognito/private window
@@ -130,6 +138,7 @@ This means the OAuth state parameter doesn't match. Fix:
 ### Error: "access_denied"
 
 Check Auth0 Application settings:
+
 1. **Grant Types** should include:
    - Authorization Code
    - Refresh Token
@@ -140,16 +149,19 @@ Check Auth0 Application settings:
 ## Why This Happened
 
 Auth0 requires you to explicitly whitelist all callback URLs for security. When you:
+
 1. Click "Sign In" → redirects to Auth0
 2. User logs in → Auth0 redirects back to your app
 3. The redirect URL must be in the **Allowed Callback URLs** list
 
 Your current Auth0 app likely has this configured:
+
 ```
 http://localhost:3000     ❌ Not the callback URL
 ```
 
 But needs:
+
 ```
 http://localhost:3000/api/auth/callback     ✅ Correct
 ```
@@ -161,6 +173,7 @@ The `/api/auth/callback` route is handled by the Next.js Auth0 SDK automatically
 ## Environment Variables Reference
 
 Your current `.env.local` configuration:
+
 ```bash
 AUTH0_DOMAIN=kilbowieconsulting.uk.auth0.com
 AUTH0_CLIENT_ID=kxYtdJFVLVarzYxyxGCigPAAKaAExFNk
@@ -176,6 +189,7 @@ APP_BASE_URL=http://localhost:3000
 ## After Fixing
 
 Once you've added the callback URL in Auth0:
+
 1. ✅ Login will work
 2. ✅ Users will be redirected to `/dashboard` after login
 3. ✅ Logo clicks navigate to homepage with hover effect

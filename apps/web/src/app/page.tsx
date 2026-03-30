@@ -27,9 +27,9 @@ export default async function Home() {
       <header className="fixed top-0 left-0 right-0 bg-slate-950 border-b border-slate-800 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="flex items-center">
-            <img 
-              src="/logo.svg" 
-              alt="Truly Imagined Logo" 
+            <img
+              src="/logo.svg"
+              alt="Truly Imagined Logo"
               className="h-8 w-auto transition-transform duration-200 hover:scale-110 cursor-pointer"
             />
           </Link>
