@@ -305,7 +305,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         <img
           src="/logo.svg"
           alt="Truly Imagined Logo"
-          className="h-8 w-auto transition-transform duration-200 hover:scale-120 cursor-pointer"
+          className="h-8 w-auto transition-transform duration-200 hover:scale-[1.2] cursor-pointer"
         />
       </Link>
 
