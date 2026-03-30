@@ -499,12 +499,17 @@ export default function TicketDetailPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className={`flex-1 space-y-1 ${isCurrentUser ? 'text-right' : ''}`}>
-                      <div className={`flex items-center gap-2 ${isCurrentUser ? 'flex-row-reverse justify-start' : ''}`}>
+                      <div
+                        className={`flex items-center gap-2 ${isCurrentUser ? 'flex-row-reverse justify-start' : ''}`}
+                      >
                         <span className="font-medium text-sm">
                           {message.user_username || message.user_email}
                         </span>
                         {message.is_internal_note && (
-                          <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">
+                          <Badge
+                            variant="outline"
+                            className="text-xs bg-yellow-50 border-yellow-200"
+                          >
                             Internal Note
                           </Badge>
                         )}
@@ -512,7 +517,9 @@ export default function TicketDetailPage() {
                           {formatTimestamp(message.created_at)}
                         </span>
                       </div>
-                      <div className={`text-sm prose prose-sm max-w-none dark:prose-invert ${isCurrentUser ? 'ml-auto' : ''}`}>
+                      <div
+                        className={`text-sm prose prose-sm max-w-none dark:prose-invert ${isCurrentUser ? 'ml-auto' : ''}`}
+                      >
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.message}</ReactMarkdown>
                       </div>
                     </div>

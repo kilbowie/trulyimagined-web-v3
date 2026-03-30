@@ -175,10 +175,26 @@ export default function FeedbackDashboard() {
         throw new Error(data.error || 'Failed to send reply');
       }
 
-      // Close dialog and refresh
-      setReplyDialogOpen(false);
-      setReplyMessage('');
-      setSelectedFeedback(null);
+      // Check if email failed
+      if (!data.emailSent && data.emailError) {
+        console.warn('[EMAIL_WARNING] Email notification failed:', data.emailError);
+        setReplyError(
+          `✓ Support ticket created, but email notification failed: ${data.emailError}`
+        );
+        // Don't close dialog immediately so admin sees the warning
+        setTimeout(() => {
+          setReplyDialogOpen(false);
+          setReplyMessage('');
+          setSelectedFeedback(null);
+          setReplyError(null);
+        }, 5000);
+      } else {
+        // Success - close dialog and refresh
+        setReplyDialogOpen(false);
+        setReplyMessage('');
+        setSelectedFeedback(null);
+      }
+
       fetchFeedback();
     } catch (error) {
       console.error('[REPLY_SUBMIT_ERROR]', error);

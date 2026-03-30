@@ -93,20 +93,26 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     await query('UPDATE user_feedback SET is_read = true WHERE id = $1', [feedbackId]);
 
     // Send email notification to user (no admin notification for feedback replies)
+    let emailError = null;
     try {
-      await sendFeedbackResponseEmail(
+      console.log('[FEEDBACK_REPLY] Sending email to:', feedback.user_email);
+      const emailResult = await sendFeedbackResponseEmail(
         feedback.user_email,
         feedback.user_username || feedback.user_professional_name || 'User',
         feedback.topic
       );
-    } catch (emailError) {
-      console.error('[FEEDBACK_REPLY_EMAIL_ERROR]', emailError);
-      // Don't fail the request if email fails
+      console.log('[FEEDBACK_REPLY] Email sent successfully:', emailResult);
+    } catch (err) {
+      emailError = err instanceof Error ? err.message : 'Unknown email error';
+      console.error('[FEEDBACK_REPLY_EMAIL_ERROR]', err);
+      // Don't fail the request if email fails, but return warning
     }
 
     return NextResponse.json({
       success: true,
       message: 'Reply sent successfully',
+      emailSent: !emailError,
+      emailError: emailError || undefined,
       ticket: {
         id: ticket.id,
         ticket_number: ticket.ticket_number,
