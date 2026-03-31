@@ -139,20 +139,32 @@ export default function LicenseTrackerPage() {
             <div className="text-xs text-muted-foreground md:text-sm">Total Licenses</div>
           </div>
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-emerald-700 dark:text-emerald-300 md:text-3xl">{stats.active}</div>
-            <div className="text-xs text-emerald-700/90 dark:text-emerald-300 md:text-sm">Active</div>
+            <div className="mb-1 text-2xl font-bold text-emerald-700 dark:text-emerald-300 md:text-3xl">
+              {stats.active}
+            </div>
+            <div className="text-xs text-emerald-700/90 dark:text-emerald-300 md:text-sm">
+              Active
+            </div>
           </div>
           <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-red-700 dark:text-red-300 md:text-3xl">{stats.revoked}</div>
+            <div className="mb-1 text-2xl font-bold text-red-700 dark:text-red-300 md:text-3xl">
+              {stats.revoked}
+            </div>
             <div className="text-xs text-red-700/90 dark:text-red-300 md:text-sm">Revoked</div>
           </div>
           <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-amber-700 dark:text-amber-300 md:text-3xl">{stats.expired}</div>
+            <div className="mb-1 text-2xl font-bold text-amber-700 dark:text-amber-300 md:text-3xl">
+              {stats.expired}
+            </div>
             <div className="text-xs text-amber-700/90 dark:text-amber-300 md:text-sm">Expired</div>
           </div>
           <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-orange-700 dark:text-orange-300 md:text-3xl">{stats.suspended}</div>
-            <div className="text-xs text-orange-700/90 dark:text-orange-300 md:text-sm">Suspended</div>
+            <div className="mb-1 text-2xl font-bold text-orange-700 dark:text-orange-300 md:text-3xl">
+              {stats.suspended}
+            </div>
+            <div className="text-xs text-orange-700/90 dark:text-orange-300 md:text-sm">
+              Suspended
+            </div>
           </div>
         </div>
 
@@ -190,7 +202,9 @@ export default function LicenseTrackerPage() {
               >
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h3 className="mb-1 text-lg font-bold text-foreground md:text-xl">{license.api_client_name}</h3>
+                    <h3 className="mb-1 text-lg font-bold text-foreground md:text-xl">
+                      {license.api_client_name}
+                    </h3>
                     <p className="text-sm text-muted-foreground">
                       Type: <span className="text-foreground">{license.license_type}</span>
                     </p>

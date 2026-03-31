@@ -1,6 +1,7 @@
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
+import { DashboardQuickSearch } from '@/components/DashboardQuickSearch';
 
 /**
  * Dashboard Layout with Sidebar
@@ -23,8 +24,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <div className="h-16 border-b bg-background flex items-center justify-center px-6">
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <div className="h-16 border-b bg-background px-4 md:px-6">
+          <div className="mx-auto flex h-full max-w-7xl items-center justify-center">
+            <DashboardQuickSearch />
+          </div>
         </div>
 
         {/* Content Area */}
