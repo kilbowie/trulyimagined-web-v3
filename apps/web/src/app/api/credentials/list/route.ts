@@ -26,6 +26,22 @@ import { pool } from '@/lib/db';
 import { decryptJSON } from '@trulyimagined/utils';
 import type { VerifiableCredential } from '@/lib/verifiable-credentials';
 
+function parseStoredCredential(value: unknown): VerifiableCredential {
+  if (typeof value === 'string') {
+    try {
+      return decryptJSON<VerifiableCredential>(value);
+    } catch {
+      return JSON.parse(value) as VerifiableCredential;
+    }
+  }
+
+  if (value && typeof value === 'object') {
+    return value as VerifiableCredential;
+  }
+
+  throw new Error('Invalid credential format in storage');
+}
+
 export async function GET(request: NextRequest) {
   try {
     // 1. Authenticate user
@@ -90,8 +106,7 @@ export async function GET(request: NextRequest) {
 
     // 6. Format response
     const credentials = credentialsResult.rows.map((row) => {
-      // Decrypt credential_json from database (Step 11: Database Encryption)
-      const credential: VerifiableCredential = decryptJSON(row.credential_json);
+      const credential = parseStoredCredential(row.credential_json);
 
       return {
         credential,

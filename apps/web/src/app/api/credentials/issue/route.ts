@@ -80,16 +80,21 @@ export async function POST(request: NextRequest) {
     // 3. Fetch user profile from database
     const profileResult = await pool.query(
       `SELECT 
-        id, 
-        auth0_user_id, 
-        email, 
-        username, 
-        legal_name, 
-        professional_name, 
-        role,
-        profile_completed
-      FROM user_profiles 
-      WHERE auth0_user_id = $1`,
+        up.id,
+        up.auth0_user_id,
+        up.email,
+        up.username,
+        up.legal_name,
+        up.professional_name,
+        up.role,
+        up.profile_completed,
+        COALESCE(up.is_verified, FALSE) AS is_verified,
+        a.id AS actor_id,
+        a.verification_status AS actor_verification_status,
+        a.verified_at AS actor_verified_at
+      FROM user_profiles up
+      LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id
+      WHERE up.auth0_user_id = $1`,
       [auth0UserId]
     );
 
@@ -102,7 +107,11 @@ export async function POST(request: NextRequest) {
 
     const profile = profileResult.rows[0];
 
-    if (!profile.profile_completed) {
+    // Actor registration can be treated as a complete profile for issuance eligibility.
+    const hasActorProfile = !!profile.actor_id;
+    const profileComplete = !!profile.profile_completed || hasActorProfile;
+
+    if (!profileComplete) {
       return NextResponse.json(
         {
           success: false,
@@ -127,17 +136,56 @@ export async function POST(request: NextRequest) {
       [profile.id]
     );
 
-    if (linksResult.rows.length === 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'No verified identity. Please verify your identity first.',
-        },
-        { status: 400 }
-      );
-    }
+    let identityLinks = linksResult.rows;
 
-    const identityLinks = linksResult.rows;
+    // Allow verified accounts without an explicit identity_links record.
+    // This supports production manual verification flags and actor verification status.
+    if (identityLinks.length === 0) {
+      const manuallyVerified = !!profile.is_verified;
+      const actorVerified = profile.actor_verification_status === 'verified';
+
+      if (manuallyVerified) {
+        identityLinks = [
+          {
+            provider: 'IAM Verification',
+            verification_level: 'high',
+            assurance_level: 'high',
+            verified_at: new Date().toISOString(),
+            is_active: true,
+          },
+        ];
+      } else if (actorVerified) {
+        identityLinks = [
+          {
+            provider: 'Actor Registry Verification',
+            verification_level: 'high',
+            assurance_level: 'high',
+            verified_at: profile.actor_verified_at || new Date().toISOString(),
+            is_active: true,
+          },
+        ];
+      } else if (process.env.NODE_ENV !== 'production') {
+        // Development fallback so local credential issuance is always testable.
+        identityLinks = [
+          {
+            provider: 'Development Mock Verification',
+            verification_level: 'medium',
+            assurance_level: 'substantial',
+            verified_at: new Date().toISOString(),
+            is_active: true,
+          },
+        ];
+      } else {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'No verified identity. Complete verification in Verify Identity or have an admin set your account as verified.',
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Find highest verification level
     const verificationLevels = ['low', 'medium', 'high', 'very-high'];
@@ -171,8 +219,8 @@ export async function POST(request: NextRequest) {
     const holderDid = `did:web:trulyimagined.com:users:${profile.id}`;
 
     // 8. Pre-allocate database record to get credential ID (for status list allocation)
-    // Use placeholder encrypted data
-    const placeholderEncrypted = encryptJSON({});
+    // Store a JSON object placeholder before replacing with the final credential payload.
+    const placeholderCredentialJson = {};
 
     const preInsertResult = await pool.query(
       `INSERT INTO verifiable_credentials (
@@ -189,7 +237,7 @@ export async function POST(request: NextRequest) {
       [
         profile.id,
         credentialType,
-        placeholderEncrypted, // Temporary placeholder (encrypted)
+        placeholderCredentialJson,
         'did:web:trulyimagined.com',
         holderDid,
         new Date().toISOString(),
@@ -218,8 +266,10 @@ export async function POST(request: NextRequest) {
     });
 
     // 11. Update credential in database with final signed credential
-    // Encrypt credential_json before storing (Step 11: Database Encryption)
+    // Encrypt credential_json before storing (Step 11: Database Encryption).
+    // credential_json is JSONB, so encrypted ciphertext must be encoded as a JSON string.
     const encryptedCredential = encryptJSON(credential);
+    const encryptedCredentialJson = JSON.stringify(encryptedCredential);
 
     await pool.query(
       `UPDATE verifiable_credentials 
@@ -229,7 +279,7 @@ export async function POST(request: NextRequest) {
            updated_at = NOW()
        WHERE id = $4`,
       [
-        encryptedCredential,
+        encryptedCredentialJson,
         credential.id, // Unique credential ID from W3C VC
         credential.validUntil || null,
         credentialDbId,

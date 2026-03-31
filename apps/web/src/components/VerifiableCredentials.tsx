@@ -231,7 +231,12 @@ export function VerifiableCredentialsCard() {
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               Issue a verifiable credential to prove your verified identity to third parties
             </p>
-            <Button onClick={issueNewCredential} disabled={issuing} size="lg" className="w-full sm:w-auto">
+            <Button
+              onClick={issueNewCredential}
+              disabled={issuing}
+              size="lg"
+              className="w-full sm:w-auto"
+            >
               <FileText className="h-4 w-4 mr-2" />
               {issuing ? 'Issuing...' : 'Issue Your First Credential'}
             </Button>
@@ -260,7 +265,10 @@ export function VerifiableCredentialsCard() {
                             {metadata.credentialType.replace('Credential', ' Credential')}
                           </CardTitle>
                           {isActive && (
-                            <Badge variant="default" className="bg-green-600 hover:bg-green-600 text-white">
+                            <Badge
+                              variant="default"
+                              className="bg-green-600 hover:bg-green-600 text-white"
+                            >
                               Active
                             </Badge>
                           )}
@@ -304,7 +312,13 @@ export function VerifiableCredentialsCard() {
                           <Download className="h-4 w-4 mr-1" />
                           Download
                         </Button>
-                        <Button asChild variant="secondary" size="sm" className="w-full" title="View details">
+                        <Button
+                          asChild
+                          variant="secondary"
+                          size="sm"
+                          className="w-full"
+                          title="View details"
+                        >
                           <Link href={`/dashboard/credentials/${metadata.id}`}>
                             <Eye className="h-4 w-4 mr-1" />
                             View
