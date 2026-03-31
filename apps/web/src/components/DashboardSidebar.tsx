@@ -16,7 +16,6 @@ import {
   Home,
   Users,
   Building,
-  Wrench,
   Upload,
   Headphones,
   LogOut,
@@ -29,7 +28,6 @@ import {
   Frown,
   Meh,
   Heart,
-  ThumbsUp,
   MoreVertical,
   Angry,
   Loader2,
@@ -69,6 +67,21 @@ import {
 interface SidebarProps {
   userName?: string;
   roles?: string[];
+}
+
+interface NavigationItem {
+  title: string;
+  href: string;
+  icon: typeof Shield;
+  show: boolean;
+  badge?: number;
+  comingSoon?: boolean;
+}
+
+interface NavigationGroup {
+  groupTitle: string;
+  show: boolean;
+  items: NavigationItem[];
 }
 
 export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
@@ -186,7 +199,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   };
 
   // Standalone navigation items
-  const standaloneItems = [
+  const standaloneItems: NavigationItem[] = [
     {
       title: 'Home',
       href: '/dashboard',
@@ -208,7 +221,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   ];
 
   // Grouped navigation items
-  const groupedNavigationItems = [
+  const groupedNavigationItems: NavigationGroup[] = [
     {
       groupTitle: 'Consent',
       show: hasActorRole,
@@ -276,9 +289,21 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         },
       ],
     },
+    {
+      groupTitle: 'IAM',
+      show: hasAdminRole,
+      items: [
+        {
+          title: 'Users',
+          href: '/dashboard/iam/users',
+          icon: Shield,
+          show: hasAdminRole,
+        },
+      ],
+    },
   ];
 
-  const documentItems = [
+  const documentItems: NavigationItem[] = [
     {
       title: 'Agent Dashboard',
       href: '/dashboard/agent',
@@ -374,12 +399,12 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                             >
                               <Icon className="h-4 w-4" />
                               <span className="flex-1">{item.title}</span>
-                              {item.badge > 0 && (
+                              {(item.badge ?? 0) > 0 && (
                                 <Badge
                                   variant="destructive"
                                   className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
                                 >
-                                  {item.badge > 99 ? '99+' : item.badge}
+                                  {(item.badge ?? 0) > 99 ? '99+' : item.badge}
                                 </Badge>
                               )}
                             </Link>

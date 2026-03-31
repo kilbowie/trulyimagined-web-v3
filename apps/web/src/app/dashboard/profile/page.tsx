@@ -32,9 +32,14 @@ export default async function ProfilePage() {
 
   // Fetch actor data from database
   const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+  const profileResult = await query(
+    'SELECT is_verified, is_pro FROM user_profiles WHERE auth0_user_id = $1',
+    [user.sub]
+  );
 
   let actor = null;
   let headshots = [];
+  let accountStatus = { is_verified: false, is_pro: false };
 
   if (actorResult.rows && actorResult.rows.length > 0) {
     actor = actorResult.rows[0];
@@ -44,5 +49,20 @@ export default async function ProfilePage() {
     headshots = headshotsResult.rows || [];
   }
 
-  return <ProfileClient user={user} roles={roles} actor={actor} headshots={headshots} />;
+  if (profileResult.rows && profileResult.rows.length > 0) {
+    accountStatus = {
+      is_verified: !!profileResult.rows[0].is_verified,
+      is_pro: !!profileResult.rows[0].is_pro,
+    };
+  }
+
+  return (
+    <ProfileClient
+      user={user}
+      roles={roles}
+      actor={actor}
+      headshots={headshots}
+      accountStatus={accountStatus}
+    />
+  );
 }

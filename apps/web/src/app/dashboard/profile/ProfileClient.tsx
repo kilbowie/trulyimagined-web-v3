@@ -67,9 +67,19 @@ interface Props {
   roles: string[];
   actor: Actor | null;
   headshots: ActorMedia[];
+  accountStatus: {
+    is_verified: boolean;
+    is_pro: boolean;
+  };
 }
 
-export default function ProfileClient({ user, roles, actor, headshots: initialHeadshots }: Props) {
+export default function ProfileClient({
+  user,
+  roles,
+  actor,
+  headshots: initialHeadshots,
+  accountStatus,
+}: Props) {
   const router = useRouter();
   const [headshots, setHeadshots] = useState<ActorMedia[]>(initialHeadshots);
   const [selectedHeadshotIndex, setSelectedHeadshotIndex] = useState(0);
@@ -156,7 +166,8 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
     firstName: actor?.first_name || user.name?.split(' ')[0] || 'Actor',
     lastName: actor?.last_name || user.name?.split(' ').slice(1).join(' ') || 'Name',
     stageName: actor?.stage_name,
-    verified: actor?.verification_status === 'verified',
+    verified: accountStatus.is_verified || actor?.verification_status === 'verified',
+    isPro: accountStatus.is_pro,
     registryId: actor?.registry_id || 'Not Assigned',
     profileImage: primaryHeadshot?.s3_url || actor?.profile_image_url || user.picture,
     location: actor?.location || 'Not specified',
@@ -470,9 +481,14 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                   <CardTitle className="text-4xl flex items-center gap-3">
                     {actorProfile.stageName || `${actorProfile.firstName} ${actorProfile.lastName}`}
                     {actorProfile.verified && (
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center">
                         <CheckCircle className="h-5 w-5 text-white" strokeWidth={3} />
                       </div>
+                    )}
+                    {actorProfile.isPro && (
+                      <Badge className="bg-amber-500 hover:bg-amber-500 text-black text-sm font-semibold px-3 py-1">
+                        Pro
+                      </Badge>
                     )}
                   </CardTitle>
                   {actorProfile.stageName && (
@@ -547,9 +563,18 @@ export default function ProfileClient({ user, roles, actor, headshots: initialHe
                       </p>
                       <Badge
                         variant={actorProfile.verified ? 'default' : 'outline'}
-                        className="text-sm"
+                        className={`text-sm ${actorProfile.verified ? 'bg-green-600 hover:bg-green-600' : ''}`}
                       >
                         {actorProfile.verified ? 'Verified' : 'Pending'}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-muted-foreground">Pro Status:</p>
+                      <Badge
+                        variant={actorProfile.isPro ? 'default' : 'outline'}
+                        className={`text-sm ${actorProfile.isPro ? 'bg-amber-500 hover:bg-amber-500 text-black' : ''}`}
+                      >
+                        {actorProfile.isPro ? 'Pro' : 'Standard'}
                       </Badge>
                     </div>
                     <div className="space-y-1">

@@ -3,14 +3,10 @@ import { isAdmin } from '@/lib/auth';
 import { query } from '@/lib/db';
 
 /**
- * Role-Protected API Route Example
- *
- * GET /api/admin/users
- *
- * Returns all users (admin only)
- * Requires Admin role
+ * GET /api/iam/users
+ * Returns IAM user account records for admin management.
  */
-export async function GET(): Promise<NextResponse<any>> {
+export async function GET(): Promise<NextResponse> {
   try {
     if (!(await isAdmin())) {
       return NextResponse.json({ error: 'Forbidden: Admin role required' }, { status: 403 });
@@ -51,7 +47,7 @@ export async function GET(): Promise<NextResponse<any>> {
       },
     });
   } catch (error) {
-    console.error('[API] /api/admin/users error:', error);
+    console.error('[API] /api/iam/users error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
