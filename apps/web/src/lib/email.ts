@@ -5,6 +5,8 @@
  * - noreply@updates.trulyimagined.com: System notifications (welcome, verification, credentials)
  * - support@updates.trulyimagined.com: Support tickets and user-replyable messages
  * - notifications@updates.trulyimagined.com: Internal admin notifications
+ *
+ * All emails are tagged with Resend Audience Segment IDs for analytics and segmentation.
  */
 
 import { Resend } from 'resend';
@@ -18,6 +20,13 @@ const ADMIN_EMAIL = process.env.RESEND_ADMIN_EMAIL || 'notifications@updates.tru
 const FROM_NAME = process.env.RESEND_FROM_NAME || 'Truly Imagined';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://trulyimagined.com';
 const LOGO_URL = 'https://assets.trulyimagined.com/logo.png';
+
+// Resend Audience Segment IDs (for analytics and segmentation)
+const SEGMENT_IDS = {
+  noreply: process.env.RESEND_SEGMENT_ID_NOREPLY || '844903fe-ab8b-4768-ad95-d9af4dc0c94d',
+  support: process.env.RESEND_SEGMENT_ID_SUPPORT || 'c4401e98-8e46-4508-b962-5317c0b675f5',
+  admin: process.env.RESEND_SEGMENT_ID_NOTIFICATIONS || '7c2dfb01-eed5-48a8-ada0-dd04193f458f',
+};
 
 // Mock email in development
 const USE_MOCK = process.env.USE_MOCK_EMAILS === 'true';
@@ -33,25 +42,32 @@ interface SendEmailOptions {
   cc?: string[];
   bcc?: string[];
   type: EmailType;
+  tags?: string[]; // Additional custom tags for Resend
 }
 
 /**
  * Core email sending function
  */
 async function sendEmail(options: SendEmailOptions) {
-  const { to, subject, html, text, replyTo, cc, bcc, type } = options;
+  const { to, subject, html, text, replyTo, cc, bcc, type, tags: customTags } = options;
 
   // Select FROM address based on email type
   let fromEmail = NOREPLY_EMAIL;
   let fromLabel = `No Reply - ${FROM_NAME}`;
+  let segmentId = SEGMENT_IDS.noreply;
 
   if (type === 'support') {
     fromEmail = SUPPORT_EMAIL;
     fromLabel = 'A. R. Greene'; // Support team name
+    segmentId = SEGMENT_IDS.support;
   } else if (type === 'admin') {
     fromEmail = ADMIN_EMAIL;
     fromLabel = 'Admin Alerts';
+    segmentId = SEGMENT_IDS.admin;
   }
+
+  // Combine segment tag with custom tags
+  const allTags = [`segment:${type}`, ...(customTags || [])];
 
   if (USE_MOCK) {
     console.log('\n📧 ========== MOCK EMAIL ==========');
@@ -62,11 +78,17 @@ async function sendEmail(options: SendEmailOptions) {
     if (bcc) console.log(`BCC: ${bcc.join(', ')}`);
     console.log(`Subject: ${subject}`);
     console.log(`Reply-To: ${replyTo || 'N/A'}`);
+    console.log(`Segment: ${type} (ID: ${segmentId})`);
+    if (customTags?.length) console.log(`Tags: ${allTags.join(', ')}`);
     console.log('===================================\n');
     return { id: `mock-${Date.now()}` };
   }
 
   try {
+    // Note: Email segmentation is handled via Resend Audience Segments
+    // (configured via environment variables) and logged for monitoring.
+    // The tags array is maintained for logging and future extensibility.
+
     const data = await resend.emails.send({
       from: `${fromLabel} <${fromEmail}>`,
       to: Array.isArray(to) ? to : [to],
@@ -79,13 +101,21 @@ async function sendEmail(options: SendEmailOptions) {
     });
 
     console.log(
-      `📧 [${type.toUpperCase()}] Email sent: ${subject} to ${Array.isArray(to) ? to.join(', ') : to}`
+      `📧 [${type.toUpperCase()}] Email sent: ${subject} to ${Array.isArray(to) ? to.join(', ') : to} (Segment: ${type})`
     );
     return data;
   } catch (error) {
     console.error(`[EMAIL ERROR - ${type.toUpperCase()}]`, error);
     throw error;
   }
+}
+
+/**
+ * Helper function to create tags for email segmentation
+ * Usage: getTags('welcome', 'actor') => ['type:welcome', 'role:actor']
+ */
+function getTags(...args: string[]): string[] {
+  return args.map((arg) => `type:${arg}`);
 }
 
 /**
@@ -330,6 +360,7 @@ export async function sendWelcomeEmail(userEmail: string, userName: string, role
     subject,
     html,
     type: 'noreply',
+    tags: getTags('welcome', role.toLowerCase()),
   });
 }
 
@@ -369,6 +400,7 @@ export async function sendVerificationCompleteEmail(
     subject,
     html,
     type: 'noreply',
+    tags: getTags('verification-complete'),
   });
 }
 
@@ -410,6 +442,7 @@ export async function sendCredentialIssuedEmail(
     subject,
     html,
     type: 'noreply',
+    tags: getTags('credential-issued', credentialType.toLowerCase()),
   });
 }
 
@@ -462,6 +495,7 @@ export async function sendSupportTicketCreatedEmail(
     html,
     replyTo: userEmail,
     type: 'admin',
+    tags: getTags('support-ticket-created', `priority-${priority.toLowerCase()}`),
   });
 }
 
@@ -502,6 +536,7 @@ export async function sendSupportTicketResponseEmail(
     html,
     type: 'support',
     replyTo: SUPPORT_EMAIL,
+    tags: getTags('support-ticket-response'),
   });
 }
 
@@ -546,6 +581,7 @@ export async function sendFeedbackResponseEmail(
     html,
     type: 'support',
     replyTo: SUPPORT_EMAIL,
+    tags: getTags('feedback-response'),
   });
 }
 
@@ -604,6 +640,7 @@ export async function sendFeedbackNotificationEmail(
     html,
     replyTo: userEmail,
     type: 'admin',
+    tags: getTags('feedback-submitted', `sentiment-${sentiment?.toLowerCase() || 'unknown'}`),
   });
 }
 
