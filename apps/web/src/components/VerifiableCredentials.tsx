@@ -193,7 +193,7 @@ export function VerifiableCredentialsCard() {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
           <div>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5" />
@@ -203,7 +203,12 @@ export function VerifiableCredentialsCard() {
               W3C-compliant digital credentials you can share with verifiers
             </CardDescription>
           </div>
-          <Button onClick={issueNewCredential} disabled={issuing} variant="default">
+          <Button
+            onClick={issueNewCredential}
+            disabled={issuing}
+            variant="default"
+            className="w-full md:w-auto"
+          >
             <FileText className="h-4 w-4 mr-2" />
             {issuing ? 'Issuing...' : 'Issue Credential'}
           </Button>
@@ -220,13 +225,13 @@ export function VerifiableCredentialsCard() {
         )}
 
         {credentials.length === 0 ? (
-          <div className="text-center py-12 border-2 border-dashed rounded-lg">
+          <div className="text-center py-10 md:py-12 border-2 border-dashed border-border rounded-lg">
             <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No credentials issued yet</h3>
             <p className="text-sm text-muted-foreground mb-6 max-w-md mx-auto">
               Issue a verifiable credential to prove your verified identity to third parties
             </p>
-            <Button onClick={issueNewCredential} disabled={issuing} size="lg">
+            <Button onClick={issueNewCredential} disabled={issuing} size="lg" className="w-full sm:w-auto">
               <FileText className="h-4 w-4 mr-2" />
               {issuing ? 'Issuing...' : 'Issue Your First Credential'}
             </Button>
@@ -242,24 +247,29 @@ export function VerifiableCredentialsCard() {
                 <Card
                   key={metadata.id}
                   className={`transition-all ${
-                    isActive ? 'border-green-500/50 bg-green-50/50' : 'opacity-75'
+                    isActive
+                      ? 'border-green-500/50 bg-green-50/60 dark:bg-green-950/20'
+                      : 'opacity-85 border-border'
                   }`}
                 >
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
                           <CardTitle className="text-lg">
                             {metadata.credentialType.replace('Credential', ' Credential')}
                           </CardTitle>
                           {isActive && (
-                            <Badge variant="default" className="bg-green-600">
+                            <Badge variant="default" className="bg-green-600 hover:bg-green-600 text-white">
                               Active
                             </Badge>
                           )}
                           {metadata.isRevoked && <Badge variant="destructive">Revoked</Badge>}
                           {isExpired && !metadata.isRevoked && (
-                            <Badge variant="secondary" className="bg-orange-600 text-white">
+                            <Badge
+                              variant="secondary"
+                              className="bg-orange-600 hover:bg-orange-600 text-white"
+                            >
                               Expired
                             </Badge>
                           )}
@@ -283,17 +293,18 @@ export function VerifiableCredentialsCard() {
                         </div>
                       </div>
 
-                      <div className="flex gap-2 ml-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 lg:ml-4 w-full lg:w-auto">
                         <Button
                           onClick={() => downloadCredential(metadata.id)}
                           variant="default"
                           size="sm"
+                          className="w-full"
                           title="Download as JSON"
                         >
                           <Download className="h-4 w-4 mr-1" />
                           Download
                         </Button>
-                        <Button asChild variant="secondary" size="sm" title="View details">
+                        <Button asChild variant="secondary" size="sm" className="w-full" title="View details">
                           <Link href={`/dashboard/credentials/${metadata.id}`}>
                             <Eye className="h-4 w-4 mr-1" />
                             View
@@ -305,6 +316,7 @@ export function VerifiableCredentialsCard() {
                             disabled={revoking === metadata.id}
                             variant="destructive"
                             size="sm"
+                            className="w-full sm:col-span-2 lg:col-span-1"
                             title="Revoke credential"
                           >
                             <Ban className="h-4 w-4 mr-1" />
@@ -339,7 +351,7 @@ export function VerifiableCredentialsCard() {
         )}
 
         {/* Info Box */}
-        <Card className="mt-6 border-blue-200 bg-blue-50/50">
+        <Card className="mt-6 border-blue-300/70 dark:border-blue-800 bg-blue-50/70 dark:bg-blue-950/30">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Info className="h-5 w-5" />

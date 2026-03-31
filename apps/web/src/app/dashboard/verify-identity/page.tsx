@@ -186,12 +186,16 @@ export default function VerifyIdentityPage() {
 
         {/* Verification Status Card */}
         <div className="bg-card border border-border shadow-sm rounded-lg p-4 md:p-6 mb-6">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Current Verification Status</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">
+            Current Verification Status
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <p className="text-sm text-muted-foreground mb-1">Overall Status</p>
-              <p className={`text-base md:text-lg font-semibold px-3 py-1 rounded inline-block border ${statusColor}`}>
+              <p
+                className={`text-base md:text-lg font-semibold px-3 py-1 rounded inline-block border ${statusColor}`}
+              >
                 {verificationStatus?.status?.replace('-', ' ').toUpperCase() || 'UNVERIFIED'}
               </p>
             </div>
@@ -220,7 +224,9 @@ export default function VerifyIdentityPage() {
 
         {/* Linked Providers */}
         <div className="bg-card border border-border shadow-sm rounded-lg p-4 md:p-6 mb-6">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Linked Identity Providers</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">
+            Linked Identity Providers
+          </h2>
 
           {identityLinks.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
@@ -264,7 +270,9 @@ export default function VerifyIdentityPage() {
 
         {/* Start Verification */}
         <div className="bg-card border border-border shadow-sm rounded-lg p-4 md:p-6">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Start New Verification</h2>
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">
+            Start New Verification
+          </h2>
 
           <div className="space-y-4">
             {/* Stripe Identity (Primary) */}
@@ -373,7 +381,9 @@ export default function VerifyIdentityPage() {
               <div className="border border-border rounded-lg p-4 opacity-70 bg-background">
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">Yoti Digital Identity (Legacy)</h3>
+                    <h3 className="font-semibold text-foreground">
+                      Yoti Digital Identity (Legacy)
+                    </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       Government-certified digital identity - requires YOTI_CLIENT_SDK_ID
                     </p>
@@ -397,7 +407,9 @@ export default function VerifyIdentityPage() {
 
         {/* Info Section */}
         <div className="mt-6 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 md:p-6">
-          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">About Verification Levels</h3>
+          <h3 className="font-semibold text-blue-900 dark:text-blue-200 mb-2">
+            About Verification Levels
+          </h3>
           <div className="text-sm text-blue-800 dark:text-blue-300 space-y-2">
             <p>
               <strong>GPG 45 (UK Trust Framework):</strong> Low, Medium, High, Very High
