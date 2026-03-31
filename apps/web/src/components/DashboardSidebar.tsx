@@ -521,7 +521,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
               >
                 <CreditCard className="h-4 w-4" />
-                <span>Billing</span>
+                <span>Billing &amp; Payments</span>
               </Link>
             </DropdownMenuItem>
 

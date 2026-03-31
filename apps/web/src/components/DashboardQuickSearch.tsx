@@ -26,7 +26,7 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     keywords: ['account', 'settings', 'security', 'billing', 'preferences'],
   },
   {
-    title: 'Billing',
+    title: 'Billing & Payments',
     description: 'Manage subscriptions, payments, and invoices',
     href: '/dashboard/account/billing',
     keywords: ['billing', 'subscription', 'stripe', 'payments', 'invoices'],

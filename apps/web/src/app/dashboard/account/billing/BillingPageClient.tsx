@@ -457,13 +457,17 @@ export default function BillingPageClient() {
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Trust Signals</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Trust Signals
+                </p>
                 <p className="mt-1 text-sm text-foreground">
                   Credentials and verification improve enterprise and platform confidence.
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-card p-3">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Consent Control</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                  Consent Control
+                </p>
                 <p className="mt-1 text-sm text-foreground">
                   Precise consent settings help unlock compliant monetization pathways.
                 </p>
@@ -488,7 +492,9 @@ export default function BillingPageClient() {
               <ReceiptText className="h-5 w-5" />
               Billing History
             </CardTitle>
-            <CardDescription>Invoice lifecycle records for subscriptions and renewals.</CardDescription>
+            <CardDescription>
+              Invoice lifecycle records for subscriptions and renewals.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {summary?.billingHistory?.length ? (
@@ -535,7 +541,7 @@ export default function BillingPageClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base md:text-lg">
               <CreditCard className="h-5 w-5" />
-              Card Management
+              Payment Methods
             </CardTitle>
             <CardDescription>
               View saved cards and securely manage payment methods in Stripe.
@@ -544,7 +550,10 @@ export default function BillingPageClient() {
           <CardContent className="space-y-3">
             {summary?.cards?.length ? (
               summary.cards.slice(0, 4).map((card) => (
-                <div key={card.id} className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+                <div
+                  key={card.id}
+                  className="rounded-lg border border-border bg-muted/30 p-3 text-sm"
+                >
                   <p className="font-medium text-foreground">
                     {(card.brand || 'Card').toUpperCase()} •••• {card.last4 || '----'}
                   </p>
@@ -591,7 +600,9 @@ export default function BillingPageClient() {
                   className="rounded-lg border border-border bg-card p-3 text-xs md:text-sm"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="font-medium text-foreground">{payment.description || payment.id}</p>
+                    <p className="font-medium text-foreground">
+                      {payment.description || payment.id}
+                    </p>
                     <Badge variant="outline" className="text-[10px] uppercase">
                       {payment.status}
                     </Badge>
