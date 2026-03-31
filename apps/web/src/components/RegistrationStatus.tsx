@@ -144,7 +144,11 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
                 disabled={!hasRegistryId}
                 className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:text-slate-500"
               >
-                {showRegistryId ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                {showRegistryId ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
                 {showRegistryId ? 'Hide Registry ID' : 'Click to Reveal Registry ID'}
               </button>
               <p className="text-xs text-slate-400">
@@ -199,7 +203,11 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
               </div>
               <Badge
                 variant="outline"
-                className={actor.isVerified ? 'border-green-500/50 text-green-700 dark:text-green-300' : 'border-border text-muted-foreground'}
+                className={
+                  actor.isVerified
+                    ? 'border-green-500/50 text-green-700 dark:text-green-300'
+                    : 'border-border text-muted-foreground'
+                }
               >
                 {actor.isVerified ? 'Verified' : 'Not Verified'}
               </Badge>
@@ -212,7 +220,11 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
               </div>
               <Badge
                 variant="outline"
-                className={actor.isPro ? 'border-amber-500/50 text-amber-700 dark:text-amber-300' : 'border-border text-muted-foreground'}
+                className={
+                  actor.isPro
+                    ? 'border-amber-500/50 text-amber-700 dark:text-amber-300'
+                    : 'border-border text-muted-foreground'
+                }
               >
                 {actor.isPro ? 'Pro Member' : 'Standard Member'}
               </Badge>
