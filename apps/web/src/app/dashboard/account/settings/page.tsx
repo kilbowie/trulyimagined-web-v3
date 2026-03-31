@@ -11,7 +11,6 @@ import { Shield, CreditCard, Bell, UserCircle, Lock, CheckCircle2 } from 'lucide
  * Account Settings Page
  *
  * Mobile-first, theme-responsive account settings shell.
- * Billing is intentionally placeholder-only for now.
  */
 export default async function AccountSettingsPage() {
   const user = await getCurrentUser();
@@ -54,7 +53,9 @@ export default async function AccountSettingsPage() {
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Email Address
                 </p>
-                <p className="mt-1 break-all text-sm text-foreground">{user.email || 'Not available'}</p>
+                <p className="mt-1 break-all text-sm text-foreground">
+                  {user.email || 'Not available'}
+                </p>
               </div>
             </div>
 
@@ -183,20 +184,19 @@ export default async function AccountSettingsPage() {
           <CardTitle className="flex items-center gap-2 text-base md:text-lg">
             <CreditCard className="h-5 w-5" />
             Billing
-            <Badge variant="secondary" className="ml-1 text-xs">
-              Placeholder
-            </Badge>
           </CardTitle>
           <CardDescription>
-            Billing is not ready to implement yet. This section is intentionally a placeholder.
+            Subscription plans, invoices, and payment methods are managed on the dedicated Billing
+            page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3 text-sm">
           <p className="text-muted-foreground">
-            Subscription plans, invoices, and payment methods will be added here in a future release.
+            Stripe-hosted checkout and customer portal flows are available for secure billing
+            management.
           </p>
-          <Button disabled className="w-full sm:w-auto">
-            Manage Billing (Coming Soon)
+          <Button asChild className="w-full sm:w-auto">
+            <Link href="/dashboard/account/billing">Manage Billing</Link>
           </Button>
         </CardContent>
       </Card>

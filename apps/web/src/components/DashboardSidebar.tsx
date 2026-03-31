@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import {
   Shield,
   UserCircle,
+  CreditCard,
   Settings,
   ScrollText,
   History,
@@ -511,6 +512,16 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               >
                 <Settings className="h-4 w-4" />
                 <span>Account</span>
+              </Link>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem asChild>
+              <Link
+                href="/dashboard/account/billing"
+                className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+              >
+                <CreditCard className="h-4 w-4" />
+                <span>Billing</span>
               </Link>
             </DropdownMenuItem>
 

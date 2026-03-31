@@ -26,6 +26,12 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     keywords: ['account', 'settings', 'security', 'billing', 'preferences'],
   },
   {
+    title: 'Billing',
+    description: 'Manage subscriptions, payments, and invoices',
+    href: '/dashboard/account/billing',
+    keywords: ['billing', 'subscription', 'stripe', 'payments', 'invoices'],
+  },
+  {
     title: 'Profile',
     description: 'Your actor profile details',
     href: '/dashboard/profile',
