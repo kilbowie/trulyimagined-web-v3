@@ -19,8 +19,7 @@ export async function PATCH(req: NextRequest, { params }: RouteParams): Promise<
     const { userProfileId } = await params;
     const body = await req.json();
 
-    const isVerified =
-      body.isVerified === undefined ? undefined : Boolean(body.isVerified);
+    const isVerified = body.isVerified === undefined ? undefined : Boolean(body.isVerified);
     const isPro = body.isPro === undefined ? undefined : Boolean(body.isPro);
 
     if (isVerified === undefined && isPro === undefined) {

@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Check, Loader2, ShieldCheck, Star } from 'lucide-react';
+import { Check, CheckCircle2, Loader2, ShieldCheck, Star } from 'lucide-react';
 
 interface IamUser {
   id: string;
@@ -36,12 +36,27 @@ interface IamUser {
   registry_id: string | null;
 }
 
+interface SuccessToast {
+  id: number;
+  message: string;
+}
+
 export default function IamUsersTable() {
   const [users, setUsers] = useState<IamUser[]>([]);
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [savingState, setSavingState] = useState<Record<string, boolean>>({});
+  const [successToasts, setSuccessToasts] = useState<SuccessToast[]>([]);
+
+  const pushSuccessToast = (message: string) => {
+    const id = Date.now() + Math.floor(Math.random() * 1000);
+    setSuccessToasts((current) => [...current, { id, message }]);
+
+    setTimeout(() => {
+      setSuccessToasts((current) => current.filter((toast) => toast.id !== id));
+    }, 3000);
+  };
 
   const fetchUsers = async () => {
     try {
@@ -91,6 +106,10 @@ export default function IamUsersTable() {
 
   const updateStatus = async (userId: string, field: 'is_verified' | 'is_pro', value: boolean) => {
     const saveKey = `${userId}:${field}`;
+    const targetUser = users.find((user) => user.id === userId);
+    const displayName =
+      targetUser?.professional_name || targetUser?.legal_name || targetUser?.email || 'User';
+    const fieldLabel = field === 'is_verified' ? 'Verified' : 'Pro';
 
     setSavingState((current) => ({ ...current, [saveKey]: true }));
     setError(null);
@@ -127,6 +146,8 @@ export default function IamUsersTable() {
           };
         })
       );
+
+      pushSuccessToast(`${fieldLabel} ${value ? 'enabled' : 'disabled'} for ${displayName}.`);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Failed to update user status');
     } finally {
@@ -140,6 +161,22 @@ export default function IamUsersTable() {
 
   return (
     <div className="space-y-6 pb-12">
+      {successToasts.length > 0 && (
+        <div className="fixed top-20 right-6 z-50 space-y-2 pointer-events-none">
+          {successToasts.map((toast) => (
+            <div
+              key={toast.id}
+              className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800 shadow-md"
+            >
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                <span>{toast.message}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div>
         <h2 className="text-3xl font-bold tracking-tight">IAM Users</h2>
         <p className="text-muted-foreground">
@@ -204,7 +241,9 @@ export default function IamUsersTable() {
                         <TableRow key={user.id}>
                           <TableCell>
                             <div className="space-y-0.5">
-                              <p className="font-medium">{user.professional_name || user.legal_name}</p>
+                              <p className="font-medium">
+                                {user.professional_name || user.legal_name}
+                              </p>
                               <p className="text-xs text-muted-foreground">@{user.username}</p>
                             </div>
                           </TableCell>
@@ -225,7 +264,9 @@ export default function IamUsersTable() {
                               variant={user.is_verified ? 'default' : 'outline'}
                               size="sm"
                               disabled={isSavingVerified}
-                              onClick={() => updateStatus(user.id, 'is_verified', !user.is_verified)}
+                              onClick={() =>
+                                updateStatus(user.id, 'is_verified', !user.is_verified)
+                              }
                               className={user.is_verified ? 'bg-green-600 hover:bg-green-700' : ''}
                             >
                               {isSavingVerified ? (
@@ -247,7 +288,9 @@ export default function IamUsersTable() {
                               size="sm"
                               disabled={isSavingPro}
                               onClick={() => updateStatus(user.id, 'is_pro', !user.is_pro)}
-                              className={user.is_pro ? 'bg-amber-500 hover:bg-amber-600 text-black' : ''}
+                              className={
+                                user.is_pro ? 'bg-amber-500 hover:bg-amber-600 text-black' : ''
+                              }
                             >
                               {isSavingPro ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
