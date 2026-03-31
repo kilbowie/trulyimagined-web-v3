@@ -207,7 +207,9 @@ export default function CredentialDetailPage() {
           <div className="text-center">
             <span className="text-6xl mb-4 block">⚠️</span>
             <h1 className="mb-4 text-2xl font-bold text-foreground">Error Loading Credential</h1>
-            <p className="mb-6 text-sm text-destructive md:text-base">{error || 'Credential not found'}</p>
+            <p className="mb-6 text-sm text-destructive md:text-base">
+              {error || 'Credential not found'}
+            </p>
             <Link
               href="/dashboard"
               className="inline-flex items-center rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -428,10 +430,7 @@ export default function CredentialDetailPage() {
           <div>
             <dt className="text-sm font-medium text-muted-foreground">Credential ID (W3C VC ID)</dt>
             <dd className="mt-1 text-sm">
-              <a
-                href={credential.id}
-                className="break-all font-mono text-primary hover:underline"
-              >
+              <a href={credential.id} className="break-all font-mono text-primary hover:underline">
                 {credential.id}
               </a>
             </dd>

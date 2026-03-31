@@ -77,15 +77,15 @@ export default function LicenseTrackerPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'text-green-400 bg-green-500/20 border-green-500';
+        return 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/30';
       case 'revoked':
-        return 'text-red-400 bg-red-500/20 border-red-500';
+        return 'text-red-700 dark:text-red-300 bg-red-500/10 border-red-500/30';
       case 'expired':
-        return 'text-yellow-400 bg-yellow-500/20 border-yellow-500';
+        return 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/30';
       case 'suspended':
-        return 'text-orange-400 bg-orange-500/20 border-orange-500';
+        return 'text-orange-700 dark:text-orange-300 bg-orange-500/10 border-orange-500/30';
       default:
-        return 'text-gray-400 bg-gray-500/20 border-gray-500';
+        return 'text-muted-foreground bg-muted border-border';
     }
   };
 
@@ -100,70 +100,72 @@ export default function LicenseTrackerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading licenses...</div>
+      <div className="flex min-h-[50vh] items-center justify-center px-4 py-8">
+        <div className="rounded-xl border border-border bg-card px-6 py-5 text-center text-base text-foreground md:text-lg">
+          Loading licenses...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="px-4 py-6 md:px-6 md:py-8">
+      <div className="mx-auto w-full max-w-7xl">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard')}
-            className="text-purple-300 hover:text-purple-100 mb-4 flex items-center gap-2"
+            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:text-base"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-4xl font-bold text-white mb-2">License Tracker</h1>
-          <p className="text-gray-300">
+          <h1 className="mb-2 text-2xl font-bold text-foreground md:text-4xl">License Tracker</h1>
+          <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
             Monitor and manage licenses granted to API clients for your data and content.
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-300">
+          <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive md:text-base">
             {error}
           </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20">
-            <div className="text-3xl font-bold text-white mb-2">{stats.total}</div>
-            <div className="text-gray-300 text-sm">Total Licenses</div>
+        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+          <div className="rounded-xl border border-border bg-card p-4 md:p-5">
+            <div className="mb-1 text-2xl font-bold text-foreground md:text-3xl">{stats.total}</div>
+            <div className="text-xs text-muted-foreground md:text-sm">Total Licenses</div>
           </div>
-          <div className="bg-green-500/20 backdrop-blur-sm rounded-xl p-6 border border-green-500">
-            <div className="text-3xl font-bold text-green-300 mb-2">{stats.active}</div>
-            <div className="text-green-200 text-sm">Active</div>
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 md:p-5">
+            <div className="mb-1 text-2xl font-bold text-emerald-700 dark:text-emerald-300 md:text-3xl">{stats.active}</div>
+            <div className="text-xs text-emerald-700/90 dark:text-emerald-300 md:text-sm">Active</div>
           </div>
-          <div className="bg-red-500/20 backdrop-blur-sm rounded-xl p-6 border border-red-500">
-            <div className="text-3xl font-bold text-red-300 mb-2">{stats.revoked}</div>
-            <div className="text-red-200 text-sm">Revoked</div>
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 md:p-5">
+            <div className="mb-1 text-2xl font-bold text-red-700 dark:text-red-300 md:text-3xl">{stats.revoked}</div>
+            <div className="text-xs text-red-700/90 dark:text-red-300 md:text-sm">Revoked</div>
           </div>
-          <div className="bg-yellow-500/20 backdrop-blur-sm rounded-xl p-6 border border-yellow-500">
-            <div className="text-3xl font-bold text-yellow-300 mb-2">{stats.expired}</div>
-            <div className="text-yellow-200 text-sm">Expired</div>
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 md:p-5">
+            <div className="mb-1 text-2xl font-bold text-amber-700 dark:text-amber-300 md:text-3xl">{stats.expired}</div>
+            <div className="text-xs text-amber-700/90 dark:text-amber-300 md:text-sm">Expired</div>
           </div>
-          <div className="bg-orange-500/20 backdrop-blur-sm rounded-xl p-6 border border-orange-500">
-            <div className="text-3xl font-bold text-orange-300 mb-2">{stats.suspended}</div>
-            <div className="text-orange-200 text-sm">Suspended</div>
+          <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 md:p-5">
+            <div className="mb-1 text-2xl font-bold text-orange-700 dark:text-orange-300 md:text-3xl">{stats.suspended}</div>
+            <div className="text-xs text-orange-700/90 dark:text-orange-300 md:text-sm">Suspended</div>
           </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="mb-6 flex flex-wrap gap-2">
           {['all', 'active', 'revoked', 'expired', 'suspended'].map((filter) => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-4 py-2 rounded-lg font-semibold transition-colors ${
+              className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors md:px-4 ${
                 activeFilter === filter
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-white/10 text-gray-300 hover:bg-white/20'
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-card text-foreground hover:bg-muted'
               }`}
             >
               {filter.charAt(0).toUpperCase() + filter.slice(1)}
@@ -173,9 +175,9 @@ export default function LicenseTrackerPage() {
 
         {/* Licenses List */}
         {licenses.length === 0 ? (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-12 border border-white/20 text-center">
-            <p className="text-gray-300 text-lg">No licenses found.</p>
-            <p className="text-gray-400 text-sm mt-2">
+          <div className="rounded-xl border border-border bg-card p-8 text-center md:p-12">
+            <p className="text-lg font-semibold text-foreground">No licenses found.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
               Licenses will appear here when API clients request access to your data.
             </p>
           </div>
@@ -184,49 +186,49 @@ export default function LicenseTrackerPage() {
             {licenses.map((license) => (
               <div
                 key={license.id}
-                className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border border-white/20 hover:border-purple-500 transition-colors"
+                className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 md:p-6"
               >
-                <div className="flex items-start justify-between mb-4">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1">{license.api_client_name}</h3>
-                    <p className="text-gray-400 text-sm">
-                      Type: <span className="text-gray-300">{license.license_type}</span>
+                    <h3 className="mb-1 text-lg font-bold text-foreground md:text-xl">{license.api_client_name}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Type: <span className="text-foreground">{license.license_type}</span>
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-sm font-semibold border ${getStatusColor(license.status)}`}
+                    className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold md:text-sm ${getStatusColor(license.status)}`}
                   >
                     {license.status.toUpperCase()}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 text-sm">
+                <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
                   <div>
-                    <div className="text-gray-400">Issued</div>
-                    <div className="text-white">{formatDate(license.issued_at)}</div>
+                    <div className="text-muted-foreground">Issued</div>
+                    <div className="text-foreground">{formatDate(license.issued_at)}</div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Expires</div>
-                    <div className="text-white">{formatDate(license.expires_at)}</div>
+                    <div className="text-muted-foreground">Expires</div>
+                    <div className="text-foreground">{formatDate(license.expires_at)}</div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Usage Count</div>
-                    <div className="text-white">{license.usage_count}</div>
+                    <div className="text-muted-foreground">Usage Count</div>
+                    <div className="text-foreground">{license.usage_count}</div>
                   </div>
                   <div>
-                    <div className="text-gray-400">Last Used</div>
-                    <div className="text-white">{formatDate(license.last_used_at)}</div>
+                    <div className="text-muted-foreground">Last Used</div>
+                    <div className="text-foreground">{formatDate(license.last_used_at)}</div>
                   </div>
                 </div>
 
                 {/* Permissions Snapshot */}
                 <details className="group">
-                  <summary className="cursor-pointer text-purple-300 hover:text-purple-100 text-sm mb-2 list-none flex items-center gap-2">
+                  <summary className="mb-2 flex list-none cursor-pointer items-center gap-2 text-sm text-primary hover:text-primary/80">
                     <span className="transform transition-transform group-open:rotate-90">▶</span>
                     View Granted Permissions
                   </summary>
-                  <div className="bg-black/30 rounded-lg p-4 mt-2">
-                    <pre className="text-xs text-gray-300 overflow-x-auto">
+                  <div className="mt-2 rounded-lg border border-border bg-muted p-4">
+                    <pre className="overflow-x-auto text-xs text-foreground">
                       {JSON.stringify(license.granted_permissions_snapshot, null, 2)}
                     </pre>
                   </div>
@@ -234,7 +236,7 @@ export default function LicenseTrackerPage() {
 
                 {/* Revocation Info */}
                 {license.status === 'revoked' && license.revocation_reason && (
-                  <div className="mt-4 p-3 bg-red-500/10 border border-red-500 rounded-lg text-sm text-red-300">
+                  <div className="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">
                     <strong>Revoked:</strong> {license.revocation_reason}
                     {license.revoked_at && ` on ${formatDate(license.revoked_at)}`}
                   </div>
@@ -242,13 +244,13 @@ export default function LicenseTrackerPage() {
 
                 {/* Actions */}
                 {license.status === 'active' && (
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                     <button
                       onClick={() => {
                         // TODO: Implement revoke functionality
                         alert('Revoke license functionality coming soon');
                       }}
-                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors"
+                      className="w-full rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 sm:w-auto"
                     >
                       Revoke License
                     </button>
