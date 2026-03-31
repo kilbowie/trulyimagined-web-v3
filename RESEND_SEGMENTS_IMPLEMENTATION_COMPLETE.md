@@ -10,18 +10,20 @@ Your three Resend Audience Segments have been fully integrated into the Truly Im
 
 ### Segment Integration
 
-| Segment | ID | Email Address | Purpose |
-|---------|----|----|---------|
-| **NoReply** | `844903fe-ab8b-4768-ad95-d9af4dc0c94d` | noreply@updates.trulyimagined.com | System notifications (welcome, verification, credentials) |
-| **Support** | `c4401e98-8e46-4508-b962-5317c0b675f5` | support@updates.trulyimagined.com | User-replyable messages & support responses |
-| **Notifications** | `7c2dfb01-eed5-48a8-ada0-dd04193f458f` | notifications@updates.trulyimagined.com | Internal admin alerts & system events |
+| Segment           | ID                                     | Email Address                           | Purpose                                                   |
+| ----------------- | -------------------------------------- | --------------------------------------- | --------------------------------------------------------- |
+| **NoReply**       | `844903fe-ab8b-4768-ad95-d9af4dc0c94d` | noreply@updates.trulyimagined.com       | System notifications (welcome, verification, credentials) |
+| **Support**       | `c4401e98-8e46-4508-b962-5317c0b675f5` | support@updates.trulyimagined.com       | User-replyable messages & support responses               |
+| **Notifications** | `7c2dfb01-eed5-48a8-ada0-dd04193f458f` | notifications@updates.trulyimagined.com | Internal admin alerts & system events                     |
 
 ---
 
 ## 🔧 Files Modified
 
 ### 1. **`.env.local`** — Environment Configuration
+
 Added three new Resend Audience Segment ID variables:
+
 ```bash
 RESEND_SEGMENT_ID_NOREPLY=844903fe-ab8b-4768-ad95-d9af4dc0c94d
 RESEND_SEGMENT_ID_SUPPORT=c4401e98-8e46-4508-b962-5317c0b675f5
@@ -29,7 +31,9 @@ RESEND_SEGMENT_ID_NOTIFICATIONS=7c2dfb01-eed5-48a8-ada0-dd04193f458f
 ```
 
 ### 2. **`apps/web/src/lib/email.ts`** — Core Email Service
+
 **Enhancements:**
+
 - ✅ Added `SEGMENT_IDS` constant mapping for all three segments
 - ✅ Enhanced `SendEmailOptions` interface with optional `tags` parameter
 - ✅ Updated `sendEmail()` function to track and log segment information
@@ -48,6 +52,7 @@ RESEND_SEGMENT_ID_NOTIFICATIONS=7c2dfb01-eed5-48a8-ada0-dd04193f458f
 ## 🎯 How Segments Work
 
 ### Automatic Segment Tracking
+
 When emails are sent, they're automatically associated with their segment:
 
 ```typescript
@@ -58,12 +63,15 @@ await sendWelcomeEmail('user@example.com', 'John', 'Actor');
 ```
 
 ### Development Testing
+
 Enable mock mode to see segment tracking in console:
+
 ```bash
 USE_MOCK_EMAILS=true
 ```
 
 Output:
+
 ```
 📧 ========== MOCK EMAIL ==========
 Type: NOREPLY
@@ -93,6 +101,7 @@ Tags: segment:noreply, type:welcome, type:actor
 ### Track Email Performance by Type
 
 With segment tags, you can now:
+
 - **Identify high-performing email types** (e.g., which credential types have best open rates)
 - **Monitor support effectiveness** (response times, customer satisfaction)
 - **Optimize send timing** (find best times by segment)
@@ -103,27 +112,35 @@ With segment tags, you can now:
 ## ✨ Key Features
 
 ### 1. **Automatic Segment Assignment**
+
 ✅ No manual setup needed — segments automatically assigned based on email type
 
 ### 2. **Enhanced Logging**
+
 ✅ Console logs now show segment info:
+
 ```
 📧 [NOREPLY] Email sent: Welcome to Truly Imagined! 🎭 to user@example.com (Segment: noreply)
 ```
 
 ### 3. **Flexible Tags**
+
 ✅ Email functions support custom tags for granular analytics:
+
 ```typescript
-tags: getTags('welcome', 'actor')  // → ['type:welcome', 'type:actor']
-tags: getTags('credential-issued', 'government-id')
-tags: getTags('feedback-submitted', 'sentiment-love')
+tags: getTags('welcome', 'actor'); // → ['type:welcome', 'type:actor']
+tags: getTags('credential-issued', 'government-id');
+tags: getTags('feedback-submitted', 'sentiment-love');
 ```
 
 ### 4. **Type-Safe Implementation**
+
 ✅ Full TypeScript support with no compilation errors
 
 ### 5. **Future-Ready**
+
 ✅ Tag infrastructure ready for future enhancements:
+
 - Segment-specific unsubscribe preferences
 - Dynamic tag generation based on user attributes
 - Cross-segment campaign tracking
@@ -133,6 +150,7 @@ tags: getTags('feedback-submitted', 'sentiment-love')
 ## 🚀 Best Practices
 
 ### Do's ✅
+
 - ✅ Use correct `type` parameter (noreply, support, admin) for each email
 - ✅ Regularly monitor Resend dashboard for segment metrics
 - ✅ Test with `USE_MOCK_EMAILS=true` before deploying
@@ -140,6 +158,7 @@ tags: getTags('feedback-submitted', 'sentiment-love')
 - ✅ Use kebab-case for tag names
 
 ### Don'ts ❌
+
 - ❌ Don't mix segment types (e.g., don't send user-replyable email as noreply)
 - ❌ Don't include PII in tags
 - ❌ Don't override segment IDs without explicit reason
@@ -150,16 +169,19 @@ tags: getTags('feedback-submitted', 'sentiment-love')
 ## 🔒 Compliance & Security
 
 ✅ **Consent Management**
+
 - Support segment respects user consent
 - NoReply for essential system notifications
 - Admin segment for internal only
 
 ✅ **Email Authentication**
+
 - All sending addresses verified in Resend
 - DKIM/SPF configured per address
 - Segments prevent metrics cross-contamination
 
 ✅ **GDPR/Privacy**
+
 - Segment IDs enable proper data management
 - Easy user removal from specific segments
 - Audit trail of email categorization
@@ -174,7 +196,7 @@ tags: getTags('feedback-submitted', 'sentiment-love')
 export async function sendMyCustomEmail(userEmail: string, data: string) {
   const subject = 'My Custom Email';
   const html = createTemplate(data);
-  
+
   return await sendEmail({
     to: userEmail,
     subject,
@@ -225,6 +247,7 @@ Before deploying to production:
 ## 🎉 You're All Set!
 
 Your Resend integration now includes:
+
 1. ✅ Three professional audience segments
 2. ✅ Automatic segment tracking per email
 3. ✅ Comprehensive logging and monitoring
@@ -232,6 +255,7 @@ Your Resend integration now includes:
 5. ✅ Future-ready for targeted campaigns
 
 **Next Steps:**
+
 1. Deploy to staging for testing
 2. Monitor Resend dashboard for activity
 3. Use analytics to optimize send times

@@ -8,11 +8,11 @@
 
 ## 🎯 Segment Overview
 
-| Segment Name | Purpose | Email From | Segment ID |
-|---|---|---|---|
-| **NoReply** | System notifications (welcome, verification, credentials) | noreply@ | `844903fe-ab8b-4768-ad95-d9af4dc0c94d` |
-| **Support** | User-replyable messages (support responses, feedback) | support@ | `c4401e98-8e46-4508-b962-5317c0b675f5` |
-| **Notifications** | Internal admin alerts (tickets, feedback) | notifications@ | `7c2dfb01-eed5-48a8-ada0-dd04193f458f` |
+| Segment Name      | Purpose                                                   | Email From     | Segment ID                             |
+| ----------------- | --------------------------------------------------------- | -------------- | -------------------------------------- |
+| **NoReply**       | System notifications (welcome, verification, credentials) | noreply@       | `844903fe-ab8b-4768-ad95-d9af4dc0c94d` |
+| **Support**       | User-replyable messages (support responses, feedback)     | support@       | `c4401e98-8e46-4508-b962-5317c0b675f5` |
+| **Notifications** | Internal admin alerts (tickets, feedback)                 | notifications@ | `7c2dfb01-eed5-48a8-ada0-dd04193f458f` |
 
 ---
 
@@ -30,6 +30,7 @@ RESEND_SEGMENT_ID_NOTIFICATIONS=7c2dfb01-eed5-48a8-ada0-dd04193f458f
 ```
 
 **Why separate environment variables?**
+
 - Easy to update segments without code changes
 - Supports different segment IDs in dev/staging/production
 - Maintains audit trail of segment assignments
@@ -40,6 +41,7 @@ RESEND_SEGMENT_ID_NOTIFICATIONS=7c2dfb01-eed5-48a8-ada0-dd04193f458f
 **File:** `apps/web/src/lib/email.ts`
 
 #### Added Segment ID Constants
+
 ```typescript
 const SEGMENT_IDS = {
   noreply: process.env.RESEND_SEGMENT_ID_NOREPLY || '844903fe-ab8b-4768-ad95-d9af4dc0c94d',
@@ -49,6 +51,7 @@ const SEGMENT_IDS = {
 ```
 
 #### Enhanced SendEmailOptions Interface
+
 ```typescript
 interface SendEmailOptions {
   to: string | string[];
@@ -64,12 +67,14 @@ interface SendEmailOptions {
 ```
 
 #### Updated Core sendEmail() Function
+
 - Automatically adds `segment:{type}` tag to all emails
 - Supports additional custom tags via `tags` parameter
 - Logs segment information in mock mode for debugging
 - Sends tags array to Resend API
 
 #### New Helper Function
+
 ```typescript
 function getTags(...args: string[]): string[] {
   return args.map((arg) => `type:${arg}`);
@@ -77,8 +82,9 @@ function getTags(...args: string[]): string[] {
 ```
 
 **Usage:**
+
 ```typescript
-tags: getTags('welcome', 'actor')
+tags: getTags('welcome', 'actor');
 // Results in: ['segment:noreply', 'type:welcome', 'type:actor']
 ```
 
@@ -86,33 +92,38 @@ tags: getTags('welcome', 'actor')
 
 All email-sending functions now include segment-specific tags:
 
-| Function | Segment | Tags |
-|---|---|---|
-| `sendWelcomeEmail()` | noreply | `segment:noreply`, `type:welcome`, `type:{role}` |
-| `sendVerificationCompleteEmail()` | noreply | `segment:noreply`, `type:verification-complete` |
-| `sendCredentialIssuedEmail()` | noreply | `segment:noreply`, `type:credential-issued`, `type:{credentialType}` |
-| `sendSupportTicketCreatedEmail()` | admin | `segment:admin`, `type:support-ticket-created`, `type:priority-{level}` |
-| `sendSupportTicketResponseEmail()` | support | `segment:support`, `type:support-ticket-response` |
-| `sendFeedbackResponseEmail()` | support | `segment:support`, `type:feedback-response` |
-| `sendFeedbackNotificationEmail()` | admin | `segment:admin`, `type:feedback-submitted`, `type:sentiment-{level}` |
+| Function                           | Segment | Tags                                                                    |
+| ---------------------------------- | ------- | ----------------------------------------------------------------------- |
+| `sendWelcomeEmail()`               | noreply | `segment:noreply`, `type:welcome`, `type:{role}`                        |
+| `sendVerificationCompleteEmail()`  | noreply | `segment:noreply`, `type:verification-complete`                         |
+| `sendCredentialIssuedEmail()`      | noreply | `segment:noreply`, `type:credential-issued`, `type:{credentialType}`    |
+| `sendSupportTicketCreatedEmail()`  | admin   | `segment:admin`, `type:support-ticket-created`, `type:priority-{level}` |
+| `sendSupportTicketResponseEmail()` | support | `segment:support`, `type:support-ticket-response`                       |
+| `sendFeedbackResponseEmail()`      | support | `segment:support`, `type:feedback-response`                             |
+| `sendFeedbackNotificationEmail()`  | admin   | `segment:admin`, `type:feedback-submitted`, `type:sentiment-{level}`    |
 
 ---
 
 ## 📊 Analytics & Use Cases
 
 ### 1. **Open Rate Tracking**
+
 Monitor engagement by segment type:
+
 - **NoReply segment**: Track system notification engagement
 - **Support segment**: Monitor support response effectiveness
 - **Notifications segment**: Track admin alert delivery
 
 ### 2. **Bounce & Complaint Analysis**
+
 - Identify segments with delivery issues
 - Diagnose reputation problems by email type
 - Adjust sending practices per segment
 
 ### 3. **Email Type Metrics**
+
 With the additional tags, you can track:
+
 - **Welcome emails**: New user onboarding effectiveness
 - **Verification emails**: Identity verification success rates
 - **Credential emails**: Credential issuance engagement
@@ -120,7 +131,9 @@ With the additional tags, you can track:
 - **Feedback tracking**: Product feedback response patterns
 
 ### 4. **Future Campaign Targeting**
+
 Segments enable:
+
 - Re-engagement campaigns by type
 - Feature announcements to specific groups
 - Segmented A/B testing
@@ -159,28 +172,34 @@ Console logs now include segment information:
 ## 🚀 Best Practices
 
 ### 1. **Segment Consistency**
+
 - Always use the correct `type` parameter when calling email functions
 - Maintain the three-tier architecture (noreply, support, admin)
 - Don't override segment types with custom tags
 
 ### 2. **Tag Hygiene**
+
 - Use kebab-case for tag names: `credential-issued`, `verification-complete`
 - Keep tags descriptive but concise
 - Avoid including email addresses or PII in tags
 
 ### 3. **Testing**
+
 - Always test with `USE_MOCK_EMAILS=true` before deploying
 - Verify segment IDs are correct in console output
 - Check that tags are appropriate for the email type
 
 ### 4. **Monitoring**
+
 - Regularly review Resend dashboard for segment metrics
 - Track delivery rates per segment
 - Monitor bounce and complaint rates by segment
 - Use Resend analytics to identify issues early
 
 ### 5. **Future Enhancements**
+
 Consider adding:
+
 - User preference tracking by segment
 - Segment-specific unsubscribe management
 - Custom segment IDs for different deployment environments
@@ -203,6 +222,7 @@ To view segment analytics:
 ### Creating Custom Reports
 
 Use Resend's analytics to:
+
 - **Filter by segment**: See metrics for each email type
 - **Track campaigns**: Monitor effectiveness over time
 - **Identify patterns**: Find delivery or engagement issues
@@ -213,17 +233,20 @@ Use Resend's analytics to:
 ## 🔐 Data Security & Compliance
 
 ### Consent Management
+
 - Segments respect user consent preferences
 - Support segment emails require explicit user action
 - NoReply segment for essential system notifications
 - Admin segment for internal notifications only
 
 ### Email Authentication
+
 - All three sending addresses are verified in Resend
 - DKIM/SPF configured for each address
 - Segment IDs prevent cross-contamination of metrics
 
 ### GDPR Compliance
+
 - Segments enable proper compliance management
 - Easy to identify and remove users from specific segments
 - Audit trail of email categorization
@@ -236,6 +259,7 @@ Use Resend's analytics to:
 ### Issue: Emails not showing in segment on Resend dashboard
 
 **Solution:**
+
 1. Verify environment variable names match exactly
 2. Check segment IDs are correct (copy from Resend dashboard)
 3. Ensure `USE_MOCK_EMAILS=false` in production
@@ -244,6 +268,7 @@ Use Resend's analytics to:
 ### Issue: Tags not appearing in Resend
 
 **Solution:**
+
 1. Check that `tags` parameter is included in `sendEmail()` call
 2. Verify tag format: should be array like `['segment:noreply', 'type:welcome']`
 3. Check Resend API response for errors
@@ -252,6 +277,7 @@ Use Resend's analytics to:
 ### Issue: Segment ID showing as invalid
 
 **Solution:**
+
 1. Re-verify segment ID from Resend dashboard
 2. Copy/paste directly (avoid typos)
 3. Check for extra spaces or formatting characters

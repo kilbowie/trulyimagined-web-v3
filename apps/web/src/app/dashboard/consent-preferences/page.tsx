@@ -222,9 +222,9 @@ export default function ConsentPreferencesPage() {
     onChange: (level: PermissionLevel) => void;
     label: string;
   }) => (
-    <div className="flex items-center justify-between py-3 border-b border-gray-200 last:border-0">
-      <span className="text-gray-900 font-medium">{label}</span>
-      <div className="flex gap-3">
+    <div className="flex flex-col md:flex-row md:items-center justify-between py-3 border-b border-border last:border-0 gap-4">
+      <span className="text-foreground font-medium text-sm md:text-base">{label}</span>
+      <div className="flex gap-2 md:gap-3 flex-wrap">
         <label className="flex items-center gap-2 cursor-pointer group">
           <input
             type="radio"
@@ -233,7 +233,7 @@ export default function ConsentPreferencesPage() {
             className="w-4 h-4"
           />
           <span
-            className={`text-sm ${value === 'allow' ? 'text-green-600 font-semibold' : 'text-gray-500 group-hover:text-gray-700'}`}
+            className={`text-sm ${value === 'allow' ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-muted-foreground group-hover:text-foreground'}`}
           >
             Allow
           </span>
@@ -246,7 +246,7 @@ export default function ConsentPreferencesPage() {
             className="w-4 h-4"
           />
           <span
-            className={`text-sm ${value === 'require_approval' ? 'text-yellow-600 font-semibold' : 'text-gray-500 group-hover:text-gray-700'}`}
+            className={`text-sm ${value === 'require_approval' ? 'text-yellow-600 dark:text-yellow-400 font-semibold' : 'text-muted-foreground group-hover:text-foreground'}`}
           >
             Require Approval
           </span>
@@ -259,7 +259,7 @@ export default function ConsentPreferencesPage() {
             className="w-4 h-4"
           />
           <span
-            className={`text-sm ${value === 'deny' ? 'text-red-600 font-semibold' : 'text-gray-500 group-hover:text-gray-700'}`}
+            className={`text-sm ${value === 'deny' ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-muted-foreground group-hover:text-foreground'}`}
           >
             Deny
           </span>
@@ -348,20 +348,20 @@ export default function ConsentPreferencesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard')}
-            className="text-purple-600 hover:text-purple-800 mb-4 flex items-center gap-2"
+            className="text-primary hover:text-primary/80 mb-4 flex items-center gap-2 font-medium"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
             Image & Likeness Consent Preferences
           </h1>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground text-sm md:text-base">
             Control how your image and likeness can be used. Set non-negotiable boundaries for
             different media types and content.
           </p>
@@ -369,16 +369,17 @@ export default function ConsentPreferencesPage() {
 
         {/* Current Version Section - Prominent */}
         {currentConsent && (
-          <div className="mb-8 bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border-2 border-purple-300">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Current Version</h2>
-            <div className="grid grid-cols-3 gap-6">
+          <div className="mb-8 bg-card rounded-xl p-6 border border-border">
+            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Current Version</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <div>
-                <div className="text-gray-500 text-sm mb-1">Version</div>
-                <div className="text-3xl font-bold text-purple-600">{currentConsent.version}</div>
+                <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
+                <div className="text-2xl md:text-3xl font-bold text-primary">{currentConsent.version}</div>
               </div>
               <div>
-                <div className="text-gray-500 text-sm mb-1">Last Updated</div>
-                <div className="text-xl font-semibold text-gray-900">
+                <div className="text-muted-foreground text-xs md:text-sm mb-1">Last Updated</div>
+                <div className="text-lg md:text-xl font-semibold text-foreground">
                   {new Date(currentConsent.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
@@ -387,9 +388,9 @@ export default function ConsentPreferencesPage() {
                 </div>
               </div>
               <div>
-                <div className="text-gray-500 text-sm mb-1">Licenses on this Version</div>
-                <div className="text-3xl font-bold text-green-600">
-                  {licenseCount} <span className="text-lg text-gray-500">Total</span>
+                <div className="text-muted-foreground text-xs md:text-sm mb-1">Licenses on this Version</div>
+                <div className="text-2xl md:text-3xl font-bold text-accent">
+                  {licenseCount} <span className="text-sm text-muted-foreground">Total</span>
                 </div>
               </div>
             </div>
@@ -398,44 +399,44 @@ export default function ConsentPreferencesPage() {
 
         {/* Success/Error Messages */}
         {success && (
-          <div className="mb-6 p-4 bg-green-500/20 border border-green-500 rounded-lg text-green-300">
+          <div className="mb-6 p-4 bg-card border border-green-500/50 rounded-lg text-green-600 dark:text-green-400 text-sm">
             {success}
           </div>
         )}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/20 border border-red-500 rounded-lg text-red-300">
+          <div className="mb-6 p-4 bg-card border border-red-500/50 rounded-lg text-red-600 dark:text-red-400 text-sm">
             {error}
           </div>
         )}
 
-        {/* Main Content - Two Column Layout */}
-        <div className="flex gap-8">
-          {/* Left Sidebar - Navigation */}
-          <div className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl p-4 border border-gray-200 sticky top-8 shadow-sm">
-              <h3 className="text-gray-900 font-bold mb-4">Quick Navigation</h3>
+        {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
+          <div className="hidden lg:block lg:w-64 flex-shrink-0">
+            <div className="bg-card rounded-xl p-4 border border-border sticky top-8 shadow-sm">
+              <h3 className="text-foreground font-bold mb-4 text-sm">Quick Navigation</h3>
               <nav className="space-y-2">
                 <a
                   href="#media-usage"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Media Usage Categories
                 </a>
                 <a
                   href="#content-types"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Content Type Restrictions
                 </a>
                 <a
                   href="#territories"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Geographic Territories
                 </a>
                 <a
                   href="#ai-controls"
-                  className="block px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   AI Controls
                 </a>
@@ -444,15 +445,15 @@ export default function ConsentPreferencesPage() {
           </div>
 
           {/* Right Content - Form */}
-          <div className="flex-1">
-            <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="flex-1 min-w-0">
+            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
               {/* Media Usage Categories */}
               <div
                 id="media-usage"
-                className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+                className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Media Usage Categories</h2>
-                <p className="text-gray-600 mb-6 text-sm">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Media Usage Categories</h2>
+                <p className="text-muted-foreground mb-6 text-sm">
                   Control how your image and likeness can be used across different media types.
                   Choose Allow for blanket approval, Require Approval for case-by-case review, or
                   Deny to reject usage.
@@ -564,10 +565,10 @@ export default function ConsentPreferencesPage() {
               {/* Content Type Restrictions */}
               <div
                 id="content-types"
-                className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+                className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Content Type Restrictions</h2>
-                <p className="text-gray-600 mb-6 text-sm">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Content Type Restrictions</h2>
+                <p className="text-muted-foreground mb-6 text-sm">
                   Set permissions for different types of content. These restrictions apply across
                   all media usage categories above.
                 </p>
@@ -678,10 +679,10 @@ export default function ConsentPreferencesPage() {
               {/* Geographic Territories */}
               <div
                 id="territories"
-                className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+                className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Geographic Territories</h2>
-                <p className="text-gray-600 mb-6 text-sm">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Geographic Territories</h2>
+                <p className="text-muted-foreground mb-6 text-sm">
                   Select which regions can use your image and likeness. Use the continent carousel
                   below to manage territories by continent. Click individual countries or use bulk
                   actions.
@@ -699,14 +700,14 @@ export default function ConsentPreferencesPage() {
               {/* AI Controls */}
               <div
                 id="ai-controls"
-                className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm"
+                className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">AI Controls</h2>
-                <p className="text-gray-600 mb-6 text-sm">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">AI Controls</h2>
+                <p className="text-muted-foreground mb-6 text-sm">
                   Control how your image and likeness can be used with AI systems and technologies.
                 </p>
                 <div className="space-y-4">
-                  <label className="flex items-center gap-3 text-gray-900 cursor-pointer">
+                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
                     <input
                       type="checkbox"
                       checked={policy.aiControls.trainingAllowed}
@@ -716,11 +717,11 @@ export default function ConsentPreferencesPage() {
                           aiControls: { ...policy.aiControls, trainingAllowed: e.target.checked },
                         })
                       }
-                      className="w-5 h-5 rounded border-gray-300"
+                      className="w-5 h-5 rounded border-border"
                     />
                     <span>Allow AI Training</span>
                   </label>
-                  <label className="flex items-center gap-3 text-gray-900 cursor-pointer">
+                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
                     <input
                       type="checkbox"
                       checked={policy.aiControls.syntheticGenerationAllowed}
@@ -733,11 +734,11 @@ export default function ConsentPreferencesPage() {
                           },
                         })
                       }
-                      className="w-5 h-5 rounded border-gray-300"
+                      className="w-5 h-5 rounded border-border"
                     />
                     <span>Allow Synthetic Generation</span>
                   </label>
-                  <label className="flex items-center gap-3 text-gray-900 cursor-pointer">
+                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
                     <input
                       type="checkbox"
                       checked={policy.aiControls.biometricAnalysisAllowed}
@@ -750,7 +751,7 @@ export default function ConsentPreferencesPage() {
                           },
                         })
                       }
-                      className="w-5 h-5 rounded border-gray-300"
+                      className="w-5 h-5 rounded border-border"
                     />
                     <span>Allow Biometric Analysis</span>
                   </label>
@@ -758,32 +759,32 @@ export default function ConsentPreferencesPage() {
               </div>
 
               {/* Reason */}
-              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-                <label className="block text-gray-900 mb-2">
-                  Reason for Update <span className="text-gray-500 text-sm">(Optional)</span>
+              <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
+                <label className="block text-foreground mb-2 font-medium">
+                  Reason for Update <span className="text-muted-foreground text-sm">(Optional)</span>
                 </label>
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-900"
+                  className="w-full px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
                   rows={3}
                   placeholder="e.g., Updated commercial terms for new licensing model"
                 />
               </div>
 
               {/* Submit Button */}
-              <div className="flex gap-4">
+              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="px-8 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-gray-600 text-white rounded-lg font-semibold transition-colors"
+                  className="px-6 md:px-8 py-2 md:py-3 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
                 >
                   {saving ? 'Saving...' : 'Update Consent Preferences'}
                 </button>
                 <button
                   type="button"
                   onClick={() => router.push('/dashboard/consent-history')}
-                  className="px-8 py-3 bg-gray-200 hover:bg-gray-300 text-gray-900 rounded-lg font-semibold transition-colors"
+                  className="px-6 md:px-8 py-2 md:py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
                 >
                   View History
                 </button>
