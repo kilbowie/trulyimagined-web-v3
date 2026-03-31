@@ -374,7 +374,9 @@ export default function ConsentPreferencesPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <div>
                 <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
-                <div className="text-2xl md:text-3xl font-bold text-primary">{currentConsent.version}</div>
+                <div className="text-2xl md:text-3xl font-bold text-primary">
+                  {currentConsent.version}
+                </div>
               </div>
               <div>
                 <div className="text-muted-foreground text-xs md:text-sm mb-1">Last Updated</div>
@@ -387,7 +389,9 @@ export default function ConsentPreferencesPage() {
                 </div>
               </div>
               <div>
-                <div className="text-muted-foreground text-xs md:text-sm mb-1">Licenses on this Version</div>
+                <div className="text-muted-foreground text-xs md:text-sm mb-1">
+                  Licenses on this Version
+                </div>
                 <div className="text-2xl md:text-3xl font-bold text-accent">
                   {licenseCount} <span className="text-sm text-muted-foreground">Total</span>
                 </div>
@@ -451,7 +455,9 @@ export default function ConsentPreferencesPage() {
                 id="media-usage"
                 className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Media Usage Categories</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                  Media Usage Categories
+                </h2>
                 <p className="text-muted-foreground mb-6 text-sm">
                   Control how your image and likeness can be used across different media types.
                   Choose Allow for blanket approval, Require Approval for case-by-case review, or
@@ -566,7 +572,9 @@ export default function ConsentPreferencesPage() {
                 id="content-types"
                 className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Content Type Restrictions</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                  Content Type Restrictions
+                </h2>
                 <p className="text-muted-foreground mb-6 text-sm">
                   Set permissions for different types of content. These restrictions apply across
                   all media usage categories above.
@@ -680,7 +688,9 @@ export default function ConsentPreferencesPage() {
                 id="territories"
                 className="bg-card rounded-xl p-6 border border-border shadow-sm"
               >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Geographic Territories</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                  Geographic Territories
+                </h2>
                 <p className="text-muted-foreground mb-6 text-sm">
                   Select which regions can use your image and likeness. Use the continent carousel
                   below to manage territories by continent. Click individual countries or use bulk
@@ -760,7 +770,8 @@ export default function ConsentPreferencesPage() {
               {/* Reason */}
               <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
                 <label className="block text-foreground mb-2 font-medium">
-                  Reason for Update <span className="text-muted-foreground text-sm">(Optional)</span>
+                  Reason for Update{' '}
+                  <span className="text-muted-foreground text-sm">(Optional)</span>
                 </label>
                 <textarea
                   value={reason}
