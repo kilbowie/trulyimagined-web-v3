@@ -372,7 +372,6 @@ export default function ConsentPreferencesPage() {
           <div className="mb-8 bg-card rounded-xl p-6 border border-border">
             <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Current Version</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               <div>
                 <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
                 <div className="text-2xl md:text-3xl font-bold text-primary">{currentConsent.version}</div>

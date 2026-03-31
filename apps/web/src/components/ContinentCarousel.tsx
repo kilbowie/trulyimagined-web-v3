@@ -65,8 +65,10 @@ export default function ContinentCarousel({
                   <h3 className="text-lg md:text-xl font-bold text-foreground">{continent}</h3>
                   <p className="text-muted-foreground text-xs md:text-sm">
                     {countries.length} countries •{' '}
-                    <span className="text-green-600 dark:text-green-400">{allowedCount} allowed</span> •{' '}
-                    <span className="text-red-600 dark:text-red-400">{deniedCount} denied</span>
+                    <span className="text-green-600 dark:text-green-400">
+                      {allowedCount} allowed
+                    </span>{' '}
+                    • <span className="text-red-600 dark:text-red-400">{deniedCount} denied</span>
                   </p>
                 </div>
               </div>
@@ -98,7 +100,9 @@ export default function ContinentCarousel({
             {/* Accordion Content */}
             {isExpanded && (
               <div className="p-4 md:p-6 bg-muted/30 border-t border-border">
-                <h4 className="text-foreground font-semibold mb-4 text-sm md:text-base">Select Countries in {continent}</h4>
+                <h4 className="text-foreground font-semibold mb-4 text-sm md:text-base">
+                  Select Countries in {continent}
+                </h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-3">
                   {countries.map((country) => {
                     const status = getCountryStatus(country.code);
