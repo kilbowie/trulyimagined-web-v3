@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Truly Imagined v3 - Bitstring Status List Utilities
  *
  * Standards Compliance:
