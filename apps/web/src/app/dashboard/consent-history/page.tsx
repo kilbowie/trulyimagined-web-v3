@@ -232,7 +232,9 @@ export default function ConsentHistoryPage() {
                               {entry.status.toUpperCase()}
                             </span>
                           </div>
-                          <p className="text-muted-foreground text-sm">{formatDate(entry.created_at)}</p>
+                          <p className="text-muted-foreground text-sm">
+                            {formatDate(entry.created_at)}
+                          </p>
                         </div>
                       </div>
 
@@ -398,7 +400,9 @@ export default function ConsentHistoryPage() {
                                   entry.policy.territories.allowed.length === 0) &&
                                   (!entry.policy.territories.denied ||
                                     entry.policy.territories.denied.length === 0) && (
-                                    <div className="text-muted-foreground">Worldwide (no restrictions)</div>
+                                    <div className="text-muted-foreground">
+                                      Worldwide (no restrictions)
+                                    </div>
                                   )}
                               </div>
                             </div>
@@ -430,7 +434,9 @@ export default function ConsentHistoryPage() {
                                     <span className="text-foreground">
                                       {key.replace(/([A-Z])/g, ' $1').trim()}
                                     </span>
-                                    <span className="text-muted-foreground">{value ? '✓' : '✗'}</span>
+                                    <span className="text-muted-foreground">
+                                      {value ? '✓' : '✗'}
+                                    </span>
                                   </div>
                                 ))}
                               </div>

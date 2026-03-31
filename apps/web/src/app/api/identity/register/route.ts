@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isActor } from '@/lib/auth';
 import { query } from '@/lib/db';
-
-/**
- * Generate a unique Registry ID (similar to Spotlight PIN format)
- * Format: XXXX-XXXX-XXXX (12 digits separated by hyphens)
- */
-function generateRegistryId(): string {
-  const part1 = Math.floor(1000 + Math.random() * 9000); // 4 digits
-  const part2 = Math.floor(1000 + Math.random() * 9000); // 4 digits
-  const part3 = Math.floor(1000 + Math.random() * 9000); // 4 digits
-  return `${part1}-${part2}-${part3}`;
-}
+import { createUniqueRegistryId } from '@/lib/registry-id';
 
 /**
  * Actor Registration API Route (Development)
@@ -60,31 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate unique Registry ID
-    let registryId = generateRegistryId();
-    let attempts = 0;
-    const maxAttempts = 10;
-
-    // Ensure Registry ID is unique
-    while (attempts < maxAttempts) {
-      const existing = await query('SELECT registry_id FROM actors WHERE registry_id = $1', [
-        registryId,
-      ]);
-
-      if (existing.rows.length === 0) {
-        break; // Unique ID found
-      }
-
-      registryId = generateRegistryId();
-      attempts++;
-    }
-
-    if (attempts >= maxAttempts) {
-      return NextResponse.json(
-        { error: 'Failed to generate unique Registry ID. Please try again.' },
-        { status: 500 }
-      );
-    }
+    const registryId = await createUniqueRegistryId();
 
     // Insert actor into database
     const result = await query(

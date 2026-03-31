@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
+import { ensureActorRegistryId } from '@/lib/registry-id';
 
 /**
  * Actor Registration Status API Route
@@ -21,19 +22,22 @@ export async function GET() {
     // Query database for actor record
     const result = await query(
       `SELECT 
-        id,
-        registry_id,
-        first_name,
-        last_name,
-        stage_name,
-        location,
-        bio,
-        verification_status,
-        is_founding_member,
-        created_at,
-        updated_at
-      FROM actors 
-      WHERE auth0_user_id = $1`,
+        a.id,
+        a.registry_id,
+        a.first_name,
+        a.last_name,
+        a.stage_name,
+        a.location,
+        a.bio,
+        a.verification_status,
+        a.is_founding_member,
+        a.created_at,
+        a.updated_at,
+        COALESCE(up.is_verified, FALSE) AS is_verified,
+        COALESCE(up.is_pro, FALSE) AS is_pro
+      FROM actors a
+      LEFT JOIN user_profiles up ON up.auth0_user_id = a.auth0_user_id
+      WHERE a.auth0_user_id = $1`,
       [user.sub]
     );
 
@@ -47,17 +51,21 @@ export async function GET() {
 
     // Return actor data
     const actor = result.rows[0];
+    const registryId = await ensureActorRegistryId(actor.id, actor.registry_id);
+
     return NextResponse.json({
       registered: true,
       actor: {
         id: actor.id,
-        registryId: actor.registry_id,
+        registryId,
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
         location: actor.location,
         bio: actor.bio,
         verificationStatus: actor.verification_status,
+        isVerified: !!actor.is_verified || actor.verification_status === 'verified',
+        isPro: !!actor.is_pro,
         isFoundingMember: actor.is_founding_member,
         createdAt: actor.created_at,
         updatedAt: actor.updated_at,

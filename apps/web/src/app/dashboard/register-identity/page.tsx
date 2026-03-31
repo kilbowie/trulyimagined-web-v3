@@ -8,6 +8,7 @@ import { AlertCircle, Shield } from 'lucide-react';
 import { RegistrationForm } from '@/components/RegistrationForm';
 import { RegistrationStatus } from '@/components/RegistrationStatus';
 import { query } from '@/lib/db';
+import { ensureActorRegistryId } from '@/lib/registry-id';
 
 /**
  * Fetch actor registration status directly from database
@@ -16,20 +17,23 @@ async function getActorStatus(auth0UserId: string) {
   try {
     const result = await query(
       `SELECT 
-        id,
-        registry_id,
-        first_name,
-        last_name,
-        stage_name,
-        location,
-        bio,
-        verification_status,
-        is_founding_member,
-        created_at,
-        updated_at,
-        email
-      FROM actors 
-      WHERE auth0_user_id = $1`,
+        a.id,
+        a.registry_id,
+        a.first_name,
+        a.last_name,
+        a.stage_name,
+        a.location,
+        a.bio,
+        a.verification_status,
+        a.is_founding_member,
+        a.created_at,
+        a.updated_at,
+        a.email,
+        COALESCE(up.is_verified, FALSE) AS is_verified,
+        COALESCE(up.is_pro, FALSE) AS is_pro
+      FROM actors a
+      LEFT JOIN user_profiles up ON up.auth0_user_id = a.auth0_user_id
+      WHERE a.auth0_user_id = $1`,
       [auth0UserId]
     );
 
@@ -38,17 +42,21 @@ async function getActorStatus(auth0UserId: string) {
     }
 
     const actor = result.rows[0];
+    const registryId = await ensureActorRegistryId(actor.id, actor.registry_id);
+
     return {
       registered: true,
       actor: {
         id: actor.id,
-        registryId: actor.registry_id,
+        registryId,
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
         location: actor.location,
         bio: actor.bio,
         verificationStatus: actor.verification_status,
+        isVerified: !!actor.is_verified || actor.verification_status === 'verified',
+        isPro: !!actor.is_pro,
         isFoundingMember: actor.is_founding_member,
         createdAt: actor.created_at,
         updatedAt: actor.updated_at,

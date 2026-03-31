@@ -14,12 +14,16 @@ import {
   Calendar,
   Copy,
   Shield,
+  Sparkles,
+  ShieldCheck,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useState } from 'react';
 
 interface ActorProfile {
   id: string;
-  registryId: string;
+  registryId?: string | null;
   email: string;
   firstName: string;
   lastName: string;
@@ -27,6 +31,8 @@ interface ActorProfile {
   bio?: string;
   location?: string;
   verificationStatus: 'pending' | 'verified' | 'rejected';
+  isVerified: boolean;
+  isPro: boolean;
   verifiedAt?: string;
   isFoundingMember: boolean;
   createdAt: string;
@@ -38,9 +44,44 @@ interface RegistrationStatusProps {
 
 export function RegistrationStatus({ actor }: RegistrationStatusProps) {
   const [copied, setCopied] = useState(false);
+  const [showRegistryId, setShowRegistryId] = useState(false);
+
+  const hasRegistryId = !!actor.registryId && actor.registryId.trim().length > 0;
+
+  const maskRegistryId = (value: string) => {
+    let visibleCharacters = 4;
+
+    return value
+      .split('')
+      .reverse()
+      .map((character) => {
+        if (!/[A-Za-z0-9]/.test(character)) {
+          return character;
+        }
+
+        if (visibleCharacters > 0) {
+          visibleCharacters -= 1;
+          return character;
+        }
+
+        return '•';
+      })
+      .reverse()
+      .join('');
+  };
+
+  const displayRegistryId = hasRegistryId
+    ? showRegistryId
+      ? actor.registryId
+      : maskRegistryId(actor.registryId)
+    : 'Not assigned';
 
   const copyRegistryId = () => {
-    navigator.clipboard.writeText(actor.registryId);
+    if (!hasRegistryId) {
+      return;
+    }
+
+    navigator.clipboard.writeText(actor.registryId!);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -85,17 +126,27 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
             <div className="space-y-2">
               <p className="text-sm text-slate-400">TrulyImagined Registry</p>
               <div className="flex items-center justify-between">
-                <p className="text-3xl font-bold font-mono tracking-wider">{actor.registryId}</p>
+                <p className="text-3xl font-bold font-mono tracking-wider">{displayRegistryId}</p>
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={copyRegistryId}
+                  disabled={!hasRegistryId}
                   className="flex items-center gap-2"
                 >
                   <Copy className="h-4 w-4" />
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
               </div>
+              <button
+                type="button"
+                onClick={() => setShowRegistryId((previous) => !previous)}
+                disabled={!hasRegistryId}
+                className="inline-flex items-center gap-2 text-xs text-slate-300 hover:text-white disabled:cursor-not-allowed disabled:text-slate-500"
+              >
+                {showRegistryId ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                {showRegistryId ? 'Hide Registry ID' : 'Click to Reveal Registry ID'}
+              </button>
               <p className="text-xs text-slate-400">
                 Use this ID to reference your identity across the platform
               </p>
@@ -140,6 +191,36 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
           <CardDescription>Your registered identity details</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <ShieldCheck className="h-4 w-4" />
+                Verification Status
+              </div>
+              <Badge
+                variant="outline"
+                className={actor.isVerified ? 'border-green-500/50 text-green-700 dark:text-green-300' : 'border-border text-muted-foreground'}
+              >
+                {actor.isVerified ? 'Verified' : 'Not Verified'}
+              </Badge>
+            </div>
+
+            <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+              <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <Sparkles className="h-4 w-4" />
+                Pro Status
+              </div>
+              <Badge
+                variant="outline"
+                className={actor.isPro ? 'border-amber-500/50 text-amber-700 dark:text-amber-300' : 'border-border text-muted-foreground'}
+              >
+                {actor.isPro ? 'Pro Member' : 'Standard Member'}
+              </Badge>
+            </div>
+          </div>
+
+          <Separator />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">Legal Name</p>
