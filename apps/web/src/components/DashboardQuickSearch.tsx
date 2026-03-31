@@ -9,6 +9,7 @@ type QuickNavItem = {
   description: string;
   href: string;
   keywords: string[];
+  allowedRoles?: string[];
 };
 
 const QUICK_NAV_ITEMS: QuickNavItem[] = [
@@ -23,48 +24,56 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     description: 'Your actor profile details',
     href: '/dashboard/profile',
     keywords: ['profile', 'account', 'bio'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Upload Media',
     description: 'Upload photos and media assets',
     href: '/dashboard/upload-media',
     keywords: ['media', 'upload', 'photos', 'images'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Consent Preferences',
     description: 'Manage data-sharing preferences',
     href: '/dashboard/consent-preferences',
     keywords: ['consent', 'preferences', 'privacy', 'settings'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Consent History',
     description: 'Review prior consent decisions',
     href: '/dashboard/consent-history',
     keywords: ['consent', 'history', 'records', 'audit'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Register Identity',
     description: 'Register your identity profile',
     href: '/dashboard/register-identity',
     keywords: ['identity', 'register', 'registry'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Verify Identity',
     description: 'Complete identity verification',
     href: '/dashboard/verify-identity',
     keywords: ['identity', 'verify', 'verification', 'kyc'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Verifiable Credentials',
     description: 'Issue and manage digital credentials',
     href: '/dashboard/verifiable-credentials',
     keywords: ['credentials', 'verifiable', 'w3c', 'proof'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'License Tracker',
     description: 'Monitor API client licenses',
     href: '/dashboard/licenses',
     keywords: ['license', 'licensing', 'tracker', 'permissions'],
+    allowedRoles: ['Actor'],
   },
   {
     title: 'Support Tickets',
@@ -77,12 +86,14 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     description: 'View submitted user feedback',
     href: '/dashboard/admin/feedback',
     keywords: ['feedback', 'admin', 'messages'],
+    allowedRoles: ['Admin'],
   },
   {
     title: 'IAM Users',
     description: 'Manage IAM users and roles',
     href: '/dashboard/iam/users',
     keywords: ['iam', 'users', 'roles', 'admin'],
+    allowedRoles: ['Admin'],
   },
   {
     title: 'Consents',
@@ -95,6 +106,7 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     description: 'User directory view',
     href: '/dashboard/users',
     keywords: ['users', 'directory'],
+    allowedRoles: ['Admin'],
   },
 ];
 
@@ -102,7 +114,8 @@ function scoreItem(item: QuickNavItem, query: string): number {
   if (!query) return 1;
 
   const q = query.toLowerCase();
-  const haystack = `${item.title} ${item.description} ${item.href} ${item.keywords.join(' ')}`.toLowerCase();
+  const haystack =
+    `${item.title} ${item.description} ${item.href} ${item.keywords.join(' ')}`.toLowerCase();
 
   if (item.title.toLowerCase().startsWith(q)) return 120;
   if (item.title.toLowerCase().includes(q)) return 90;
@@ -115,7 +128,19 @@ function scoreItem(item: QuickNavItem, query: string): number {
   return 0;
 }
 
-export function DashboardQuickSearch() {
+type DashboardQuickSearchProps = {
+  roles?: string[];
+};
+
+function canAccessItem(item: QuickNavItem, roles: string[]): boolean {
+  if (!item.allowedRoles || item.allowedRoles.length === 0) {
+    return true;
+  }
+
+  return item.allowedRoles.some((role) => roles.includes(role));
+}
+
+export function DashboardQuickSearch({ roles = [] }: DashboardQuickSearchProps) {
   const router = useRouter();
   const pathname = usePathname();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,8 +148,13 @@ export function DashboardQuickSearch() {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
 
+  const visibleItems = useMemo(
+    () => QUICK_NAV_ITEMS.filter((item) => canAccessItem(item, roles)),
+    [roles]
+  );
+
   const results = useMemo(() => {
-    const ranked = QUICK_NAV_ITEMS.map((item) => ({
+    const ranked = visibleItems.map((item) => ({
       item,
       score: scoreItem(item, query),
     }))
@@ -133,7 +163,7 @@ export function DashboardQuickSearch() {
       .map((entry) => entry.item);
 
     return ranked.slice(0, 8);
-  }, [query]);
+  }, [query, visibleItems]);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -227,7 +257,9 @@ export function DashboardQuickSearch() {
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => navigateTo(result)}
                 className={`w-full rounded-md px-3 py-2 text-left transition-colors ${
-                  isActive ? 'bg-accent text-accent-foreground' : 'text-popover-foreground hover:bg-accent/70'
+                  isActive
+                    ? 'bg-accent text-accent-foreground'
+                    : 'text-popover-foreground hover:bg-accent/70'
                 }`}
               >
                 <div className="flex items-center justify-between gap-3">

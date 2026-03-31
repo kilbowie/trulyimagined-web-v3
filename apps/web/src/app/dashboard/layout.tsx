@@ -26,7 +26,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {/* Top Bar */}
         <div className="h-16 border-b bg-background px-4 md:px-6">
           <div className="mx-auto flex h-full max-w-7xl items-center justify-center">
-            <DashboardQuickSearch />
+            <DashboardQuickSearch roles={roles} />
           </div>
         </div>
 
