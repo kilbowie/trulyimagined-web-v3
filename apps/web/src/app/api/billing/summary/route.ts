@@ -23,7 +23,10 @@ export async function GET() {
     );
 
     if (profileResult.rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
     }
 
     const profile = profileResult.rows[0];

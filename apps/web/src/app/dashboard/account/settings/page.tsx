@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Shield, CreditCard, Bell, UserCircle, Lock, CheckCircle2 } from 'lucide-react';
+import { Shield, Bell, UserCircle, Lock, CheckCircle2 } from 'lucide-react';
 
 /**
  * Account Settings Page
@@ -28,7 +28,7 @@ export default async function AccountSettingsPage() {
           Account Settings
         </h1>
         <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
-          Manage your account profile, notifications, security posture, and billing preferences.
+          Manage your account profile, notifications, and security posture.
         </p>
       </div>
 
@@ -179,27 +179,6 @@ export default async function AccountSettingsPage() {
         </Card>
       </div>
 
-      <Card className="border-amber-500/30 bg-amber-500/10">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
-            <CreditCard className="h-5 w-5" />
-            Billing
-          </CardTitle>
-          <CardDescription>
-            Subscription plans, invoices, and payment methods are managed on the dedicated Billing
-            page.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm">
-          <p className="text-muted-foreground">
-            Stripe-hosted checkout and customer portal flows are available for secure billing
-            management.
-          </p>
-          <Button asChild className="w-full sm:w-auto">
-            <Link href="/dashboard/account/billing">Manage Billing</Link>
-          </Button>
-        </CardContent>
-      </Card>
     </div>
   );
 }

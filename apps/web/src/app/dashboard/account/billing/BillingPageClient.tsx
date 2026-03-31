@@ -7,7 +7,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { AlertCircle, CheckCircle2, CreditCard, ExternalLink, Loader2, ReceiptText } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  CreditCard,
+  ExternalLink,
+  Loader2,
+  ReceiptText,
+} from 'lucide-react';
 
 type BillingPlan = {
   id: string;
@@ -22,15 +29,13 @@ type BillingSummary = {
   success: boolean;
   stripeConfigured: boolean;
   customer: { id: string; email: string | null; name: string | null } | null;
-  subscription:
-    | {
-        id: string;
-        status: string;
-        cancelAtPeriodEnd: boolean;
-            currentPeriodEnd: number | null;
-        items: Array<{ id: string; priceId: string; productName: string }>;
-      }
-    | null;
+  subscription: {
+    id: string;
+    status: string;
+    cancelAtPeriodEnd: boolean;
+    currentPeriodEnd: number | null;
+    items: Array<{ id: string; priceId: string; productName: string }>;
+  } | null;
   invoices: Array<{
     id: string;
     number: string | null;
@@ -164,7 +169,9 @@ export default function BillingPageClient() {
 
       window.location.href = payload.url;
     } catch (portalError) {
-      setError(portalError instanceof Error ? portalError.message : 'Failed to open billing portal');
+      setError(
+        portalError instanceof Error ? portalError.message : 'Failed to open billing portal'
+      );
       setOpeningPortal(false);
     }
   }
@@ -242,7 +249,9 @@ export default function BillingPageClient() {
                 <div key={plan.id} className="rounded-lg border border-border bg-card p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                      <h3 className="text-sm font-semibold text-foreground md:text-base">{plan.name}</h3>
+                      <h3 className="text-sm font-semibold text-foreground md:text-base">
+                        {plan.name}
+                      </h3>
                       <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
@@ -258,7 +267,9 @@ export default function BillingPageClient() {
 
                     <Button
                       onClick={() => startCheckout(plan.id)}
-                      disabled={!summary?.stripeConfigured || !plan.configured || checkoutPlanId === plan.id}
+                      disabled={
+                        !summary?.stripeConfigured || !plan.configured || checkoutPlanId === plan.id
+                      }
                       className="w-full sm:w-auto"
                     >
                       {checkoutPlanId === plan.id ? (
@@ -293,13 +304,17 @@ export default function BillingPageClient() {
         <Card>
           <CardHeader>
             <CardTitle className="text-base md:text-lg">Current Subscription</CardTitle>
-            <CardDescription>Manage your active plan, payment methods, and invoices.</CardDescription>
+            <CardDescription>
+              Manage your active plan, payment methods, and invoices.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {summary?.subscription ? (
               <>
                 <div className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
-                  <p className="font-medium text-foreground">Status: {summary.subscription.status}</p>
+                  <p className="font-medium text-foreground">
+                    Status: {summary.subscription.status}
+                  </p>
                   <p className="mt-1 text-muted-foreground">
                     Renewal:{' '}
                     {summary.subscription.currentPeriodEnd
@@ -339,7 +354,10 @@ export default function BillingPageClient() {
               {summary?.invoices?.length ? (
                 <div className="space-y-2">
                   {summary.invoices.slice(0, 3).map((invoice) => (
-                    <div key={invoice.id} className="rounded-lg border border-border p-2.5 text-xs md:text-sm">
+                    <div
+                      key={invoice.id}
+                      className="rounded-lg border border-border p-2.5 text-xs md:text-sm"
+                    >
                       <div className="flex items-center justify-between gap-2">
                         <span className="font-medium text-foreground">
                           {invoice.number || invoice.id}

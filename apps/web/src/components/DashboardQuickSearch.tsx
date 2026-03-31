@@ -239,7 +239,7 @@ export function DashboardQuickSearch({ roles = [] }: DashboardQuickSearchProps) 
   return (
     <div ref={containerRef} className="relative w-full max-w-xl">
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/70" />
         <input
           type="text"
           value={query}
@@ -252,13 +252,13 @@ export function DashboardQuickSearch({ roles = [] }: DashboardQuickSearchProps) 
           placeholder="Quick search features and settings..."
           autoComplete="off"
           spellCheck={false}
-          className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground outline-none ring-offset-background transition focus:border-primary focus:ring-2 focus:ring-primary/20"
+          className="h-10 w-full rounded-lg border border-primary/40 bg-card pl-9 pr-3 text-sm text-foreground shadow-sm outline-none ring-offset-background transition placeholder:text-muted-foreground/90 hover:border-primary/50 focus:border-primary focus:ring-2 focus:ring-primary/35"
           aria-label="Quick navigation search"
         />
       </div>
 
       {open && results.length > 0 && (
-        <div className="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-lg border border-border bg-popover p-1 shadow-lg">
+        <div className="absolute z-30 mt-2 max-h-80 w-full overflow-y-auto rounded-lg border border-primary/30 bg-popover p-1 shadow-xl">
           {results.map((result, index) => {
             const isActive = index === activeIndex;
             const isCurrent = pathname === result.href;
