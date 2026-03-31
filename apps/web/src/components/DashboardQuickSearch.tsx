@@ -20,6 +20,12 @@ const QUICK_NAV_ITEMS: QuickNavItem[] = [
     keywords: ['home', 'overview', 'dashboard'],
   },
   {
+    title: 'Account Settings',
+    description: 'Manage account preferences and security',
+    href: '/dashboard/account/settings',
+    keywords: ['account', 'settings', 'security', 'billing', 'preferences'],
+  },
+  {
     title: 'Profile',
     description: 'Your actor profile details',
     href: '/dashboard/profile',
@@ -154,10 +160,11 @@ export function DashboardQuickSearch({ roles = [] }: DashboardQuickSearchProps) 
   );
 
   const results = useMemo(() => {
-    const ranked = visibleItems.map((item) => ({
-      item,
-      score: scoreItem(item, query),
-    }))
+    const ranked = visibleItems
+      .map((item) => ({
+        item,
+        score: scoreItem(item, query),
+      }))
       .filter((entry) => entry.score > 0)
       .sort((a, b) => b.score - a.score || a.item.title.localeCompare(b.item.title))
       .map((entry) => entry.item);
