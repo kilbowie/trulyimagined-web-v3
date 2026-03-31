@@ -10,9 +10,11 @@ import { Separator } from '@/components/ui/separator';
 import {
   AlertCircle,
   CheckCircle2,
+  CircleDollarSign,
   CreditCard,
   ExternalLink,
   Loader2,
+  Rocket,
   ReceiptText,
 } from 'lucide-react';
 
@@ -28,6 +30,7 @@ type BillingPlan = {
 type BillingSummary = {
   success: boolean;
   stripeConfigured: boolean;
+  role: string | null;
   customer: { id: string; email: string | null; name: string | null } | null;
   subscription: {
     id: string;
@@ -47,6 +50,49 @@ type BillingSummary = {
     invoicePdf: string | null;
   }>;
   availablePlans: BillingPlan[];
+  billingHistory: Array<{
+    id: string;
+    number: string | null;
+    status: string | null;
+    amountDue: number;
+    amountPaid: number;
+    currency: string;
+    created: number;
+    periodStart: number;
+    periodEnd: number;
+    hostedInvoiceUrl: string | null;
+    invoicePdf: string | null;
+  }>;
+  paymentsHistory: Array<{
+    id: string;
+    status: string;
+    amount: number;
+    amountRefunded: number;
+    currency: string;
+    created: number;
+    description: string | null;
+    receiptUrl: string | null;
+    paymentMethodDetails: {
+      brand: string;
+      last4: string;
+    } | null;
+  }>;
+  cards: Array<{
+    id: string;
+    brand: string | null;
+    last4: string | null;
+    expMonth: number | null;
+    expYear: number | null;
+    country: string | null;
+    funding: string | null;
+  }>;
+  opportunities: {
+    canMonetizeLicensing: boolean;
+    recommendedActions: Array<{
+      label: string;
+      href: string;
+    }>;
+  };
   error?: string;
 };
 
@@ -390,6 +436,204 @@ export default function BillingPageClient() {
           </CardContent>
         </Card>
       </div>
+
+      {summary?.opportunities?.canMonetizeLicensing && (
+        <Card className="border-primary/25 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <Rocket className="h-5 w-5" />
+              Actor Earnings Opportunities
+            </CardTitle>
+            <CardDescription>
+              Build revenue readiness through licensing, consent controls, and credential trust.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Licensing</p>
+                <p className="mt-1 text-sm text-foreground">
+                  Manage rights grants and monitor usage-backed opportunities.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Trust Signals</p>
+                <p className="mt-1 text-sm text-foreground">
+                  Credentials and verification improve enterprise and platform confidence.
+                </p>
+              </div>
+              <div className="rounded-lg border border-border bg-card p-3">
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Consent Control</p>
+                <p className="mt-1 text-sm text-foreground">
+                  Precise consent settings help unlock compliant monetization pathways.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {summary.opportunities.recommendedActions.map((action) => (
+                <Button key={action.href} asChild variant="outline" className="w-full sm:w-auto">
+                  <Link href={action.href}>{action.label}</Link>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Card className="xl:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <ReceiptText className="h-5 w-5" />
+              Billing History
+            </CardTitle>
+            <CardDescription>Invoice lifecycle records for subscriptions and renewals.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {summary?.billingHistory?.length ? (
+              <div className="space-y-2">
+                {summary.billingHistory.slice(0, 8).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-border bg-card p-3 text-xs md:text-sm"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-medium text-foreground">{entry.number || entry.id}</p>
+                      <Badge variant="secondary" className="text-[10px] uppercase">
+                        {entry.status || 'unknown'}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 gap-2 text-muted-foreground sm:grid-cols-3">
+                      <p>Issued: {formatDateFromUnix(entry.created)}</p>
+                      <p>Due: {formatCurrency(entry.amountDue, entry.currency)}</p>
+                      <p>Paid: {formatCurrency(entry.amountPaid, entry.currency)}</p>
+                    </div>
+                    {entry.hostedInvoiceUrl && (
+                      <div className="mt-2">
+                        <a
+                          href={entry.hostedInvoiceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-1 text-primary hover:underline"
+                        >
+                          Open invoice
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No billing history available yet.</p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+              <CreditCard className="h-5 w-5" />
+              Card Management
+            </CardTitle>
+            <CardDescription>
+              View saved cards and securely manage payment methods in Stripe.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {summary?.cards?.length ? (
+              summary.cards.slice(0, 4).map((card) => (
+                <div key={card.id} className="rounded-lg border border-border bg-muted/30 p-3 text-sm">
+                  <p className="font-medium text-foreground">
+                    {(card.brand || 'Card').toUpperCase()} •••• {card.last4 || '----'}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Expires {card.expMonth || '--'}/{card.expYear || '----'}
+                    {card.country ? ` • ${card.country}` : ''}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No saved cards found.</p>
+            )}
+
+            <Button onClick={openBillingPortal} disabled={openingPortal} className="w-full">
+              {openingPortal ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Opening Portal...
+                </>
+              ) : (
+                'Manage Cards in Stripe Portal'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <CircleDollarSign className="h-5 w-5" />
+            Payments History
+          </CardTitle>
+          <CardDescription>
+            Settled and attempted payment transactions associated with your account.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {summary?.paymentsHistory?.length ? (
+            <div className="space-y-2">
+              {summary.paymentsHistory.slice(0, 10).map((payment) => (
+                <div
+                  key={payment.id}
+                  className="rounded-lg border border-border bg-card p-3 text-xs md:text-sm"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="font-medium text-foreground">{payment.description || payment.id}</p>
+                    <Badge variant="outline" className="text-[10px] uppercase">
+                      {payment.status}
+                    </Badge>
+                  </div>
+
+                  <div className="mt-2 grid grid-cols-1 gap-2 text-muted-foreground sm:grid-cols-4">
+                    <p>{formatDateFromUnix(payment.created)}</p>
+                    <p>{formatCurrency(payment.amount, payment.currency)}</p>
+                    <p>
+                      {payment.paymentMethodDetails
+                        ? `${payment.paymentMethodDetails.brand.toUpperCase()} •••• ${payment.paymentMethodDetails.last4}`
+                        : 'Payment method unavailable'}
+                    </p>
+                    <p>
+                      Refunded:{' '}
+                      {payment.amountRefunded > 0
+                        ? formatCurrency(payment.amountRefunded, payment.currency)
+                        : 'No'}
+                    </p>
+                  </div>
+
+                  {payment.receiptUrl && (
+                    <div className="mt-2">
+                      <a
+                        href={payment.receiptUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-primary hover:underline"
+                      >
+                        View receipt
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No payments history available yet.</p>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent className="py-4">

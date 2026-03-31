@@ -178,7 +178,6 @@ export default async function AccountSettingsPage() {
           </CardContent>
         </Card>
       </div>
-
     </div>
   );
 }

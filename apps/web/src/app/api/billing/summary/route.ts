@@ -41,9 +41,33 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         stripeConfigured: false,
+        role: profile.role || null,
         customer: null,
         subscription: null,
         invoices: [],
+        billingHistory: [],
+        paymentsHistory: [],
+        cards: [],
+        opportunities: {
+          canMonetizeLicensing: profile.role === 'Actor',
+          recommendedActions:
+            profile.role === 'Actor'
+              ? [
+                  {
+                    label: 'Manage License Grants',
+                    href: '/dashboard/licenses',
+                  },
+                  {
+                    label: 'Issue Verifiable Credentials',
+                    href: '/dashboard/verifiable-credentials',
+                  },
+                  {
+                    label: 'Refine Consent Preferences',
+                    href: '/dashboard/consent-preferences',
+                  },
+                ]
+              : [],
+        },
         availablePlans,
       });
     }
@@ -53,9 +77,33 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         stripeConfigured: true,
+        role: profile.role || null,
         customer: null,
         subscription: null,
         invoices: [],
+        billingHistory: [],
+        paymentsHistory: [],
+        cards: [],
+        opportunities: {
+          canMonetizeLicensing: profile.role === 'Actor',
+          recommendedActions:
+            profile.role === 'Actor'
+              ? [
+                  {
+                    label: 'Manage License Grants',
+                    href: '/dashboard/licenses',
+                  },
+                  {
+                    label: 'Issue Verifiable Credentials',
+                    href: '/dashboard/verifiable-credentials',
+                  },
+                  {
+                    label: 'Refine Consent Preferences',
+                    href: '/dashboard/consent-preferences',
+                  },
+                ]
+              : [],
+        },
         availablePlans,
       });
     }
@@ -72,12 +120,66 @@ export async function GET() {
 
     const invoiceList = await stripe.invoices.list({
       customer: customer.id,
-      limit: 5,
+      limit: 12,
     });
+
+    const paymentList = await stripe.charges.list({
+      customer: customer.id,
+      limit: 12,
+    });
+
+    const paymentMethodList = await stripe.paymentMethods.list({
+      customer: customer.id,
+      type: 'card',
+      limit: 12,
+    });
+
+    const billingHistory = invoiceList.data.map((invoice) => ({
+      id: invoice.id,
+      number: invoice.number,
+      status: invoice.status,
+      amountDue: invoice.amount_due,
+      amountPaid: invoice.amount_paid,
+      currency: invoice.currency,
+      created: invoice.created,
+      periodStart: invoice.period_start,
+      periodEnd: invoice.period_end,
+      hostedInvoiceUrl: invoice.hosted_invoice_url,
+      invoicePdf: invoice.invoice_pdf,
+    }));
+
+    const paymentsHistory = paymentList.data.map((payment) => ({
+      id: payment.id,
+      status: payment.status,
+      amount: payment.amount,
+      amountRefunded: payment.amount_refunded,
+      currency: payment.currency,
+      created: payment.created,
+      description: payment.description,
+      receiptUrl: payment.receipt_url,
+      paymentMethodDetails:
+        payment.payment_method_details?.type === 'card' && payment.payment_method_details.card
+          ? {
+              brand: payment.payment_method_details.card.brand,
+              last4: payment.payment_method_details.card.last4,
+            }
+          : null,
+    }));
+
+    const cards = paymentMethodList.data.map((method) => ({
+      id: method.id,
+      brand: method.card?.brand || null,
+      last4: method.card?.last4 || null,
+      expMonth: method.card?.exp_month || null,
+      expYear: method.card?.exp_year || null,
+      country: method.card?.country || null,
+      funding: method.card?.funding || null,
+    }));
 
     return NextResponse.json({
       success: true,
       stripeConfigured: true,
+      role: profile.role || null,
       customer: {
         id: customer.id,
         email: customer.email,
@@ -111,6 +213,29 @@ export async function GET() {
         hostedInvoiceUrl: invoice.hosted_invoice_url,
         invoicePdf: invoice.invoice_pdf,
       })),
+      billingHistory,
+      paymentsHistory,
+      cards,
+      opportunities: {
+        canMonetizeLicensing: profile.role === 'Actor',
+        recommendedActions:
+          profile.role === 'Actor'
+            ? [
+                {
+                  label: 'Manage License Grants',
+                  href: '/dashboard/licenses',
+                },
+                {
+                  label: 'Issue Verifiable Credentials',
+                  href: '/dashboard/verifiable-credentials',
+                },
+                {
+                  label: 'Refine Consent Preferences',
+                  href: '/dashboard/consent-preferences',
+                },
+              ]
+            : [],
+      },
       availablePlans,
     });
   } catch (error) {
