@@ -188,12 +188,12 @@ export default function CredentialDetailPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-8">
+      <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
+        <div className="rounded-xl border border-border bg-card p-6 md:p-8">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 w-2/3 rounded bg-muted md:w-1/3"></div>
+            <div className="h-4 w-4/5 rounded bg-muted md:w-1/2"></div>
+            <div className="h-64 rounded bg-muted"></div>
           </div>
         </div>
       </div>
@@ -202,15 +202,15 @@ export default function CredentialDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow p-8">
+      <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
+        <div className="rounded-xl border border-border bg-card p-6 md:p-8">
           <div className="text-center">
             <span className="text-6xl mb-4 block">⚠️</span>
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Credential</h1>
-            <p className="text-red-600 mb-6">{error || 'Credential not found'}</p>
+            <h1 className="mb-4 text-2xl font-bold text-foreground">Error Loading Credential</h1>
+            <p className="mb-6 text-sm text-destructive md:text-base">{error || 'Credential not found'}</p>
             <Link
               href="/dashboard"
-              className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+              className="inline-flex items-center rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
               ← Back to Dashboard
             </Link>
@@ -225,35 +225,35 @@ export default function CredentialDetailPage() {
   const isActive = !metadata.isRevoked && !isExpired;
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
+    <div className="container mx-auto max-w-6xl px-4 py-6 md:py-8">
       {/* Header */}
       <div className="mb-6">
         <Link
           href="/dashboard"
-          className="text-purple-600 hover:text-purple-700 font-medium mb-4 inline-block"
+          className="mb-4 inline-block text-sm font-medium text-primary transition-colors hover:text-primary/80 md:text-base"
         >
           ← Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold text-gray-900">Credential Details</h1>
+        <h1 className="text-2xl font-bold text-foreground md:text-3xl">Credential Details</h1>
       </div>
 
       {/* Status Banner */}
       <div
-        className={`mb-6 p-4 rounded-lg border-2 ${
+        className={`mb-6 rounded-xl border p-4 md:p-5 ${
           isActive
-            ? 'bg-green-50 border-green-200'
+            ? 'border-emerald-500/30 bg-emerald-500/10'
             : metadata.isRevoked
-              ? 'bg-red-50 border-red-200'
-              : 'bg-orange-50 border-orange-200'
+              ? 'border-destructive/40 bg-destructive/10'
+              : 'border-amber-500/30 bg-amber-500/10'
         }`}
       >
         <div className="flex items-center gap-3">
           <span className="text-3xl">{isActive ? '✅' : metadata.isRevoked ? '🚫' : '⚠️'}</span>
           <div>
-            <h2 className="font-bold text-lg">
+            <h2 className="text-lg font-bold text-foreground">
               {isActive ? 'Active Credential' : metadata.isRevoked ? 'Revoked' : 'Expired'}
             </h2>
-            <p className="text-sm text-gray-700">
+            <p className="text-sm text-muted-foreground">
               {isActive
                 ? 'This credential is valid and can be used for verification'
                 : metadata.isRevoked
@@ -267,17 +267,17 @@ export default function CredentialDetailPage() {
       </div>
 
       {/* Action Buttons */}
-      <div className="mb-6 flex flex-wrap gap-3">
+      <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
         <button
           onClick={downloadCredential}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+          className="w-full rounded-lg bg-primary px-4 py-2 font-medium text-primary-foreground transition-colors hover:bg-primary/90 lg:w-auto"
         >
           📥 Download JSON
         </button>
         <button
           onClick={verifyCredential}
           disabled={verifying}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors font-medium"
+          className="w-full rounded-lg bg-secondary px-4 py-2 font-medium text-secondary-foreground transition-colors hover:bg-secondary/85 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
         >
           {verifying ? '⏳ Verifying...' : '🔍 Verify Signature'}
         </button>
@@ -285,7 +285,7 @@ export default function CredentialDetailPage() {
           <button
             onClick={revokeCredential}
             disabled={revoking}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full rounded-lg bg-destructive px-4 py-2 font-medium text-destructive-foreground transition-colors hover:bg-destructive/90 disabled:cursor-not-allowed disabled:opacity-60 sm:col-span-2 lg:w-auto"
           >
             {revoking ? '⏳ Revoking...' : '🚫 Revoke Credential'}
           </button>
@@ -295,14 +295,16 @@ export default function CredentialDetailPage() {
       {/* Verification Result */}
       {verification && (
         <div
-          className={`mb-6 p-4 rounded-lg border ${
-            verification.verified ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+          className={`mb-6 rounded-xl border p-4 ${
+            verification.verified
+              ? 'border-emerald-500/30 bg-emerald-500/10'
+              : 'border-destructive/40 bg-destructive/10'
           }`}
         >
-          <h3 className="font-semibold mb-1">
+          <h3 className="mb-1 font-semibold text-foreground">
             {verification.verified ? '✅ Signature Valid' : '❌ Signature Invalid'}
           </h3>
-          <p className="text-sm text-gray-700">
+          <p className="text-sm text-muted-foreground">
             {verification.verified
               ? 'Cryptographic signature verified successfully'
               : `Verification failed: ${verification.error}`}
@@ -311,38 +313,38 @@ export default function CredentialDetailPage() {
       )}
 
       {/* Metadata Card */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">Metadata</h2>
-        <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="mb-6 rounded-xl border border-border bg-card p-5 md:p-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Metadata</h2>
+        <dl className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Credential Type</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-muted-foreground">Credential Type</dt>
+            <dd className="mt-1 text-sm text-foreground">
               {metadata.credentialType.replace('Credential', ' Credential')}
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Database ID</dt>
-            <dd className="mt-1 text-sm text-gray-900 font-mono break-all">{metadata.id}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Database ID</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">{metadata.id}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Issued At</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-muted-foreground">Issued At</dt>
+            <dd className="mt-1 text-sm text-foreground">
               {new Date(metadata.issuedAt).toLocaleString()}
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Expires At</dt>
-            <dd className="mt-1 text-sm text-gray-900">
+            <dt className="text-sm font-medium text-muted-foreground">Expires At</dt>
+            <dd className="mt-1 text-sm text-foreground">
               {metadata.expiresAt ? new Date(metadata.expiresAt).toLocaleString() : 'Never'}
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Proof Type</dt>
-            <dd className="mt-1 text-sm text-gray-900">{metadata.proofType}</dd>
+            <dt className="text-sm font-medium text-muted-foreground">Proof Type</dt>
+            <dd className="mt-1 text-sm text-foreground">{metadata.proofType}</dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Verification Method</dt>
-            <dd className="mt-1 text-sm text-gray-900 font-mono break-all">
+            <dt className="text-sm font-medium text-muted-foreground">Verification Method</dt>
+            <dd className="mt-1 break-all font-mono text-sm text-foreground">
               {metadata.verificationMethod}
             </dd>
           </div>
@@ -351,51 +353,51 @@ export default function CredentialDetailPage() {
 
       {/* W3C Bitstring Status List */}
       {credential.credentialStatus && (
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold mb-4">W3C Bitstring Status List</h2>
-          <p className="text-sm text-gray-600 mb-4">
+        <div className="mb-6 rounded-xl border border-border bg-card p-5 md:p-6">
+          <h2 className="mb-4 text-xl font-bold text-foreground">W3C Bitstring Status List</h2>
+          <p className="mb-4 text-sm text-muted-foreground">
             This credential includes revocation status information compliant with{' '}
             <a
               href="https://www.w3.org/TR/vc-bitstring-status-list/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-600 hover:underline"
+              className="text-primary hover:underline"
             >
               W3C Bitstring Status List v1.0
             </a>
           </p>
           <dl className="space-y-3">
             <div>
-              <dt className="text-sm font-medium text-gray-500">Status Purpose</dt>
-              <dd className="mt-1 text-sm text-gray-900 capitalize">
+              <dt className="text-sm font-medium text-muted-foreground">Status Purpose</dt>
+              <dd className="mt-1 text-sm capitalize text-foreground">
                 {credential.credentialStatus.statusPurpose}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Status List Index</dt>
-              <dd className="mt-1 text-sm text-gray-900 font-mono">
+              <dt className="text-sm font-medium text-muted-foreground">Status List Index</dt>
+              <dd className="mt-1 font-mono text-sm text-foreground">
                 {credential.credentialStatus.statusListIndex}
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Status List Credential</dt>
+              <dt className="text-sm font-medium text-muted-foreground">Status List Credential</dt>
               <dd className="mt-1 text-sm">
                 <a
                   href={credential.credentialStatus.statusListCredential}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-purple-600 hover:underline font-mono break-all"
+                  className="break-all font-mono text-primary hover:underline"
                 >
                   {credential.credentialStatus.statusListCredential}
                 </a>
               </dd>
             </div>
             <div>
-              <dt className="text-sm font-medium text-gray-500">Status Entry ID</dt>
+              <dt className="text-sm font-medium text-muted-foreground">Status Entry ID</dt>
               <dd className="mt-1 text-sm">
                 <a
                   href={credential.credentialStatus.id}
-                  className="text-purple-600 hover:underline font-mono break-all"
+                  className="break-all font-mono text-primary hover:underline"
                 >
                   {credential.credentialStatus.id}
                 </a>
@@ -406,11 +408,11 @@ export default function CredentialDetailPage() {
       )}
 
       {!credential.credentialStatus && (
-        <div className="bg-yellow-50 rounded-lg shadow border border-yellow-200 p-6 mb-6">
-          <h2 className="text-xl font-bold mb-2 text-yellow-900">
+        <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 md:p-6">
+          <h2 className="mb-2 text-xl font-bold text-foreground">
             ⚠️ Legacy Credential (No Status List)
           </h2>
-          <p className="text-sm text-yellow-800">
+          <p className="text-sm text-muted-foreground">
             This credential was issued before the W3C Bitstring Status List implementation was
             added. It does not include verifiable revocation status information, but can still be
             revoked in the database. Revocation status will only be reflected in our system and not
@@ -420,32 +422,32 @@ export default function CredentialDetailPage() {
       )}
 
       {/* DID Information */}
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-xl font-bold mb-4">Decentralized Identifiers (DIDs)</h2>
+      <div className="mb-6 rounded-xl border border-border bg-card p-5 md:p-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Decentralized Identifiers (DIDs)</h2>
         <dl className="space-y-3">
           <div>
-            <dt className="text-sm font-medium text-gray-500">Credential ID (W3C VC ID)</dt>
+            <dt className="text-sm font-medium text-muted-foreground">Credential ID (W3C VC ID)</dt>
             <dd className="mt-1 text-sm">
               <a
                 href={credential.id}
-                className="text-purple-600 hover:underline font-mono break-all"
+                className="break-all font-mono text-primary hover:underline"
               >
                 {credential.id}
               </a>
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Holder DID</dt>
+            <dt className="text-sm font-medium text-muted-foreground">Holder DID</dt>
             <dd className="mt-1 text-sm">
-              <span className="font-mono break-all text-gray-900">{metadata.holderDid}</span>
+              <span className="break-all font-mono text-foreground">{metadata.holderDid}</span>
             </dd>
           </div>
           <div>
-            <dt className="text-sm font-medium text-gray-500">Issuer DID</dt>
+            <dt className="text-sm font-medium text-muted-foreground">Issuer DID</dt>
             <dd className="mt-1 text-sm">
               <a
                 href={credential.issuer}
-                className="text-purple-600 hover:underline font-mono break-all"
+                className="break-all font-mono text-primary hover:underline"
               >
                 {credential.issuer}
               </a>
@@ -455,9 +457,9 @@ export default function CredentialDetailPage() {
       </div>
 
       {/* Full Credential JSON */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">Full Credential (JSON-LD)</h2>
-        <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-xs">
+      <div className="rounded-xl border border-border bg-card p-5 md:p-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">Full Credential (JSON-LD)</h2>
+        <pre className="overflow-x-auto rounded-lg border border-border bg-muted p-4 text-xs text-foreground">
           <code>{JSON.stringify(credential, null, 2)}</code>
         </pre>
       </div>
