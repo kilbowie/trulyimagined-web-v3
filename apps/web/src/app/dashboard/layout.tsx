@@ -2,7 +2,6 @@ import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { DashboardQuickSearch } from '@/components/DashboardQuickSearch';
-import { DashboardRouteTransitionLoader } from '@/components/DashboardRouteTransitionLoader';
 
 /**
  * Dashboard Layout with Sidebar
@@ -19,8 +18,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <DashboardRouteTransitionLoader />
-
       {/* Sidebar */}
       <DashboardSidebar userName={user.name || user.email} roles={roles} />
 

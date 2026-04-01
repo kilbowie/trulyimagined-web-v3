@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import Auth0Provider from '@/components/Auth0Provider';
 import { ThemeProvider } from '@/components/theme-provider';
+import { GlobalRouteTransitionLoader } from '@/components/GlobalRouteTransitionLoader';
 
 export const metadata: Metadata = {
   title: 'Truly Imagined v3 - Global Performer Digital Identity Registry',
@@ -34,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
+          <GlobalRouteTransitionLoader />
           <Auth0Provider>{children}</Auth0Provider>
         </ThemeProvider>
       </body>

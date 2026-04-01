@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import TerritoryMap, { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 import ContinentCarousel from '@/components/ContinentCarousel';
 import {
@@ -906,8 +907,18 @@ export default function ConsentPreferencesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-900 text-xl">Loading consent preferences...</div>
+      <div className="min-h-screen flex items-center justify-center bg-background/95 backdrop-blur-sm">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-amber-500/20 blur-3xl dark:bg-amber-300/15" />
+          <Image
+            src="/logo.svg"
+            alt="Truly Imagined"
+            width={360}
+            height={112}
+            priority
+            className="relative h-auto w-56 sm:w-72 md:w-80 animate-pulse brightness-90 dark:brightness-110"
+          />
+        </div>
       </div>
     );
   }
