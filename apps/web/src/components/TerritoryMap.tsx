@@ -73,6 +73,7 @@ export const COUNTRIES_BY_CONTINENT = {
     { code: 'RS', name: 'Serbia' },
     { code: 'UA', name: 'Ukraine' },
     { code: 'BY', name: 'Belarus' },
+    { code: 'RU', name: 'Russia' },
     { code: 'MD', name: 'Moldova' },
     { code: 'AL', name: 'Albania' },
     { code: 'MK', name: 'North Macedonia' },

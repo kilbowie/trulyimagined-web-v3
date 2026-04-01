@@ -45,6 +45,7 @@ type ConsentPolicy = {
     revenueShare?: number;
   };
   attributionRequired: boolean;
+  usageBlocked?: boolean;
 };
 
 type ConsentLedgerEntry = {
@@ -231,6 +232,11 @@ export default function ConsentHistoryPage() {
                             >
                               {entry.status.toUpperCase()}
                             </span>
+                            {entry.policy.usageBlocked && (
+                              <span className="px-3 py-1 rounded-full text-xs font-semibold border border-red-500/50 text-red-700 dark:text-red-300 bg-red-500/10 dark:bg-red-500/20">
+                                BLOCKED
+                              </span>
+                            )}
                           </div>
                           <p className="text-muted-foreground text-sm">
                             {formatDate(entry.created_at)}
@@ -239,23 +245,31 @@ export default function ConsentHistoryPage() {
                       </div>
 
                       {/* Summary */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 mb-4 text-sm">
-                        <div>
-                          <div className="text-muted-foreground">Media Usage Allowed</div>
-                          <div className="text-foreground font-semibold">
-                            {permissions.media}/10 Categories
+                      <div className="mb-4">
+                        {entry.policy.usageBlocked && (
+                          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-300">
+                            <span>Usage Status</span>
+                            <span className="rounded-full border border-red-500/50 px-2 py-0.5">BLOCKED</span>
                           </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">Content Types Allowed</div>
-                          <div className="text-foreground font-semibold">
-                            {permissions.content}/10 Types
+                        )}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm">
+                          <div>
+                            <div className="text-muted-foreground">Media Usage Allowed</div>
+                            <div className="text-foreground font-semibold">
+                              {permissions.media}/10 Categories
+                            </div>
                           </div>
-                        </div>
-                        <div>
-                          <div className="text-muted-foreground">AI Controls Enabled</div>
-                          <div className="text-foreground font-semibold">
-                            {permissions.ai}/3 Active
+                          <div>
+                            <div className="text-muted-foreground">Content Types Allowed</div>
+                            <div className="text-foreground font-semibold">
+                              {permissions.content}/10 Types
+                            </div>
+                          </div>
+                          <div>
+                            <div className="text-muted-foreground">AI Controls Enabled</div>
+                            <div className="text-foreground font-semibold">
+                              {permissions.ai}/3 Active
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -284,6 +298,14 @@ export default function ConsentHistoryPage() {
                       {/* Full Policy Details */}
                       {isExpanded && (
                         <div className="mt-4 space-y-4">
+                          {entry.policy.usageBlocked ? (
+                            <div className="p-4 bg-red-500/10 border border-red-500/40 rounded-lg">
+                              <h4 className="text-red-700 dark:text-red-300 font-semibold">
+                                No Usage Permitted
+                              </h4>
+                            </div>
+                          ) : (
+                            <>
                           {/* Media Usage Categories */}
                           {entry.policy.mediaUsage && (
                             <div className="p-4 bg-muted/40 border border-border rounded-lg">
@@ -466,6 +488,8 @@ export default function ConsentHistoryPage() {
                                 )}
                               </div>
                             </details>
+                          )}
+                            </>
                           )}
                         </div>
                       )}

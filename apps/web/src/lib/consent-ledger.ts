@@ -75,11 +75,11 @@ export interface ConsentPolicy {
   // Global usage switch
   usageBlocked?: boolean;
 
-    // Optional constraints (territory/expiry metadata)
-    constraints?: {
-          territory?: string;
-          expiryDate?: string;
-    };
+  // Optional constraints (territory/expiry metadata)
+  constraints?: {
+    territory?: string;
+    expiryDate?: string;
+  };
 }
 
 export interface ConsentLedgerEntry {

@@ -63,13 +63,17 @@ export default function ContinentCarousel({
                 <span className="text-lg md:text-xl text-foreground">{isExpanded ? '▼' : '▶'}</span>
                 <div className="text-left">
                   <h3 className="text-lg md:text-xl font-bold text-foreground">{continent}</h3>
-                  <p className="text-muted-foreground text-xs md:text-sm">
-                    {countries.length} countries •{' '}
-                    <span className="text-green-600 dark:text-green-400">
-                      {allowedCount} allowed
-                    </span>{' '}
-                    • <span className="text-red-600 dark:text-red-400">{deniedCount} denied</span>
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="text-xs md:text-sm text-muted-foreground">
+                      {countries.length} countries
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                      Allowed: {allowedCount}
+                    </span>
+                    <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                      Denied: {deniedCount}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>

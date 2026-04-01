@@ -4,7 +4,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 import ContinentCarousel from '@/components/ContinentCarousel';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +76,7 @@ type ConsentLedgerEntry = {
 
 export default function ConsentPreferencesPage() {
   const router = useRouter();
+  const sectionValues = ['media-usage', 'content-types', 'territories', 'ai-controls'];
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,6 +129,7 @@ export default function ConsentPreferencesPage() {
   const [reason, setReason] = useState('');
   const [usageChangeDialogOpen, setUsageChangeDialogOpen] = useState(false);
   const [pendingUsageBlocked, setPendingUsageBlocked] = useState<boolean | null>(null);
+  const [openSections, setOpenSections] = useState<string[]>(sectionValues);
 
   const getBaselinePolicy = (): ConsentPolicy => {
     if (!currentConsent?.policy) {
@@ -186,7 +193,8 @@ export default function ConsentPreferencesPage() {
       },
     });
 
-  const hasPolicyChanges = normalizedPolicyString(policy) !== normalizedPolicyString(getBaselinePolicy());
+  const hasPolicyChanges =
+    normalizedPolicyString(policy) !== normalizedPolicyString(getBaselinePolicy());
 
   const getPermissionCounts = (values: PermissionLevel[]) => {
     return values.reduce(
@@ -203,6 +211,10 @@ export default function ConsentPreferencesPage() {
   const aiControlsCounts = {
     allow: Object.values(policy.aiControls).filter(Boolean).length,
     deny: Object.values(policy.aiControls).filter((value) => !value).length,
+  };
+  const geographicCounts = {
+    allow: policy.territories.allowed.length,
+    deny: policy.territories.denied.length,
   };
 
   // Load current consent on mount
@@ -296,8 +308,8 @@ export default function ConsentPreferencesPage() {
       const data = await res.json();
       setSuccess(`Consent updated successfully! Version ${data.entry.version} created.`);
       setReason('');
-        setPendingUsageBlocked(null);
-        setUsageChangeDialogOpen(false);
+      setPendingUsageBlocked(null);
+      setUsageChangeDialogOpen(false);
 
       // Reload current consent
       await loadCurrentConsent();
@@ -314,6 +326,13 @@ export default function ConsentPreferencesPage() {
       return;
     }
     await persistConsent(policy);
+  };
+
+  const handleCancelChanges = () => {
+    setPolicy(getBaselinePolicy());
+    setReason('');
+    setError(null);
+    setSuccess(null);
   };
 
   const requestUsageModeChange = (nextBlocked: boolean) => {
@@ -468,6 +487,16 @@ export default function ConsentPreferencesPage() {
     }
   };
 
+  const handleQuickNavClick = (sectionId: string, e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    setOpenSections((prev) => (prev.includes(sectionId) ? prev : [...prev, sectionId]));
+
+    const target = document.getElementById(sectionId);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -554,7 +583,7 @@ export default function ConsentPreferencesPage() {
               onClick={() => requestUsageModeChange(true)}
               disabled={saving}
               className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                policy.usageBlocked ?? false
+                (policy.usageBlocked ?? false)
                   ? 'bg-red-600/15 text-red-600 dark:text-red-400 border-red-500/40'
                   : 'bg-background text-muted-foreground border-border hover:text-foreground'
               }`}
@@ -590,30 +619,36 @@ export default function ConsentPreferencesPage() {
         {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
-          <div className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}>
+          <div
+            className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}
+          >
             <div className="bg-card rounded-xl p-4 border border-border sticky top-8 shadow-sm">
               <h3 className="text-foreground font-bold mb-4 text-sm">Quick Navigation</h3>
               <nav className="space-y-2">
                 <a
                   href="#media-usage"
+                  onClick={(e) => handleQuickNavClick('media-usage', e)}
                   className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Media Usage Categories
                 </a>
                 <a
                   href="#content-types"
+                  onClick={(e) => handleQuickNavClick('content-types', e)}
                   className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Content Type Restrictions
                 </a>
                 <a
                   href="#territories"
+                  onClick={(e) => handleQuickNavClick('territories', e)}
                   className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   Geographic Territories
                 </a>
                 <a
                   href="#ai-controls"
+                  onClick={(e) => handleQuickNavClick('ai-controls', e)}
                   className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
                 >
                   AI Controls
@@ -624,7 +659,11 @@ export default function ConsentPreferencesPage() {
 
           {/* Right Content - Form */}
           <div className="flex-1 min-w-0">
-            <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+            <form
+              id="consent-preferences-form"
+              onSubmit={handleSubmit}
+              className={`space-y-6 md:space-y-8 ${hasPolicyChanges ? 'pb-28' : ''}`}
+            >
               {(policy.usageBlocked ?? false) ? (
                 <div className="bg-card rounded-xl p-6 border border-red-500/40 shadow-sm">
                   <h2 className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
@@ -636,7 +675,12 @@ export default function ConsentPreferencesPage() {
                   </p>
                 </div>
               ) : (
-                <Accordion type="multiple" defaultValue={['media-usage', 'content-types', 'territories', 'ai-controls']} className="space-y-6">
+                <Accordion
+                  type="multiple"
+                  value={openSections}
+                  onValueChange={setOpenSections}
+                  className="space-y-6"
+                >
                   <AccordionItem
                     value="media-usage"
                     id="media-usage"
@@ -644,17 +688,25 @@ export default function ConsentPreferencesPage() {
                   >
                     <AccordionTrigger className="px-6 py-5 hover:no-underline">
                       <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">Media Usage Categories</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {mediaUsageCounts.allow}</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">Requires Approval: {mediaUsageCounts.require_approval}</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {mediaUsageCounts.deny}</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">
+                          Media Usage Categories
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                          Allowed: {mediaUsageCounts.allow}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
+                          Requires Approval: {mediaUsageCounts.require_approval}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                          Denied: {mediaUsageCounts.deny}
+                        </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
                       <p className="text-muted-foreground mb-6 text-sm">
                         Control how your image and likeness can be used across different media
-                        types. Choose Allow for blanket approval, Require Approval for
-                        case-by-case review, or Deny to reject usage.
+                        types. Choose Allow for blanket approval, Require Approval for case-by-case
+                        review, or Deny to reject usage.
                       </p>
                       <div className="space-y-1">
                         <PermissionSelector
@@ -768,10 +820,18 @@ export default function ConsentPreferencesPage() {
                   >
                     <AccordionTrigger className="px-6 py-5 hover:no-underline">
                       <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">Content Type Restrictions</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {contentTypeCounts.allow}</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">Requires Approval: {contentTypeCounts.require_approval}</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {contentTypeCounts.deny}</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">
+                          Content Type Restrictions
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                          Allowed: {contentTypeCounts.allow}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
+                          Requires Approval: {contentTypeCounts.require_approval}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                          Denied: {contentTypeCounts.deny}
+                        </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
@@ -891,7 +951,15 @@ export default function ConsentPreferencesPage() {
                   >
                     <AccordionTrigger className="px-6 py-5 hover:no-underline">
                       <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">Geographic Territories</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">
+                          Geographic Territories
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                          Allowed: {geographicCounts.allow}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                          Denied: {geographicCounts.deny}
+                        </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
@@ -917,9 +985,15 @@ export default function ConsentPreferencesPage() {
                   >
                     <AccordionTrigger className="px-6 py-5 hover:no-underline">
                       <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">AI Controls</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {aiControlsCounts.allow}</span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {aiControlsCounts.deny}</span>
+                        <span className="text-xl md:text-2xl font-bold text-foreground">
+                          AI Controls
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                          Allowed: {aiControlsCounts.allow}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                          Denied: {aiControlsCounts.deny}
+                        </span>
                       </div>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
@@ -1000,29 +1074,42 @@ export default function ConsentPreferencesPage() {
                 />
               </div>
 
-              {/* Submit Button */}
-              <div className="flex flex-col md:flex-row gap-3 md:gap-4">
-                <button
-                  type="submit"
-                  disabled={saving || !hasPolicyChanges}
-                  className="px-6 md:px-8 py-2 md:py-3 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
-                >
-                  {saving ? 'Saving...' : 'Update Consent Preferences'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => router.push('/dashboard/consent-history')}
-                  className="px-6 md:px-8 py-2 md:py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
-                >
-                  View History
-                </button>
-              </div>
             </form>
           </div>
           {/* End Right Content */}
         </div>
         {/* End Two Column Layout */}
       </div>
+
+      {hasPolicyChanges && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
+          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="hidden sm:block text-sm text-muted-foreground">
+                You have unsaved changes.
+              </p>
+              <div className="ml-auto flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleCancelChanges}
+                  disabled={saving}
+                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-semibold transition-colors text-sm md:text-base"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  form="consent-preferences-form"
+                  disabled={saving || !hasPolicyChanges}
+                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-semibold transition-colors text-sm md:text-base"
+                >
+                  {saving ? 'Saving...' : 'Update Consent Preferences'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Dialog
         open={usageChangeDialogOpen}
