@@ -407,7 +407,7 @@ export default function TerritoryMap({
   deniedCountries,
   onCountryClick,
 }: TerritoryMapProps) {
-  const [tooltipCode, setTooltipCode] = useState<string | null>(null);
+  const [hoveredCountryName, setHoveredCountryName] = useState<string | null>(null);
 
   const getGeoName = (geo: Geography) => {
     return String(
@@ -496,6 +496,7 @@ export default function TerritoryMap({
               .filter((geo) => normalizeCountryName(getGeoName(geo)) !== 'antarctica')
               .map((geo) => {
                 const fillColor = getCountryFill(geo);
+                const geoName = getGeoName(geo);
                 return (
                   <Geography
                     key={`${geo.rsmKey}-${fillColor}`}
@@ -508,23 +509,17 @@ export default function TerritoryMap({
                         outline: 'none',
                       },
                       hover: {
-                        fill: fillColor,
+                        fill: '#60a5fa',
                         outline: 'none',
                         cursor: 'pointer',
                       },
                       pressed: {
-                        fill: fillColor,
+                        fill: '#3b82f6',
                         outline: 'none',
                       },
                     }}
-                    onMouseEnter={() => {
-                      const isoCode = getIsoA2FromGeo(geo);
-                      if (!isoCode) {
-                        return;
-                      }
-                      setTooltipCode(isoCode);
-                    }}
-                    onMouseLeave={() => setTooltipCode(null)}
+                    onMouseEnter={() => setHoveredCountryName(geoName)}
+                    onMouseLeave={() => setHoveredCountryName(null)}
                     onClick={() => handleGeographyClick(geo)}
                   />
                 );
@@ -533,11 +528,11 @@ export default function TerritoryMap({
         </Geographies>
       </ComposableMap>
 
-        {tooltipCode && (
-          <div className="absolute left-4 top-4 z-10 pointer-events-none rounded-md border border-slate-700 bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg">
-            {tooltipCode}
-          </div>
-        )}
+      {hoveredCountryName && (
+        <div className="absolute left-4 top-4 z-10 pointer-events-none rounded-md border border-slate-700 bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg">
+          {hoveredCountryName}
+        </div>
+      )}
 
       {/* Statistics Display */}
       <div className="mt-4 flex items-center gap-6 text-sm font-semibold">

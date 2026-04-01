@@ -105,6 +105,18 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     unreadSupport: 0,
   });
 
+  const triggerDashboardTransition = (href: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    if (!href.startsWith('/dashboard') || href === pathname) {
+      return;
+    }
+
+    window.dispatchEvent(new CustomEvent('dashboard:transition-start', { detail: { href } }));
+  };
+
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
   const hasAdminRole = roles.includes('Admin');
@@ -399,6 +411,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={() => triggerDashboardTransition(item.href)}
                   className={cn(
                     'flex items-center rounded-lg px-3 py-2 text-sm transition-colors',
                     isCollapsed ? 'justify-center' : 'gap-3',
@@ -436,6 +449,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                           <Link
                             key={item.href}
                             href={item.href}
+                            onClick={() => triggerDashboardTransition(item.href)}
                             className={cn(
                               'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
                               isActive
@@ -486,6 +500,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                               <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={() => triggerDashboardTransition(item.href)}
                                 className={cn(
                                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                                   isActive
@@ -536,6 +551,11 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                     <div key={item.href} className="relative">
                       <Link
                         href={item.href}
+                        onClick={() => {
+                          if (!item.comingSoon) {
+                            triggerDashboardTransition(item.href);
+                          }
+                        }}
                         className={cn(
                           'flex items-center rounded-lg px-3 py-2 text-sm transition-colors',
                           isCollapsed ? 'justify-center' : 'gap-3',
@@ -567,6 +587,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       <div className="border-t border-slate-800 p-4">
         <Link
           href="/dashboard/support"
+          onClick={() => triggerDashboardTransition('/dashboard/support')}
           className={cn(
             'flex items-center rounded-lg px-3 py-2 text-sm transition-colors relative',
             isCollapsed ? 'justify-center' : 'gap-3',

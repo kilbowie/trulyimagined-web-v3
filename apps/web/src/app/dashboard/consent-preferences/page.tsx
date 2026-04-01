@@ -983,7 +983,9 @@ export default function ConsentPreferencesPage() {
             {/* Current Version Section - Prominent */}
             {currentConsent && (
               <div className="mb-8 bg-card rounded-xl p-6 border border-border">
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Current Version</h2>
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
+                  Current Version
+                </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <div>
                     <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
@@ -992,7 +994,9 @@ export default function ConsentPreferencesPage() {
                     </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground text-xs md:text-sm mb-1">Last Updated</div>
+                    <div className="text-muted-foreground text-xs md:text-sm mb-1">
+                      Last Updated
+                    </div>
                     <div className="text-lg md:text-xl font-semibold text-foreground">
                       {new Date(currentConsent.created_at).toLocaleDateString('en-US', {
                         month: 'short',
@@ -1166,487 +1170,487 @@ export default function ConsentPreferencesPage() {
 
             {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
             <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
-          <div
-            className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}
-          >
-            <div className="bg-card rounded-xl p-4 border border-border sticky top-8 shadow-sm">
-              <h3 className="text-foreground font-bold mb-4 text-sm">Quick Navigation</h3>
-              <nav className="space-y-2">
-                <a
-                  href="#media-usage"
-                  onClick={(e) => handleQuickNavClick('media-usage', e)}
-                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
-                >
-                  Media Usage Categories
-                </a>
-                <a
-                  href="#content-types"
-                  onClick={(e) => handleQuickNavClick('content-types', e)}
-                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
-                >
-                  Content Type Restrictions
-                </a>
-                <a
-                  href="#territories"
-                  onClick={(e) => handleQuickNavClick('territories', e)}
-                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
-                >
-                  Geographic Territories
-                </a>
-                <a
-                  href="#ai-controls"
-                  onClick={(e) => handleQuickNavClick('ai-controls', e)}
-                  className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
-                >
-                  AI Controls
-                </a>
-              </nav>
-            </div>
-          </div>
-
-          {/* Right Content - Form */}
-          <div className="flex-1 min-w-0">
-            <form
-              id="consent-preferences-form"
-              onSubmit={handleSubmit}
-              className="space-y-6 md:space-y-8"
-            >
-              {(policy.usageBlocked ?? false) ? (
-                <div className="bg-card rounded-xl p-6 border border-red-500/40 shadow-sm">
-                  <h2 className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
-                    Usage is Blocked
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Detailed consent sections are hidden while block mode is active. Switch to
-                    Permit Usage to view and edit your detailed preferences.
-                  </p>
-                </div>
-              ) : (
-                <Accordion
-                  type="multiple"
-                  value={openSections}
-                  onValueChange={setOpenSections}
-                  className="space-y-6"
-                >
-                  <AccordionItem
-                    value="media-usage"
-                    id="media-usage"
-                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
-                      <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">
-                          Media Usage Categories
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
-                          Allowed: {mediaUsageCounts.allow}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
-                          Requires Approval: {mediaUsageCounts.require_approval}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
-                          Denied: {mediaUsageCounts.deny}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6">
-                      <p className="text-muted-foreground mb-6 text-sm">
-                        Control how your image and likeness can be used across different media
-                        types. Choose Allow for blanket approval, Require Approval for case-by-case
-                        review, or Deny to reject usage.
-                      </p>
-                      <div className="space-y-1">
-                        <PermissionSelector
-                          label="Film / Theatrical"
-                          value={policy.mediaUsage.film}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, film: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Television"
-                          value={policy.mediaUsage.television}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, television: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Streaming Platforms"
-                          value={policy.mediaUsage.streaming}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, streaming: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Gaming / Interactive Media"
-                          value={policy.mediaUsage.gaming}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, gaming: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Voice Replication / AI Voice"
-                          value={policy.mediaUsage.voiceReplication}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Virtual Reality / Metaverse"
-                          value={policy.mediaUsage.virtualReality}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, virtualReality: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Social Media"
-                          value={policy.mediaUsage.socialMedia}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, socialMedia: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Advertising / Commercials"
-                          value={policy.mediaUsage.advertising}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, advertising: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Merchandise / Products"
-                          value={policy.mediaUsage.merchandise}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, merchandise: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Live Performance / Events"
-                          value={policy.mediaUsage.livePerformance}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              mediaUsage: { ...policy.mediaUsage, livePerformance: value },
-                            })
-                          }
-                        />
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem
-                    value="content-types"
-                    id="content-types"
-                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
-                      <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">
-                          Content Type Restrictions
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
-                          Allowed: {contentTypeCounts.allow}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
-                          Requires Approval: {contentTypeCounts.require_approval}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
-                          Denied: {contentTypeCounts.deny}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6">
-                      <p className="text-muted-foreground mb-6 text-sm">
-                        Set permissions for different types of content. These restrictions apply
-                        across all media usage categories above.
-                      </p>
-                      <div className="space-y-1">
-                        <PermissionSelector
-                          label="Explicit Content"
-                          value={policy.contentTypes.explicit}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, explicit: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Political Content"
-                          value={policy.contentTypes.political}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, political: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Religious Content"
-                          value={policy.contentTypes.religious}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, religious: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Violent Content"
-                          value={policy.contentTypes.violence}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, violence: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Alcohol-Related Content"
-                          value={policy.contentTypes.alcohol}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, alcohol: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Tobacco-Related Content"
-                          value={policy.contentTypes.tobacco}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, tobacco: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Gambling-Related Content"
-                          value={policy.contentTypes.gambling}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, gambling: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Pharmaceutical / Medical Content"
-                          value={policy.contentTypes.pharmaceutical}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, pharmaceutical: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Firearms-Related Content"
-                          value={policy.contentTypes.firearms}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, firearms: value },
-                            })
-                          }
-                        />
-                        <PermissionSelector
-                          label="Adult Content"
-                          value={policy.contentTypes.adultContent}
-                          onChange={(value) =>
-                            setPolicy({
-                              ...policy,
-                              contentTypes: { ...policy.contentTypes, adultContent: value },
-                            })
-                          }
-                        />
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem
-                    value="territories"
-                    id="territories"
-                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
-                      <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">
-                          Geographic Territories
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
-                          Allowed: {geographicCounts.allow}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
-                          Denied: {geographicCounts.deny}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6">
-                      <p className="text-muted-foreground mb-6 text-sm">
-                        Select which regions can use your image and likeness. Use the continent
-                        carousel below to manage territories by continent. Click individual
-                        countries or use bulk actions.
-                      </p>
-
-                      <ContinentCarousel
-                        allowedCountries={policy.territories.allowed}
-                        deniedCountries={policy.territories.denied}
-                        onCountryToggle={handleCountryClick}
-                        onContinentAction={handleContinentAction}
-                      />
-                    </AccordionContent>
-                  </AccordionItem>
-
-                  <AccordionItem
-                    value="ai-controls"
-                    id="ai-controls"
-                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
-                  >
-                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
-                      <div className="flex flex-wrap items-center gap-2 text-left">
-                        <span className="text-xl md:text-2xl font-bold text-foreground">
-                          AI Controls
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
-                          Allowed: {aiControlsCounts.allow}
-                        </span>
-                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
-                          Denied: {aiControlsCounts.deny}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="px-6 pb-6">
-                      <p className="text-muted-foreground mb-6 text-sm">
-                        Control how your image and likeness can be used with AI systems and
-                        technologies.
-                      </p>
-                      <div className="space-y-4">
-                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={policy.aiControls.trainingAllowed}
-                            onChange={(e) =>
-                              setPolicy({
-                                ...policy,
-                                aiControls: {
-                                  ...policy.aiControls,
-                                  trainingAllowed: e.target.checked,
-                                },
-                              })
-                            }
-                            className="w-5 h-5 rounded border-border"
-                          />
-                          <span>Allow AI Training</span>
-                        </label>
-                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={policy.aiControls.syntheticGenerationAllowed}
-                            onChange={(e) =>
-                              setPolicy({
-                                ...policy,
-                                aiControls: {
-                                  ...policy.aiControls,
-                                  syntheticGenerationAllowed: e.target.checked,
-                                },
-                              })
-                            }
-                            className="w-5 h-5 rounded border-border"
-                          />
-                          <span>Allow Synthetic Generation</span>
-                        </label>
-                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={policy.aiControls.biometricAnalysisAllowed}
-                            onChange={(e) =>
-                              setPolicy({
-                                ...policy,
-                                aiControls: {
-                                  ...policy.aiControls,
-                                  biometricAnalysisAllowed: e.target.checked,
-                                },
-                              })
-                            }
-                            className="w-5 h-5 rounded border-border"
-                          />
-                          <span>Allow Biometric Analysis</span>
-                        </label>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
-              )}
-
-              {/* Reason */}
-              <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
-                <label className="block text-foreground mb-2 font-medium">
-                  Reason for Update{' '}
-                  <span className="text-muted-foreground text-sm">(Optional)</span>
-                </label>
-                <textarea
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
-                  rows={3}
-                  placeholder="e.g., Updated commercial terms for new licensing model"
-                />
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
-                <p className="text-sm text-muted-foreground">
-                  You have {unsavedChangeCount} unsaved{' '}
-                  {unsavedChangeCount === 1 ? 'change' : 'changes'}.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="button"
-                    onClick={handleCancelEditMode}
-                    disabled={saving}
-                    className="px-6 py-2.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-semibold transition-colors text-sm"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={saving || !hasPolicyChanges}
-                    className="px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-semibold transition-colors text-sm"
-                  >
-                    {saving ? 'Saving...' : 'Save Changes'}
-                  </button>
+              {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
+              <div
+                className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}
+              >
+                <div className="bg-card rounded-xl p-4 border border-border sticky top-8 shadow-sm">
+                  <h3 className="text-foreground font-bold mb-4 text-sm">Quick Navigation</h3>
+                  <nav className="space-y-2">
+                    <a
+                      href="#media-usage"
+                      onClick={(e) => handleQuickNavClick('media-usage', e)}
+                      className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
+                    >
+                      Media Usage Categories
+                    </a>
+                    <a
+                      href="#content-types"
+                      onClick={(e) => handleQuickNavClick('content-types', e)}
+                      className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
+                    >
+                      Content Type Restrictions
+                    </a>
+                    <a
+                      href="#territories"
+                      onClick={(e) => handleQuickNavClick('territories', e)}
+                      className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
+                    >
+                      Geographic Territories
+                    </a>
+                    <a
+                      href="#ai-controls"
+                      onClick={(e) => handleQuickNavClick('ai-controls', e)}
+                      className="block px-3 py-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors text-sm"
+                    >
+                      AI Controls
+                    </a>
+                  </nav>
                 </div>
               </div>
-            </form>
-          </div>
+
+              {/* Right Content - Form */}
+              <div className="flex-1 min-w-0">
+                <form
+                  id="consent-preferences-form"
+                  onSubmit={handleSubmit}
+                  className="space-y-6 md:space-y-8"
+                >
+                  {(policy.usageBlocked ?? false) ? (
+                    <div className="bg-card rounded-xl p-6 border border-red-500/40 shadow-sm">
+                      <h2 className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
+                        Usage is Blocked
+                      </h2>
+                      <p className="text-sm text-muted-foreground">
+                        Detailed consent sections are hidden while block mode is active. Switch to
+                        Permit Usage to view and edit your detailed preferences.
+                      </p>
+                    </div>
+                  ) : (
+                    <Accordion
+                      type="multiple"
+                      value={openSections}
+                      onValueChange={setOpenSections}
+                      className="space-y-6"
+                    >
+                      <AccordionItem
+                        value="media-usage"
+                        id="media-usage"
+                        className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                          <div className="flex flex-wrap items-center gap-2 text-left">
+                            <span className="text-xl md:text-2xl font-bold text-foreground">
+                              Media Usage Categories
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                              Allowed: {mediaUsageCounts.allow}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
+                              Requires Approval: {mediaUsageCounts.require_approval}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                              Denied: {mediaUsageCounts.deny}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6">
+                          <p className="text-muted-foreground mb-6 text-sm">
+                            Control how your image and likeness can be used across different media
+                            types. Choose Allow for blanket approval, Require Approval for
+                            case-by-case review, or Deny to reject usage.
+                          </p>
+                          <div className="space-y-1">
+                            <PermissionSelector
+                              label="Film / Theatrical"
+                              value={policy.mediaUsage.film}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, film: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Television"
+                              value={policy.mediaUsage.television}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, television: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Streaming Platforms"
+                              value={policy.mediaUsage.streaming}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, streaming: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Gaming / Interactive Media"
+                              value={policy.mediaUsage.gaming}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, gaming: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Voice Replication / AI Voice"
+                              value={policy.mediaUsage.voiceReplication}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Virtual Reality / Metaverse"
+                              value={policy.mediaUsage.virtualReality}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, virtualReality: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Social Media"
+                              value={policy.mediaUsage.socialMedia}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, socialMedia: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Advertising / Commercials"
+                              value={policy.mediaUsage.advertising}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, advertising: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Merchandise / Products"
+                              value={policy.mediaUsage.merchandise}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, merchandise: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Live Performance / Events"
+                              value={policy.mediaUsage.livePerformance}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  mediaUsage: { ...policy.mediaUsage, livePerformance: value },
+                                })
+                              }
+                            />
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem
+                        value="content-types"
+                        id="content-types"
+                        className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                          <div className="flex flex-wrap items-center gap-2 text-left">
+                            <span className="text-xl md:text-2xl font-bold text-foreground">
+                              Content Type Restrictions
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                              Allowed: {contentTypeCounts.allow}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">
+                              Requires Approval: {contentTypeCounts.require_approval}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                              Denied: {contentTypeCounts.deny}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6">
+                          <p className="text-muted-foreground mb-6 text-sm">
+                            Set permissions for different types of content. These restrictions apply
+                            across all media usage categories above.
+                          </p>
+                          <div className="space-y-1">
+                            <PermissionSelector
+                              label="Explicit Content"
+                              value={policy.contentTypes.explicit}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, explicit: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Political Content"
+                              value={policy.contentTypes.political}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, political: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Religious Content"
+                              value={policy.contentTypes.religious}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, religious: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Violent Content"
+                              value={policy.contentTypes.violence}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, violence: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Alcohol-Related Content"
+                              value={policy.contentTypes.alcohol}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, alcohol: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Tobacco-Related Content"
+                              value={policy.contentTypes.tobacco}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, tobacco: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Gambling-Related Content"
+                              value={policy.contentTypes.gambling}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, gambling: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Pharmaceutical / Medical Content"
+                              value={policy.contentTypes.pharmaceutical}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, pharmaceutical: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Firearms-Related Content"
+                              value={policy.contentTypes.firearms}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, firearms: value },
+                                })
+                              }
+                            />
+                            <PermissionSelector
+                              label="Adult Content"
+                              value={policy.contentTypes.adultContent}
+                              onChange={(value) =>
+                                setPolicy({
+                                  ...policy,
+                                  contentTypes: { ...policy.contentTypes, adultContent: value },
+                                })
+                              }
+                            />
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem
+                        value="territories"
+                        id="territories"
+                        className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                          <div className="flex flex-wrap items-center gap-2 text-left">
+                            <span className="text-xl md:text-2xl font-bold text-foreground">
+                              Geographic Territories
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                              Allowed: {geographicCounts.allow}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                              Denied: {geographicCounts.deny}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6">
+                          <p className="text-muted-foreground mb-6 text-sm">
+                            Select which regions can use your image and likeness. Use the continent
+                            carousel below to manage territories by continent. Click individual
+                            countries or use bulk actions.
+                          </p>
+
+                          <ContinentCarousel
+                            allowedCountries={policy.territories.allowed}
+                            deniedCountries={policy.territories.denied}
+                            onCountryToggle={handleCountryClick}
+                            onContinentAction={handleContinentAction}
+                          />
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem
+                        value="ai-controls"
+                        id="ai-controls"
+                        className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                          <div className="flex flex-wrap items-center gap-2 text-left">
+                            <span className="text-xl md:text-2xl font-bold text-foreground">
+                              AI Controls
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                              Allowed: {aiControlsCounts.allow}
+                            </span>
+                            <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                              Denied: {aiControlsCounts.deny}
+                            </span>
+                          </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="px-6 pb-6">
+                          <p className="text-muted-foreground mb-6 text-sm">
+                            Control how your image and likeness can be used with AI systems and
+                            technologies.
+                          </p>
+                          <div className="space-y-4">
+                            <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={policy.aiControls.trainingAllowed}
+                                onChange={(e) =>
+                                  setPolicy({
+                                    ...policy,
+                                    aiControls: {
+                                      ...policy.aiControls,
+                                      trainingAllowed: e.target.checked,
+                                    },
+                                  })
+                                }
+                                className="w-5 h-5 rounded border-border"
+                              />
+                              <span>Allow AI Training</span>
+                            </label>
+                            <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={policy.aiControls.syntheticGenerationAllowed}
+                                onChange={(e) =>
+                                  setPolicy({
+                                    ...policy,
+                                    aiControls: {
+                                      ...policy.aiControls,
+                                      syntheticGenerationAllowed: e.target.checked,
+                                    },
+                                  })
+                                }
+                                className="w-5 h-5 rounded border-border"
+                              />
+                              <span>Allow Synthetic Generation</span>
+                            </label>
+                            <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={policy.aiControls.biometricAnalysisAllowed}
+                                onChange={(e) =>
+                                  setPolicy({
+                                    ...policy,
+                                    aiControls: {
+                                      ...policy.aiControls,
+                                      biometricAnalysisAllowed: e.target.checked,
+                                    },
+                                  })
+                                }
+                                className="w-5 h-5 rounded border-border"
+                              />
+                              <span>Allow Biometric Analysis</span>
+                            </label>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  )}
+
+                  {/* Reason */}
+                  <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
+                    <label className="block text-foreground mb-2 font-medium">
+                      Reason for Update{' '}
+                      <span className="text-muted-foreground text-sm">(Optional)</span>
+                    </label>
+                    <textarea
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
+                      rows={3}
+                      placeholder="e.g., Updated commercial terms for new licensing model"
+                    />
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+                    <p className="text-sm text-muted-foreground">
+                      You have {unsavedChangeCount} unsaved{' '}
+                      {unsavedChangeCount === 1 ? 'change' : 'changes'}.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <button
+                        type="button"
+                        onClick={handleCancelEditMode}
+                        disabled={saving}
+                        className="px-6 py-2.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-semibold transition-colors text-sm"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving || !hasPolicyChanges}
+                        className="px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-semibold transition-colors text-sm"
+                      >
+                        {saving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                </form>
+              </div>
               {/* End Right Content */}
             </div>
             {/* End Two Column Layout */}
