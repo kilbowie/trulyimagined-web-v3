@@ -350,6 +350,34 @@ Object.entries(ISO_CODE_MAP).forEach(([twoDigit, threeDigit]) => {
   ISO_CODE_REVERSE[threeDigit] = twoDigit;
 });
 
+const normalizeCountryName = (value: string) =>
+  value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const COUNTRY_NAME_TO_CODE: Record<string, string> = {};
+Object.values(COUNTRIES_BY_CONTINENT).forEach((countries) => {
+  countries.forEach((country) => {
+    COUNTRY_NAME_TO_CODE[normalizeCountryName(country.name)] = country.code;
+  });
+});
+
+const COUNTRY_NAME_ALIASES: Record<string, string> = {
+  'united states of america': 'US',
+  usa: 'US',
+  'russian federation': 'RU',
+  czechia: 'CZ',
+  'korea south': 'KR',
+  'south korea': 'KR',
+  'north macedonia': 'MK',
+  'cote divoire': 'CI',
+  'ivory coast': 'CI',
+};
+
 // Calculate total countries in our database
 export const getTotalCountries = () => {
   return Object.values(COUNTRIES_BY_CONTINENT).reduce(
@@ -362,7 +390,7 @@ interface Geography {
   id: string;
   rsmKey: string;
   properties: {
-    ISO_A2: string;
+    ISO_A2?: string;
     [key: string]: string | number | boolean | null | undefined;
   };
 }
@@ -378,20 +406,64 @@ export default function TerritoryMap({
   deniedCountries,
   onCountryClick,
 }: TerritoryMapProps) {
-  const getCountryFill = (geo: Geography) => {
-    const isoCode = ISO_CODE_REVERSE[geo.id] || geo.properties.ISO_A2;
+  const getGeoName = (geo: Geography) => {
+    return String(
+      geo.properties.NAME ||
+        geo.properties.name ||
+        geo.properties.NAME_LONG ||
+        geo.properties.ADMIN ||
+        geo.properties.SOVEREIGNT ||
+        ''
+    );
+  };
 
-    if (allowedCountries.includes(isoCode)) {
+  const getIsoA2FromGeo = (geo: Geography): string | undefined => {
+    const isoA2Raw =
+      geo.properties.ISO_A2 ||
+      geo.properties.iso_a2 ||
+      geo.properties.ISO2 ||
+      geo.properties.iso2 ||
+      undefined;
+    if (typeof isoA2Raw === 'string' && isoA2Raw.length === 2) {
+      return isoA2Raw.toUpperCase();
+    }
+
+    const isoA3Raw =
+      geo.properties.ISO_A3 ||
+      geo.properties.iso_a3 ||
+      geo.properties.ADM0_A3 ||
+      geo.properties.ISO3 ||
+      geo.properties.iso3 ||
+      geo.id;
+
+    if (typeof isoA3Raw === 'string') {
+      const isoA3 = isoA3Raw.toUpperCase();
+      if (ISO_CODE_REVERSE[isoA3]) {
+        return ISO_CODE_REVERSE[isoA3];
+      }
+      if (isoA3.length === 2) {
+        return isoA3;
+      }
+    }
+
+    const normalizedName = normalizeCountryName(getGeoName(geo));
+    return COUNTRY_NAME_TO_CODE[normalizedName] || COUNTRY_NAME_ALIASES[normalizedName];
+  };
+
+  const getCountryFill = (geo: Geography) => {
+    const isoCode = getIsoA2FromGeo(geo);
+
+    if (isoCode && allowedCountries.includes(isoCode)) {
       return '#10b981'; // Green
     }
-    if (deniedCountries.includes(isoCode)) {
+    if (isoCode && deniedCountries.includes(isoCode)) {
       return '#ef4444'; // Red
     }
     return '#374151'; // Gray (neutral)
   };
 
   const handleGeographyClick = (geo: Geography) => {
-    const isoCode = ISO_CODE_REVERSE[geo.id] || geo.properties.ISO_A2;
+    const isoCode = getIsoA2FromGeo(geo);
     if (isoCode) {
       onCountryClick(isoCode);
     }
@@ -407,7 +479,8 @@ export default function TerritoryMap({
       <ComposableMap
         projection="geoMercator"
         projectionConfig={{
-          scale: 120,
+          scale: 130,
+          center: [0, 16],
         }}
         style={{
           width: '100%',
@@ -416,7 +489,9 @@ export default function TerritoryMap({
       >
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
-            geographies.map((geo) => {
+            geographies
+              .filter((geo) => normalizeCountryName(getGeoName(geo)) !== 'antarctica')
+              .map((geo) => {
               const fillColor = getCountryFill(geo);
               return (
                 <Geography
@@ -442,7 +517,7 @@ export default function TerritoryMap({
                   onClick={() => handleGeographyClick(geo)}
                 />
               );
-            })
+              })
           }
         </Geographies>
       </ComposableMap>

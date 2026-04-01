@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
+import TerritoryMap, { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 import ContinentCarousel from '@/components/ContinentCarousel';
 import {
   Accordion,
@@ -460,6 +460,12 @@ export default function ConsentPreferencesPage() {
     allow: policy.territories.allowed.length,
     deny: policy.territories.denied.length,
   };
+  const currentVersionTerritories = currentConsent?.policy.territories || {
+    allowed: policy.territories.allowed,
+    denied: policy.territories.denied,
+  };
+  const currentVersionAllowedCodes = [...currentVersionTerritories.allowed].sort();
+  const currentVersionDeniedCodes = [...currentVersionTerritories.denied].sort();
   const currentVersionMediaCounts = currentConsent
     ? getPermissionCounts(Object.values(currentConsent.policy.mediaUsage || policy.mediaUsage))
     : mediaUsageCounts;
@@ -485,7 +491,14 @@ export default function ConsentPreferencesPage() {
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20" aria-hidden="true">
             <svg viewBox="0 0 42 42" className="h-20 w-20 -rotate-90">
-              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="hsl(var(--muted))" strokeWidth="6" />
+              <circle
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="transparent"
+                stroke="hsl(var(--muted))"
+                strokeWidth="6"
+              />
               <circle
                 cx="21"
                 cy="21"
@@ -947,6 +960,49 @@ export default function ConsentPreferencesPage() {
                 counts={currentVersionContentCounts}
                 total={10}
               />
+            </div>
+
+            <div className="mt-4 rounded-lg border border-border bg-background/40 p-4">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className="text-sm font-semibold text-foreground">Geographic Territories</span>
+                <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                  Allowed: {currentVersionAllowedCodes.length}
+                </span>
+                <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                  Denied: {currentVersionDeniedCodes.length}
+                </span>
+              </div>
+
+              <TerritoryMap
+                allowedCountries={currentVersionAllowedCodes}
+                deniedCountries={currentVersionDeniedCodes}
+                onCountryClick={() => {
+                  // Read-only visualization in Current Version summary.
+                }}
+              />
+
+              <div className="mt-4 space-y-2 text-sm">
+                <div className="text-foreground break-words">
+                  <span className="text-foreground font-medium">Allowed:</span>{' '}
+                  {currentVersionAllowedCodes.length > 0 ? (
+                    <span className="text-green-600 dark:text-green-400">
+                      {currentVersionAllowedCodes.join(', ')}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">None</span>
+                  )}
+                </div>
+                <div className="text-foreground break-words">
+                  <span className="text-foreground font-medium">Denied:</span>{' '}
+                  {currentVersionDeniedCodes.length > 0 ? (
+                    <span className="text-red-600 dark:text-red-400">
+                      {currentVersionDeniedCodes.join(', ')}
+                    </span>
+                  ) : (
+                    <span className="text-muted-foreground">None</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
