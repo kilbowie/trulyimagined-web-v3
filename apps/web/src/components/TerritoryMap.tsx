@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 
 const geoUrl = 'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json';
@@ -406,6 +407,8 @@ export default function TerritoryMap({
   deniedCountries,
   onCountryClick,
 }: TerritoryMapProps) {
+  const [tooltipCode, setTooltipCode] = useState<string | null>(null);
+
   const getGeoName = (geo: Geography) => {
     return String(
       geo.properties.NAME ||
@@ -492,35 +495,49 @@ export default function TerritoryMap({
             geographies
               .filter((geo) => normalizeCountryName(getGeoName(geo)) !== 'antarctica')
               .map((geo) => {
-              const fillColor = getCountryFill(geo);
-              return (
-                <Geography
-                  key={`${geo.rsmKey}-${fillColor}`}
-                  geography={geo}
-                  fill={fillColor}
-                  stroke="#1f2937"
-                  strokeWidth={0.5}
-                  style={{
-                    default: {
-                      outline: 'none',
-                    },
-                    hover: {
-                      fill: '#6366f1',
-                      outline: 'none',
-                      cursor: 'pointer',
-                    },
-                    pressed: {
-                      fill: '#4f46e5',
-                      outline: 'none',
-                    },
-                  }}
-                  onClick={() => handleGeographyClick(geo)}
-                />
-              );
+                const fillColor = getCountryFill(geo);
+                return (
+                  <Geography
+                    key={`${geo.rsmKey}-${fillColor}`}
+                    geography={geo}
+                    fill={fillColor}
+                    stroke="#1f2937"
+                    strokeWidth={0.5}
+                    style={{
+                      default: {
+                        outline: 'none',
+                      },
+                      hover: {
+                        fill: fillColor,
+                        outline: 'none',
+                        cursor: 'pointer',
+                      },
+                      pressed: {
+                        fill: fillColor,
+                        outline: 'none',
+                      },
+                    }}
+                    onMouseEnter={() => {
+                      const isoCode = getIsoA2FromGeo(geo);
+                      if (!isoCode) {
+                        return;
+                      }
+                      setTooltipCode(isoCode);
+                    }}
+                    onMouseLeave={() => setTooltipCode(null)}
+                    onClick={() => handleGeographyClick(geo)}
+                  />
+                );
               })
           }
         </Geographies>
       </ComposableMap>
+
+        {tooltipCode && (
+          <div className="absolute left-4 top-4 z-10 pointer-events-none rounded-md border border-slate-700 bg-slate-900/95 px-2 py-1 text-xs font-semibold text-white shadow-lg">
+            {tooltipCode}
+          </div>
+        )}
 
       {/* Statistics Display */}
       <div className="mt-4 flex items-center gap-6 text-sm font-semibold">

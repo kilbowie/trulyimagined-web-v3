@@ -358,6 +358,7 @@ export default function ConsentPreferencesPage() {
   const [reason, setReason] = useState('');
   const [templateName, setTemplateName] = useState('');
   const [customTemplates, setCustomTemplates] = useState<SavedTemplate[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [usageChangeDialogOpen, setUsageChangeDialogOpen] = useState(false);
   const [pendingUsageBlocked, setPendingUsageBlocked] = useState<boolean | null>(null);
   const [openSections, setOpenSections] = useState<string[]>(sectionValues);
@@ -650,7 +651,10 @@ export default function ConsentPreferencesPage() {
     }
   };
 
-  const persistConsent = async (policyToSave: ConsentPolicy, reasonToSave: string = reason) => {
+  const persistConsent = async (
+    policyToSave: ConsentPolicy,
+    reasonToSave: string = reason
+  ): Promise<boolean> => {
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -675,8 +679,10 @@ export default function ConsentPreferencesPage() {
 
       // Reload current consent
       await loadCurrentConsent();
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update consent');
+      return false;
     } finally {
       setSaving(false);
     }
@@ -687,7 +693,10 @@ export default function ConsentPreferencesPage() {
     if (!hasPolicyChanges) {
       return;
     }
-    await persistConsent(policy);
+    const saved = await persistConsent(policy);
+    if (saved) {
+      setIsEditMode(false);
+    }
   };
 
   const handleCancelChanges = () => {
@@ -695,6 +704,11 @@ export default function ConsentPreferencesPage() {
     setReason('');
     setError(null);
     setSuccess(null);
+  };
+
+  const handleCancelEditMode = () => {
+    handleCancelChanges();
+    setIsEditMode(false);
   };
 
   const applyTemplate = (template: TemplateOption) => {
@@ -918,140 +932,182 @@ export default function ConsentPreferencesPage() {
           </p>
         </div>
 
-        {/* Current Version Section - Prominent */}
-        {currentConsent && (
-          <div className="mb-8 bg-card rounded-xl p-6 border border-border">
-            <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Current Version</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              <div>
-                <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
-                <div className="text-2xl md:text-3xl font-bold text-primary">
-                  {currentConsent.version}
-                </div>
+        {!isEditMode && (
+          <>
+            {/* Usage Mode Toggle */}
+            <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Usage Status</h2>
+              <p className="text-muted-foreground text-sm mb-5">
+                Choose whether all usage is globally permitted (subject to your section settings) or
+                fully blocked.
+              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => requestUsageModeChange(false)}
+                  disabled={saving}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                    !(policy.usageBlocked ?? false)
+                      ? 'bg-green-600/15 text-green-600 dark:text-green-400 border-green-500/40'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                  }`}
+                >
+                  Permit Usage
+                </button>
+                <button
+                  type="button"
+                  onClick={() => requestUsageModeChange(true)}
+                  disabled={saving}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                    (policy.usageBlocked ?? false)
+                      ? 'bg-red-600/15 text-red-600 dark:text-red-400 border-red-500/40'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                  }`}
+                >
+                  Block Usage
+                </button>
               </div>
-              <div>
-                <div className="text-muted-foreground text-xs md:text-sm mb-1">Last Updated</div>
-                <div className="text-lg md:text-xl font-semibold text-foreground">
-                  {new Date(currentConsent.created_at).toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    year: 'numeric',
-                  })}
+
+              {(policy.usageBlocked ?? false) && (
+                <div className="mt-5 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
+                  <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                    Usage is currently blocked.
+                  </p>
+                  <p className="text-xs text-red-600/90 dark:text-red-300 mt-1">
+                    No media usage is permitted while block mode is active.
+                  </p>
                 </div>
-              </div>
-              <div>
-                <div className="text-muted-foreground text-xs md:text-sm mb-1">
-                  Licenses on this Version
-                </div>
-                <div className="text-2xl md:text-3xl font-bold text-accent">
-                  {licenseCount} <span className="text-sm text-muted-foreground">Total</span>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <DonutChart
-                label="Media Usage Categories"
-                counts={currentVersionMediaCounts}
-                total={10}
-              />
-              <DonutChart
-                label="Content Type Restrictions"
-                counts={currentVersionContentCounts}
-                total={10}
-              />
-            </div>
+            {/* Current Version Section - Prominent */}
+            {currentConsent && (
+              <div className="mb-8 bg-card rounded-xl p-6 border border-border">
+                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">Current Version</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  <div>
+                    <div className="text-muted-foreground text-xs md:text-sm mb-1">Version</div>
+                    <div className="text-2xl md:text-3xl font-bold text-primary">
+                      {currentConsent.version}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs md:text-sm mb-1">Last Updated</div>
+                    <div className="text-lg md:text-xl font-semibold text-foreground">
+                      {new Date(currentConsent.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-muted-foreground text-xs md:text-sm mb-1">
+                      Licenses on this Version
+                    </div>
+                    <div className="text-2xl md:text-3xl font-bold text-accent">
+                      {licenseCount} <span className="text-sm text-muted-foreground">Total</span>
+                    </div>
+                  </div>
+                </div>
 
-            <div className="mt-4 rounded-lg border border-border bg-background/40 p-4">
-              <div className="flex flex-wrap items-center gap-2 mb-3">
-                <span className="text-sm font-semibold text-foreground">Geographic Territories</span>
-                <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
-                  Allowed: {currentVersionAllowedCodes.length}
-                </span>
-                <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
-                  Denied: {currentVersionDeniedCodes.length}
-                </span>
-              </div>
+                <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <DonutChart
+                    label="Media Usage Categories"
+                    counts={currentVersionMediaCounts}
+                    total={10}
+                  />
+                  <DonutChart
+                    label="Content Type Restrictions"
+                    counts={currentVersionContentCounts}
+                    total={10}
+                  />
+                </div>
 
-              <TerritoryMap
-                allowedCountries={currentVersionAllowedCodes}
-                deniedCountries={currentVersionDeniedCodes}
-                onCountryClick={() => {
-                  // Read-only visualization in Current Version summary.
-                }}
-              />
-
-              <div className="mt-4 space-y-2 text-sm">
-                <div className="text-foreground break-words">
-                  <span className="text-foreground font-medium">Allowed:</span>{' '}
-                  {currentVersionAllowedCodes.length > 0 ? (
-                    <span className="text-green-600 dark:text-green-400">
-                      {currentVersionAllowedCodes.join(', ')}
+                <div className="mt-4 rounded-lg border border-border bg-background/40 p-4">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="text-sm font-semibold text-foreground">
+                      Geographic Territories
                     </span>
-                  ) : (
-                    <span className="text-muted-foreground">None</span>
-                  )}
-                </div>
-                <div className="text-foreground break-words">
-                  <span className="text-foreground font-medium">Denied:</span>{' '}
-                  {currentVersionDeniedCodes.length > 0 ? (
-                    <span className="text-red-600 dark:text-red-400">
-                      {currentVersionDeniedCodes.join(', ')}
+                    <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">
+                      Allowed: {currentVersionAllowedCodes.length}
                     </span>
-                  ) : (
-                    <span className="text-muted-foreground">None</span>
-                  )}
+                    <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">
+                      Denied: {currentVersionDeniedCodes.length}
+                    </span>
+                  </div>
+
+                  <TerritoryMap
+                    allowedCountries={currentVersionAllowedCodes}
+                    deniedCountries={currentVersionDeniedCodes}
+                    onCountryClick={() => {
+                      // Read-only visualization in Current Version summary.
+                    }}
+                  />
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="text-foreground break-words">
+                      <span className="text-foreground font-medium">Allowed:</span>{' '}
+                      {currentVersionAllowedCodes.length > 0 ? (
+                        <span className="text-green-600 dark:text-green-400">
+                          {currentVersionAllowedCodes.join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
+                      )}
+                    </div>
+                    <div className="text-foreground break-words">
+                      <span className="text-foreground font-medium">Denied:</span>{' '}
+                      {currentVersionDeniedCodes.length > 0 ? (
+                        <span className="text-red-600 dark:text-red-400">
+                          {currentVersionDeniedCodes.join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">None</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditMode(true)}
+                    className="px-6 md:px-8 py-2 md:py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
+                  >
+                    Update Consent Preferences
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => router.push('/dashboard/consent-history')}
+                    className="px-6 md:px-8 py-2 md:py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
+                  >
+                    View History
+                  </button>
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+
+            {!currentConsent && (
+              <div className="mb-8 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEditMode(true)}
+                  className="px-6 md:px-8 py-2 md:py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
+                >
+                  Update Consent Preferences
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/dashboard/consent-history')}
+                  className="px-6 md:px-8 py-2 md:py-3 bg-muted hover:bg-muted/80 text-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
+                >
+                  View History
+                </button>
+              </div>
+            )}
+          </>
         )}
-
-        {/* Usage Mode Toggle */}
-        <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Usage Status</h2>
-          <p className="text-muted-foreground text-sm mb-5">
-            Choose whether all usage is globally permitted (subject to your section settings) or
-            fully blocked.
-          </p>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={() => requestUsageModeChange(false)}
-              disabled={saving}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                !(policy.usageBlocked ?? false)
-                  ? 'bg-green-600/15 text-green-600 dark:text-green-400 border-green-500/40'
-                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
-              }`}
-            >
-              Permit Usage
-            </button>
-            <button
-              type="button"
-              onClick={() => requestUsageModeChange(true)}
-              disabled={saving}
-              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
-                (policy.usageBlocked ?? false)
-                  ? 'bg-red-600/15 text-red-600 dark:text-red-400 border-red-500/40'
-                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
-              }`}
-            >
-              Block Usage
-            </button>
-          </div>
-
-          {(policy.usageBlocked ?? false) && (
-            <div className="mt-5 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
-              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                Usage is currently blocked.
-              </p>
-              <p className="text-xs text-red-600/90 dark:text-red-300 mt-1">
-                No media usage is permitted while block mode is active.
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Success/Error Messages */}
         {success && (
@@ -1065,49 +1121,51 @@ export default function ConsentPreferencesPage() {
           </div>
         )}
 
-        {/* Templates */}
-        <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
-          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Templates</h2>
-          <p className="text-muted-foreground text-sm mb-5">
-            Apply a starter preset or save your current settings as a reusable template.
-          </p>
+        {isEditMode && (
+          <>
+            {/* Templates */}
+            <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
+              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Templates</h2>
+              <p className="text-muted-foreground text-sm mb-5">
+                Apply a starter preset or save your current settings as a reusable template.
+              </p>
 
-          <div className="flex flex-wrap gap-2 mb-5">
-            {templates.map((template) => (
-              <button
-                key={template.id}
-                type="button"
-                onClick={() => applyTemplate(template)}
-                className="px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-sm font-medium transition-colors"
-              >
-                {template.name}
-                {template.source === 'custom' ? ' (Saved)' : ''}
-              </button>
-            ))}
-          </div>
+              <div className="flex flex-wrap gap-2 mb-5">
+                {templates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => applyTemplate(template)}
+                    className="px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-sm font-medium transition-colors"
+                  >
+                    {template.name}
+                    {template.source === 'custom' ? ' (Saved)' : ''}
+                  </button>
+                ))}
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              value={templateName}
-              onChange={(e) => setTemplateName(e.target.value)}
-              maxLength={60}
-              placeholder="Template name"
-              className="flex-1 px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
-            />
-            <button
-              type="button"
-              onClick={saveCurrentAsTemplate}
-              disabled={!templateName.trim()}
-              className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-60 text-foreground font-semibold transition-colors text-sm"
-            >
-              Save Current as Template
-            </button>
-          </div>
-        </div>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  maxLength={60}
+                  placeholder="Template name"
+                  className="flex-1 px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
+                />
+                <button
+                  type="button"
+                  onClick={saveCurrentAsTemplate}
+                  disabled={!templateName.trim()}
+                  className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-60 text-foreground font-semibold transition-colors text-sm"
+                >
+                  Save Current as Template
+                </button>
+              </div>
+            </div>
 
-        {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+            {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
+            <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
           <div
             className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}
@@ -1152,7 +1210,7 @@ export default function ConsentPreferencesPage() {
             <form
               id="consent-preferences-form"
               onSubmit={handleSubmit}
-              className={`space-y-6 md:space-y-8 ${hasPolicyChanges ? 'pb-28' : ''}`}
+              className="space-y-6 md:space-y-8"
             >
               {(policy.usageBlocked ?? false) ? (
                 <div className="bg-card rounded-xl p-6 border border-red-500/40 shadow-sm">
@@ -1563,43 +1621,38 @@ export default function ConsentPreferencesPage() {
                   placeholder="e.g., Updated commercial terms for new licensing model"
                 />
               </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-4">
+                <p className="text-sm text-muted-foreground">
+                  You have {unsavedChangeCount} unsaved{' '}
+                  {unsavedChangeCount === 1 ? 'change' : 'changes'}.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={handleCancelEditMode}
+                    disabled={saving}
+                    className="px-6 py-2.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-semibold transition-colors text-sm"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving || !hasPolicyChanges}
+                    className="px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-semibold transition-colors text-sm"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
             </form>
           </div>
-          {/* End Right Content */}
-        </div>
-        {/* End Two Column Layout */}
-      </div>
-
-      {hasPolicyChanges && (
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 backdrop-blur">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
-            <div className="flex items-center justify-between gap-3">
-              <p className="hidden sm:block text-sm text-muted-foreground">
-                You have {unsavedChangeCount} unsaved{' '}
-                {unsavedChangeCount === 1 ? 'change' : 'changes'}.
-              </p>
-              <div className="ml-auto flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleCancelChanges}
-                  disabled={saving}
-                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-muted hover:bg-muted/80 text-foreground font-semibold transition-colors text-sm md:text-base"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  form="consent-preferences-form"
-                  disabled={saving || !hasPolicyChanges}
-                  className="px-4 md:px-6 py-2 md:py-2.5 rounded-lg bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground font-semibold transition-colors text-sm md:text-base"
-                >
-                  {saving ? 'Saving...' : 'Update Consent Preferences'}
-                </button>
-              </div>
+              {/* End Right Content */}
             </div>
-          </div>
-        </div>
-      )}
+            {/* End Two Column Layout */}
+          </>
+        )}
+      </div>
 
       <Dialog
         open={usageChangeDialogOpen}
