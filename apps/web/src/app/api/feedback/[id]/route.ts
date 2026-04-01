@@ -6,10 +6,7 @@ import { query } from '@/lib/db';
  * PATCH /api/feedback/[id]
  * Mark feedback as read or update admin notes (Admin only)
  */
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {

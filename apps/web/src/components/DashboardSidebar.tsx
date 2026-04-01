@@ -32,6 +32,8 @@ import {
   MoreVertical,
   Angry,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -88,6 +90,8 @@ interface NavigationGroup {
 export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isAutoCollapsed, setIsAutoCollapsed] = useState(false);
   const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
   const [feedbackTopic, setFeedbackTopic] = useState('General');
   const [feedbackText, setFeedbackText] = useState('');
@@ -125,6 +129,35 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-collapse on smaller screens, preserve manual preference on larger screens.
+  useEffect(() => {
+    const storageKey = 'dashboard.sidebar.collapsed';
+
+    const updateCollapseState = () => {
+      const shouldAutoCollapse = window.innerWidth < 1280;
+      setIsAutoCollapsed(shouldAutoCollapse);
+
+      if (shouldAutoCollapse) {
+        setIsCollapsed(true);
+      } else {
+        const savedPreference = localStorage.getItem(storageKey) === 'true';
+        setIsCollapsed(savedPreference);
+      }
+    };
+
+    updateCollapseState();
+    window.addEventListener('resize', updateCollapseState);
+    return () => window.removeEventListener('resize', updateCollapseState);
+  }, []);
+
+  const handleSidebarToggle = () => {
+    const nextValue = !isCollapsed;
+    setIsCollapsed(nextValue);
+    if (!isAutoCollapsed) {
+      localStorage.setItem('dashboard.sidebar.collapsed', String(nextValue));
+    }
+  };
 
   const feedbackTopics = [
     'General',
@@ -321,19 +354,36 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     },
   ];
 
+  const collapsedGroupedItems = groupedNavigationItems
+    .filter((group) => group.show)
+    .flatMap((group) => group.items.filter((item) => item.show));
+
   return (
-    <div className="flex h-screen w-64 flex-col border-r bg-slate-950 text-white">
+    <div
+      className={cn(
+        'flex h-screen flex-col border-r bg-slate-950 text-white transition-all duration-200',
+        isCollapsed ? 'w-20' : 'w-64'
+      )}
+    >
       {/* Logo/Brand */}
-      <Link
-        href="/"
-        className="flex h-16 items-center justify-center border-b border-slate-800 px-6"
-      >
-        <img
-          src="/logo.svg"
-          alt="Truly Imagined Logo"
-          className="h-8 w-auto transition-transform duration-200 hover:scale-[1.2] cursor-pointer"
-        />
-      </Link>
+      <div className="relative flex h-16 items-center justify-center border-b border-slate-800 px-4">
+        <Link href="/" className="flex items-center justify-center">
+          <img
+            src="/logo.svg"
+            alt="Truly Imagined Logo"
+            className="h-8 w-auto transition-transform duration-200 hover:scale-[1.2] cursor-pointer"
+          />
+        </Link>
+        <button
+          type="button"
+          onClick={handleSidebarToggle}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-slate-800 border border-slate-700 rounded-full p-1 text-slate-300 hover:text-white hover:bg-slate-700"
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+        </button>
+      </div>
 
       {/* Navigation */}
       <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
@@ -350,14 +400,16 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                    'flex items-center rounded-lg px-3 py-2 text-sm transition-colors',
+                    isCollapsed ? 'justify-center' : 'gap-3',
                     isActive
                       ? 'bg-slate-800 text-white'
                       : 'text-slate-400 hover:bg-slate-900 hover:text-white'
                   )}
+                  title={item.title}
                 >
                   <Icon className="h-4 w-4" />
-                  <span>{item.title}</span>
+                  {!isCollapsed && <span>{item.title}</span>}
                 </Link>
               );
             })}
@@ -365,68 +417,98 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
 
         {/* Grouped Navigation Items */}
         <div className="pt-4">
-          <Accordion type="multiple" className="space-y-1">
-            {groupedNavigationItems
-              .filter((group) => group.show)
-              .map((group) => {
-                const visibleItems = group.items.filter((item) => item.show);
-                if (visibleItems.length === 0) return null;
+          {isCollapsed ? (
+            <div className="space-y-1">
+              {collapsedGroupedItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href;
 
                 return (
-                  <AccordionItem
-                    key={group.groupTitle}
-                    value={group.groupTitle}
-                    className="border-b-0"
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
+                      isActive
+                        ? 'bg-slate-800 text-white'
+                        : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                    )}
+                    title={item.title}
                   >
-                    <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">
-                      {group.groupTitle}
-                    </AccordionTrigger>
-                    <AccordionContent className="pb-2">
-                      <div className="space-y-1">
-                        {visibleItems.map((item) => {
-                          const Icon = item.icon;
-                          const isActive = pathname === item.href;
-
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className={cn(
-                                'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
-                                isActive
-                                  ? 'bg-slate-800 text-white'
-                                  : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-                              )}
-                            >
-                              <Icon className="h-4 w-4" />
-                              <span className="flex-1">{item.title}</span>
-                              {(item.badge ?? 0) > 0 && (
-                                <Badge
-                                  variant="destructive"
-                                  className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
-                                >
-                                  {(item.badge ?? 0) > 99 ? '99+' : item.badge}
-                                </Badge>
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
+                    <Icon className="h-4 w-4" />
+                    {(item.badge ?? 0) > 0 && (
+                      <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                    )}
+                  </Link>
                 );
               })}
-          </Accordion>
+            </div>
+          ) : (
+            <Accordion type="multiple" className="space-y-1">
+              {groupedNavigationItems
+                .filter((group) => group.show)
+                .map((group) => {
+                  const visibleItems = group.items.filter((item) => item.show);
+                  if (visibleItems.length === 0) return null;
+
+                  return (
+                    <AccordionItem
+                      key={group.groupTitle}
+                      value={group.groupTitle}
+                      className="border-b-0"
+                    >
+                      <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">
+                        {group.groupTitle}
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="space-y-1">
+                          {visibleItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href;
+
+                            return (
+                              <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                  'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                                  isActive
+                                    ? 'bg-slate-800 text-white'
+                                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                                )}
+                              >
+                                <Icon className="h-4 w-4" />
+                                <span className="flex-1">{item.title}</span>
+                                {(item.badge ?? 0) > 0 && (
+                                  <Badge
+                                    variant="destructive"
+                                    className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
+                                  >
+                                    {(item.badge ?? 0) > 99 ? '99+' : item.badge}
+                                  </Badge>
+                                )}
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+            </Accordion>
+          )}
         </div>
 
         {/* Documents Section */}
         {documentItems.some((item) => item.show) && (
           <>
-            <div className="pt-6 pb-2">
-              <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Additional
-              </h3>
-            </div>
+            {!isCollapsed && (
+              <div className="pt-6 pb-2">
+                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Additional
+                </h3>
+              </div>
+            )}
             <div className="space-y-1">
               {documentItems
                 .filter((item) => item.show)
@@ -439,17 +521,19 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                       <Link
                         href={item.href}
                         className={cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                          'flex items-center rounded-lg px-3 py-2 text-sm transition-colors',
+                          isCollapsed ? 'justify-center' : 'gap-3',
                           item.comingSoon && 'opacity-50 cursor-not-allowed',
                           isActive
                             ? 'bg-slate-800 text-white'
                             : 'text-slate-400 hover:bg-slate-900 hover:text-white'
                         )}
                         {...(item.comingSoon && { onClick: (e) => e.preventDefault() })}
+                        title={item.title}
                       >
                         <Icon className="h-4 w-4" />
-                        <span className="flex-1">{item.title}</span>
-                        {item.comingSoon && (
+                        {!isCollapsed && <span className="flex-1">{item.title}</span>}
+                        {!isCollapsed && item.comingSoon && (
                           <Badge variant="outline" className="text-xs border-slate-700">
                             Soon
                           </Badge>
@@ -468,14 +552,16 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         <Link
           href="/dashboard/support"
           className={cn(
-            'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors relative',
+            'flex items-center rounded-lg px-3 py-2 text-sm transition-colors relative',
+            isCollapsed ? 'justify-center' : 'gap-3',
             pathname?.startsWith('/dashboard/support')
               ? 'bg-slate-800 text-white'
               : 'text-slate-400 hover:bg-slate-900 hover:text-white'
           )}
+          title="Support"
         >
           <Headphones className="h-4 w-4" />
-          <span className="flex-1">Support</span>
+          {!isCollapsed && <span className="flex-1">Support</span>}
           {notificationCounts.unreadSupport > 0 && (
             <div className="absolute top-1/2 -translate-y-1/2 right-2 h-3 w-3 rounded-full bg-red-500 animate-pulse" />
           )}
@@ -486,17 +572,26 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       <div className="border-t border-slate-800 p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="group flex items-center gap-3 w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700">
+            <button
+              className={cn(
+                'group flex items-center w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700',
+                isCollapsed ? 'justify-center' : 'gap-3'
+              )}
+            >
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800">
                 <UserCircle className="h-5 w-5 text-slate-400" />
               </div>
-              <div className="flex-1 min-w-0 text-left">
-                <p className="text-sm font-medium truncate text-white">{userName || 'User'}</p>
-                <p className="text-xs text-slate-500">
-                  {roles.length > 0 ? roles.join(', ') : 'No roles'}
-                </p>
-              </div>
-              <MoreVertical className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
+              {!isCollapsed && (
+                <>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-sm font-medium truncate text-white">{userName || 'User'}</p>
+                    <p className="text-xs text-slate-500">
+                      {roles.length > 0 ? roles.join(', ') : 'No roles'}
+                    </p>
+                  </div>
+                  <MoreVertical className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                </>
+              )}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent

@@ -64,6 +64,7 @@ const CreateConsentEntrySchema = z.object({
       revenueShare: z.number().min(0).max(100).optional(),
     }),
     attributionRequired: z.boolean(),
+    usageBlocked: z.boolean().optional(),
   }),
   reason: z.string().optional(),
 });

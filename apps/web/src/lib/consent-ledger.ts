@@ -72,6 +72,9 @@ export interface ConsentPolicy {
   // Attribution (preserved from original)
   attributionRequired: boolean;
 
+  // Global usage switch
+  usageBlocked?: boolean;
+
     // Optional constraints (territory/expiry metadata)
     constraints?: {
           territory?: string;
@@ -300,6 +303,13 @@ export function evaluateMediaUsage(
   permission: PermissionLevel;
   reason?: string;
 } {
+  if (policy.usageBlocked) {
+    return {
+      permission: 'deny',
+      reason: 'All usage is globally blocked by actor consent settings',
+    };
+  }
+
   const permission = policy.mediaUsage[requestedUsage];
 
   if (permission === 'deny') {
@@ -329,6 +339,13 @@ export function evaluateContentType(
   permission: PermissionLevel;
   reason?: string;
 } {
+  if (policy.usageBlocked) {
+    return {
+      permission: 'deny',
+      reason: 'All usage is globally blocked by actor consent settings',
+    };
+  }
+
   const permission = policy.contentTypes[contentType];
 
   if (permission === 'deny') {
@@ -358,6 +375,13 @@ export function evaluateTerritory(
   allowed: boolean;
   reason?: string;
 } {
+  if (policy.usageBlocked) {
+    return {
+      allowed: false,
+      reason: 'All usage is globally blocked by actor consent settings',
+    };
+  }
+
   // If territory is in denied list, reject
   if (policy.territories.denied.includes(territoryCode)) {
     return {
@@ -480,5 +504,6 @@ export function createDefaultPolicy(): ConsentPolicy {
       revenueShare: undefined,
     },
     attributionRequired: true,
+    usageBlocked: false,
   };
 }

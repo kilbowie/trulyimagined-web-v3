@@ -7,10 +7,7 @@ import { sendFeedbackResponseEmail } from '@/lib/email';
  * POST /api/feedback/[id]/reply
  * Reply to feedback - creates a support ticket and sends email notification (Admin only)
  */
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const user = await getCurrentUser();
     if (!user) {

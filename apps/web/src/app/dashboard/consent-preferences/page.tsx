@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 import ContinentCarousel from '@/components/ContinentCarousel';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type PermissionLevel = 'allow' | 'require_approval' | 'deny';
 
@@ -47,6 +56,7 @@ type ConsentPolicy = {
     revenueShare?: number;
   };
   attributionRequired: boolean;
+  usageBlocked?: boolean;
 };
 
 type ConsentLedgerEntry = {
@@ -111,6 +121,89 @@ export default function ConsentPreferencesPage() {
   });
 
   const [reason, setReason] = useState('');
+  const [usageChangeDialogOpen, setUsageChangeDialogOpen] = useState(false);
+  const [pendingUsageBlocked, setPendingUsageBlocked] = useState<boolean | null>(null);
+
+  const getBaselinePolicy = (): ConsentPolicy => {
+    if (!currentConsent?.policy) {
+      return {
+        mediaUsage: {
+          film: 'require_approval',
+          television: 'require_approval',
+          streaming: 'require_approval',
+          gaming: 'require_approval',
+          voiceReplication: 'deny',
+          virtualReality: 'require_approval',
+          socialMedia: 'require_approval',
+          advertising: 'require_approval',
+          merchandise: 'require_approval',
+          livePerformance: 'require_approval',
+        },
+        contentTypes: {
+          explicit: 'deny',
+          political: 'require_approval',
+          religious: 'require_approval',
+          violence: 'require_approval',
+          alcohol: 'require_approval',
+          tobacco: 'deny',
+          gambling: 'deny',
+          pharmaceutical: 'require_approval',
+          firearms: 'deny',
+          adultContent: 'deny',
+        },
+        territories: {
+          allowed: [],
+          denied: [],
+        },
+        aiControls: {
+          trainingAllowed: false,
+          syntheticGenerationAllowed: false,
+          biometricAnalysisAllowed: false,
+        },
+        commercial: {
+          paymentRequired: true,
+          minFee: undefined,
+          revenueShare: undefined,
+        },
+        attributionRequired: true,
+        usageBlocked: false,
+      };
+    }
+
+    return {
+      ...currentConsent.policy,
+      usageBlocked: currentConsent.policy.usageBlocked ?? false,
+    };
+  };
+
+  const normalizedPolicyString = (value: ConsentPolicy) =>
+    JSON.stringify({
+      ...value,
+      usageBlocked: value.usageBlocked ?? false,
+      territories: {
+        allowed: [...value.territories.allowed].sort(),
+        denied: [...value.territories.denied].sort(),
+      },
+    });
+
+  const hasPolicyChanges = normalizedPolicyString(policy) !== normalizedPolicyString(getBaselinePolicy());
+
+  const getPermissionCounts = (values: PermissionLevel[]) => {
+    return values.reduce(
+      (acc, item) => {
+        acc[item] += 1;
+        return acc;
+      },
+      { allow: 0, require_approval: 0, deny: 0 }
+    );
+  };
+
+  const mediaUsageCounts = getPermissionCounts(Object.values(policy.mediaUsage));
+  const contentTypeCounts = getPermissionCounts(Object.values(policy.contentTypes));
+  const aiControlsCounts = {
+    allow: Object.values(policy.aiControls).filter(Boolean).length,
+    deny: Object.values(policy.aiControls).filter((value) => !value).length,
+  };
 
   // Load current consent on mount
   useEffect(() => {
@@ -170,6 +263,7 @@ export default function ConsentPreferencesPage() {
             revenueShare: undefined,
           },
           attributionRequired: loadedPolicy.attributionRequired ?? true,
+          usageBlocked: loadedPolicy.usageBlocked ?? false,
         });
       }
       if (data.licensesOnCurrentVersion !== undefined) {
@@ -182,8 +276,7 @@ export default function ConsentPreferencesPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const persistConsent = async (policyToSave: ConsentPolicy, reasonToSave: string = reason) => {
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -192,7 +285,7 @@ export default function ConsentPreferencesPage() {
       const res = await fetch('/api/consent-ledger/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ policy, reason }),
+        body: JSON.stringify({ policy: policyToSave, reason: reasonToSave }),
       });
 
       if (!res.ok) {
@@ -203,6 +296,8 @@ export default function ConsentPreferencesPage() {
       const data = await res.json();
       setSuccess(`Consent updated successfully! Version ${data.entry.version} created.`);
       setReason('');
+        setPendingUsageBlocked(null);
+        setUsageChangeDialogOpen(false);
 
       // Reload current consent
       await loadCurrentConsent();
@@ -211,6 +306,40 @@ export default function ConsentPreferencesPage() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!hasPolicyChanges) {
+      return;
+    }
+    await persistConsent(policy);
+  };
+
+  const requestUsageModeChange = (nextBlocked: boolean) => {
+    const currentBlocked = policy.usageBlocked ?? false;
+    if (currentBlocked === nextBlocked) {
+      return;
+    }
+    setPendingUsageBlocked(nextBlocked);
+    setUsageChangeDialogOpen(true);
+  };
+
+  const confirmUsageModeChange = async () => {
+    if (pendingUsageBlocked === null) {
+      return;
+    }
+
+    const updatedPolicy = {
+      ...policy,
+      usageBlocked: pendingUsageBlocked,
+    };
+
+    setPolicy(updatedPolicy);
+    const usageReason = pendingUsageBlocked
+      ? 'Usage blocked by actor preference'
+      : 'Usage permitted by actor preference';
+    await persistConsent(updatedPolicy, usageReason);
   };
 
   const PermissionSelector = ({
@@ -400,6 +529,52 @@ export default function ConsentPreferencesPage() {
           </div>
         )}
 
+        {/* Usage Mode Toggle */}
+        <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Usage Status</h2>
+          <p className="text-muted-foreground text-sm mb-5">
+            Choose whether all usage is globally permitted (subject to your section settings) or
+            fully blocked.
+          </p>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => requestUsageModeChange(false)}
+              disabled={saving}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                !(policy.usageBlocked ?? false)
+                  ? 'bg-green-600/15 text-green-600 dark:text-green-400 border-green-500/40'
+                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
+              }`}
+            >
+              Permit Usage
+            </button>
+            <button
+              type="button"
+              onClick={() => requestUsageModeChange(true)}
+              disabled={saving}
+              className={`px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
+                policy.usageBlocked ?? false
+                  ? 'bg-red-600/15 text-red-600 dark:text-red-400 border-red-500/40'
+                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
+              }`}
+            >
+              Block Usage
+            </button>
+          </div>
+
+          {(policy.usageBlocked ?? false) && (
+            <div className="mt-5 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
+              <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                Usage is currently blocked.
+              </p>
+              <p className="text-xs text-red-600/90 dark:text-red-300 mt-1">
+                No media usage is permitted while block mode is active.
+              </p>
+            </div>
+          )}
+        </div>
+
         {/* Success/Error Messages */}
         {success && (
           <div className="mb-6 p-4 bg-card border border-green-500/50 rounded-lg text-green-600 dark:text-green-400 text-sm">
@@ -415,7 +590,7 @@ export default function ConsentPreferencesPage() {
         {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Left Sidebar - Navigation (Hidden on mobile, shown on lg) */}
-          <div className="hidden lg:block lg:w-64 flex-shrink-0">
+          <div className={`hidden lg:block lg:w-64 flex-shrink-0 ${(policy.usageBlocked ?? false) ? 'opacity-60 pointer-events-none' : ''}`}>
             <div className="bg-card rounded-xl p-4 border border-border sticky top-8 shadow-sm">
               <h3 className="text-foreground font-bold mb-4 text-sm">Quick Navigation</h3>
               <nav className="space-y-2">
@@ -450,322 +625,365 @@ export default function ConsentPreferencesPage() {
           {/* Right Content - Form */}
           <div className="flex-1 min-w-0">
             <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
-              {/* Media Usage Categories */}
-              <div
-                id="media-usage"
-                className="bg-card rounded-xl p-6 border border-border shadow-sm"
-              >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                  Media Usage Categories
-                </h2>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  Control how your image and likeness can be used across different media types.
-                  Choose Allow for blanket approval, Require Approval for case-by-case review, or
-                  Deny to reject usage.
-                </p>
-                <div className="space-y-1">
-                  <PermissionSelector
-                    label="Film / Theatrical"
-                    value={policy.mediaUsage.film}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, film: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Television"
-                    value={policy.mediaUsage.television}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, television: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Streaming Platforms"
-                    value={policy.mediaUsage.streaming}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, streaming: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Gaming / Interactive Media"
-                    value={policy.mediaUsage.gaming}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, gaming: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Voice Replication / AI Voice"
-                    value={policy.mediaUsage.voiceReplication}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Virtual Reality / Metaverse"
-                    value={policy.mediaUsage.virtualReality}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, virtualReality: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Social Media"
-                    value={policy.mediaUsage.socialMedia}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, socialMedia: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Advertising / Commercials"
-                    value={policy.mediaUsage.advertising}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, advertising: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Merchandise / Products"
-                    value={policy.mediaUsage.merchandise}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, merchandise: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Live Performance / Events"
-                    value={policy.mediaUsage.livePerformance}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        mediaUsage: { ...policy.mediaUsage, livePerformance: value },
-                      })
-                    }
-                  />
+              {(policy.usageBlocked ?? false) ? (
+                <div className="bg-card rounded-xl p-6 border border-red-500/40 shadow-sm">
+                  <h2 className="text-xl md:text-2xl font-bold text-red-600 dark:text-red-400 mb-3">
+                    Usage is Blocked
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Detailed consent sections are hidden while block mode is active. Switch to
+                    Permit Usage to view and edit your detailed preferences.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <Accordion type="multiple" defaultValue={['media-usage', 'content-types', 'territories', 'ai-controls']} className="space-y-6">
+                  <AccordionItem
+                    value="media-usage"
+                    id="media-usage"
+                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                  >
+                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                      <div className="flex flex-wrap items-center gap-2 text-left">
+                        <span className="text-xl md:text-2xl font-bold text-foreground">Media Usage Categories</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {mediaUsageCounts.allow}</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">Requires Approval: {mediaUsageCounts.require_approval}</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {mediaUsageCounts.deny}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <p className="text-muted-foreground mb-6 text-sm">
+                        Control how your image and likeness can be used across different media
+                        types. Choose Allow for blanket approval, Require Approval for
+                        case-by-case review, or Deny to reject usage.
+                      </p>
+                      <div className="space-y-1">
+                        <PermissionSelector
+                          label="Film / Theatrical"
+                          value={policy.mediaUsage.film}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, film: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Television"
+                          value={policy.mediaUsage.television}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, television: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Streaming Platforms"
+                          value={policy.mediaUsage.streaming}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, streaming: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Gaming / Interactive Media"
+                          value={policy.mediaUsage.gaming}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, gaming: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Voice Replication / AI Voice"
+                          value={policy.mediaUsage.voiceReplication}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, voiceReplication: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Virtual Reality / Metaverse"
+                          value={policy.mediaUsage.virtualReality}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, virtualReality: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Social Media"
+                          value={policy.mediaUsage.socialMedia}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, socialMedia: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Advertising / Commercials"
+                          value={policy.mediaUsage.advertising}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, advertising: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Merchandise / Products"
+                          value={policy.mediaUsage.merchandise}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, merchandise: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Live Performance / Events"
+                          value={policy.mediaUsage.livePerformance}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              mediaUsage: { ...policy.mediaUsage, livePerformance: value },
+                            })
+                          }
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-              {/* Content Type Restrictions */}
-              <div
-                id="content-types"
-                className="bg-card rounded-xl p-6 border border-border shadow-sm"
-              >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                  Content Type Restrictions
-                </h2>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  Set permissions for different types of content. These restrictions apply across
-                  all media usage categories above.
-                </p>
-                <div className="space-y-1">
-                  <PermissionSelector
-                    label="Explicit Content"
-                    value={policy.contentTypes.explicit}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, explicit: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Political Content"
-                    value={policy.contentTypes.political}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, political: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Religious Content"
-                    value={policy.contentTypes.religious}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, religious: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Violent Content"
-                    value={policy.contentTypes.violence}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, violence: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Alcohol-Related Content"
-                    value={policy.contentTypes.alcohol}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, alcohol: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Tobacco-Related Content"
-                    value={policy.contentTypes.tobacco}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, tobacco: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Gambling-Related Content"
-                    value={policy.contentTypes.gambling}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, gambling: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Pharmaceutical / Medical Content"
-                    value={policy.contentTypes.pharmaceutical}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, pharmaceutical: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Firearms-Related Content"
-                    value={policy.contentTypes.firearms}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, firearms: value },
-                      })
-                    }
-                  />
-                  <PermissionSelector
-                    label="Adult Content"
-                    value={policy.contentTypes.adultContent}
-                    onChange={(value) =>
-                      setPolicy({
-                        ...policy,
-                        contentTypes: { ...policy.contentTypes, adultContent: value },
-                      })
-                    }
-                  />
-                </div>
-              </div>
+                  <AccordionItem
+                    value="content-types"
+                    id="content-types"
+                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                  >
+                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                      <div className="flex flex-wrap items-center gap-2 text-left">
+                        <span className="text-xl md:text-2xl font-bold text-foreground">Content Type Restrictions</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {contentTypeCounts.allow}</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-yellow-500/30 text-yellow-600 dark:text-yellow-400">Requires Approval: {contentTypeCounts.require_approval}</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {contentTypeCounts.deny}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <p className="text-muted-foreground mb-6 text-sm">
+                        Set permissions for different types of content. These restrictions apply
+                        across all media usage categories above.
+                      </p>
+                      <div className="space-y-1">
+                        <PermissionSelector
+                          label="Explicit Content"
+                          value={policy.contentTypes.explicit}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, explicit: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Political Content"
+                          value={policy.contentTypes.political}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, political: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Religious Content"
+                          value={policy.contentTypes.religious}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, religious: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Violent Content"
+                          value={policy.contentTypes.violence}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, violence: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Alcohol-Related Content"
+                          value={policy.contentTypes.alcohol}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, alcohol: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Tobacco-Related Content"
+                          value={policy.contentTypes.tobacco}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, tobacco: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Gambling-Related Content"
+                          value={policy.contentTypes.gambling}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, gambling: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Pharmaceutical / Medical Content"
+                          value={policy.contentTypes.pharmaceutical}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, pharmaceutical: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Firearms-Related Content"
+                          value={policy.contentTypes.firearms}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, firearms: value },
+                            })
+                          }
+                        />
+                        <PermissionSelector
+                          label="Adult Content"
+                          value={policy.contentTypes.adultContent}
+                          onChange={(value) =>
+                            setPolicy({
+                              ...policy,
+                              contentTypes: { ...policy.contentTypes, adultContent: value },
+                            })
+                          }
+                        />
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
 
-              {/* Geographic Territories */}
-              <div
-                id="territories"
-                className="bg-card rounded-xl p-6 border border-border shadow-sm"
-              >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">
-                  Geographic Territories
-                </h2>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  Select which regions can use your image and likeness. Use the continent carousel
-                  below to manage territories by continent. Click individual countries or use bulk
-                  actions.
-                </p>
+                  <AccordionItem
+                    value="territories"
+                    id="territories"
+                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                  >
+                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                      <div className="flex flex-wrap items-center gap-2 text-left">
+                        <span className="text-xl md:text-2xl font-bold text-foreground">Geographic Territories</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <p className="text-muted-foreground mb-6 text-sm">
+                        Select which regions can use your image and likeness. Use the continent
+                        carousel below to manage territories by continent. Click individual
+                        countries or use bulk actions.
+                      </p>
 
-                {/* Continent Carousel */}
-                <ContinentCarousel
-                  allowedCountries={policy.territories.allowed}
-                  deniedCountries={policy.territories.denied}
-                  onCountryToggle={handleCountryClick}
-                  onContinentAction={handleContinentAction}
-                />
-              </div>
+                      <ContinentCarousel
+                        allowedCountries={policy.territories.allowed}
+                        deniedCountries={policy.territories.denied}
+                        onCountryToggle={handleCountryClick}
+                        onContinentAction={handleContinentAction}
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
 
-              {/* AI Controls */}
-              <div
-                id="ai-controls"
-                className="bg-card rounded-xl p-6 border border-border shadow-sm"
-              >
-                <h2 className="text-xl md:text-2xl font-bold text-foreground mb-4">AI Controls</h2>
-                <p className="text-muted-foreground mb-6 text-sm">
-                  Control how your image and likeness can be used with AI systems and technologies.
-                </p>
-                <div className="space-y-4">
-                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={policy.aiControls.trainingAllowed}
-                      onChange={(e) =>
-                        setPolicy({
-                          ...policy,
-                          aiControls: { ...policy.aiControls, trainingAllowed: e.target.checked },
-                        })
-                      }
-                      className="w-5 h-5 rounded border-border"
-                    />
-                    <span>Allow AI Training</span>
-                  </label>
-                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={policy.aiControls.syntheticGenerationAllowed}
-                      onChange={(e) =>
-                        setPolicy({
-                          ...policy,
-                          aiControls: {
-                            ...policy.aiControls,
-                            syntheticGenerationAllowed: e.target.checked,
-                          },
-                        })
-                      }
-                      className="w-5 h-5 rounded border-border"
-                    />
-                    <span>Allow Synthetic Generation</span>
-                  </label>
-                  <label className="flex items-center gap-3 text-foreground cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={policy.aiControls.biometricAnalysisAllowed}
-                      onChange={(e) =>
-                        setPolicy({
-                          ...policy,
-                          aiControls: {
-                            ...policy.aiControls,
-                            biometricAnalysisAllowed: e.target.checked,
-                          },
-                        })
-                      }
-                      className="w-5 h-5 rounded border-border"
-                    />
-                    <span>Allow Biometric Analysis</span>
-                  </label>
-                </div>
-              </div>
+                  <AccordionItem
+                    value="ai-controls"
+                    id="ai-controls"
+                    className="bg-card rounded-xl border border-border shadow-sm overflow-hidden"
+                  >
+                    <AccordionTrigger className="px-6 py-5 hover:no-underline">
+                      <div className="flex flex-wrap items-center gap-2 text-left">
+                        <span className="text-xl md:text-2xl font-bold text-foreground">AI Controls</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-green-500/30 text-green-600 dark:text-green-400">Allowed: {aiControlsCounts.allow}</span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-red-500/30 text-red-600 dark:text-red-400">Denied: {aiControlsCounts.deny}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <p className="text-muted-foreground mb-6 text-sm">
+                        Control how your image and likeness can be used with AI systems and
+                        technologies.
+                      </p>
+                      <div className="space-y-4">
+                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={policy.aiControls.trainingAllowed}
+                            onChange={(e) =>
+                              setPolicy({
+                                ...policy,
+                                aiControls: {
+                                  ...policy.aiControls,
+                                  trainingAllowed: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-5 h-5 rounded border-border"
+                          />
+                          <span>Allow AI Training</span>
+                        </label>
+                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={policy.aiControls.syntheticGenerationAllowed}
+                            onChange={(e) =>
+                              setPolicy({
+                                ...policy,
+                                aiControls: {
+                                  ...policy.aiControls,
+                                  syntheticGenerationAllowed: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-5 h-5 rounded border-border"
+                          />
+                          <span>Allow Synthetic Generation</span>
+                        </label>
+                        <label className="flex items-center gap-3 text-foreground cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={policy.aiControls.biometricAnalysisAllowed}
+                            onChange={(e) =>
+                              setPolicy({
+                                ...policy,
+                                aiControls: {
+                                  ...policy.aiControls,
+                                  biometricAnalysisAllowed: e.target.checked,
+                                },
+                              })
+                            }
+                            className="w-5 h-5 rounded border-border"
+                          />
+                          <span>Allow Biometric Analysis</span>
+                        </label>
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              )}
 
               {/* Reason */}
               <div className="bg-card rounded-xl p-6 border border-border shadow-sm">
@@ -786,7 +1004,7 @@ export default function ConsentPreferencesPage() {
               <div className="flex flex-col md:flex-row gap-3 md:gap-4">
                 <button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || !hasPolicyChanges}
                   className="px-6 md:px-8 py-2 md:py-3 bg-primary hover:bg-primary/90 disabled:bg-muted text-primary-foreground rounded-lg font-semibold transition-colors text-sm md:text-base"
                 >
                   {saving ? 'Saving...' : 'Update Consent Preferences'}
@@ -805,6 +1023,49 @@ export default function ConsentPreferencesPage() {
         </div>
         {/* End Two Column Layout */}
       </div>
+
+      <Dialog
+        open={usageChangeDialogOpen}
+        onOpenChange={(open) => {
+          setUsageChangeDialogOpen(open);
+          if (!open) {
+            setPendingUsageBlocked(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {pendingUsageBlocked ? 'Confirm Block Usage' : 'Confirm Permit Usage'}
+            </DialogTitle>
+            <DialogDescription>
+              {pendingUsageBlocked
+                ? 'This will immediately block all usage, create a new consent version, and add it to your consent history. Are you sure you want to continue?'
+                : 'This will permit usage mode, create a new consent version, and add it to your consent history. Are you sure you want to continue?'}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => {
+                setUsageChangeDialogOpen(false);
+                setPendingUsageBlocked(null);
+              }}
+              className="px-4 py-2 rounded-lg bg-muted text-foreground font-medium"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={confirmUsageModeChange}
+              disabled={saving}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium disabled:bg-muted"
+            >
+              {saving ? 'Updating...' : 'Confirm and Update'}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
