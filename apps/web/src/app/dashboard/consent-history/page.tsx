@@ -249,7 +249,9 @@ export default function ConsentHistoryPage() {
                         {entry.policy.usageBlocked && (
                           <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-red-500/50 bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-700 dark:text-red-300">
                             <span>Usage Status</span>
-                            <span className="rounded-full border border-red-500/50 px-2 py-0.5">BLOCKED</span>
+                            <span className="rounded-full border border-red-500/50 px-2 py-0.5">
+                              BLOCKED
+                            </span>
                           </div>
                         )}
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 md:gap-4 text-sm">
@@ -306,189 +308,198 @@ export default function ConsentHistoryPage() {
                             </div>
                           ) : (
                             <>
-                          {/* Media Usage Categories */}
-                          {entry.policy.mediaUsage && (
-                            <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                              <h4 className="text-foreground font-semibold mb-3">
-                                Media Usage Categories
-                              </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                {Object.entries(entry.policy.mediaUsage).map(([key, value]) => (
-                                  <div key={key} className="flex items-center gap-2">
-                                    <span
-                                      className={`w-2 h-2 rounded-full ${
-                                        value === 'allow'
-                                          ? 'bg-green-400'
-                                          : value === 'require_approval'
-                                            ? 'bg-yellow-400'
-                                            : 'bg-red-400'
-                                      }`}
-                                    ></span>
-                                    <span className="text-foreground capitalize">
-                                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                      ({value.replace('_', ' ')})
-                                    </span>
+                              {/* Media Usage Categories */}
+                              {entry.policy.mediaUsage && (
+                                <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                  <h4 className="text-foreground font-semibold mb-3">
+                                    Media Usage Categories
+                                  </h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                    {Object.entries(entry.policy.mediaUsage).map(([key, value]) => (
+                                      <div key={key} className="flex items-center gap-2">
+                                        <span
+                                          className={`w-2 h-2 rounded-full ${
+                                            value === 'allow'
+                                              ? 'bg-green-400'
+                                              : value === 'require_approval'
+                                                ? 'bg-yellow-400'
+                                                : 'bg-red-400'
+                                          }`}
+                                        ></span>
+                                        <span className="text-foreground capitalize">
+                                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                                        </span>
+                                        <span className="text-muted-foreground text-xs">
+                                          ({value.replace('_', ' ')})
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Content Type Restrictions */}
-                          {entry.policy.contentTypes && (
-                            <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                              <h4 className="text-foreground font-semibold mb-3">
-                                Content Type Restrictions
-                              </h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                {Object.entries(entry.policy.contentTypes).map(([key, value]) => (
-                                  <div key={key} className="flex items-center gap-2">
-                                    <span
-                                      className={`w-2 h-2 rounded-full ${
-                                        value === 'allow'
-                                          ? 'bg-green-400'
-                                          : value === 'require_approval'
-                                            ? 'bg-yellow-400'
-                                            : 'bg-red-400'
-                                      }`}
-                                    ></span>
-                                    <span className="text-foreground capitalize">
-                                      {key.replace(/([A-Z])/g, ' $1').trim()}
-                                    </span>
-                                    <span className="text-muted-foreground text-xs">
-                                      ({value.replace('_', ' ')})
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Commercial Terms */}
-                          <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                            <h4 className="text-foreground font-semibold mb-3">Commercial Terms</h4>
-                            <div className="text-sm space-y-2 text-foreground">
-                              <div>
-                                Payment Required:{' '}
-                                <span className="font-medium text-foreground">
-                                  {entry.policy.commercial.paymentRequired ? 'Yes' : 'No'}
-                                </span>
-                              </div>
-                              {entry.policy.commercial.minFee !== undefined && (
-                                <div>
-                                  Minimum Fee:{' '}
-                                  <span className="font-medium text-foreground">
-                                    ${entry.policy.commercial.minFee}
-                                  </span>
                                 </div>
                               )}
-                              {entry.policy.commercial.revenueShare !== undefined && (
-                                <div>
-                                  Revenue Share:{' '}
-                                  <span className="font-medium text-foreground">
-                                    {entry.policy.commercial.revenueShare}%
-                                  </span>
+
+                              {/* Content Type Restrictions */}
+                              {entry.policy.contentTypes && (
+                                <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                  <h4 className="text-foreground font-semibold mb-3">
+                                    Content Type Restrictions
+                                  </h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                    {Object.entries(entry.policy.contentTypes).map(
+                                      ([key, value]) => (
+                                        <div key={key} className="flex items-center gap-2">
+                                          <span
+                                            className={`w-2 h-2 rounded-full ${
+                                              value === 'allow'
+                                                ? 'bg-green-400'
+                                                : value === 'require_approval'
+                                                  ? 'bg-yellow-400'
+                                                  : 'bg-red-400'
+                                            }`}
+                                          ></span>
+                                          <span className="text-foreground capitalize">
+                                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                                          </span>
+                                          <span className="text-muted-foreground text-xs">
+                                            ({value.replace('_', ' ')})
+                                          </span>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
                                 </div>
                               )}
-                            </div>
-                          </div>
 
-                          {/* Territories */}
-                          {entry.policy.territories && (
-                            <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                              <h4 className="text-foreground font-semibold mb-3">
-                                Geographic Territories
-                              </h4>
-                              <div className="text-sm space-y-2 text-foreground break-words">
-                                {entry.policy.territories.allowed?.length > 0 && (
+                              {/* Commercial Terms */}
+                              <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                <h4 className="text-foreground font-semibold mb-3">
+                                  Commercial Terms
+                                </h4>
+                                <div className="text-sm space-y-2 text-foreground">
                                   <div>
-                                    Allowed:{' '}
-                                    <span className="text-green-700 dark:text-green-400">
-                                      {entry.policy.territories.allowed.join(', ')}
+                                    Payment Required:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {entry.policy.commercial.paymentRequired ? 'Yes' : 'No'}
                                     </span>
                                   </div>
-                                )}
-                                {entry.policy.territories.denied?.length > 0 && (
-                                  <div>
-                                    Denied:{' '}
-                                    <span className="text-red-700 dark:text-red-400">
-                                      {entry.policy.territories.denied.join(', ')}
-                                    </span>
-                                  </div>
-                                )}
-                                {(!entry.policy.territories.allowed ||
-                                  entry.policy.territories.allowed.length === 0) &&
-                                  (!entry.policy.territories.denied ||
-                                    entry.policy.territories.denied.length === 0) && (
-                                    <div className="text-muted-foreground">
-                                      Worldwide (no restrictions)
+                                  {entry.policy.commercial.minFee !== undefined && (
+                                    <div>
+                                      Minimum Fee:{' '}
+                                      <span className="font-medium text-foreground">
+                                        ${entry.policy.commercial.minFee}
+                                      </span>
                                     </div>
                                   )}
+                                  {entry.policy.commercial.revenueShare !== undefined && (
+                                    <div>
+                                      Revenue Share:{' '}
+                                      <span className="font-medium text-foreground">
+                                        {entry.policy.commercial.revenueShare}%
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          )}
 
-                          {/* Attribution */}
-                          {entry.policy.attributionRequired !== undefined && (
-                            <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                              <h4 className="text-foreground font-semibold mb-3">Attribution</h4>
-                              <div className="text-sm text-muted-foreground">
-                                Attribution Required:{' '}
-                                <span className="font-medium text-foreground">
-                                  {entry.policy.attributionRequired ? 'Yes' : 'No'}
-                                </span>
-                              </div>
-                            </div>
-                          )}
+                              {/* Territories */}
+                              {entry.policy.territories && (
+                                <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                  <h4 className="text-foreground font-semibold mb-3">
+                                    Geographic Territories
+                                  </h4>
+                                  <div className="text-sm space-y-2 text-foreground break-words">
+                                    {entry.policy.territories.allowed?.length > 0 && (
+                                      <div>
+                                        Allowed:{' '}
+                                        <span className="text-green-700 dark:text-green-400">
+                                          {entry.policy.territories.allowed.join(', ')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {entry.policy.territories.denied?.length > 0 && (
+                                      <div>
+                                        Denied:{' '}
+                                        <span className="text-red-700 dark:text-red-400">
+                                          {entry.policy.territories.denied.join(', ')}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {(!entry.policy.territories.allowed ||
+                                      entry.policy.territories.allowed.length === 0) &&
+                                      (!entry.policy.territories.denied ||
+                                        entry.policy.territories.denied.length === 0) && (
+                                        <div className="text-muted-foreground">
+                                          Worldwide (no restrictions)
+                                        </div>
+                                      )}
+                                  </div>
+                                </div>
+                              )}
 
-                          {/* AI Controls */}
-                          {entry.policy.aiControls && (
-                            <div className="p-4 bg-muted/40 border border-border rounded-lg">
-                              <h4 className="text-foreground font-semibold mb-3">AI Controls</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                                {Object.entries(entry.policy.aiControls).map(([key, value]) => (
-                                  <div key={key} className="flex items-center gap-2">
-                                    <span
-                                      className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
-                                    ></span>
-                                    <span className="text-foreground">
-                                      {key.replace(/([A-Z])/g, ' $1').trim()}
+                              {/* Attribution */}
+                              {entry.policy.attributionRequired !== undefined && (
+                                <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                  <h4 className="text-foreground font-semibold mb-3">
+                                    Attribution
+                                  </h4>
+                                  <div className="text-sm text-muted-foreground">
+                                    Attribution Required:{' '}
+                                    <span className="font-medium text-foreground">
+                                      {entry.policy.attributionRequired ? 'Yes' : 'No'}
                                     </span>
-                                    <span className="text-muted-foreground">
-                                      {value ? '✓' : '✗'}
-                                    </span>
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
+                                </div>
+                              )}
 
-                          {/* Metadata */}
-                          {(entry.ip_address || entry.user_agent) && (
-                            <details className="group">
-                              <summary className="cursor-pointer text-muted-foreground hover:text-foreground text-xs list-none flex items-center gap-2">
-                                <span className="transform transition-transform group-open:rotate-90">
-                                  ▶
-                                </span>
-                                Technical Metadata
-                              </summary>
-                              <div className="mt-2 p-3 bg-muted/40 border border-border rounded-lg text-xs">
-                                {entry.ip_address && (
-                                  <div className="text-muted-foreground break-all">
-                                    IP: <span className="text-foreground">{entry.ip_address}</span>
+                              {/* AI Controls */}
+                              {entry.policy.aiControls && (
+                                <div className="p-4 bg-muted/40 border border-border rounded-lg">
+                                  <h4 className="text-foreground font-semibold mb-3">
+                                    AI Controls
+                                  </h4>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                                    {Object.entries(entry.policy.aiControls).map(([key, value]) => (
+                                      <div key={key} className="flex items-center gap-2">
+                                        <span
+                                          className={`w-2 h-2 rounded-full ${value ? 'bg-green-400' : 'bg-red-400'}`}
+                                        ></span>
+                                        <span className="text-foreground">
+                                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                                        </span>
+                                        <span className="text-muted-foreground">
+                                          {value ? '✓' : '✗'}
+                                        </span>
+                                      </div>
+                                    ))}
                                   </div>
-                                )}
-                                {entry.user_agent && (
-                                  <div className="text-muted-foreground mt-1 break-words">
-                                    User Agent:{' '}
-                                    <span className="text-foreground">{entry.user_agent}</span>
+                                </div>
+                              )}
+
+                              {/* Metadata */}
+                              {(entry.ip_address || entry.user_agent) && (
+                                <details className="group">
+                                  <summary className="cursor-pointer text-muted-foreground hover:text-foreground text-xs list-none flex items-center gap-2">
+                                    <span className="transform transition-transform group-open:rotate-90">
+                                      ▶
+                                    </span>
+                                    Technical Metadata
+                                  </summary>
+                                  <div className="mt-2 p-3 bg-muted/40 border border-border rounded-lg text-xs">
+                                    {entry.ip_address && (
+                                      <div className="text-muted-foreground break-all">
+                                        IP:{' '}
+                                        <span className="text-foreground">{entry.ip_address}</span>
+                                      </div>
+                                    )}
+                                    {entry.user_agent && (
+                                      <div className="text-muted-foreground mt-1 break-words">
+                                        User Agent:{' '}
+                                        <span className="text-foreground">{entry.user_agent}</span>
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </details>
-                          )}
+                                </details>
+                              )}
                             </>
                           )}
                         </div>

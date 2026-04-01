@@ -74,6 +74,235 @@ type ConsentLedgerEntry = {
   created_at: string;
 };
 
+type SavedTemplate = {
+  id: string;
+  name: string;
+  policy: ConsentPolicy;
+  createdAt: string;
+};
+
+type TemplateOption = {
+  id: string;
+  name: string;
+  policy: ConsentPolicy;
+  source: 'starter' | 'custom';
+};
+
+const CUSTOM_TEMPLATES_STORAGE_KEY = 'consent-preferences-custom-templates-v1';
+
+const clonePolicy = (source: ConsentPolicy): ConsentPolicy => ({
+  mediaUsage: { ...source.mediaUsage },
+  contentTypes: { ...source.contentTypes },
+  territories: {
+    allowed: [...source.territories.allowed],
+    denied: [...source.territories.denied],
+  },
+  aiControls: { ...source.aiControls },
+  commercial: { ...source.commercial },
+  attributionRequired: source.attributionRequired,
+  usageBlocked: source.usageBlocked ?? false,
+});
+
+const STARTER_TEMPLATES: TemplateOption[] = [
+  {
+    id: 'starter-allow-all',
+    name: 'Allow-All',
+    source: 'starter',
+    policy: {
+      mediaUsage: {
+        film: 'allow',
+        television: 'allow',
+        streaming: 'allow',
+        gaming: 'allow',
+        voiceReplication: 'allow',
+        virtualReality: 'allow',
+        socialMedia: 'allow',
+        advertising: 'allow',
+        merchandise: 'allow',
+        livePerformance: 'allow',
+      },
+      contentTypes: {
+        explicit: 'allow',
+        political: 'allow',
+        religious: 'allow',
+        violence: 'allow',
+        alcohol: 'allow',
+        tobacco: 'allow',
+        gambling: 'allow',
+        pharmaceutical: 'allow',
+        firearms: 'allow',
+        adultContent: 'allow',
+      },
+      territories: {
+        allowed: [],
+        denied: [],
+      },
+      aiControls: {
+        trainingAllowed: true,
+        syntheticGenerationAllowed: true,
+        biometricAnalysisAllowed: true,
+      },
+      commercial: {
+        paymentRequired: true,
+        minFee: undefined,
+        revenueShare: undefined,
+      },
+      attributionRequired: true,
+      usageBlocked: false,
+    },
+  },
+  {
+    id: 'starter-allow-moderate',
+    name: 'Allow-Moderate',
+    source: 'starter',
+    policy: {
+      mediaUsage: {
+        film: 'require_approval',
+        television: 'require_approval',
+        streaming: 'require_approval',
+        gaming: 'require_approval',
+        voiceReplication: 'deny',
+        virtualReality: 'require_approval',
+        socialMedia: 'require_approval',
+        advertising: 'require_approval',
+        merchandise: 'require_approval',
+        livePerformance: 'require_approval',
+      },
+      contentTypes: {
+        explicit: 'deny',
+        political: 'require_approval',
+        religious: 'require_approval',
+        violence: 'require_approval',
+        alcohol: 'require_approval',
+        tobacco: 'deny',
+        gambling: 'deny',
+        pharmaceutical: 'require_approval',
+        firearms: 'deny',
+        adultContent: 'deny',
+      },
+      territories: {
+        allowed: [],
+        denied: [],
+      },
+      aiControls: {
+        trainingAllowed: false,
+        syntheticGenerationAllowed: false,
+        biometricAnalysisAllowed: false,
+      },
+      commercial: {
+        paymentRequired: true,
+        minFee: undefined,
+        revenueShare: undefined,
+      },
+      attributionRequired: true,
+      usageBlocked: false,
+    },
+  },
+  {
+    id: 'starter-allow-limited',
+    name: 'Allow-Limited',
+    source: 'starter',
+    policy: {
+      mediaUsage: {
+        film: 'require_approval',
+        television: 'require_approval',
+        streaming: 'deny',
+        gaming: 'deny',
+        voiceReplication: 'deny',
+        virtualReality: 'deny',
+        socialMedia: 'deny',
+        advertising: 'deny',
+        merchandise: 'deny',
+        livePerformance: 'require_approval',
+      },
+      contentTypes: {
+        explicit: 'deny',
+        political: 'deny',
+        religious: 'deny',
+        violence: 'deny',
+        alcohol: 'require_approval',
+        tobacco: 'deny',
+        gambling: 'deny',
+        pharmaceutical: 'require_approval',
+        firearms: 'deny',
+        adultContent: 'deny',
+      },
+      territories: {
+        allowed: [],
+        denied: [],
+      },
+      aiControls: {
+        trainingAllowed: false,
+        syntheticGenerationAllowed: false,
+        biometricAnalysisAllowed: false,
+      },
+      commercial: {
+        paymentRequired: true,
+        minFee: undefined,
+        revenueShare: undefined,
+      },
+      attributionRequired: true,
+      usageBlocked: false,
+    },
+  },
+];
+
+const getPolicyChangeCount = (current: ConsentPolicy, baseline: ConsentPolicy): number => {
+  let changes = 0;
+
+  for (const key of Object.keys(current.mediaUsage) as Array<keyof ConsentPolicy['mediaUsage']>) {
+    if (current.mediaUsage[key] !== baseline.mediaUsage[key]) {
+      changes += 1;
+    }
+  }
+
+  for (const key of Object.keys(current.contentTypes) as Array<
+    keyof ConsentPolicy['contentTypes']
+  >) {
+    if (current.contentTypes[key] !== baseline.contentTypes[key]) {
+      changes += 1;
+    }
+  }
+
+  for (const key of Object.keys(current.aiControls) as Array<keyof ConsentPolicy['aiControls']>) {
+    if (current.aiControls[key] !== baseline.aiControls[key]) {
+      changes += 1;
+    }
+  }
+
+  const allowedDiff = new Set([
+    ...current.territories.allowed.filter((code) => !baseline.territories.allowed.includes(code)),
+    ...baseline.territories.allowed.filter((code) => !current.territories.allowed.includes(code)),
+  ]);
+  const deniedDiff = new Set([
+    ...current.territories.denied.filter((code) => !baseline.territories.denied.includes(code)),
+    ...baseline.territories.denied.filter((code) => !current.territories.denied.includes(code)),
+  ]);
+  changes += allowedDiff.size + deniedDiff.size;
+
+  if ((current.usageBlocked ?? false) !== (baseline.usageBlocked ?? false)) {
+    changes += 1;
+  }
+
+  if (current.commercial.paymentRequired !== baseline.commercial.paymentRequired) {
+    changes += 1;
+  }
+
+  if ((current.commercial.minFee ?? null) !== (baseline.commercial.minFee ?? null)) {
+    changes += 1;
+  }
+
+  if ((current.commercial.revenueShare ?? null) !== (baseline.commercial.revenueShare ?? null)) {
+    changes += 1;
+  }
+
+  if (current.attributionRequired !== baseline.attributionRequired) {
+    changes += 1;
+  }
+
+  return changes;
+};
+
 export default function ConsentPreferencesPage() {
   const router = useRouter();
   const sectionValues = ['media-usage', 'content-types', 'territories', 'ai-controls'];
@@ -127,6 +356,8 @@ export default function ConsentPreferencesPage() {
   });
 
   const [reason, setReason] = useState('');
+  const [templateName, setTemplateName] = useState('');
+  const [customTemplates, setCustomTemplates] = useState<SavedTemplate[]>([]);
   const [usageChangeDialogOpen, setUsageChangeDialogOpen] = useState(false);
   const [pendingUsageBlocked, setPendingUsageBlocked] = useState<boolean | null>(null);
   const [openSections, setOpenSections] = useState<string[]>(sectionValues);
@@ -193,8 +424,20 @@ export default function ConsentPreferencesPage() {
       },
     });
 
-  const hasPolicyChanges =
-    normalizedPolicyString(policy) !== normalizedPolicyString(getBaselinePolicy());
+  const baselinePolicy = getBaselinePolicy();
+
+  const hasPolicyChanges = normalizedPolicyString(policy) !== normalizedPolicyString(baselinePolicy);
+  const unsavedChangeCount = hasPolicyChanges ? getPolicyChangeCount(policy, baselinePolicy) : 0;
+
+  const templates: TemplateOption[] = [
+    ...STARTER_TEMPLATES,
+    ...customTemplates.map((template) => ({
+      id: template.id,
+      name: template.name,
+      policy: template.policy,
+      source: 'custom' as const,
+    })),
+  ];
 
   const getPermissionCounts = (values: PermissionLevel[]) => {
     return values.reduce(
@@ -220,6 +463,32 @@ export default function ConsentPreferencesPage() {
   // Load current consent on mount
   useEffect(() => {
     loadCurrentConsent();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CUSTOM_TEMPLATES_STORAGE_KEY);
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as SavedTemplate[];
+      if (!Array.isArray(parsed)) {
+        return;
+      }
+
+      const cleaned = parsed.filter(
+        (template) =>
+          template &&
+          typeof template.id === 'string' &&
+          typeof template.name === 'string' &&
+          typeof template.createdAt === 'string' &&
+          template.policy
+      );
+      setCustomTemplates(cleaned);
+    } catch {
+      setCustomTemplates([]);
+    }
   }, []);
 
   const loadCurrentConsent = async () => {
@@ -329,10 +598,41 @@ export default function ConsentPreferencesPage() {
   };
 
   const handleCancelChanges = () => {
-    setPolicy(getBaselinePolicy());
+    setPolicy(clonePolicy(baselinePolicy));
     setReason('');
     setError(null);
     setSuccess(null);
+  };
+
+  const applyTemplate = (template: TemplateOption) => {
+    setPolicy(clonePolicy(template.policy));
+    setError(null);
+    setSuccess(`Template "${template.name}" applied.`);
+  };
+
+  const saveCurrentAsTemplate = () => {
+    const name = templateName.trim();
+    if (!name) {
+      return;
+    }
+
+    const nextTemplate: SavedTemplate = {
+      id: `custom-${Date.now()}`,
+      name,
+      policy: clonePolicy(policy),
+      createdAt: new Date().toISOString(),
+    };
+
+    const deduped = customTemplates.filter(
+      (template) => template.name.toLowerCase() !== name.toLowerCase()
+    );
+    const next = [nextTemplate, ...deduped];
+
+    setCustomTemplates(next);
+    localStorage.setItem(CUSTOM_TEMPLATES_STORAGE_KEY, JSON.stringify(next));
+    setTemplateName('');
+    setError(null);
+    setSuccess(`Template "${name}" saved for quick reuse.`);
   };
 
   const requestUsageModeChange = (nextBlocked: boolean) => {
@@ -615,6 +915,47 @@ export default function ConsentPreferencesPage() {
             {error}
           </div>
         )}
+
+        {/* Templates */}
+        <div className="mb-8 bg-card rounded-xl p-6 border border-border shadow-sm">
+          <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3">Templates</h2>
+          <p className="text-muted-foreground text-sm mb-5">
+            Apply a starter preset or save your current settings as a reusable template.
+          </p>
+
+          <div className="flex flex-wrap gap-2 mb-5">
+            {templates.map((template) => (
+              <button
+                key={template.id}
+                type="button"
+                onClick={() => applyTemplate(template)}
+                className="px-3 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-foreground text-sm font-medium transition-colors"
+              >
+                {template.name}
+                {template.source === 'custom' ? ' (Saved)' : ''}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <input
+              type="text"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              maxLength={60}
+              placeholder="Template name"
+              className="flex-1 px-4 py-2 rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground"
+            />
+            <button
+              type="button"
+              onClick={saveCurrentAsTemplate}
+              disabled={!templateName.trim()}
+              className="px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 disabled:opacity-60 text-foreground font-semibold transition-colors text-sm"
+            >
+              Save Current as Template
+            </button>
+          </div>
+        </div>
 
         {/* Main Content - Two Column Layout on Desktop, Single Column on Mobile */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
@@ -1073,7 +1414,6 @@ export default function ConsentPreferencesPage() {
                   placeholder="e.g., Updated commercial terms for new licensing model"
                 />
               </div>
-
             </form>
           </div>
           {/* End Right Content */}
@@ -1086,7 +1426,7 @@ export default function ConsentPreferencesPage() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between gap-3">
               <p className="hidden sm:block text-sm text-muted-foreground">
-                You have unsaved changes.
+                You have {unsavedChangeCount} unsaved {unsavedChangeCount === 1 ? 'change' : 'changes'}.
               </p>
               <div className="ml-auto flex items-center gap-3">
                 <button
