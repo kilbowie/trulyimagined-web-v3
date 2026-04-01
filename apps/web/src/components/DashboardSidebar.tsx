@@ -235,7 +235,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   // Standalone navigation items
   const standaloneItems: NavigationItem[] = [
     {
-      title: 'Home',
+      title: 'Dashboard',
       href: '/dashboard',
       icon: Home,
       show: true,
@@ -354,10 +354,6 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     },
   ];
 
-  const collapsedGroupedItems = groupedNavigationItems
-    .filter((group) => group.show)
-    .flatMap((group) => group.items.filter((item) => item.show));
-
   return (
     <div
       className={cn(
@@ -422,30 +418,42 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         {/* Grouped Navigation Items */}
         <div className="pt-4">
           {isCollapsed ? (
-            <div className="space-y-1">
-              {collapsedGroupedItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = pathname === item.href;
+            <div className="space-y-2">
+              {groupedNavigationItems
+                .filter((group) => group.show)
+                .map((group) => {
+                  const visibleItems = group.items.filter((item) => item.show);
+                  if (visibleItems.length === 0) return null;
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
-                      isActive
-                        ? 'bg-slate-800 text-white'
-                        : 'text-slate-400 hover:bg-slate-900 hover:text-white'
-                    )}
-                    title={item.title}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {(item.badge ?? 0) > 0 && (
-                      <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
-                    )}
-                  </Link>
-                );
-              })}
+                  return (
+                    <div key={group.groupTitle} className="space-y-1">
+                      <div className="border-t border-slate-800" />
+                      {visibleItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            className={cn(
+                              'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
+                              isActive
+                                ? 'bg-slate-800 text-white'
+                                : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                            )}
+                            title={item.title}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {(item.badge ?? 0) > 0 && (
+                              <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                            )}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
             </div>
           ) : (
             <Accordion type="multiple" className="space-y-1">
@@ -459,7 +467,11 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                     <AccordionItem
                       key={group.groupTitle}
                       value={group.groupTitle}
-                      className="border-b-0"
+                      className={cn(
+                        'border-b-0',
+                        ['Consent', 'Identity', 'Licensing'].includes(group.groupTitle) &&
+                          'mt-2 pt-2 border-t border-slate-800'
+                      )}
                     >
                       <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">
                         {group.groupTitle}

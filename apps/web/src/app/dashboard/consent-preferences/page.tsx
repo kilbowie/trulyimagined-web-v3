@@ -426,7 +426,8 @@ export default function ConsentPreferencesPage() {
 
   const baselinePolicy = getBaselinePolicy();
 
-  const hasPolicyChanges = normalizedPolicyString(policy) !== normalizedPolicyString(baselinePolicy);
+  const hasPolicyChanges =
+    normalizedPolicyString(policy) !== normalizedPolicyString(baselinePolicy);
   const unsavedChangeCount = hasPolicyChanges ? getPolicyChangeCount(policy, baselinePolicy) : 0;
 
   const templates: TemplateOption[] = [
@@ -458,6 +459,85 @@ export default function ConsentPreferencesPage() {
   const geographicCounts = {
     allow: policy.territories.allowed.length,
     deny: policy.territories.denied.length,
+  };
+  const currentVersionMediaCounts = currentConsent
+    ? getPermissionCounts(Object.values(currentConsent.policy.mediaUsage || policy.mediaUsage))
+    : mediaUsageCounts;
+  const currentVersionContentCounts = currentConsent
+    ? getPermissionCounts(Object.values(currentConsent.policy.contentTypes || policy.contentTypes))
+    : contentTypeCounts;
+
+  const DonutChart = ({
+    label,
+    counts,
+    total,
+  }: {
+    label: string;
+    counts: { allow: number; require_approval: number; deny: number };
+    total: number;
+  }) => {
+    const allowPct = (counts.allow / total) * 100;
+    const approvalPct = (counts.require_approval / total) * 100;
+
+    return (
+      <div className="rounded-lg border border-border bg-background/40 p-4">
+        <h3 className="text-sm font-semibold text-foreground mb-3">{label}</h3>
+        <div className="flex items-center gap-4">
+          <div className="relative h-20 w-20" aria-hidden="true">
+            <svg viewBox="0 0 42 42" className="h-20 w-20 -rotate-90">
+              <circle cx="21" cy="21" r="15.915" fill="transparent" stroke="hsl(var(--muted))" strokeWidth="6" />
+              <circle
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="transparent"
+                stroke="#22c55e"
+                strokeWidth="6"
+                strokeDasharray={`${allowPct} ${100 - allowPct}`}
+                strokeDashoffset="0"
+              />
+              <circle
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="transparent"
+                stroke="#f59e0b"
+                strokeWidth="6"
+                strokeDasharray={`${approvalPct} ${100 - approvalPct}`}
+                strokeDashoffset={`-${allowPct}`}
+              />
+              <circle
+                cx="21"
+                cy="21"
+                r="15.915"
+                fill="transparent"
+                stroke="#ef4444"
+                strokeWidth="6"
+                strokeDasharray={`${100 - allowPct - approvalPct} ${allowPct + approvalPct}`}
+                strokeDashoffset={`-${allowPct + approvalPct}`}
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-xs font-semibold text-foreground">{total}</span>
+            </div>
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-green-500" />
+              <span>Allowed: {counts.allow}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
+              <span>Requires Approval: {counts.require_approval}</span>
+            </div>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <span className="h-2 w-2 rounded-full bg-red-500" />
+              <span>Denied: {counts.deny}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   // Load current consent on mount
@@ -854,6 +934,19 @@ export default function ConsentPreferencesPage() {
                   {licenseCount} <span className="text-sm text-muted-foreground">Total</span>
                 </div>
               </div>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <DonutChart
+                label="Media Usage Categories"
+                counts={currentVersionMediaCounts}
+                total={10}
+              />
+              <DonutChart
+                label="Content Type Restrictions"
+                counts={currentVersionContentCounts}
+                total={10}
+              />
             </div>
           </div>
         )}
@@ -1426,7 +1519,8 @@ export default function ConsentPreferencesPage() {
           <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 py-3">
             <div className="flex items-center justify-between gap-3">
               <p className="hidden sm:block text-sm text-muted-foreground">
-                You have {unsavedChangeCount} unsaved {unsavedChangeCount === 1 ? 'change' : 'changes'}.
+                You have {unsavedChangeCount} unsaved{' '}
+                {unsavedChangeCount === 1 ? 'change' : 'changes'}.
               </p>
               <div className="ml-auto flex items-center gap-3">
                 <button
