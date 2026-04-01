@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "target": "ES2022",
     "lib": ["ES2022"],
     "module": "commonjs",
@@ -23,7 +24,7 @@
       "@trulyimagined/types": ["./shared/types/src"],
       "@trulyimagined/utils": ["./shared/utils/src"],
       "@trulyimagined/middleware": ["./shared/middleware/src"],
-      "@trulyimagined/database": ["./infra/database/src"]
+      "@trulyimagined/database": ["./infra/database/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "dist", ".next", "build"]

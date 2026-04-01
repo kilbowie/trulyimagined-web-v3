@@ -301,7 +301,13 @@ async function migrate() {
     log('   AWS_SECRET_ACCESS_KEY=<your-secret-key>\n');
 
     log('2. Test secret retrieval with AWS CLI:');
-    log('   aws secretsmanager get-secret-value --secret-id ' + results[0].name + ' --region ' + REGION + '\n');
+    log(
+      '   aws secretsmanager get-secret-value --secret-id ' +
+        results[0].name +
+        ' --region ' +
+        REGION +
+        '\n'
+    );
 
     log('3. Deploy application:');
     log('   vercel --prod\n');

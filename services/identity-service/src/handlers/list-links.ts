@@ -6,7 +6,9 @@
  * Part of Step 7: Multi-Provider Identity Linking
  */
 
-import { query } from '../../../infra/database/src/client';
+import { db } from '@trulyimagined/database';
+
+const query = db.query.bind(db);
 
 interface IdentityLink {
   linkId: string;
@@ -84,7 +86,7 @@ export async function listIdentityLinks(
     const now = new Date();
 
     // Transform and enrich results
-    const links: IdentityLink[] = result.rows.map((row) => {
+    const links: IdentityLink[] = result.rows.map((row: Record<string, any>) => {
       const expiresAt = row.expires_at ? new Date(row.expires_at) : null;
       const isExpired = expiresAt ? expiresAt < now : false;
 

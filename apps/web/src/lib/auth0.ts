@@ -20,6 +20,6 @@ export const auth0 = new Auth0Client({
   },
   routes: {
     callback: '/api/auth/callback',
-    postLoginRedirect: process.env.AUTH0_POST_LOGIN_REDIRECT || '/dashboard',
   },
+  signInReturnToPath: process.env.AUTH0_POST_LOGIN_REDIRECT || '/dashboard',
 });

@@ -46,7 +46,8 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
   const [copied, setCopied] = useState(false);
   const [showRegistryId, setShowRegistryId] = useState(false);
 
-  const hasRegistryId = !!actor.registryId && actor.registryId.trim().length > 0;
+  const registryId = actor.registryId ?? '';
+  const hasRegistryId = registryId.trim().length > 0;
 
   const maskRegistryId = (value: string) => {
     let visibleCharacters = 4;
@@ -72,8 +73,8 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
 
   const displayRegistryId = hasRegistryId
     ? showRegistryId
-      ? actor.registryId
-      : maskRegistryId(actor.registryId)
+      ? registryId
+      : maskRegistryId(registryId)
     : 'Not assigned';
 
   const copyRegistryId = () => {
@@ -81,7 +82,7 @@ export function RegistrationStatus({ actor }: RegistrationStatusProps) {
       return;
     }
 
-    navigator.clipboard.writeText(actor.registryId!);
+    navigator.clipboard.writeText(registryId);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };

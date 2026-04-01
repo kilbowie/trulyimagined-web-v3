@@ -7,7 +7,10 @@ import { sendFeedbackResponseEmail } from '@/lib/email';
  * POST /api/feedback/[id]/reply
  * Reply to feedback - creates a support ticket and sends email notification (Admin only)
  */
-export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -21,7 +24,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const feedbackId = params.id;
+    const { id: feedbackId } = await params;
     const body = await request.json();
     const { message } = body;
 

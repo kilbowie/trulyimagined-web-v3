@@ -6,7 +6,10 @@ import { query } from '@/lib/db';
  * PATCH /api/feedback/[id]
  * Mark feedback as read or update admin notes (Admin only)
  */
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const user = await getCurrentUser();
     if (!user) {
@@ -20,7 +23,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 });
     }
 
-    const feedbackId = params.id;
+    const { id: feedbackId } = await params;
     const body = await request.json();
     const { is_read, admin_notes } = body;
 

@@ -6,7 +6,9 @@
  * Part of Step 7: Multi-Provider Identity Linking
  */
 
-import { query } from '../../../infra/database/src/client';
+import { db } from '@trulyimagined/database';
+
+const query = db.query.bind(db);
 
 interface LinkProviderRequest {
   userId: string;
