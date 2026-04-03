@@ -17,7 +17,7 @@ export default function AboutPage() {
       <h2>1. Why This Exists</h2>
       <p>
         Performers increasingly need clear control over how their identity and likeness may be used
-        in AI-related workflows.
+        in AI workflows.
       </p>
 
       <h2>2. What the Platform Supports</h2>
@@ -29,7 +29,7 @@ export default function AboutPage() {
 
       <h2>3. Typical User Journey</h2>
       <ol>
-        <li>Create an account and set up profile details.</li>
+        <li>Create an account and set up your profile.</li>
         <li>Complete identity and consent setup steps.</li>
         <li>Review and manage consent boundaries over time.</li>
         <li>Use dashboard tools to monitor and update preferences.</li>
@@ -45,6 +45,8 @@ export default function AboutPage() {
       <p>
         See our <a href="/privacy-policy">Privacy Policy</a>,{' '}
         <a href="/terms-of-service">Terms of Service</a>,{' '}
+        <a href="/cookie-notice">Cookie Notice</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
         <a href="/security-trust">Security and Trust</a>, and{' '}
         <a href="/contact">Contact and Support</a> pages.
       </p>

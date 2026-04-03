@@ -66,8 +66,11 @@ export default function DataRightsRetentionPage() {
       <h2>5. Related Policies</h2>
       <p>
         See our <a href="/privacy-policy">Privacy Policy</a>,{' '}
-        <a href="/terms-of-service">Terms of Service</a>, and{' '}
-        <a href="/contact">Contact and Support</a> page for related information.
+        <a href="/terms-of-service">Terms of Service</a>,{' '}
+        <a href="/cookie-notice">Cookie Notice</a>,{' '}
+        <a href="/security-trust">Security and Trust</a>,{' '}
+        <a href="/accessibility">Accessibility Statement</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages for related information.
       </p>
     </PublicContentPage>
   );

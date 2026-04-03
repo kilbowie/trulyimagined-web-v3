@@ -34,7 +34,7 @@ export default function ContactPage() {
       <h2>2. Response Targets</h2>
       <p>
         We aim to respond to most requests within two business days. Complex legal, privacy, or
-        security matters may require more time.
+        security matters may take longer.
       </p>
 
       <h2>3. What to Include</h2>
@@ -61,7 +61,7 @@ export default function ContactPage() {
         See our <a href="/privacy-policy">Privacy Policy</a>,{' '}
         <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
         <a href="/terms-of-service">Terms of Service</a>, and{' '}
-        <a href="/security-trust">Security and Trust</a> pages for policy details.
+        <a href="/security-trust">Security and Trust</a> pages for additional policy details.
       </p>
     </PublicContentPage>
   );

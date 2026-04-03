@@ -34,7 +34,7 @@ export default function CookieNoticePage() {
       <h2>4. Cookie Durations</h2>
       <ul>
         <li>Session cookies are removed when your browser session ends.</li>
-        <li>Persistent security or preference cookies remain for limited configured durations.</li>
+        <li>Persistent security or preference cookies remain for limited, configured durations.</li>
       </ul>
 
       <h2>5. Managing Cookies</h2>

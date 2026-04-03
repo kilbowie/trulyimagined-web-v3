@@ -15,7 +15,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LayoutDashboard, LogOut, Loader2, ChevronDown, Sun, Moon, FileText } from 'lucide-react';
+import {
+  User,
+  LayoutDashboard,
+  LogOut,
+  Loader2,
+  ChevronDown,
+  Sun,
+  Moon,
+  FileText,
+} from 'lucide-react';
 
 /**
  * Navigation component with auth-aware login/logout buttons

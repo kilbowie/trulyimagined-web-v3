@@ -22,7 +22,7 @@ export default function AccessibilityPage() {
       <h2>2. Current Status</h2>
       <p>
         Accessibility is an active workstream. We do not currently claim full conformance to a
-        formal accessibility standard across all pages.
+        formal accessibility standard across all parts of the service.
       </p>
 
       <h2>3. Known Limitations</h2>
@@ -34,14 +34,16 @@ export default function AccessibilityPage() {
       <h2>4. Feedback and Assistance</h2>
       <p>
         If you experience an accessibility issue, contact{' '}
-        <a href="mailto:support@trulyimagined.com">support@trulyimagined.com</a> with details of
-        the page and issue.
+        <a href="mailto:support@trulyimagined.com">support@trulyimagined.com</a> with details of the
+        page and issue.
       </p>
 
       <h2>5. Related Policies</h2>
       <p>
-        You can also review our <a href="/contact">Contact and Support</a> and{' '}
-        <a href="/privacy-policy">Privacy Policy</a> pages.
+        You can also review our <a href="/privacy-policy">Privacy Policy</a>,{' '}
+        <a href="/terms-of-service">Terms of Service</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages.
       </p>
     </PublicContentPage>
   );

@@ -43,7 +43,7 @@ export default function SecurityTrustPage() {
       <h2>5. Certification Transparency</h2>
       <p>
         Truly Imagined does not currently claim formal third-party certification on this page.
-        Statements here describe our current practices and design goals.
+        Statements here describe current practices and design goals.
       </p>
 
       <h2>6. Related Policies</h2>

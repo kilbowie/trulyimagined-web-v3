@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
       <ul>
         <li>Account and profile details such as email, name, and role information.</li>
         <li>Identity verification outcomes and related verification metadata.</li>
-        <li>Consent and licensing activity records needed for accountability.</li>
+        <li>Consent and licensing activity records needed for auditability and accountability.</li>
         <li>Support ticket communications and support metadata.</li>
         <li>Security, authentication, and operational logs.</li>
       </ul>
@@ -104,7 +104,7 @@ export default function PrivacyPolicyPage() {
       <p>
         We apply layered technical and organizational controls, including encryption and access
         control measures. We continuously review security operations, but no online service can be
-        entirely risk free.
+        entirely risk-free.
       </p>
 
       <h2>11. Age Restriction</h2>
@@ -116,7 +116,8 @@ export default function PrivacyPolicyPage() {
         complaint with the UK Information Commissioner&apos;s Office (ICO).
       </p>
       <p>
-        ICO website: <a href="https://ico.org.uk">https://ico.org.uk</a>
+        ICO website: <a href="https://ico.org.uk">https://ico.org.uk</a>. You can find complaint
+        guidance directly on the ICO website.
       </p>
 
       <h2>13. Changes to This Policy</h2>
