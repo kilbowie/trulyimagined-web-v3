@@ -45,6 +45,14 @@ export default function SecurityTrustPage() {
         Truly Imagined does not currently claim formal third-party certification on this page.
         Statements here describe our current practices and design goals.
       </p>
+
+      <h2>6. Related Policies</h2>
+      <p>
+        For legal and rights context, see our <a href="/privacy-policy">Privacy Policy</a>,{' '}
+        <a href="/terms-of-service">Terms of Service</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages.
+      </p>
     </PublicContentPage>
   );
 }

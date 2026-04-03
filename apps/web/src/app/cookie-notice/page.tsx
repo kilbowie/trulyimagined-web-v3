@@ -45,7 +45,11 @@ export default function CookieNoticePage() {
 
       <h2>6. Related Policies</h2>
       <p>
-        For broader personal data information, see our <a href="/privacy-policy">Privacy Policy</a>.
+        For broader personal data and user-rights information, see our{' '}
+        <a href="/privacy-policy">Privacy Policy</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
+        <a href="/terms-of-service">Terms of Service</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages.
       </p>
     </PublicContentPage>
   );

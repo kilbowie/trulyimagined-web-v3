@@ -10,16 +10,17 @@ const legalLinks = [
   { href: '/privacy-policy', label: 'Privacy Policy' },
   { href: '/terms-of-service', label: 'Terms of Service' },
   { href: '/cookie-notice', label: 'Cookie Notice' },
-  { href: '/contact', label: 'Data Rights Requests' },
+  { href: '/data-rights-retention', label: 'Data Rights & Retention' },
 ];
 
 const trustLinks = [
   { href: '/security-trust', label: 'Security & Trust' },
-  { href: '/privacy-policy#retention', label: 'Data Retention' },
-  { href: '/privacy-policy#rights', label: 'Your Data Rights' },
+  { href: '/accessibility', label: 'Accessibility' },
+  { href: '/privacy-policy#retention', label: 'Retention Summary' },
 ];
 
 const companyLinks = [
+  { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact & Support' },
   { href: 'mailto:support@trulyimagined.com', label: 'Support Email' },
   { href: 'mailto:security@trulyimagined.com', label: 'Security Reports' },

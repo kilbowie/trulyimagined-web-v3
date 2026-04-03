@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { User, LayoutDashboard, LogOut, Loader2, ChevronDown, Sun, Moon } from 'lucide-react';
+import { User, LayoutDashboard, LogOut, Loader2, ChevronDown, Sun, Moon, FileText } from 'lucide-react';
 
 /**
  * Navigation component with auth-aware login/logout buttons
@@ -60,6 +60,24 @@ export default function AuthNav() {
             <span className="sr-only">Toggle theme</span>
           </Button>
         )}
+        <Button
+          variant="ghost"
+          size="icon"
+          asChild
+          className="md:hidden text-slate-300 hover:text-white hover:bg-slate-800"
+        >
+          <Link href="/privacy-policy">
+            <FileText className="h-5 w-5" />
+            <span className="sr-only">Legal pages</span>
+          </Link>
+        </Button>
+        <Button
+          variant="ghost"
+          asChild
+          className="hidden md:flex text-slate-300 hover:text-white hover:bg-slate-800"
+        >
+          <Link href="/privacy-policy">Privacy</Link>
+        </Button>
         <Button
           variant="ghost"
           asChild
@@ -169,6 +187,22 @@ export default function AuthNav() {
             <Link href="/dashboard/profile" className="cursor-pointer">
               <User className="mr-2 h-4 w-4" />
               Profile
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuSeparator />
+
+          <DropdownMenuItem asChild>
+            <Link href="/privacy-policy" className="cursor-pointer">
+              <FileText className="mr-2 h-4 w-4" />
+              Privacy Policy
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild>
+            <Link href="/terms-of-service" className="cursor-pointer">
+              <FileText className="mr-2 h-4 w-4" />
+              Terms of Service
             </Link>
           </DropdownMenuItem>
 

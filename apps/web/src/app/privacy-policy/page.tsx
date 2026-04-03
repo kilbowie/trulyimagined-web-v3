@@ -103,8 +103,8 @@ export default function PrivacyPolicyPage() {
       <h2>10. Security</h2>
       <p>
         We apply layered technical and organizational controls, including encryption and access
-        control measures. We continuously review security operations, but no online system can be
-        guaranteed risk free.
+        control measures. We continuously review security operations, but no online service can be
+        entirely risk free.
       </p>
 
       <h2>11. Age Restriction</h2>
@@ -123,6 +123,16 @@ export default function PrivacyPolicyPage() {
       <p>
         We may update this policy from time to time. The most current version will always show the
         latest update date.
+      </p>
+
+      <h2>14. Related Pages</h2>
+      <p>
+        You can also review our <a href="/terms-of-service">Terms of Service</a>,{' '}
+        <a href="/cookie-notice">Cookie Notice</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
+        <a href="/security-trust">Security and Trust</a>,{' '}
+        <a href="/accessibility">Accessibility Statement</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages.
       </p>
     </PublicContentPage>
   );

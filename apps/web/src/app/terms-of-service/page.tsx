@@ -64,7 +64,7 @@ export default function TermsOfServicePage() {
       <h2>9. Disclaimers and Liability</h2>
       <p>
         The service is provided on an "as available" basis. Nothing in these Terms limits liability
-        where limitation is not allowed by law.
+        where limitation is not allowed by applicable law.
       </p>
 
       <h2>10. Governing Law</h2>
@@ -74,6 +74,15 @@ export default function TermsOfServicePage() {
       <p>
         Legal notices and terms questions can be sent to{' '}
         <a href="mailto:legal@trulyimagined.com">legal@trulyimagined.com</a>.
+      </p>
+
+      <h2>12. Related Pages</h2>
+      <p>
+        For supporting information, see our <a href="/privacy-policy">Privacy Policy</a>,{' '}
+        <a href="/cookie-notice">Cookie Notice</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
+        <a href="/security-trust">Security and Trust</a>, and{' '}
+        <a href="/contact">Contact and Support</a> pages.
       </p>
     </PublicContentPage>
   );

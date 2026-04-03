@@ -55,6 +55,14 @@ export default function ContactPage() {
         For suspected vulnerabilities, suspicious account activity, or potential incidents, contact
         security@trulyimagined.com as soon as possible and include steps to reproduce where safe.
       </p>
+
+      <h2>6. Related Pages</h2>
+      <p>
+        See our <a href="/privacy-policy">Privacy Policy</a>,{' '}
+        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
+        <a href="/terms-of-service">Terms of Service</a>, and{' '}
+        <a href="/security-trust">Security and Trust</a> pages for policy details.
+      </p>
     </PublicContentPage>
   );
 }
