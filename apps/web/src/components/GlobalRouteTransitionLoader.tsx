@@ -99,7 +99,9 @@ export function GlobalRouteTransitionLoader() {
       }
 
       const normalizedUrl = new URL(requestUrl, window.location.origin);
-      const isApiRequest = normalizedUrl.origin === window.location.origin && normalizedUrl.pathname.startsWith('/api/');
+      const isApiRequest =
+        normalizedUrl.origin === window.location.origin &&
+        normalizedUrl.pathname.startsWith('/api/');
 
       if (isApiRequest) {
         setInFlightApiRequests((count) => count + 1);

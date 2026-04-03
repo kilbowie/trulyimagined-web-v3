@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Lock, FileCheck, CheckCircle, UserCheck, FileText, ArrowRight } from 'lucide-react';
+import SiteFooter from '@/components/SiteFooter';
 
 export default async function Home() {
   // Check if user is authenticated and has a role
@@ -113,7 +114,7 @@ export default async function Home() {
         </section>
 
         {/* How It Works - Combined with Infrastructure */}
-        <section className="py-20 px-6 bg-slate-50 dark:bg-slate-900">
+        <section id="how-it-works" className="py-20 px-6 bg-slate-50 dark:bg-slate-900">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
               <h2 className="text-3xl md:text-4xl font-bold mb-4">How It Works</h2>
@@ -319,15 +320,7 @@ export default async function Home() {
           </div>
         </section>
 
-        {/* Footer */}
-        <footer className="py-8 px-6 border-t border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-          <div className="max-w-6xl mx-auto text-center text-sm text-muted-foreground">
-            <p>Registry • Compliance • Auditability</p>
-            <p className="mt-2">
-              © {new Date().getFullYear()} Truly Imagined. All rights reserved.
-            </p>
-          </div>
-        </footer>
+        <SiteFooter />
       </main>
     </>
   );
