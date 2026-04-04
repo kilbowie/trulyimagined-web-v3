@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserRoles } from '@/lib/auth';
+import { getCurrentUser, getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { DashboardQuickSearch } from '@/components/DashboardQuickSearch';
@@ -14,12 +14,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     redirect('/auth/login');
   }
 
-  const roles = await getUserRoles();
+  const [roles, agentTeamMember] = await Promise.all([
+    getUserRoles(),
+    getAgentTeamMembership(),
+  ]);
 
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
-      <DashboardSidebar userName={user.name || user.email} roles={roles} />
+      <DashboardSidebar userName={user.name || user.email} roles={roles} agentTeamMember={agentTeamMember} />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">

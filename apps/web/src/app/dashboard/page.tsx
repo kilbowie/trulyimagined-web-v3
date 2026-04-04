@@ -1,4 +1,4 @@
-import { getCurrentUser, getUserRoles } from '@/lib/auth';
+import { getCurrentUser, getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
@@ -23,8 +23,13 @@ export default async function DashboardPage() {
   const hasActorRole = roles.includes('Actor');
   const hasAgentRole = roles.includes('Agent');
 
+  // Check team membership for assistants/sub-agents
+  const teamMembership = (!hasActorRole && !hasAgentRole)
+    ? await getAgentTeamMembership()
+    : null;
+
   // Fetch actor data to get stage name
-  let displayName = user.name || 'User';
+  let displayName = user.name || user.email || 'User';
   if (hasActorRole) {
     try {
       const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
@@ -285,6 +290,62 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Team Member Workspace */}
+      {teamMembership && (
+        <div className="space-y-4">
+          <div>
+            <p className="text-sm text-muted-foreground">
+              You are a <strong>{teamMembership.memberRole}</strong> at{' '}
+              <strong>{teamMembership.agencyName}</strong>
+            </p>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Team Member Workspace</CardTitle>
+              <CardDescription>
+                Access the agency features available to you based on your permissions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {teamMembership.permissions.canManageRoster && (
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/agent/roster">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
+                          <span>My Roster</span>
+                          <ArrowUpRight className="h-5 w-5" />
+                        </CardTitle>
+                        <CardDescription>View and manage the agency&apos;s actor roster</CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+                )}
+                {teamMembership.permissions.canManageRequests && (
+                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                    <Link href="/dashboard/agent/requests">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
+                          <span>Representation Requests</span>
+                          <ArrowUpRight className="h-5 w-5" />
+                        </CardTitle>
+                        <CardDescription>Review and respond to actor representation requests</CardDescription>
+                      </CardHeader>
+                    </Link>
+                  </Card>
+                )}
+                {!teamMembership.permissions.canManageRoster &&
+                  !teamMembership.permissions.canManageRequests && (
+                    <p className="text-sm text-muted-foreground col-span-full">
+                      No features have been enabled for your account yet. Contact your Agency Admin to request access.
+                    </p>
+                  )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

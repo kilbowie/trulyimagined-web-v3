@@ -67,9 +67,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+import type { AgentTeamMembership } from '@/lib/auth';
+
 interface SidebarProps {
   userName?: string;
   roles?: string[];
+  agentTeamMember?: AgentTeamMembership | null;
 }
 
 interface NavigationItem {
@@ -87,7 +90,7 @@ interface NavigationGroup {
   items: NavigationItem[];
 }
 
-export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
+export function DashboardSidebar({ userName, roles = [], agentTeamMember }: SidebarProps) {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -123,6 +126,10 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const hasAgentRole = roles.includes('Agent');
   const hasAdminRole = roles.includes('Admin');
   const hasEnterpriseRole = roles.includes('Enterprise');
+
+  // Active agency team member flags
+  const isTeamMember = Boolean(agentTeamMember);
+  const teamPerms = agentTeamMember?.permissions;
 
   // Fetch notification counts
   useEffect(() => {
@@ -289,20 +296,20 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const groupedNavigationItems: NavigationGroup[] = [
     {
       groupTitle: 'Representation',
-      show: hasAgentRole,
+      show: hasAgentRole || (isTeamMember && Boolean(teamPerms?.canManageRoster || teamPerms?.canManageRequests)),
       items: [
         {
           title: 'My Roster',
           href: '/dashboard/agent/roster',
           icon: FileText,
-          show: hasAgentRole,
+          show: hasAgentRole || Boolean(isTeamMember && teamPerms?.canManageRoster),
         },
         {
           title: 'Representation Requests',
           href: '/dashboard/agent/requests',
           icon: MessageCircle,
-          show: hasAgentRole,
-          badge: hasAgentRole ? notificationCounts.pendingRepresentationRequests : 0,
+          show: hasAgentRole || Boolean(isTeamMember && teamPerms?.canManageRequests),
+          badge: (hasAgentRole || isTeamMember) ? notificationCounts.pendingRepresentationRequests : 0,
         },
       ],
     },

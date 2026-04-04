@@ -115,3 +115,70 @@ export async function requireRole(allowedRoles: string[]) {
 
   return user;
 }
+
+/**
+ * Shape of an active agency team membership record
+ */
+export interface AgentTeamMembership {
+  id: string;
+  agencyId: string;
+  agencyName: string;
+  memberRole: 'Agent' | 'Assistant';
+  permissions: {
+    canManageRoster: boolean;
+    canManageRequests: boolean;
+    canViewConsent: boolean;
+    canViewLicensing: boolean;
+    canManageTeam: boolean;
+  };
+}
+
+/**
+ * Returns the active agency team membership for the current user, or null.
+ * Used to grant agent-level page access to invited team members.
+ */
+export async function getAgentTeamMembership(): Promise<AgentTeamMembership | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  try {
+    const result = await query(
+      `SELECT
+         atm.id,
+         atm.agency_id,
+         atm.member_role,
+         atm.access_permissions,
+         a.agency_name
+       FROM agency_team_members atm
+       JOIN agents a ON a.id = atm.agency_id
+       WHERE atm.linked_user_profile_id = (
+         SELECT id FROM user_profiles WHERE auth0_user_id = $1
+       )
+       AND atm.status = 'active'
+       AND atm.deleted_at IS NULL
+       LIMIT 1`,
+      [user.sub]
+    );
+
+    if (result.rows.length === 0) return null;
+
+    const row = result.rows[0];
+    const perms = (row.access_permissions as Record<string, boolean>) || {};
+    return {
+      id: row.id,
+      agencyId: row.agency_id,
+      agencyName: row.agency_name,
+      memberRole: row.member_role,
+      permissions: {
+        canManageRoster: Boolean(perms.canManageRoster),
+        canManageRequests: Boolean(perms.canManageRequests),
+        canViewConsent: Boolean(perms.canViewConsent),
+        canViewLicensing: Boolean(perms.canViewLicensing),
+        canManageTeam: Boolean(perms.canManageTeam),
+      },
+    };
+  } catch (error) {
+    console.error('[AUTH] Failed to get agent team membership:', error);
+    return null;
+  }
+}

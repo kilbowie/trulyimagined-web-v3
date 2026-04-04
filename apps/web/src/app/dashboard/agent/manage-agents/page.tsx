@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Plus, UserPlus } from 'lucide-react';
+import { Loader2, Plus, UserPlus, Pencil } from 'lucide-react';
 
 type TeamRole = 'Agent' | 'Assistant';
 type TeamStatus = 'invited' | 'active' | 'disabled';
@@ -74,6 +74,12 @@ export default function ManageAgentsPage() {
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
+
+  // Permission editing dialog state
+  const [permDialogOpen, setPermDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [editingPermissions, setEditingPermissions] = useState<TeamPermissions>(defaultPermissions);
+  const [savingPerms, setSavingPerms] = useState(false);
 
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberName, setNewMemberName] = useState('');
@@ -246,6 +252,27 @@ export default function ManageAgentsPage() {
       setError(deleteError instanceof Error ? deleteError.message : 'Failed to delete team member');
     } finally {
       setBusyMemberId(null);
+    }
+  };
+
+  const openPermDialog = (member: TeamMember) => {
+    setEditingMember(member);
+    setEditingPermissions({ ...defaultPermissions, ...member.access_permissions });
+    setPermDialogOpen(true);
+  };
+
+  const savePermissions = async () => {
+    if (!editingMember) return;
+    setError(null);
+    setSavingPerms(true);
+    try {
+      await updateMember(editingMember.id, { accessPermissions: editingPermissions });
+      setPermDialogOpen(false);
+      setEditingMember(null);
+    } catch {
+      // updateMember already sets error state
+    } finally {
+      setSavingPerms(false);
     }
   };
 
@@ -482,6 +509,15 @@ export default function ManageAgentsPage() {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openPermDialog(member)}
+                              title="Edit permissions"
+                            >
+                              <Pencil className="h-3.5 w-3.5 mr-1" />
+                              Permissions
+                            </Button>
                             {(member.status === 'invited' || member.status === 'disabled') && (
                               <Button
                                 variant="outline"
@@ -511,6 +547,58 @@ export default function ManageAgentsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Permissions Dialog */}
+      <Dialog open={permDialogOpen} onOpenChange={setPermDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Edit Permissions</DialogTitle>
+            <DialogDescription>
+              {editingMember
+                ? `Adjust access permissions for ${editingMember.full_name || editingMember.email}.`
+                : 'Adjust access permissions.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid grid-cols-1 gap-2 rounded-md border p-3 py-4">
+            {(
+              [
+                ['canManageRoster', 'Manage Roster'],
+                ['canManageRequests', 'Manage Requests'],
+                ['canViewConsent', 'View Consent'],
+                ['canViewLicensing', 'View Licensing'],
+                ['canManageTeam', 'Manage Team'],
+              ] as Array<[keyof TeamPermissions, string]>
+            ).map(([key, label]) => (
+              <label key={key} className="flex items-center gap-3 text-sm cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 rounded"
+                  checked={editingPermissions[key]}
+                  onChange={() =>
+                    setEditingPermissions((current) => ({ ...current, [key]: !current[key] }))
+                  }
+                />
+                <span>{label}</span>
+              </label>
+            ))}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPermDialogOpen(false)}
+              disabled={savingPerms}
+            >
+              Cancel
+            </Button>
+            <Button onClick={savePermissions} disabled={savingPerms}>
+              {savingPerms ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

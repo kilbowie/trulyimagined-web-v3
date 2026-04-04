@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { getUserRoles } from '@/lib/auth';
+import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getActorByAuth0Id, getAgentByAuth0Id } from '@/lib/representation';
 
@@ -15,7 +15,8 @@ interface UpdateRequestPayload {
 
 /**
  * PUT /api/representation/requests/:id
- * Agent approves/rejects requests, actor can withdraw own pending requests.
+ * Agent (or team member with canManageRequests) approves/rejects;
+ * actor can withdraw own pending requests.
  */
 export async function PUT(req: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
@@ -30,14 +31,29 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     const hasAgentRole = roles.includes('Agent');
     const hasActorRole = roles.includes('Actor');
 
-    if (!hasAgentRole && !hasActorRole) {
+    // Resolve agent identity: owner or team member with canManageRequests
+    let agentId: string | null = null;
+    let agentRecord: { id: string; profile_completed?: boolean } | null = null;
+
+    if (hasAgentRole) {
+      agentRecord = await getAgentByAuth0Id(user.sub);
+      agentId = agentRecord?.id ?? null;
+    } else {
+      const membership = await getAgentTeamMembership();
+      if (membership?.permissions.canManageRequests) {
+        agentId = membership.agencyId;
+      }
+    }
+
+    const hasActorOnly = hasActorRole && !agentId;
+
+    if (!agentId && !hasActorOnly) {
       return NextResponse.json(
-        { error: 'Forbidden: Actor or Agent role required' },
+        { error: 'Forbidden: insufficient permissions' },
         { status: 403 }
       );
     }
 
-    const agent = hasAgentRole ? await getAgentByAuth0Id(user.sub) : null;
     const actor = hasActorRole ? await getActorByAuth0Id(user.sub) : null;
 
     const { id } = await params;
@@ -93,15 +109,16 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
       });
     }
 
-    if (!agent) {
-      return NextResponse.json({ error: 'Agent profile not found' }, { status: 404 });
+    if (!agentId) {
+      return NextResponse.json({ error: 'Forbidden: agent access required' }, { status: 403 });
     }
 
-    if (targetRequest.agent_id !== agent.id) {
+    if (targetRequest.agent_id !== agentId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (!agent.profile_completed) {
+    // For agency owners, check profile completion; team members bypass this
+    if (agentRecord && !agentRecord.profile_completed) {
       return NextResponse.json(
         {
           error:

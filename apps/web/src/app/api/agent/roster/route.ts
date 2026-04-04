@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { getUserRoles } from '@/lib/auth';
+import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
 
 /**
  * GET /api/agent/roster
- * Returns active actor roster for the authenticated agent.
+ * Returns active actor roster for the authenticated agent or an active team member
+ * with the canManageRoster permission.
  */
 export async function GET() {
   try {
@@ -18,12 +19,25 @@ export async function GET() {
     }
 
     const roles = await getUserRoles();
-    if (!roles.includes('Agent')) {
-      return NextResponse.json({ error: 'Forbidden: Agent role required' }, { status: 403 });
+
+    // Resolve agentId: agency owner (Agent role) or team member with canManageRoster
+    let agentId: string | null = null;
+
+    if (roles.includes('Agent')) {
+      const agent = await getAgentByAuth0Id(user.sub);
+      agentId = agent?.id ?? null;
+    } else {
+      const membership = await getAgentTeamMembership();
+      if (membership?.permissions.canManageRoster) {
+        agentId = membership.agencyId;
+      }
     }
 
-    const agent = await getAgentByAuth0Id(user.sub);
-    if (!agent) {
+    if (agentId === null && !roles.includes('Agent')) {
+      return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
+    }
+
+    if (!agentId) {
       return NextResponse.json({ roster: [], total: 0 });
     }
 
@@ -55,7 +69,7 @@ export async function GET() {
          AND r.ended_at IS NULL
          AND a.deleted_at IS NULL
        ORDER BY r.started_at DESC`,
-      [agent.id]
+      [agentId]
     );
 
     return NextResponse.json({
