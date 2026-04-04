@@ -48,10 +48,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     const hasActorOnly = hasActorRole && !agentId;
 
     if (!agentId && !hasActorOnly) {
-      return NextResponse.json(
-        { error: 'Forbidden: insufficient permissions' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
     }
 
     const actor = hasActorRole ? await getActorByAuth0Id(user.sub) : null;
@@ -121,8 +118,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     if (agentRecord && !agentRecord.profile_completed) {
       return NextResponse.json(
         {
-          error:
-            'Complete your agent profile before responding to representation requests.',
+          error: 'Complete your agent profile before responding to representation requests.',
         },
         { status: 409 }
       );
@@ -161,10 +157,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
       );
 
       if (approvedResult.rows.length === 0) {
-        return NextResponse.json(
-          { error: 'Request is no longer pending' },
-          { status: 409 }
-        );
+        return NextResponse.json({ error: 'Request is no longer pending' }, { status: 409 });
       }
 
       await query(

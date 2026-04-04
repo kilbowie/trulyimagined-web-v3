@@ -102,10 +102,7 @@ export async function GET() {
       });
     }
 
-    return NextResponse.json(
-      { error: 'Forbidden: insufficient permissions' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
   } catch (error) {
     console.error('[REPRESENTATION_REQUESTS] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

@@ -11,12 +11,7 @@ export default async function RequestsPage() {
   const hasAgentRole = roles.includes('Agent');
 
   if (!hasAgentRole && !membership?.permissions.canManageRequests) {
-    return (
-      <NoPermission
-        feature="Representation Requests"
-        agencyName={membership?.agencyName}
-      />
-    );
+    return <NoPermission feature="Representation Requests" agencyName={membership?.agencyName} />;
   }
 
   return <RequestsContent />;

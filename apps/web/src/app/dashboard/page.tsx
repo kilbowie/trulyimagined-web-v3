@@ -24,9 +24,7 @@ export default async function DashboardPage() {
   const hasAgentRole = roles.includes('Agent');
 
   // Check team membership for assistants/sub-agents
-  const teamMembership = (!hasActorRole && !hasAgentRole)
-    ? await getAgentTeamMembership()
-    : null;
+  const teamMembership = !hasActorRole && !hasAgentRole ? await getAgentTeamMembership() : null;
 
   // Fetch actor data to get stage name
   let displayName = user.name || user.email || 'User';
@@ -318,7 +316,9 @@ export default async function DashboardPage() {
                           <span>My Roster</span>
                           <ArrowUpRight className="h-5 w-5" />
                         </CardTitle>
-                        <CardDescription>View and manage the agency&apos;s actor roster</CardDescription>
+                        <CardDescription>
+                          View and manage the agency&apos;s actor roster
+                        </CardDescription>
                       </CardHeader>
                     </Link>
                   </Card>
@@ -331,7 +331,9 @@ export default async function DashboardPage() {
                           <span>Representation Requests</span>
                           <ArrowUpRight className="h-5 w-5" />
                         </CardTitle>
-                        <CardDescription>Review and respond to actor representation requests</CardDescription>
+                        <CardDescription>
+                          Review and respond to actor representation requests
+                        </CardDescription>
                       </CardHeader>
                     </Link>
                   </Card>
@@ -339,7 +341,8 @@ export default async function DashboardPage() {
                 {!teamMembership.permissions.canManageRoster &&
                   !teamMembership.permissions.canManageRequests && (
                     <p className="text-sm text-muted-foreground col-span-full">
-                      No features have been enabled for your account yet. Contact your Agency Admin to request access.
+                      No features have been enabled for your account yet. Contact your Agency Admin
+                      to request access.
                     </p>
                   )}
               </div>

@@ -67,12 +67,24 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import type { AgentTeamMembership } from '@/lib/auth';
+interface AgentTeamPermissions {
+  canManageRoster: boolean;
+  canManageRequests: boolean;
+  canViewConsent: boolean;
+  canViewLicensing: boolean;
+  canManageTeam: boolean;
+}
 
 interface SidebarProps {
   userName?: string;
   roles?: string[];
-  agentTeamMember?: AgentTeamMembership | null;
+  agentTeamMember?: {
+    id: string;
+    agencyId: string;
+    agencyName: string;
+    memberRole: 'Agent' | 'Assistant';
+    permissions: AgentTeamPermissions;
+  } | null;
 }
 
 interface NavigationItem {
@@ -296,7 +308,9 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
   const groupedNavigationItems: NavigationGroup[] = [
     {
       groupTitle: 'Representation',
-      show: hasAgentRole || (isTeamMember && Boolean(teamPerms?.canManageRoster || teamPerms?.canManageRequests)),
+      show:
+        hasAgentRole ||
+        (isTeamMember && Boolean(teamPerms?.canManageRoster || teamPerms?.canManageRequests)),
       items: [
         {
           title: 'My Roster',
@@ -309,7 +323,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
           href: '/dashboard/agent/requests',
           icon: MessageCircle,
           show: hasAgentRole || Boolean(isTeamMember && teamPerms?.canManageRequests),
-          badge: (hasAgentRole || isTeamMember) ? notificationCounts.pendingRepresentationRequests : 0,
+          badge:
+            hasAgentRole || isTeamMember ? notificationCounts.pendingRepresentationRequests : 0,
         },
       ],
     },

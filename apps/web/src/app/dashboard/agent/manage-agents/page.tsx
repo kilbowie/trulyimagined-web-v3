@@ -570,7 +570,10 @@ export default function ManageAgentsPage() {
                 ['canManageTeam', 'Manage Team'],
               ] as Array<[keyof TeamPermissions, string]>
             ).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-3 text-sm cursor-pointer select-none">
+              <label
+                key={key}
+                className="flex items-center gap-3 text-sm cursor-pointer select-none"
+              >
                 <input
                   type="checkbox"
                   className="h-4 w-4 rounded"

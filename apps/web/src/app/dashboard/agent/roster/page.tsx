@@ -11,12 +11,7 @@ export default async function RosterPage() {
   const hasAgentRole = roles.includes('Agent');
 
   if (!hasAgentRole && !membership?.permissions.canManageRoster) {
-    return (
-      <NoPermission
-        feature="My Roster"
-        agencyName={membership?.agencyName}
-      />
-    );
+    return <NoPermission feature="My Roster" agencyName={membership?.agencyName} />;
   }
 
   return <RosterContent />;

@@ -83,17 +83,27 @@ export default function RequestsContent() {
   };
 
   if (loading) {
-    return <div className="py-12 text-center text-muted-foreground">Loading representation requests...</div>;
+    return (
+      <div className="py-12 text-center text-muted-foreground">
+        Loading representation requests...
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6 pb-10">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Representation Requests</h1>
-        <p className="text-muted-foreground mt-2">Approve or reject incoming actor representation requests.</p>
+        <p className="text-muted-foreground mt-2">
+          Approve or reject incoming actor representation requests.
+        </p>
       </div>
 
-      {error && <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
 
       <Tabs defaultValue="pending" className="space-y-4">
         <TabsList>
@@ -110,7 +120,10 @@ export default function RequestsContent() {
             </Card>
           ) : (
             pending.map((item) => {
-              const actorName = item.stage_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || 'Actor';
+              const actorName =
+                item.stage_name ||
+                `${item.first_name || ''} ${item.last_name || ''}`.trim() ||
+                'Actor';
               const isSaving = savingId === item.id;
 
               return (
@@ -118,7 +131,8 @@ export default function RequestsContent() {
                   <CardHeader>
                     <CardTitle className="text-xl">{actorName}</CardTitle>
                     <CardDescription>
-                      Registry: {item.actor_registry_id || 'N/A'} • Requested {new Date(item.requested_at).toLocaleDateString()}
+                      Registry: {item.actor_registry_id || 'N/A'} • Requested{' '}
+                      {new Date(item.requested_at).toLocaleDateString()}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -133,7 +147,10 @@ export default function RequestsContent() {
                       <Textarea
                         value={responseNote[item.id] || ''}
                         onChange={(event) =>
-                          setResponseNote((current) => ({ ...current, [item.id]: event.target.value }))
+                          setResponseNote((current) => ({
+                            ...current,
+                            [item.id]: event.target.value,
+                          }))
                         }
                         placeholder="Add context for approval or rejection"
                       />
@@ -143,7 +160,11 @@ export default function RequestsContent() {
                       <Button disabled={isSaving} onClick={() => updateRequest(item.id, 'approve')}>
                         {isSaving ? 'Saving...' : 'Approve'}
                       </Button>
-                      <Button variant="outline" disabled={isSaving} onClick={() => updateRequest(item.id, 'reject')}>
+                      <Button
+                        variant="outline"
+                        disabled={isSaving}
+                        onClick={() => updateRequest(item.id, 'reject')}
+                      >
                         {isSaving ? 'Saving...' : 'Reject'}
                       </Button>
                     </div>
@@ -163,20 +184,28 @@ export default function RequestsContent() {
             </Card>
           ) : (
             history.map((item) => {
-              const actorName = item.stage_name || `${item.first_name || ''} ${item.last_name || ''}`.trim() || 'Actor';
+              const actorName =
+                item.stage_name ||
+                `${item.first_name || ''} ${item.last_name || ''}`.trim() ||
+                'Actor';
 
               return (
                 <Card key={item.id}>
                   <CardHeader>
                     <CardTitle className="text-xl flex items-center gap-2">
                       {actorName}
-                      <Badge variant={item.status === 'approved' ? 'default' : 'secondary'} className="capitalize">
+                      <Badge
+                        variant={item.status === 'approved' ? 'default' : 'secondary'}
+                        className="capitalize"
+                      >
                         {item.status}
                       </Badge>
                     </CardTitle>
                     <CardDescription>
                       Requested {new Date(item.requested_at).toLocaleDateString()}
-                      {item.responded_at ? ` • Responded ${new Date(item.responded_at).toLocaleDateString()}` : ''}
+                      {item.responded_at
+                        ? ` • Responded ${new Date(item.responded_at).toLocaleDateString()}`
+                        : ''}
                     </CardDescription>
                   </CardHeader>
                   {item.response_note && (

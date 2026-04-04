@@ -1,5 +1,9 @@
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+
+async function getQuery() {
+  const { query } = await import('@/lib/db');
+  return query;
+}
 
 /**
  * Get the current user session (server-side only)
@@ -26,6 +30,7 @@ export async function getUserRoles(): Promise<string[]> {
   if (!user) return [];
 
   try {
+    const query = await getQuery();
     const result = await query('SELECT role FROM user_profiles WHERE auth0_user_id = $1', [
       user.sub,
     ]);
@@ -50,6 +55,7 @@ export async function getUserProfile() {
   if (!user) return null;
 
   try {
+    const query = await getQuery();
     const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
     return result.rows[0] || null;
   } catch (error) {
@@ -142,6 +148,7 @@ export async function getAgentTeamMembership(): Promise<AgentTeamMembership | nu
   if (!user) return null;
 
   try {
+    const query = await getQuery();
     const result = await query(
       `SELECT
          atm.id,
