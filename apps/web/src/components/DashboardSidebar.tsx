@@ -104,6 +104,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     unreadFeedback: 0,
     unreadSupport: 0,
     pendingRepresentationRequests: 0,
+    pendingLicensingRequests: 0,
   });
 
   const triggerDashboardTransition = (href: string) => {
@@ -181,6 +182,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     'Verify Identity',
     'Verifiable Credentials',
     'License Tracker',
+    'Licensing Requests',
     'Agency Profile',
     'Representation Requests',
     'My Roster',
@@ -330,6 +332,13 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
           href: '/dashboard/licenses',
           icon: ScrollText,
           show: hasActorRole,
+        },
+        {
+          title: 'Licensing Requests',
+          href: '/dashboard/licensing-requests',
+          icon: FileText,
+          show: hasActorRole,
+          badge: hasActorRole ? notificationCounts.pendingLicensingRequests : 0,
         },
       ],
     },

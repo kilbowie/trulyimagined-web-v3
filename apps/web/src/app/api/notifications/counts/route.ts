@@ -32,10 +32,12 @@ export async function GET(_request: NextRequest) {
       unreadSupport: number;
       openSupportTickets?: number;
       pendingRepresentationRequests?: number;
+      pendingLicensingRequests?: number;
     } = {
       unreadFeedback: 0,
       unreadSupport: 0,
       pendingRepresentationRequests: 0,
+      pendingLicensingRequests: 0,
     };
 
     // For admins: get unread feedback count
@@ -107,14 +109,23 @@ export async function GET(_request: NextRequest) {
     if (profile.role === 'Actor') {
       const actor = await getActorByAuth0Id(user.sub);
       if (actor) {
-        const pendingResult = await query(
+        const pendingRepResult = await query(
           `SELECT COUNT(*) AS count
            FROM representation_requests
            WHERE actor_id = $1
              AND status = 'pending'`,
           [actor.id]
         );
-        counts.pendingRepresentationRequests = parseInt(pendingResult.rows[0].count, 10) || 0;
+        counts.pendingRepresentationRequests = parseInt(pendingRepResult.rows[0].count, 10) || 0;
+
+        const pendingLicResult = await query(
+          `SELECT COUNT(*) AS count
+           FROM licensing_requests
+           WHERE actor_id = $1
+             AND status = 'pending'`,
+          [actor.id]
+        );
+        counts.pendingLicensingRequests = parseInt(pendingLicResult.rows[0].count, 10) || 0;
       }
     }
 

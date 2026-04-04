@@ -58,7 +58,10 @@ export async function POST(request: NextRequest) {
     );
 
     if (agentResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Agent not found for the provided registry ID' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Agent not found for the provided registry ID' },
+        { status: 404 }
+      );
     }
 
     const agent = agentResult.rows[0];
