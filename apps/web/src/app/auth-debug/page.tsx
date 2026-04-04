@@ -159,7 +159,7 @@ export default function AuthDebugPage() {
                 <ul className="list-disc ml-6 mt-1 text-sm">
                   <li>Name: "Truly Imagined - Development"</li>
                   <li>Type: Regular Web Application</li>
-                  <li>Callback URLs: http://localhost:3000/auth/callback</li>
+                  <li>Callback URLs: http://localhost:3000/api/auth/callback</li>
                   <li>Logout URLs: http://localhost:3000</li>
                 </ul>
               </li>
