@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import './globals.css';
 import Auth0Provider from '@/components/Auth0Provider';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -35,7 +36,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           enableSystem
           disableTransitionOnChange
         >
-          <GlobalRouteTransitionLoader />
+          <Suspense fallback={null}>
+            <GlobalRouteTransitionLoader />
+          </Suspense>
           <Auth0Provider>{children}</Auth0Provider>
         </ThemeProvider>
       </body>

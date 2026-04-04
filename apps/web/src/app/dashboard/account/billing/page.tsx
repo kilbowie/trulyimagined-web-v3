@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
 import BillingPageClient from './BillingPageClient';
@@ -21,7 +22,9 @@ export default async function AccountBillingPage() {
         </p>
       </div>
 
-      <BillingPageClient />
+      <Suspense fallback={null}>
+        <BillingPageClient />
+      </Suspense>
     </div>
   );
 }
