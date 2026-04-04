@@ -44,9 +44,8 @@ export default function AboutPage() {
       <h2>5. Related Legal and Trust Pages</h2>
       <p>
         See our <a href="/privacy-policy">Privacy Policy</a>,{' '}
-        <a href="/terms-of-service">Terms of Service</a>,{' '}
-        <a href="/cookie-notice">Cookie Notice</a>,{' '}
-        <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
+        <a href="/terms-of-service">Terms of Service</a>, <a href="/cookie-notice">Cookie Notice</a>
+        , <a href="/data-rights-retention">Data Rights and Retention</a>,{' '}
         <a href="/security-trust">Security and Trust</a>, and{' '}
         <a href="/contact">Contact and Support</a> pages.
       </p>

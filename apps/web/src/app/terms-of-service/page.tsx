@@ -73,8 +73,8 @@ export default function TermsOfServicePage() {
       <h2>11. Contact</h2>
       <p>
         Legal notices and terms questions can be sent to{' '}
-        <a href="mailto:legal@trulyimagined.com">legal@trulyimagined.com</a>. Our service
-        address is Clyde Offices, 2nd Floor, 48 West George Street, Glasgow, G2 1BP.
+        <a href="mailto:legal@trulyimagined.com">legal@trulyimagined.com</a>. Our service address is
+        Clyde Offices, 2nd Floor, 48 West George Street, Glasgow, G2 1BP.
       </p>
 
       <h2>12. Related Pages</h2>

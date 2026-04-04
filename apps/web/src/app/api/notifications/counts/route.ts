@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { getActorByAuth0Id, getAgentByAuth0Id } from '@/lib/representation';
 
 /**
  * GET /api/notifications/counts
@@ -30,9 +31,11 @@ export async function GET(_request: NextRequest) {
       unreadFeedback: number;
       unreadSupport: number;
       openSupportTickets?: number;
+      pendingRepresentationRequests?: number;
     } = {
       unreadFeedback: 0,
       unreadSupport: 0,
+      pendingRepresentationRequests: 0,
     };
 
     // For admins: get unread feedback count
@@ -85,6 +88,34 @@ export async function GET(_request: NextRequest) {
         counts.unreadSupport,
         parseInt(urgentTicketsResult.rows[0].count) || 0
       );
+    }
+
+    if (profile.role === 'Agent') {
+      const agent = await getAgentByAuth0Id(user.sub);
+      if (agent) {
+        const pendingResult = await query(
+          `SELECT COUNT(*) AS count
+           FROM representation_requests
+           WHERE agent_id = $1
+             AND status = 'pending'`,
+          [agent.id]
+        );
+        counts.pendingRepresentationRequests = parseInt(pendingResult.rows[0].count, 10) || 0;
+      }
+    }
+
+    if (profile.role === 'Actor') {
+      const actor = await getActorByAuth0Id(user.sub);
+      if (actor) {
+        const pendingResult = await query(
+          `SELECT COUNT(*) AS count
+           FROM representation_requests
+           WHERE actor_id = $1
+             AND status = 'pending'`,
+          [actor.id]
+        );
+        counts.pendingRepresentationRequests = parseInt(pendingResult.rows[0].count, 10) || 0;
+      }
     }
 
     return NextResponse.json({

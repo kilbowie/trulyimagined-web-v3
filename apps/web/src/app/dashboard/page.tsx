@@ -21,6 +21,7 @@ export default async function DashboardPage() {
 
   const roles = await getUserRoles();
   const hasActorRole = roles.includes('Actor');
+  const hasAgentRole = roles.includes('Agent');
 
   // Fetch actor data to get stage name
   let displayName = user.name || 'User';
@@ -231,6 +232,56 @@ export default async function DashboardPage() {
                   Create W3C verifiable credentials to share with third parties
                 </p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasAgentRole && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Agent Workspace</CardTitle>
+            <CardDescription>
+              Manage your agency profile, representation requests, and actor roster.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                <Link href="/dashboard/agent/profile">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
+                      <span>Agency Profile</span>
+                      <ArrowUpRight className="h-5 w-5" />
+                    </CardTitle>
+                    <CardDescription>Complete your profile and business details</CardDescription>
+                  </CardHeader>
+                </Link>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                <Link href="/dashboard/agent/requests">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
+                      <span>Representation Requests</span>
+                      <ArrowUpRight className="h-5 w-5" />
+                    </CardTitle>
+                    <CardDescription>Review incoming actor requests</CardDescription>
+                  </CardHeader>
+                </Link>
+              </Card>
+
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                <Link href="/dashboard/agent/roster">
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between text-lg group-hover:text-primary">
+                      <span>My Roster</span>
+                      <ArrowUpRight className="h-5 w-5" />
+                    </CardTitle>
+                    <CardDescription>View linked actors and manage relationships</CardDescription>
+                  </CardHeader>
+                </Link>
+              </Card>
             </div>
           </CardContent>
         </Card>

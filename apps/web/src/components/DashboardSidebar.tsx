@@ -103,6 +103,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   const [notificationCounts, setNotificationCounts] = useState({
     unreadFeedback: 0,
     unreadSupport: 0,
+    pendingRepresentationRequests: 0,
   });
 
   const triggerDashboardTransition = (href: string) => {
@@ -180,6 +181,9 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
     'Verify Identity',
     'Verifiable Credentials',
     'License Tracker',
+    'Agency Profile',
+    'Representation Requests',
+    'My Roster',
   ];
 
   const handleSubmitFeedback = async () => {
@@ -264,6 +268,13 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       icon: Upload,
       show: hasActorRole,
     },
+    {
+      title: 'My Representation',
+      href: '/dashboard/representation',
+      icon: Users,
+      show: hasActorRole,
+      badge: hasActorRole ? notificationCounts.pendingRepresentationRequests : 0,
+    },
   ];
 
   // Grouped navigation items
@@ -323,6 +334,37 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
       ],
     },
     {
+      groupTitle: 'Agency',
+      show: hasAgentRole,
+      items: [
+        {
+          title: 'Agent Dashboard',
+          href: '/dashboard/agent',
+          icon: Users,
+          show: hasAgentRole,
+        },
+        {
+          title: 'Agency Profile',
+          href: '/dashboard/agent/profile',
+          icon: UserCircle,
+          show: hasAgentRole,
+        },
+        {
+          title: 'Representation Requests',
+          href: '/dashboard/agent/requests',
+          icon: MessageCircle,
+          show: hasAgentRole,
+          badge: hasAgentRole ? notificationCounts.pendingRepresentationRequests : 0,
+        },
+        {
+          title: 'My Roster',
+          href: '/dashboard/agent/roster',
+          icon: FileText,
+          show: hasAgentRole,
+        },
+      ],
+    },
+    {
       groupTitle: 'Admin',
       show: hasAdminRole,
       items: [
@@ -350,13 +392,6 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   ];
 
   const documentItems: NavigationItem[] = [
-    {
-      title: 'Agent Dashboard',
-      href: '/dashboard/agent',
-      icon: Users,
-      show: hasAgentRole,
-      comingSoon: true,
-    },
     {
       title: 'Enterprise Portal',
       href: '/dashboard/enterprise',

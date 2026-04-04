@@ -34,6 +34,11 @@ interface IamUser {
   stage_name: string | null;
   verification_status: string | null;
   registry_id: string | null;
+  agent_id: string | null;
+  agency_name: string | null;
+  agent_verification_status: string | null;
+  agent_registry_id: string | null;
+  agent_profile_completed: boolean | null;
 }
 
 interface SuccessToast {
@@ -96,6 +101,7 @@ export default function IamUsersTable() {
         user.legal_name,
         user.professional_name,
         user.stage_name || '',
+        user.agency_name || '',
         user.role,
       ]
         .join(' ')
@@ -242,7 +248,9 @@ export default function IamUsersTable() {
                           <TableCell>
                             <div className="space-y-0.5">
                               <p className="font-medium">
-                                {user.professional_name || user.legal_name}
+                                {user.role === 'Agent'
+                                  ? user.agency_name || user.professional_name || user.legal_name
+                                  : user.professional_name || user.legal_name}
                               </p>
                               <p className="text-xs text-muted-foreground">@{user.username}</p>
                             </div>
@@ -252,7 +260,13 @@ export default function IamUsersTable() {
                             <Badge variant="secondary">{user.role}</Badge>
                           </TableCell>
                           <TableCell className="text-sm">
-                            {user.registry_id ? (
+                            {user.role === 'Agent' ? (
+                              user.agent_registry_id ? (
+                                <span className="font-mono">{user.agent_registry_id}</span>
+                              ) : (
+                                <span className="text-muted-foreground">-</span>
+                              )
+                            ) : user.registry_id ? (
                               <span className="font-mono">{user.registry_id}</span>
                             ) : (
                               <span className="text-muted-foreground">-</span>

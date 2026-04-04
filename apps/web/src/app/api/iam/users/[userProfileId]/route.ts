@@ -46,9 +46,23 @@ export async function PATCH(req: NextRequest, { params }: RouteParams): Promise<
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
+    const updatedUser = updateResult.rows[0];
+
+    if (isVerified !== undefined && updatedUser.role === 'Agent') {
+      await query(
+        `UPDATE agents
+         SET verification_status = $2,
+             verified_at = CASE WHEN $2 = 'verified' THEN NOW() ELSE NULL END,
+             updated_at = NOW()
+         WHERE auth0_user_id = $1
+           AND deleted_at IS NULL`,
+        [updatedUser.auth0_user_id, isVerified ? 'verified' : 'pending']
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      data: updateResult.rows[0],
+      data: updatedUser,
     });
   } catch (error) {
     console.error('[API] /api/iam/users/[userProfileId] error:', error);

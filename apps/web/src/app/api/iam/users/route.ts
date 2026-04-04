@@ -32,9 +32,15 @@ export async function GET(): Promise<NextResponse> {
         a.last_name,
         a.stage_name,
         a.verification_status,
-        a.registry_id
+        a.registry_id,
+        ag.id AS agent_id,
+        ag.agency_name,
+        ag.verification_status AS agent_verification_status,
+        ag.registry_id AS agent_registry_id,
+        ag.profile_completed AS agent_profile_completed
       FROM user_profiles up
       LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id AND a.deleted_at IS NULL
+      LEFT JOIN agents ag ON ag.auth0_user_id = up.auth0_user_id AND ag.deleted_at IS NULL
       ORDER BY up.created_at DESC
     `
     );
