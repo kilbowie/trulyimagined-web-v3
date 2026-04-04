@@ -254,7 +254,9 @@ export default function LicensingRequestsPage() {
   const historyRequests = requests.filter((r) => r.status !== 'pending');
 
   if (loading) {
-    return <div className="py-12 text-center text-muted-foreground">Loading licensing requests...</div>;
+    return (
+      <div className="py-12 text-center text-muted-foreground">Loading licensing requests...</div>
+    );
   }
 
   return (

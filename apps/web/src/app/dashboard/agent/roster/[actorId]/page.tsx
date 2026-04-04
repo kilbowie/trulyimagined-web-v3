@@ -100,7 +100,9 @@ export default function AgentActorDetailsPage() {
 
   const actorName = useMemo(() => {
     if (!actor) return 'Actor';
-    return actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim() || 'Actor';
+    return (
+      actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim() || 'Actor'
+    );
   }, [actor]);
 
   useEffect(() => {
@@ -131,7 +133,9 @@ export default function AgentActorDetailsPage() {
           throw new Error(licensesData.error || 'Failed to load license history');
         }
 
-        const matchedActor = (rosterData.roster || []).find((entry: RosterActor) => entry.id === actorId);
+        const matchedActor = (rosterData.roster || []).find(
+          (entry: RosterActor) => entry.id === actorId
+        );
         setActor(matchedActor || null);
         setConsentLog(consentData.consentLog || []);
         setConsentLedger(consentData.consentLedger || []);
@@ -155,7 +159,9 @@ export default function AgentActorDetailsPage() {
       return;
     }
 
-    const confirmed = window.confirm('Are you sure you want to remove this actor from your roster?');
+    const confirmed = window.confirm(
+      'Are you sure you want to remove this actor from your roster?'
+    );
     if (!confirmed) {
       return;
     }
@@ -190,20 +196,27 @@ export default function AgentActorDetailsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{actorName}</h1>
-          <p className="text-muted-foreground mt-2">Manage consent and licensing history for this actor.</p>
+          <p className="text-muted-foreground mt-2">
+            Manage consent and licensing history for this actor.
+          </p>
         </div>
         <Button variant="outline" disabled={unlinking} onClick={removeFromRoster}>
           {unlinking ? 'Removing...' : 'Remove from Roster'}
         </Button>
       </div>
 
-      {error && <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
 
       <Card>
         <CardHeader>
           <CardTitle>Actor Summary</CardTitle>
           <CardDescription>
-            Registry: {actor?.registry_id || 'N/A'} • Verification: {actor?.verification_status || 'unknown'}
+            Registry: {actor?.registry_id || 'N/A'} • Verification:{' '}
+            {actor?.verification_status || 'unknown'}
           </CardDescription>
         </CardHeader>
       </Card>
@@ -279,8 +292,12 @@ export default function AgentActorDetailsPage() {
                             <StatusBadge status={entry.action} />
                           </td>
                           <td className="py-2 pr-4">{entry.consent_type}</td>
-                          <td className="py-2 pr-4 text-muted-foreground">{entry.project_name || '—'}</td>
-                          <td className="py-2 pr-4 text-muted-foreground">{entry.requester_type || '—'}</td>
+                          <td className="py-2 pr-4 text-muted-foreground">
+                            {entry.project_name || '—'}
+                          </td>
+                          <td className="py-2 pr-4 text-muted-foreground">
+                            {entry.requester_type || '—'}
+                          </td>
                           <td className="py-2 whitespace-nowrap">{formatDate(entry.created_at)}</td>
                         </tr>
                       ))}
@@ -320,7 +337,9 @@ export default function AgentActorDetailsPage() {
                           <td className="py-2 pr-4">
                             <div>{req.requester_name}</div>
                             {req.requester_organization && (
-                              <div className="text-xs text-muted-foreground">{req.requester_organization}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {req.requester_organization}
+                              </div>
                             )}
                           </td>
                           <td className="py-2 pr-4">{req.project_name}</td>
@@ -346,7 +365,9 @@ export default function AgentActorDetailsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Licenses</CardTitle>
-              <CardDescription>Active and historical license grants for this actor.</CardDescription>
+              <CardDescription>
+                Active and historical license grants for this actor.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {licenses.length === 0 ? (
@@ -372,8 +393,12 @@ export default function AgentActorDetailsPage() {
                           <td className="py-2 pr-4">
                             <StatusBadge status={lic.status} />
                           </td>
-                          <td className="py-2 pr-4 whitespace-nowrap">{formatDate(lic.issued_at)}</td>
-                          <td className="py-2 pr-4 whitespace-nowrap">{formatDate(lic.expires_at)}</td>
+                          <td className="py-2 pr-4 whitespace-nowrap">
+                            {formatDate(lic.issued_at)}
+                          </td>
+                          <td className="py-2 pr-4 whitespace-nowrap">
+                            {formatDate(lic.expires_at)}
+                          </td>
                           <td className="py-2">{lic.usage_count.toLocaleString()}</td>
                         </tr>
                       ))}
