@@ -158,13 +158,28 @@ export async function getAgentTeamMembership(): Promise<AgentTeamMembership | nu
          a.agency_name
        FROM agency_team_members atm
        JOIN agents a ON a.id = atm.agency_id
-       WHERE atm.linked_user_profile_id = (
-         SELECT id FROM user_profiles WHERE auth0_user_id = $1
+       WHERE (
+         atm.linked_user_profile_id = (
+           SELECT id FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1
+         )
+         OR (
+           $2::text IS NOT NULL
+           AND atm.email IS NOT NULL
+           AND LOWER(atm.email) = LOWER($2::text)
+         )
        )
        AND atm.status = 'active'
        AND atm.deleted_at IS NULL
+       ORDER BY
+         CASE
+           WHEN atm.linked_user_profile_id = (
+             SELECT id FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1
+           ) THEN 0
+           ELSE 1
+         END,
+         atm.created_at DESC
        LIMIT 1`,
-      [user.sub]
+      [user.sub, user.email ?? null]
     );
 
     if (result.rows.length === 0) return null;
