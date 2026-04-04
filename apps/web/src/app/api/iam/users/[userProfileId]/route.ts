@@ -48,15 +48,14 @@ export async function PATCH(req: NextRequest, { params }: RouteParams): Promise<
 
     const updatedUser = updateResult.rows[0];
 
-    if (isVerified !== undefined && updatedUser.role === 'Agent') {
+    if (isVerified !== undefined && String(updatedUser.role).toLowerCase() === 'agent') {
       await query(
         `UPDATE agents
          SET verification_status = $2,
-             verified_at = CASE WHEN $2 = 'verified' THEN NOW() ELSE NULL END,
              updated_at = NOW()
-         WHERE auth0_user_id = $1
+         WHERE (user_profile_id = $1 OR auth0_user_id = $3)
            AND deleted_at IS NULL`,
-        [updatedUser.auth0_user_id, isVerified ? 'verified' : 'pending']
+        [updatedUser.id, isVerified ? 'verified' : 'pending', updatedUser.auth0_user_id]
       );
     }
 
