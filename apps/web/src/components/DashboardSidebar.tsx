@@ -524,8 +524,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                         'border-b-0',
                         ['Representation', 'Consent', 'Identity', 'Licensing'].includes(
                           group.groupTitle
-                        ) &&
-                          'mt-2 pt-2 border-t border-slate-800'
+                        ) && 'mt-2 pt-2 border-t border-slate-800'
                       )}
                     >
                       <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">

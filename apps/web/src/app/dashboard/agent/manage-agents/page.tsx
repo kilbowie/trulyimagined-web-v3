@@ -54,6 +54,7 @@ interface TeamMember {
   linked_user_profile_id: string | null;
   professional_name: string | null;
   username: string | null;
+  is_verified?: boolean | null;
 }
 
 const defaultPermissions: TeamPermissions = {
@@ -72,6 +73,7 @@ export default function ManageAgentsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [busyMemberId, setBusyMemberId] = useState<string | null>(null);
 
   const [newMemberEmail, setNewMemberEmail] = useState('');
   const [newMemberName, setNewMemberName] = useState('');
@@ -190,6 +192,61 @@ export default function ManageAgentsPage() {
       ...current,
       [key]: !current[key],
     }));
+  };
+
+  const resendInvite = async (member: TeamMember) => {
+    setError(null);
+    setSuccess(null);
+
+    try {
+      setBusyMemberId(member.id);
+      const response = await fetch(`/api/agent/manage-agents/${member.id}`, {
+        method: 'POST',
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to resend invitation email');
+      }
+
+      setMembers((current) =>
+        current.map((entry) => (entry.id === member.id ? payload.data : entry))
+      );
+      setSuccess(`Invitation resent to ${member.email}.`);
+    } catch (resendError) {
+      setError(
+        resendError instanceof Error ? resendError.message : 'Failed to resend invitation email'
+      );
+    } finally {
+      setBusyMemberId(null);
+    }
+  };
+
+  const deleteMember = async (member: TeamMember) => {
+    const confirmed = window.confirm(`Delete ${member.email} from your agency team?`);
+    if (!confirmed) return;
+
+    setError(null);
+    setSuccess(null);
+
+    try {
+      setBusyMemberId(member.id);
+      const response = await fetch(`/api/agent/manage-agents/${member.id}`, {
+        method: 'DELETE',
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to delete team member');
+      }
+
+      setMembers((current) => current.filter((entry) => entry.id !== member.id));
+      setSuccess(`${member.email} has been removed from your agency team.`);
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Failed to delete team member');
+    } finally {
+      setBusyMemberId(null);
+    }
   };
 
   return (
@@ -333,13 +390,16 @@ export default function ManageAgentsPage() {
                     <TableHead>Role</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Permissions</TableHead>
+                    <TableHead>Last Invite Sent</TableHead>
+                    <TableHead>Verified</TableHead>
                     <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredMembers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                         No team members found.
                       </TableCell>
                     </TableRow>
@@ -401,10 +461,46 @@ export default function ManageAgentsPage() {
                               ))}
                           </div>
                         </TableCell>
+                        <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                          {member.invite_sent_at
+                            ? new Date(member.invite_sent_at).toLocaleString('en-GB')
+                            : '—'}
+                        </TableCell>
+                        <TableCell>
+                          {member.linked_user_profile_id ? (
+                            <Badge variant={member.is_verified ? 'default' : 'secondary'}>
+                              {member.is_verified ? 'Verified' : 'Unverified'}
+                            </Badge>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Pending Signup</span>
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           {member.joined_at
                             ? new Date(member.joined_at).toLocaleDateString('en-GB')
                             : '—'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {(member.status === 'invited' || member.status === 'disabled') && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={busyMemberId === member.id}
+                                onClick={() => resendInvite(member)}
+                              >
+                                Resend Email
+                              </Button>
+                            )}
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              disabled={busyMemberId === member.id}
+                              onClick={() => deleteMember(member)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))

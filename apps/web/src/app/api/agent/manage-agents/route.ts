@@ -82,7 +82,8 @@ export async function GET() {
           up.auth0_user_id,
           up.professional_name,
           up.username,
-          up.role AS linked_role
+           up.role AS linked_role,
+           up.is_verified
        FROM agency_team_members atm
        LEFT JOIN user_profiles up ON up.id = atm.linked_user_profile_id
        WHERE atm.agency_id = $1
@@ -199,7 +200,13 @@ export async function POST(request: NextRequest) {
       ]
     );
 
-    const inviteLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/login?screen_hint=signup&returnTo=/dashboard/agent/profile?invite=${inviteToken}`;
+    const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const returnToPath = `/dashboard/agency-invite?invite=${inviteToken}`;
+    const inviteUrl = new URL('/auth/login', appBaseUrl);
+    inviteUrl.searchParams.set('screen_hint', 'signup');
+    inviteUrl.searchParams.set('returnTo', returnToPath);
+
+    const inviteLink = inviteUrl.toString();
 
     try {
       await sendAgencyTeamInviteEmail({
