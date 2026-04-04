@@ -104,6 +104,20 @@ export async function GET() {
       },
     });
   } catch (error) {
+    const dbError = error as { code?: string; message?: string };
+
+    if (dbError?.code === '42P01') {
+      return NextResponse.json(
+        {
+          error:
+            'Manage Agents is not ready yet because database migration 014 has not been applied.',
+          migrationRequired: true,
+          migrationFile: 'infra/database/migrations/014_agency_team_members.sql',
+        },
+        { status: 503 }
+      );
+    }
+
     console.error('[AGENT_MANAGE_AGENTS] GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

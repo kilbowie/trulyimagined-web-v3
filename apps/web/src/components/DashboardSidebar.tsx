@@ -288,6 +288,25 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
   // Grouped navigation items
   const groupedNavigationItems: NavigationGroup[] = [
     {
+      groupTitle: 'Representation',
+      show: hasAgentRole,
+      items: [
+        {
+          title: 'My Roster',
+          href: '/dashboard/agent/roster',
+          icon: FileText,
+          show: hasAgentRole,
+        },
+        {
+          title: 'Representation Requests',
+          href: '/dashboard/agent/requests',
+          icon: MessageCircle,
+          show: hasAgentRole,
+          badge: hasAgentRole ? notificationCounts.pendingRepresentationRequests : 0,
+        },
+      ],
+    },
+    {
       groupTitle: 'Consent',
       show: hasActorRole,
       items: [
@@ -503,7 +522,9 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
                       value={group.groupTitle}
                       className={cn(
                         'border-b-0',
-                        ['Consent', 'Identity', 'Licensing'].includes(group.groupTitle) &&
+                        ['Representation', 'Consent', 'Identity', 'Licensing'].includes(
+                          group.groupTitle
+                        ) &&
                           'mt-2 pt-2 border-t border-slate-800'
                       )}
                     >

@@ -668,12 +668,7 @@ export async function sendAgencyTeamInviteEmail(options: {
     <p>Use the button below to accept your invitation and continue setup.</p>
   `;
 
-  const html = createNoReplyTemplate(
-    subject,
-    bodyContent,
-    'Accept Invitation',
-    options.inviteLink
-  );
+  const html = createNoReplyTemplate(subject, bodyContent, 'Accept Invitation', options.inviteLink);
 
   return await sendEmail({
     to: options.toEmail,

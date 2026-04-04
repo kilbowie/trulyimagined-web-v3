@@ -547,13 +547,17 @@ export default function AgentActorDetailsPage() {
                   <h3 className="text-sm font-semibold mb-3">Geographic Territories</h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="font-medium text-green-600 dark:text-green-400">Allowed: </span>
+                      <span className="font-medium text-green-600 dark:text-green-400">
+                        Allowed:{' '}
+                      </span>
                       {currentConsent.policy?.territories?.allowed?.length ? (
                         <span className="text-muted-foreground">
                           {currentConsent.policy.territories.allowed.join(', ')}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground italic">No explicit allowed list</span>
+                        <span className="text-muted-foreground italic">
+                          No explicit allowed list
+                        </span>
                       )}
                     </div>
                     <div>

@@ -282,7 +282,11 @@ export default function ManageAgentsPage() {
                 Cancel
               </Button>
               <Button onClick={createMember} disabled={saving}>
-                {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <UserPlus className="h-4 w-4 mr-2" />}
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
                 Send Invite
               </Button>
             </DialogFooter>
@@ -369,7 +373,9 @@ export default function ManageAgentsPage() {
                         <TableCell>
                           <Select
                             value={member.status}
-                            onValueChange={(value) => updateMember(member.id, { status: value as TeamStatus })}
+                            onValueChange={(value) =>
+                              updateMember(member.id, { status: value as TeamStatus })
+                            }
                           >
                             <SelectTrigger className="w-[130px]">
                               <SelectValue />
@@ -387,7 +393,10 @@ export default function ManageAgentsPage() {
                               .filter(([, enabled]) => Boolean(enabled))
                               .map(([key]) => (
                                 <Badge key={key} variant="secondary" className="text-xs">
-                                  {key.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
+                                  {key
+                                    .replace('can', '')
+                                    .replace(/([A-Z])/g, ' $1')
+                                    .trim()}
                                 </Badge>
                               ))}
                           </div>

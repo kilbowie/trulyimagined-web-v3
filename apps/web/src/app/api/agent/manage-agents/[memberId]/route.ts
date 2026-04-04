@@ -61,7 +61,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const current = existing.rows[0];
 
-    const role = body.memberRole === 'Agent' ? 'Agent' : body.memberRole === 'Assistant' ? 'Assistant' : null;
+    const role =
+      body.memberRole === 'Agent' ? 'Agent' : body.memberRole === 'Assistant' ? 'Assistant' : null;
     const status =
       body.status === 'invited' || body.status === 'active' || body.status === 'disabled'
         ? body.status

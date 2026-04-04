@@ -206,19 +206,30 @@ export default function AgentProfilePage() {
             )}
           </CardTitle>
           <CardDescription>
-            Registry ID: {profile?.registry_id ? profile.registry_id : 'Will be assigned on creation'}
+            Registry ID:{' '}
+            {profile?.registry_id ? profile.registry_id : 'Will be assigned on creation'}
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {error && <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
-      {success && <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">{success}</div>}
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {success}
+        </div>
+      )}
 
       <form onSubmit={onSubmit} className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>Basic Details</CardTitle>
-            <CardDescription>These details are visible to linked actors and admins.</CardDescription>
+            <CardDescription>
+              These details are visible to linked actors and admins.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2 rounded-md border p-4">

@@ -66,9 +66,9 @@ export default function AgentRosterPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [usageModeFilter, setUsageModeFilter] = useState('all');
-  const [consentGroupFilter, setConsentGroupFilter] = useState<'all' | 'mediaUsage' | 'contentTypes'>(
-    'all'
-  );
+  const [consentGroupFilter, setConsentGroupFilter] = useState<
+    'all' | 'mediaUsage' | 'contentTypes'
+  >('all');
   const [consentFieldFilter, setConsentFieldFilter] = useState('all');
   const [consentLevelFilter, setConsentLevelFilter] = useState('all');
 
