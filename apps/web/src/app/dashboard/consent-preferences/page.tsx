@@ -475,6 +475,76 @@ export default function ConsentPreferencesPage() {
     ? getPermissionCounts(Object.values(currentConsent.policy.contentTypes || policy.contentTypes))
     : contentTypeCounts;
 
+  const MEDIA_USAGE_LABELS: Record<string, string> = {
+    film: 'Film',
+    television: 'Television',
+    streaming: 'Streaming Platforms',
+    gaming: 'Gaming',
+    voiceReplication: 'Voice Replication',
+    virtualReality: 'Virtual Reality',
+    socialMedia: 'Social Media',
+    advertising: 'Advertising',
+    merchandise: 'Merchandise',
+    livePerformance: 'Live Performance',
+  };
+
+  const CONTENT_TYPE_LABELS: Record<string, string> = {
+    explicit: 'Explicit Content',
+    political: 'Political Content',
+    religious: 'Religious Content',
+    violence: 'Violence',
+    alcohol: 'Alcohol',
+    tobacco: 'Tobacco',
+    gambling: 'Gambling',
+    pharmaceutical: 'Pharmaceutical',
+    firearms: 'Firearms',
+    adultContent: 'Adult Content',
+  };
+
+  const renderPermissionList = (
+    items: Record<string, PermissionLevel>,
+    labels: Record<string, string>
+  ) => {
+    const allowed = Object.entries(items)
+      .filter(([, v]) => v === 'allow')
+      .map(([k]) => labels[k] ?? k);
+    const requiresApproval = Object.entries(items)
+      .filter(([, v]) => v === 'require_approval')
+      .map(([k]) => labels[k] ?? k);
+    const denied = Object.entries(items)
+      .filter(([, v]) => v === 'deny')
+      .map(([k]) => labels[k] ?? k);
+
+    return (
+      <div className="mt-3 space-y-2 text-sm">
+        <div>
+          <span className="font-medium text-green-600 dark:text-green-400">Allowed: </span>
+          {allowed.length > 0 ? (
+            <span className="text-muted-foreground">{allowed.join(', ')}</span>
+          ) : (
+            <span className="text-muted-foreground italic">None</span>
+          )}
+        </div>
+        <div>
+          <span className="font-medium text-amber-600 dark:text-amber-400">Requires Approval: </span>
+          {requiresApproval.length > 0 ? (
+            <span className="text-muted-foreground">{requiresApproval.join(', ')}</span>
+          ) : (
+            <span className="text-muted-foreground italic">None</span>
+          )}
+        </div>
+        <div>
+          <span className="font-medium text-red-600 dark:text-red-400">Denied: </span>
+          {denied.length > 0 ? (
+            <span className="text-muted-foreground">{denied.join(', ')}</span>
+          ) : (
+            <span className="text-muted-foreground italic">None</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const DonutChart = ({
     label,
     counts,
@@ -1027,16 +1097,30 @@ export default function ConsentPreferencesPage() {
                 </div>
 
                 <div className="mt-6 pt-6 border-t border-border grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  <DonutChart
-                    label="Media Usage Categories"
-                    counts={currentVersionMediaCounts}
-                    total={10}
-                  />
-                  <DonutChart
-                    label="Content Type Restrictions"
-                    counts={currentVersionContentCounts}
-                    total={10}
-                  />
+                  <div>
+                    <DonutChart
+                      label="Media Usage Categories"
+                      counts={currentVersionMediaCounts}
+                      total={10}
+                    />
+                    {currentConsent?.policy?.mediaUsage &&
+                      renderPermissionList(
+                        currentConsent.policy.mediaUsage as Record<string, PermissionLevel>,
+                        MEDIA_USAGE_LABELS
+                      )}
+                  </div>
+                  <div>
+                    <DonutChart
+                      label="Content Type Restrictions"
+                      counts={currentVersionContentCounts}
+                      total={10}
+                    />
+                    {currentConsent?.policy?.contentTypes &&
+                      renderPermissionList(
+                        currentConsent.policy.contentTypes as Record<string, PermissionLevel>,
+                        CONTENT_TYPE_LABELS
+                      )}
+                  </div>
                 </div>
 
                 <div className="mt-4 rounded-lg border border-border bg-background/40 p-4">

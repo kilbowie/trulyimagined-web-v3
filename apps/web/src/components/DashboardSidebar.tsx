@@ -342,37 +342,7 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
         },
       ],
     },
-    {
-      groupTitle: 'Agency',
-      show: hasAgentRole,
-      items: [
-        {
-          title: 'Agent Dashboard',
-          href: '/dashboard/agent',
-          icon: Users,
-          show: hasAgentRole,
-        },
-        {
-          title: 'Agency Profile',
-          href: '/dashboard/agent/profile',
-          icon: UserCircle,
-          show: hasAgentRole,
-        },
-        {
-          title: 'Representation Requests',
-          href: '/dashboard/agent/requests',
-          icon: MessageCircle,
-          show: hasAgentRole,
-          badge: hasAgentRole ? notificationCounts.pendingRepresentationRequests : 0,
-        },
-        {
-          title: 'My Roster',
-          href: '/dashboard/agent/roster',
-          icon: FileText,
-          show: hasAgentRole,
-        },
-      ],
-    },
+
     {
       groupTitle: 'Admin',
       show: hasAdminRole,
@@ -471,6 +441,125 @@ export function DashboardSidebar({ userName, roles = [] }: SidebarProps) {
               );
             })}
         </div>
+
+        {/* Agent Navigation Section */}
+        {hasAgentRole && (
+          <div className="mt-4 pt-4 border-t border-slate-800">
+            {isCollapsed ? (
+              <div className="space-y-1">
+                {[
+                  { title: 'Agent Dashboard', href: '/dashboard/agent', icon: Users },
+                  { title: 'Agency Profile', href: '/dashboard/agent/profile', icon: UserCircle },
+                  { title: 'My Roster', href: '/dashboard/agent/roster', icon: FileText },
+                  {
+                    title: 'Representation Requests',
+                    href: '/dashboard/agent/requests',
+                    icon: MessageCircle,
+                    badge: notificationCounts.pendingRepresentationRequests,
+                  },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => triggerDashboardTransition(item.href)}
+                      className={cn(
+                        'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
+                        isActive
+                          ? 'bg-slate-800 text-white'
+                          : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                      )}
+                      title={item.title}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {(item.badge ?? 0) > 0 && (
+                        <span className="absolute top-1 right-1 h-2.5 w-2.5 rounded-full bg-red-500" />
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {/* Agent Dashboard */}
+                <Link
+                  href="/dashboard/agent"
+                  onClick={() => triggerDashboardTransition('/dashboard/agent')}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                    pathname === '/dashboard/agent'
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                  )}
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Agent Dashboard</span>
+                </Link>
+                {/* Agency Profile */}
+                <Link
+                  href="/dashboard/agent/profile"
+                  onClick={() => triggerDashboardTransition('/dashboard/agent/profile')}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                    pathname === '/dashboard/agent/profile'
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                  )}
+                >
+                  <UserCircle className="h-4 w-4" />
+                  <span>Agency Profile</span>
+                </Link>
+                {/* Separator */}
+                <div className="my-2 border-t border-slate-700" />
+                {/* Representation sub-section header */}
+                <div className="px-3 py-1 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Representation
+                </div>
+                {/* My Roster */}
+                <Link
+                  href="/dashboard/agent/roster"
+                  onClick={() => triggerDashboardTransition('/dashboard/agent/roster')}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                    pathname === '/dashboard/agent/roster' ||
+                      pathname.startsWith('/dashboard/agent/roster/')
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                  )}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span>My Roster</span>
+                </Link>
+                {/* Representation Requests */}
+                <Link
+                  href="/dashboard/agent/requests"
+                  onClick={() => triggerDashboardTransition('/dashboard/agent/requests')}
+                  className={cn(
+                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
+                    pathname === '/dashboard/agent/requests'
+                      ? 'bg-slate-800 text-white'
+                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                  )}
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  <span className="flex-1">Representation Requests</span>
+                  {notificationCounts.pendingRepresentationRequests > 0 && (
+                    <Badge
+                      variant="destructive"
+                      className="ml-auto h-5 min-w-5 rounded-full px-1.5 text-xs font-medium"
+                    >
+                      {notificationCounts.pendingRepresentationRequests > 99
+                        ? '99+'
+                        : notificationCounts.pendingRepresentationRequests}
+                    </Badge>
+                  )}
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Grouped Navigation Items */}
         <div className="pt-4">

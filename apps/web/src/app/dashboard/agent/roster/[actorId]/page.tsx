@@ -6,6 +6,53 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+type PermissionLevel = 'allow' | 'require_approval' | 'deny';
+
+interface ConsentPolicy {
+  mediaUsage: {
+    film: PermissionLevel;
+    television: PermissionLevel;
+    streaming: PermissionLevel;
+    gaming: PermissionLevel;
+    voiceReplication: PermissionLevel;
+    virtualReality: PermissionLevel;
+    socialMedia: PermissionLevel;
+    advertising: PermissionLevel;
+    merchandise: PermissionLevel;
+    livePerformance: PermissionLevel;
+  };
+  contentTypes: {
+    explicit: PermissionLevel;
+    political: PermissionLevel;
+    religious: PermissionLevel;
+    violence: PermissionLevel;
+    alcohol: PermissionLevel;
+    tobacco: PermissionLevel;
+    gambling: PermissionLevel;
+    pharmaceutical: PermissionLevel;
+    firearms: PermissionLevel;
+    adultContent: PermissionLevel;
+  };
+  territories?: {
+    allowed: string[];
+    denied: string[];
+  };
+  aiControls?: {
+    trainingAllowed: boolean;
+    syntheticGenerationAllowed: boolean;
+    biometricAnalysisAllowed: boolean;
+  };
+  usageBlocked?: boolean;
+}
 
 interface RosterActor {
   relationship_id: string;
@@ -34,7 +81,7 @@ interface ConsentLedgerEntry {
   status: string;
   reason: string | null;
   created_at: string;
-  policy: Record<string, unknown>;
+  policy: ConsentPolicy;
 }
 
 interface LicensingRequest {
@@ -62,6 +109,32 @@ interface License {
   revocation_reason: string | null;
 }
 
+const MEDIA_USAGE_LABELS: Record<string, string> = {
+  film: 'Film',
+  television: 'Television',
+  streaming: 'Streaming Platforms',
+  gaming: 'Gaming',
+  voiceReplication: 'Voice Replication',
+  virtualReality: 'Virtual Reality',
+  socialMedia: 'Social Media',
+  advertising: 'Advertising',
+  merchandise: 'Merchandise',
+  livePerformance: 'Live Performance',
+};
+
+const CONTENT_TYPE_LABELS: Record<string, string> = {
+  explicit: 'Explicit Content',
+  political: 'Political Content',
+  religious: 'Religious Content',
+  violence: 'Violence',
+  alcohol: 'Alcohol',
+  tobacco: 'Tobacco',
+  gambling: 'Gambling',
+  pharmaceutical: 'Pharmaceutical',
+  firearms: 'Firearms',
+  adultContent: 'Adult Content',
+};
+
 function formatDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-GB', {
@@ -81,6 +154,143 @@ function StatusBadge({ status }: { status: string }) {
   return <Badge variant={variant}>{status}</Badge>;
 }
 
+function DonutChart({
+  label,
+  counts,
+  total,
+}: {
+  label: string;
+  counts: { allow: number; require_approval: number; deny: number };
+  total: number;
+}) {
+  const allowPct = (counts.allow / total) * 100;
+  const approvalPct = (counts.require_approval / total) * 100;
+
+  return (
+    <div className="rounded-lg border border-border bg-background/40 p-4">
+      <h3 className="text-sm font-semibold text-foreground mb-3">{label}</h3>
+      <div className="flex items-center gap-4">
+        <div className="relative h-20 w-20" aria-hidden="true">
+          <svg viewBox="0 0 42 42" className="h-20 w-20 -rotate-90">
+            <circle
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="transparent"
+              stroke="hsl(var(--muted))"
+              strokeWidth="6"
+            />
+            <circle
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="transparent"
+              stroke="#22c55e"
+              strokeWidth="6"
+              strokeDasharray={`${allowPct} ${100 - allowPct}`}
+              strokeDashoffset="0"
+            />
+            <circle
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="transparent"
+              stroke="#f59e0b"
+              strokeWidth="6"
+              strokeDasharray={`${approvalPct} ${100 - approvalPct}`}
+              strokeDashoffset={`-${allowPct}`}
+            />
+            <circle
+              cx="21"
+              cy="21"
+              r="15.915"
+              fill="transparent"
+              stroke="#ef4444"
+              strokeWidth="6"
+              strokeDasharray={`${100 - allowPct - approvalPct} ${allowPct + approvalPct}`}
+              strokeDashoffset={`-${allowPct + approvalPct}`}
+            />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-xs font-semibold text-foreground">{total}</span>
+          </div>
+        </div>
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-green-500" />
+            <span>Allowed: {counts.allow}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <span>Requires Approval: {counts.require_approval}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <span className="h-2 w-2 rounded-full bg-red-500" />
+            <span>Denied: {counts.deny}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PermissionList({
+  items,
+  labels,
+}: {
+  items: Record<string, PermissionLevel>;
+  labels: Record<string, string>;
+}) {
+  const allowed = Object.entries(items)
+    .filter(([, v]) => v === 'allow')
+    .map(([k]) => labels[k] ?? k);
+  const requiresApproval = Object.entries(items)
+    .filter(([, v]) => v === 'require_approval')
+    .map(([k]) => labels[k] ?? k);
+  const denied = Object.entries(items)
+    .filter(([, v]) => v === 'deny')
+    .map(([k]) => labels[k] ?? k);
+
+  return (
+    <div className="mt-3 space-y-2 text-sm">
+      <div>
+        <span className="font-medium text-green-600 dark:text-green-400">Allowed: </span>
+        {allowed.length > 0 ? (
+          <span className="text-muted-foreground">{allowed.join(', ')}</span>
+        ) : (
+          <span className="text-muted-foreground italic">None</span>
+        )}
+      </div>
+      <div>
+        <span className="font-medium text-amber-600 dark:text-amber-400">Requires Approval: </span>
+        {requiresApproval.length > 0 ? (
+          <span className="text-muted-foreground">{requiresApproval.join(', ')}</span>
+        ) : (
+          <span className="text-muted-foreground italic">None</span>
+        )}
+      </div>
+      <div>
+        <span className="font-medium text-red-600 dark:text-red-400">Denied: </span>
+        {denied.length > 0 ? (
+          <span className="text-muted-foreground">{denied.join(', ')}</span>
+        ) : (
+          <span className="text-muted-foreground italic">None</span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function getPermissionCounts(values: PermissionLevel[]) {
+  return values.reduce(
+    (acc, item) => {
+      acc[item] += 1;
+      return acc;
+    },
+    { allow: 0, require_approval: 0, deny: 0 }
+  );
+}
+
 export default function AgentActorDetailsPage() {
   const router = useRouter();
   const params = useParams<{ actorId: string }>();
@@ -97,6 +307,7 @@ export default function AgentActorDetailsPage() {
   const [licensingRequests, setLicensingRequests] = useState<LicensingRequest[]>([]);
   const [licenses, setLicenses] = useState<License[]>([]);
   const [unlinking, setUnlinking] = useState(false);
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
 
   const actorName = useMemo(() => {
     if (!actor) return 'Actor';
@@ -104,6 +315,22 @@ export default function AgentActorDetailsPage() {
       actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim() || 'Actor'
     );
   }, [actor]);
+
+  // The current consent version is the one with the highest version number (first in DESC order)
+  const currentConsent = useMemo(() => {
+    if (consentLedger.length === 0) return null;
+    return consentLedger[0];
+  }, [consentLedger]);
+
+  const currentMediaCounts = useMemo(() => {
+    if (!currentConsent?.policy?.mediaUsage) return { allow: 0, require_approval: 0, deny: 0 };
+    return getPermissionCounts(Object.values(currentConsent.policy.mediaUsage));
+  }, [currentConsent]);
+
+  const currentContentCounts = useMemo(() => {
+    if (!currentConsent?.policy?.contentTypes) return { allow: 0, require_approval: 0, deny: 0 };
+    return getPermissionCounts(Object.values(currentConsent.policy.contentTypes));
+  }, [currentConsent]);
 
   useEffect(() => {
     const loadDetails = async () => {
@@ -159,13 +386,6 @@ export default function AgentActorDetailsPage() {
       return;
     }
 
-    const confirmed = window.confirm(
-      'Are you sure you want to remove this actor from your roster?'
-    );
-    if (!confirmed) {
-      return;
-    }
-
     try {
       setUnlinking(true);
       setError(null);
@@ -184,6 +404,7 @@ export default function AgentActorDetailsPage() {
       setError(unlinkError instanceof Error ? unlinkError.message : 'Failed to unlink actor');
     } finally {
       setUnlinking(false);
+      setRemoveDialogOpen(false);
     }
   };
 
@@ -200,10 +421,40 @@ export default function AgentActorDetailsPage() {
             Manage consent and licensing history for this actor.
           </p>
         </div>
-        <Button variant="outline" disabled={unlinking} onClick={removeFromRoster}>
+        <Button
+          variant="destructive"
+          disabled={unlinking}
+          onClick={() => setRemoveDialogOpen(true)}
+        >
           {unlinking ? 'Removing...' : 'Remove from Roster'}
         </Button>
       </div>
+
+      {/* Remove confirmation dialog */}
+      <Dialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove from Roster</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove{' '}
+              <span className="font-semibold text-foreground">{actorName}</span> from your roster?
+              This will end the representation relationship. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setRemoveDialogOpen(false)}
+              disabled={unlinking}
+            >
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={removeFromRoster} disabled={unlinking}>
+              {unlinking ? 'Removing...' : 'Yes, Remove'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {error && (
         <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -228,6 +479,71 @@ export default function AgentActorDetailsPage() {
         </TabsList>
 
         <TabsContent value="consent" className="space-y-4">
+          {/* Current Consent Version */}
+          {currentConsent && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Current Consent Version</CardTitle>
+                <CardDescription>
+                  Active consent policy for this actor — read-only view.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Version</div>
+                    <div className="text-2xl font-bold text-primary">v{currentConsent.version}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
+                    <div className="text-base font-semibold">{formatDate(currentConsent.created_at)}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-1">Status</div>
+                    <StatusBadge status={currentConsent.status} />
+                  </div>
+                </div>
+
+                {currentConsent.policy?.usageBlocked && (
+                  <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3">
+                    <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                      Usage is currently blocked by this actor.
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <div>
+                    <DonutChart
+                      label="Media Usage Categories"
+                      counts={currentMediaCounts}
+                      total={10}
+                    />
+                    {currentConsent.policy?.mediaUsage && (
+                      <PermissionList
+                        items={currentConsent.policy.mediaUsage}
+                        labels={MEDIA_USAGE_LABELS}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <DonutChart
+                      label="Content Type Restrictions"
+                      counts={currentContentCounts}
+                      total={10}
+                    />
+                    {currentConsent.policy?.contentTypes && (
+                      <PermissionList
+                        items={currentConsent.policy.contentTypes}
+                        labels={CONTENT_TYPE_LABELS}
+                      />
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Current Consent Ledger Entries</CardTitle>

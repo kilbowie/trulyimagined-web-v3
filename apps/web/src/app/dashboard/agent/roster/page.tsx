@@ -1,9 +1,18 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Search, X } from 'lucide-react';
 
 interface RosterActor {
   relationship_id: string;
@@ -21,6 +30,8 @@ export default function AgentRosterPage() {
   const [roster, setRoster] = useState<RosterActor[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     const loadRoster = async () => {
@@ -45,6 +56,41 @@ export default function AgentRosterPage() {
     loadRoster();
   }, []);
 
+  const uniqueStatuses = useMemo(() => {
+    const statuses = Array.from(new Set(roster.map((a) => a.verification_status).filter(Boolean)));
+    return statuses.sort();
+  }, [roster]);
+
+  const filteredRoster = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return roster.filter((actor) => {
+      const displayName = (
+        actor.stage_name ||
+        `${actor.first_name || ''} ${actor.last_name || ''}`.trim() ||
+        ''
+      ).toLowerCase();
+      const registryId = (actor.registry_id || '').toLowerCase();
+      const location = (actor.location || '').toLowerCase();
+      const verificationStatus = (actor.verification_status || '').toLowerCase();
+      const matchesQuery =
+        !q ||
+        displayName.includes(q) ||
+        registryId.includes(q) ||
+        location.includes(q) ||
+        verificationStatus.includes(q);
+      const matchesStatus =
+        statusFilter === 'all' || actor.verification_status === statusFilter;
+      return matchesQuery && matchesStatus;
+    });
+  }, [roster, searchQuery, statusFilter]);
+
+  const hasActiveFilters = searchQuery.trim() !== '' || statusFilter !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+  };
+
   if (loading) {
     return <div className="py-12 text-center text-muted-foreground">Loading roster...</div>;
   }
@@ -56,7 +102,52 @@ export default function AgentRosterPage() {
         <p className="text-muted-foreground mt-2">Actors currently linked to your agency.</p>
       </div>
 
-      {error && <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+
+      {/* Search & Filter Bar */}
+      {roster.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, registry ID, location…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="All statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All statuses</SelectItem>
+              {uniqueStatuses.map((status) => (
+                <SelectItem key={status} value={status} className="capitalize">
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {hasActiveFilters && (
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-4 w-4" />
+              Clear
+            </button>
+          )}
+          <span className="text-sm text-muted-foreground whitespace-nowrap">
+            {filteredRoster.length} of {roster.length} actors
+          </span>
+        </div>
+      )}
 
       {roster.length === 0 ? (
         <Card>
@@ -64,9 +155,15 @@ export default function AgentRosterPage() {
             No represented actors yet.
           </CardContent>
         </Card>
+      ) : filteredRoster.length === 0 ? (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No actors match your search.
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {roster.map((actor) => {
+          {filteredRoster.map((actor) => {
             const displayName =
               actor.stage_name ||
               `${actor.first_name || ''} ${actor.last_name || ''}`.trim() ||
