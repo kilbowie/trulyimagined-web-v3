@@ -38,9 +38,19 @@ export async function GET() {
         a.last_name,
         a.verification_status,
         a.profile_image_url,
-        a.location
+        a.location,
+        lc.version AS consent_version,
+        lc.policy AS consent_policy,
+        COALESCE((lc.policy->>'usageBlocked')::boolean, false) AS consent_usage_blocked
        FROM actor_agent_relationships r
        INNER JOIN actors a ON a.id = r.actor_id
+       LEFT JOIN LATERAL (
+         SELECT cl.version, cl.policy
+         FROM consent_ledger cl
+         WHERE cl.actor_id = a.id
+         ORDER BY cl.version DESC
+         LIMIT 1
+       ) lc ON TRUE
        WHERE r.agent_id = $1
          AND r.ended_at IS NULL
          AND a.deleted_at IS NULL

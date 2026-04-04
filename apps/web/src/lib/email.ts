@@ -644,4 +644,44 @@ export async function sendFeedbackNotificationEmail(
   });
 }
 
+/**
+ * Agency team invitation email (NoReply)
+ */
+export async function sendAgencyTeamInviteEmail(options: {
+  toEmail: string;
+  recipientName: string;
+  agencyName: string;
+  memberRole: 'Agent' | 'Assistant';
+  inviteLink: string;
+}) {
+  const subject = `You're invited to join ${options.agencyName} on Truly Imagined`;
+
+  const bodyContent = `
+    <p>Hi ${options.recipientName},</p>
+    <p>${options.agencyName} has invited you to join their team on <strong>Truly Imagined</strong> as <strong>${options.memberRole}</strong>.</p>
+    <p>Next steps:</p>
+    <ul style="line-height: 1.8; color: #4a4a4a;">
+      <li>Create your account or sign in</li>
+      <li>Complete your profile setup</li>
+      <li>Join the agency workspace and begin collaborating</li>
+    </ul>
+    <p>Use the button below to accept your invitation and continue setup.</p>
+  `;
+
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Accept Invitation',
+    options.inviteLink
+  );
+
+  return await sendEmail({
+    to: options.toEmail,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('agency-team-invite', options.memberRole.toLowerCase()),
+  });
+}
+
 export { sendEmail };

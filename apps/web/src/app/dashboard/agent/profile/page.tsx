@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useEffect, useState } from 'react';
+import { FormEvent, useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -45,8 +45,10 @@ const initialForm = {
 };
 
 export default function AgentProfilePage() {
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [profile, setProfile] = useState<AgentProfile | null>(null);
@@ -93,6 +95,50 @@ export default function AgentProfilePage() {
 
   const updateField = (field: keyof typeof initialForm, value: string) => {
     setForm((current) => ({ ...current, [field]: value }));
+  };
+
+  const uploadProfilePhoto = async (file: File) => {
+    try {
+      setUploadingPhoto(true);
+      setError(null);
+      setSuccess(null);
+
+      const body = new FormData();
+      body.append('file', file);
+
+      const response = await fetch('/api/agent-profile/upload-photo', {
+        method: 'POST',
+        body,
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || 'Failed to upload profile photo');
+      }
+
+      setForm((current) => ({
+        ...current,
+        profileImageUrl: payload.profileImageUrl,
+      }));
+
+      setProfile((current) =>
+        current
+          ? {
+              ...current,
+              profile_image_url: payload.profileImageUrl,
+            }
+          : current
+      );
+
+      setSuccess('Profile photo uploaded successfully.');
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : 'Failed to upload photo');
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) {
+        photoInputRef.current.value = '';
+      }
+    }
   };
 
   const onSubmit = async (event: FormEvent) => {
@@ -175,6 +221,51 @@ export default function AgentProfilePage() {
             <CardDescription>These details are visible to linked actors and admins.</CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2 rounded-md border p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="h-20 w-20 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
+                  {form.profileImageUrl ? (
+                    <img
+                      src={form.profileImageUrl}
+                      alt="Agency profile"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">No photo</span>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Profile Photo</p>
+                  <p className="text-xs text-muted-foreground">
+                    Upload a JPG, PNG, or WEBP image (max 10MB).
+                  </p>
+                  <Label htmlFor="profilePhotoUpload" className="sr-only">
+                    Upload profile photo
+                  </Label>
+                  <input
+                    id="profilePhotoUpload"
+                    ref={photoInputRef}
+                    type="file"
+                    title="Upload profile photo"
+                    aria-label="Upload profile photo"
+                    accept="image/jpeg,image/jpg,image/png,image/webp"
+                    className="text-sm"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        void uploadProfilePhoto(file);
+                      }
+                    }}
+                    disabled={uploadingPhoto}
+                  />
+                  {uploadingPhoto && (
+                    <p className="text-xs text-muted-foreground">Uploading photo...</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <div className="sm:col-span-2 space-y-2">
               <Label htmlFor="agencyName">Agency Name *</Label>
               <Input
@@ -210,15 +301,6 @@ export default function AgentProfilePage() {
                 value={form.websiteUrl}
                 onChange={(event) => updateField('websiteUrl', event.target.value)}
                 placeholder="https://youragency.com"
-              />
-            </div>
-            <div className="sm:col-span-2 space-y-2">
-              <Label htmlFor="profileImageUrl">Profile Image URL</Label>
-              <Input
-                id="profileImageUrl"
-                value={form.profileImageUrl}
-                onChange={(event) => updateField('profileImageUrl', event.target.value)}
-                placeholder="https://..."
               />
             </div>
           </CardContent>

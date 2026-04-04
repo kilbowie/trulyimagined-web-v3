@@ -496,7 +496,9 @@ export default function AgentActorDetailsPage() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">Last Updated</div>
-                    <div className="text-base font-semibold">{formatDate(currentConsent.created_at)}</div>
+                    <div className="text-base font-semibold">
+                      {formatDate(currentConsent.created_at)}
+                    </div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground mb-1">Status</div>
@@ -538,6 +540,32 @@ export default function AgentActorDetailsPage() {
                         labels={CONTENT_TYPE_LABELS}
                       />
                     )}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-border/60 bg-background/50 p-4">
+                  <h3 className="text-sm font-semibold mb-3">Geographic Territories</h3>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="font-medium text-green-600 dark:text-green-400">Allowed: </span>
+                      {currentConsent.policy?.territories?.allowed?.length ? (
+                        <span className="text-muted-foreground">
+                          {currentConsent.policy.territories.allowed.join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">No explicit allowed list</span>
+                      )}
+                    </div>
+                    <div>
+                      <span className="font-medium text-red-600 dark:text-red-400">Denied: </span>
+                      {currentConsent.policy?.territories?.denied?.length ? (
+                        <span className="text-muted-foreground">
+                          {currentConsent.policy.territories.denied.join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">No denied territories</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>

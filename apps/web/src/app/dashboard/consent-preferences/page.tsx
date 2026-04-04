@@ -526,7 +526,9 @@ export default function ConsentPreferencesPage() {
           )}
         </div>
         <div>
-          <span className="font-medium text-amber-600 dark:text-amber-400">Requires Approval: </span>
+          <span className="font-medium text-amber-600 dark:text-amber-400">
+            Requires Approval:{' '}
+          </span>
           {requiresApproval.length > 0 ? (
             <span className="text-muted-foreground">{requiresApproval.join(', ')}</span>
           ) : (
