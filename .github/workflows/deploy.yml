@@ -124,6 +124,10 @@ jobs:
         run: pnpm test
         continue-on-error: true
 
+      - name: Run web integration contract tests
+        if: github.event_name == 'pull_request'
+        run: pnpm --filter @trulyimagined/web test:integration
+
   # Job 4: Build Check
   build:
     name: Build Check

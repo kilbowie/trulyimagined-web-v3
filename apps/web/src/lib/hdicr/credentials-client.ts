@@ -2,20 +2,53 @@ import { pool } from '@/lib/db';
 import { getStatusListCredential, updateCredentialStatus } from '@/lib/status-list-manager';
 import { allocateStatusIndex } from '@/lib/status-list-manager';
 import { encryptJSON } from '@trulyimagined/utils';
-import { warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
 
 warnIfRemoteModeEnabled('credentials');
 
-export async function getUserProfileByAuth0UserId(auth0UserId: string) {
-  const profileResult = await pool.query(
-    `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
-    [auth0UserId]
-  );
+type CredentialListRow = {
+  id: string;
+  credential_type: string;
+  credential_json: unknown;
+  issuer_did: string | null;
+  holder_did: string | null;
+  issued_at: string | null;
+  expires_at: string | null;
+  is_revoked: boolean;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+  verification_method: string | null;
+  proof_type: string | null;
+};
 
-  return profileResult.rows[0] || null;
+function mapRemoteCredentialToRow(item: Record<string, unknown>): CredentialListRow | null {
+  const metadata = (item.metadata ?? {}) as Record<string, unknown>;
+
+  if (typeof metadata.id !== 'string' || typeof metadata.credentialType !== 'string') {
+    return null;
+  }
+
+  return {
+    id: metadata.id,
+    credential_type: metadata.credentialType,
+    credential_json: item.credential,
+    issuer_did: (metadata.issuerDid as string | null) ?? null,
+    holder_did: (metadata.holderDid as string | null) ?? null,
+    issued_at: (metadata.issuedAt as string | null) ?? null,
+    expires_at: (metadata.expiresAt as string | null) ?? null,
+    is_revoked: Boolean(metadata.isRevoked),
+    revoked_at: (metadata.revokedAt as string | null) ?? null,
+    revocation_reason: (metadata.revocationReason as string | null) ?? null,
+    verification_method: (metadata.verificationMethod as string | null) ?? null,
+    proof_type: (metadata.proofType as string | null) ?? null,
+  };
 }
 
-export async function listCredentialsByProfileId(options: {
+async function listCredentialsByProfileIdLocal(options: {
   userProfileId: string;
   includeRevoked: boolean;
   includeExpired: boolean;
@@ -49,7 +82,69 @@ export async function listCredentialsByProfileId(options: {
   sql += ' ORDER BY issued_at DESC';
 
   const result = await pool.query(sql, [options.userProfileId]);
-  return result.rows;
+  return result.rows as CredentialListRow[];
+}
+
+export async function getUserProfileByAuth0UserId(auth0UserId: string) {
+  const profileResult = await pool.query(
+    `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
+    [auth0UserId]
+  );
+
+  return profileResult.rows[0] || null;
+}
+
+export async function listCredentialsByProfileId(options: {
+  userProfileId: string;
+  includeRevoked: boolean;
+  includeExpired: boolean;
+}) {
+  const mode = getHdicrAdapterMode('credentials');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote' && baseUrl) {
+    try {
+      const url = new URL('/credentials/list', baseUrl);
+      url.searchParams.set('userProfileId', options.userProfileId);
+      url.searchParams.set('includeRevoked', String(options.includeRevoked));
+      url.searchParams.set('includeExpired', String(options.includeExpired));
+
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          rows?: CredentialListRow[];
+          credentials?: Array<Record<string, unknown>>;
+        };
+
+        if (Array.isArray(payload.rows)) {
+          return payload.rows;
+        }
+
+        if (Array.isArray(payload.credentials)) {
+          return payload.credentials.map(mapRemoteCredentialToRow).filter(Boolean) as CredentialListRow[];
+        }
+
+        console.warn(
+          '[HDICR] Remote credentials list returned an unexpected payload. Falling back to local adapter.'
+        );
+      } else {
+        console.warn(
+          `[HDICR] Remote credentials list failed with status ${response.status}. Falling back to local adapter.`
+        );
+      }
+    } catch (error) {
+      console.warn('[HDICR] Remote credentials list request failed. Falling back to local adapter.', error);
+    }
+  }
+
+  return listCredentialsByProfileIdLocal(options);
 }
 
 export async function getCredentialById(credentialId: string) {
