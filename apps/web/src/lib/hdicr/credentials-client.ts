@@ -176,7 +176,7 @@ export async function getCredentialById(credentialId: string) {
   return credentialResult.rows[0] || null;
 }
 
-export async function revokeCredentialById(credentialId: string, reason?: string) {
+async function revokeCredentialByIdLocal(credentialId: string, reason?: string) {
   const credential = await pool.query(
     `SELECT user_profile_id, is_revoked, credential_type
      FROM verifiable_credentials
@@ -244,6 +244,66 @@ export async function revokeCredentialById(credentialId: string, reason?: string
   };
 }
 
+export async function revokeCredentialById(credentialId: string, reason?: string) {
+  const mode = getHdicrAdapterMode('credentials');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote' && baseUrl) {
+    try {
+      const url = new URL('/credentials/revoke', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          credentialId,
+          reason,
+        }),
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          found?: boolean;
+          alreadyRevoked?: boolean;
+          hasStatusEntry?: boolean;
+          revokedAt?: string | null;
+          ownerUserProfileId?: string;
+        };
+
+        if (payload.found !== undefined) {
+          return {
+            found: Boolean(payload.found),
+            alreadyRevoked: Boolean(payload.alreadyRevoked),
+            hasStatusEntry: Boolean(payload.hasStatusEntry),
+            revokedAt: payload.revokedAt ?? null,
+            ownerUserProfileId: payload.ownerUserProfileId,
+          };
+        }
+
+        console.warn(
+          '[HDICR] Remote credential revoke returned an unexpected payload. Falling back to local adapter.'
+        );
+      } else if (response.status === 404) {
+        return { found: false as const, alreadyRevoked: false, hasStatusEntry: false, revokedAt: null };
+      } else {
+        console.warn(
+          `[HDICR] Remote credential revoke failed with status ${response.status}. Falling back to local adapter.`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        '[HDICR] Remote credential revoke request failed. Falling back to local adapter.',
+        error
+      );
+    }
+  }
+
+  return revokeCredentialByIdLocal(credentialId, reason);
+}
+
 export async function getStatusListById(listId: string) {
   return getStatusListCredential(pool, listId);
 }
@@ -290,7 +350,7 @@ export async function listActiveIdentityLinksByUserProfileId(userProfileId: stri
   return linksResult.rows;
 }
 
-export async function createCredentialPlaceholderRecord(params: {
+async function createCredentialPlaceholderRecordLocal(params: {
   userProfileId: string;
   credentialType: string;
   holderDid: string;
@@ -322,6 +382,55 @@ export async function createCredentialPlaceholderRecord(params: {
   return preInsertResult.rows[0]?.id as string;
 }
 
+export async function createCredentialPlaceholderRecord(params: {
+  userProfileId: string;
+  credentialType: string;
+  holderDid: string;
+}) {
+  const mode = getHdicrAdapterMode('credentials');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote' && baseUrl) {
+    try {
+      const url = new URL('/credentials/create-placeholder', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(params),
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          id?: string;
+        };
+
+        if (typeof payload.id === 'string') {
+          return payload.id;
+        }
+
+        console.warn(
+          '[HDICR] Remote create credential placeholder returned an unexpected payload. Falling back to local adapter.'
+        );
+      } else {
+        console.warn(
+          `[HDICR] Remote create credential placeholder failed with status ${response.status}. Falling back to local adapter.`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        '[HDICR] Remote create credential placeholder request failed. Falling back to local adapter.',
+        error
+      );
+    }
+  }
+
+  return createCredentialPlaceholderRecordLocal(params);
+}
+
 export async function allocateRevocationStatusForCredential(credentialId: string) {
   return allocateStatusIndex(pool, {
     credentialId,
@@ -330,7 +439,7 @@ export async function allocateRevocationStatusForCredential(credentialId: string
   });
 }
 
-export async function finalizeIssuedCredentialRecord(params: {
+async function finalizeIssuedCredentialRecordLocal(params: {
   credentialDbId: string;
   credential: { id: string; validUntil?: string | null };
 }) {
@@ -351,4 +460,42 @@ export async function finalizeIssuedCredentialRecord(params: {
       params.credentialDbId,
     ]
   );
+}
+
+export async function finalizeIssuedCredentialRecord(params: {
+  credentialDbId: string;
+  credential: { id: string; validUntil?: string | null };
+}) {
+  const mode = getHdicrAdapterMode('credentials');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote' && baseUrl) {
+    try {
+      const url = new URL('/credentials/finalize', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify(params),
+        cache: 'no-store',
+      });
+
+      if (response.ok) {
+        return;
+      } else {
+        console.warn(
+          `[HDICR] Remote finalize credential failed with status ${response.status}. Falling back to local adapter.`
+        );
+      }
+    } catch (error) {
+      console.warn(
+        '[HDICR] Remote finalize credential request failed. Falling back to local adapter.',
+        error
+      );
+    }
+  }
+
+  return finalizeIssuedCredentialRecordLocal(params);
 }
