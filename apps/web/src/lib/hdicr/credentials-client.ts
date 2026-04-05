@@ -2,11 +2,15 @@ import { pool } from '@/lib/db';
 import { getStatusListCredential, updateCredentialStatus } from '@/lib/status-list-manager';
 import { allocateStatusIndex } from '@/lib/status-list-manager';
 import { encryptJSON } from '@trulyimagined/utils';
+import { warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
+
+warnIfRemoteModeEnabled('credentials');
 
 export async function getUserProfileByAuth0UserId(auth0UserId: string) {
-  const profileResult = await pool.query(`SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`, [
-    auth0UserId,
-  ]);
+  const profileResult = await pool.query(
+    `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
+    [auth0UserId]
+  );
 
   return profileResult.rows[0] || null;
 }
@@ -87,7 +91,12 @@ export async function revokeCredentialById(credentialId: string, reason?: string
   const credentialRow = credential.rows[0];
 
   if (credentialRow.is_revoked) {
-    return { found: true as const, alreadyRevoked: true as const, hasStatusEntry: false, revokedAt: null };
+    return {
+      found: true as const,
+      alreadyRevoked: true as const,
+      hasStatusEntry: false,
+      revokedAt: null,
+    };
   }
 
   const statusEntryResult = await pool.query(

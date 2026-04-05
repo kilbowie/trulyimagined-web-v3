@@ -2,6 +2,9 @@ import { query } from '@/lib/db';
 import { encryptJSON } from '@trulyimagined/utils';
 import { resolveIdentity } from '@/lib/identity-resolution';
 import { ensureActorRegistryId } from '@/lib/registry-id';
+import { warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
+
+warnIfRemoteModeEnabled('identity');
 
 export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
   const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
