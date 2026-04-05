@@ -1,5 +1,7 @@
 import { pool } from '@/lib/db';
 import { getStatusListCredential, updateCredentialStatus } from '@/lib/status-list-manager';
+import { allocateStatusIndex } from '@/lib/status-list-manager';
+import { encryptJSON } from '@trulyimagined/utils';
 
 export async function getUserProfileByAuth0UserId(auth0UserId: string) {
   const profileResult = await pool.query(`SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`, [
@@ -135,4 +137,109 @@ export async function revokeCredentialById(credentialId: string, reason?: string
 
 export async function getStatusListById(listId: string) {
   return getStatusListCredential(pool, listId);
+}
+
+export async function getIssuanceProfileByAuth0UserId(auth0UserId: string) {
+  const profileResult = await pool.query(
+    `SELECT
+      up.id,
+      up.auth0_user_id,
+      up.email,
+      up.username,
+      up.legal_name,
+      up.professional_name,
+      up.role,
+      up.profile_completed,
+      COALESCE(up.is_verified, FALSE) AS is_verified,
+      a.id AS actor_id,
+      a.verification_status AS actor_verification_status,
+      a.verified_at AS actor_verified_at
+    FROM user_profiles up
+    LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id
+    WHERE up.auth0_user_id = $1`,
+    [auth0UserId]
+  );
+
+  return profileResult.rows[0] || null;
+}
+
+export async function listActiveIdentityLinksByUserProfileId(userProfileId: string) {
+  const linksResult = await pool.query(
+    `SELECT
+      provider,
+      verification_level,
+      assurance_level,
+      verified_at,
+      is_active
+    FROM identity_links
+    WHERE user_profile_id = $1
+      AND is_active = TRUE
+    ORDER BY verified_at DESC`,
+    [userProfileId]
+  );
+
+  return linksResult.rows;
+}
+
+export async function createCredentialPlaceholderRecord(params: {
+  userProfileId: string;
+  credentialType: string;
+  holderDid: string;
+}) {
+  const preInsertResult = await pool.query(
+    `INSERT INTO verifiable_credentials (
+      user_profile_id,
+      credential_type,
+      credential_json,
+      issuer_did,
+      holder_did,
+      issued_at,
+      verification_method,
+      proof_type
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+    RETURNING id`,
+    [
+      params.userProfileId,
+      params.credentialType,
+      {},
+      'did:web:trulyimagined.com',
+      params.holderDid,
+      new Date().toISOString(),
+      'did:web:trulyimagined.com#key-1',
+      'Ed25519Signature2020',
+    ]
+  );
+
+  return preInsertResult.rows[0]?.id as string;
+}
+
+export async function allocateRevocationStatusForCredential(credentialId: string) {
+  return allocateStatusIndex(pool, {
+    credentialId,
+    statusPurpose: 'revocation',
+    statusSize: 1,
+  });
+}
+
+export async function finalizeIssuedCredentialRecord(params: {
+  credentialDbId: string;
+  credential: { id: string; validUntil?: string | null };
+}) {
+  const encryptedCredential = encryptJSON(params.credential);
+  const encryptedCredentialJson = JSON.stringify(encryptedCredential);
+
+  await pool.query(
+    `UPDATE verifiable_credentials
+     SET credential_json = $1,
+         credential_id = $2,
+         expires_at = $3,
+         updated_at = NOW()
+     WHERE id = $4`,
+    [
+      encryptedCredentialJson,
+      params.credential.id,
+      params.credential.validUntil || null,
+      params.credentialDbId,
+    ]
+  );
 }
