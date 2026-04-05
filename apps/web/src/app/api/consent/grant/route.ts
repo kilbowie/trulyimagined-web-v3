@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import { grantConsent } from '@/lib/hdicr/consent-client';
 
 /**
  * POST /api/consent/grant
@@ -44,34 +44,15 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    // Insert into consent_log (append-only)
-    const result = await query(
-      `INSERT INTO consent_log (
-        actor_id, action, consent_type, consent_scope,
-        project_name, project_description,
-        requester_id, requester_type,
-        ip_address, user_agent, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-      RETURNING *`,
-      [
-        actorId,
-        'granted',
-        consentType,
-        JSON.stringify(scope || {}),
-        scope?.projectName || null,
-        scope?.projectDescription || null,
-        session.user.sub,
-        session.user['https://trulyimagined.com/role'] || 'actor',
-        ipAddress,
-        userAgent,
-        JSON.stringify({
-          grantedAt: new Date().toISOString(),
-          source: 'api',
-        }),
-      ]
-    );
-
-    const consentRecord = result.rows[0];
+    const consentRecord = await grantConsent({
+      actorId,
+      consentType,
+      scope,
+      requesterId: session.user.sub,
+      requesterType: session.user['https://trulyimagined.com/role'] || 'actor',
+      ipAddress,
+      userAgent,
+    });
 
     console.log('[CONSENT] Consent granted:', {
       id: consentRecord.id,

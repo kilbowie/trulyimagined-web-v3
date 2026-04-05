@@ -6,8 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
-import { getLatestConsent, getConsentHistory } from '@/lib/consent-ledger';
+import { getCurrentConsentLedger, resolveActorIdByAuth0UserId } from '@/lib/hdicr/consent-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,23 +18,9 @@ export async function GET(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    // 2. Get user profile
-    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
-      auth0UserId,
-    ]);
+    const actorId = await resolveActorIdByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    const profile = profileResult.rows[0];
-
-    // 3. Find actor record
-    const actorResult = await query('SELECT id FROM actors WHERE user_profile_id = $1', [
-      profile.id,
-    ]);
-
-    if (actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({
         current: null,
         history: [],
@@ -43,24 +28,14 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const actorId = actorResult.rows[0].id;
-
     // 4. Get consent data
     const searchParams = request.nextUrl.searchParams;
     const includeHistory = searchParams.get('includeHistory') === 'true';
 
-    const current = await getLatestConsent(actorId);
-    const history = includeHistory ? await getConsentHistory(actorId, 20) : [];
-
-    // 5. If current consent exists, count licenses using this version
-    let licensesOnCurrentVersion = 0;
-    if (current) {
-      const licenseCountResult = await query(
-        'SELECT COUNT(*) as count FROM licenses WHERE consent_ledger_id = $1',
-        [current.id]
-      );
-      licensesOnCurrentVersion = parseInt(licenseCountResult.rows[0].count);
-    }
+    const { current, history, licensesOnCurrentVersion } = await getCurrentConsentLedger(
+      actorId,
+      includeHistory
+    );
 
     return NextResponse.json({
       current,

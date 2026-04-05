@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { getActorByAuth0Id } from '@/lib/representation';
+import {
+  applyLicensingDecision,
+  getLicensingRequestById,
+  resolveActorIdByAuth0UserId,
+} from '@/lib/hdicr/licensing-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -31,29 +34,21 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
-    const actor = await getActorByAuth0Id(user.sub);
-    if (!actor) {
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
+    if (!actorId) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
 
     const { id } = await params;
 
     // Load the licensing request and verify ownership
-    const existing = await query(
-      `SELECT id, actor_id, status, requester_name, project_name
-       FROM licensing_requests
-       WHERE id = $1
-       LIMIT 1`,
-      [id]
-    );
+    const req = await getLicensingRequestById(id);
 
-    if (existing.rows.length === 0) {
+    if (!req) {
       return NextResponse.json({ error: 'Licensing request not found' }, { status: 404 });
     }
 
-    const req = existing.rows[0];
-
-    if (req.actor_id !== actor.id) {
+    if (req.actor_id !== actorId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -81,36 +76,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    let updatedRow;
-
-    if (action === 'approve') {
-      const result = await query(
-        `UPDATE licensing_requests
-         SET status = 'approved',
-             approved_at = NOW(),
-             updated_at = NOW()
-         WHERE id = $1
-           AND actor_id = $2
-           AND status = 'pending'
-         RETURNING *`,
-        [id, actor.id]
-      );
-      updatedRow = result.rows[0];
-    } else {
-      const result = await query(
-        `UPDATE licensing_requests
-         SET status = 'rejected',
-             rejected_at = NOW(),
-             rejection_reason = $3,
-             updated_at = NOW()
-         WHERE id = $1
-           AND actor_id = $2
-           AND status = 'pending'
-         RETURNING *`,
-        [id, actor.id, rejectionReason?.trim() || null]
-      );
-      updatedRow = result.rows[0];
-    }
+    const updatedRow = await applyLicensingDecision(id, actorId, action, rejectionReason);
 
     if (!updatedRow) {
       return NextResponse.json(

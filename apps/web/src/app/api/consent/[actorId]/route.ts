@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import { listConsentRecords } from '@/lib/hdicr/consent-client';
 
 interface ConsentRecord {
   id: string;
@@ -72,38 +72,12 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
     const action = searchParams.get('action');
 
-    // Build query - fetch from database directly
-    let sqlQuery = `
-      SELECT * FROM consent_log 
-      WHERE actor_id = $1
-    `;
-    const queryParams: (string | number)[] = [actorId];
-
-    // Optional filter by action
-    if (action) {
-      sqlQuery += ` AND action = $${queryParams.length + 1}`;
-      queryParams.push(action);
-    }
-
-    sqlQuery += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${
-      queryParams.length + 2
-    }`;
-    queryParams.push(limit, offset);
-
-    // Execute query
-    const result = await query(sqlQuery, queryParams);
-
-    // Get total count (for pagination)
-    let countQuery = `SELECT COUNT(*) FROM consent_log WHERE actor_id = $1`;
-    const countParams: (string | number)[] = [actorId];
-
-    if (action) {
-      countQuery += ` AND action = $2`;
-      countParams.push(action);
-    }
-
-    const countResult = await query(countQuery, countParams);
-    const totalCount = parseInt(countResult.rows[0].count);
+    const { rows, totalCount } = await listConsentRecords({
+      actorId,
+      limit,
+      offset,
+      action: action || undefined,
+    });
 
     // Group consents by current status (active/revoked/expired)
     const activeConsents: ConsentResponse[] = [];
@@ -113,7 +87,7 @@ export async function GET(
     // Map to track latest action per consent type + project
     const latestByTypeProject = new Map<string, ConsentRecord>();
 
-    for (const record of result.rows) {
+    for (const record of rows) {
       const key = `${record.consent_type}:${record.consent_scope?.projectId || 'general'}`;
 
       const existing = latestByTypeProject.get(key);
@@ -153,7 +127,7 @@ export async function GET(
 
     console.log('[CONSENT] List consents:', {
       actorId,
-      totalRecords: result.rows.length,
+      totalRecords: rows.length,
       active: activeConsents.length,
       revoked: revokedConsents.length,
       expired: expiredConsents.length,
@@ -172,7 +146,7 @@ export async function GET(
         revoked: revokedConsents,
         expired: expiredConsents,
       },
-      fullHistory: result.rows.map((record) => ({
+      fullHistory: rows.map((record) => ({
         id: record.id,
         action: record.action,
         consentType: record.consent_type,

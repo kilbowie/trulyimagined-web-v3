@@ -6,8 +6,10 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
-import { getActorLicenses, getLicenseStats } from '@/lib/licensing';
+import {
+  getActorLicensesAndStats,
+  resolveActorIdByAuth0UserId,
+} from '@/lib/hdicr/licensing-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,23 +21,9 @@ export async function GET(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    // 2. Get user profile
-    const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
-      auth0UserId,
-    ]);
+    const actorId = await resolveActorIdByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    const profile = profileResult.rows[0];
-
-    // 3. Find actor record
-    const actorResult = await query('SELECT id FROM actors WHERE user_profile_id = $1', [
-      profile.id,
-    ]);
-
-    if (actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({
         licenses: [],
         stats: {
@@ -48,9 +36,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    const actorId = actorResult.rows[0].id;
-
-    // 4. Get licenses and stats
     const searchParams = request.nextUrl.searchParams;
     const statusFilter = searchParams.get('status') as
       | 'active'
@@ -58,9 +43,7 @@ export async function GET(request: NextRequest) {
       | 'expired'
       | 'suspended'
       | null;
-
-    const licenses = await getActorLicenses(actorId, statusFilter || undefined);
-    const stats = await getLicenseStats(actorId);
+    const { licenses, stats } = await getActorLicensesAndStats(actorId, statusFilter || undefined);
 
     return NextResponse.json({
       licenses,

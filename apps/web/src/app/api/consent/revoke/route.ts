@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import { revokeConsent } from '@/lib/hdicr/consent-client';
 
 /**
  * POST /api/consent/revoke
@@ -44,75 +44,25 @@ export async function POST(request: NextRequest) {
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
 
-    let result;
+    const revokeResult = await revokeConsent({
+      actorId,
+      consentId: consentId || undefined,
+      consentType: consentType || undefined,
+      projectId: projectId || undefined,
+      reason: reason || undefined,
+      ipAddress,
+      userAgent,
+    });
 
-    // Scenario 1: Revoke specific consent by ID
-    if (consentId) {
-      // Fetch the original consent to copy its details
-      const original = await query(
-        `SELECT * FROM consent_log WHERE id = $1 AND actor_id = $2 ORDER BY created_at DESC LIMIT 1`,
-        [consentId, actorId]
-      );
-
-      if (original.rows.length === 0) {
-        return NextResponse.json({ error: 'Consent not found' }, { status: 404 });
-      }
-
-      const originalConsent = original.rows[0];
-
-      // Insert revocation record
-      result = await query(
-        `INSERT INTO consent_log (
-          actor_id, action, consent_type, consent_scope,
-          project_name, project_description,
-          ip_address, user_agent, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING *`,
-        [
-          actorId,
-          'revoked',
-          originalConsent.consent_type,
-          originalConsent.consent_scope,
-          originalConsent.project_name,
-          originalConsent.project_description,
-          ipAddress,
-          userAgent,
-          JSON.stringify({
-            originalConsentId: consentId,
-            reason: reason || 'User requested revocation',
-            revokedAt: new Date().toISOString(),
-          }),
-        ]
-      );
-    }
-    // Scenario 2: Revoke all consents of specific type
-    else if (consentType) {
-      result = await query(
-        `INSERT INTO consent_log (
-          actor_id, action, consent_type, consent_scope,
-          ip_address, user_agent, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING *`,
-        [
-          actorId,
-          'revoked',
-          consentType,
-          JSON.stringify({ projectId: projectId || null }),
-          ipAddress,
-          userAgent,
-          JSON.stringify({
-            reason: reason || 'User revoked all consents of this type',
-            revokedAt: new Date().toISOString(),
-          }),
-        ]
-      );
+    if (revokeResult.notFound) {
+      return NextResponse.json({ error: 'Consent not found' }, { status: 404 });
     }
 
-    if (!result || result.rows.length === 0) {
+    if (!revokeResult.record) {
       return NextResponse.json({ error: 'Failed to create revocation record' }, { status: 500 });
     }
 
-    const revocationRecord = result.rows[0];
+    const revocationRecord = revokeResult.record;
 
     console.log('[CONSENT] Consent revoked:', {
       id: revocationRecord.id,

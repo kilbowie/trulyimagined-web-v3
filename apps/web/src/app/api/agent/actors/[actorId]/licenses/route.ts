@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
+import {
+  getAgentActorLicensingData,
+  verifyActiveRepresentation,
+} from '@/lib/hdicr/licensing-client';
 
 interface RouteParams {
   params: Promise<{ actorId: string }>;
@@ -33,43 +36,17 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<NextR
 
     const { actorId } = await params;
 
-    const relationship = await query(
-      `SELECT 1
-       FROM actor_agent_relationships
-       WHERE actor_id = $1
-         AND agent_id = $2
-         AND ended_at IS NULL
-       LIMIT 1`,
-      [actorId, agent.id]
-    );
+    const hasRelationship = await verifyActiveRepresentation(actorId, agent.id);
 
-    if (relationship.rows.length === 0) {
+    if (!hasRelationship) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const requests = await query(
-      `SELECT *
-       FROM licensing_requests
-       WHERE actor_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [actorId]
-    );
-
-    const licenses = await query(
-      `SELECT
-         l.*, ac.name AS api_client_name
-       FROM licenses l
-       LEFT JOIN api_clients ac ON ac.id = l.api_client_id
-       WHERE l.actor_id = $1
-       ORDER BY l.issued_at DESC
-       LIMIT 100`,
-      [actorId]
-    );
+    const { licensingRequests, licenses } = await getAgentActorLicensingData(actorId);
 
     return NextResponse.json({
-      licensingRequests: requests.rows,
-      licenses: licenses.rows,
+      licensingRequests,
+      licenses,
     });
   } catch (error) {
     console.error('[AGENT_ACTOR_LICENSES] GET error:', error);

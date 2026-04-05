@@ -9,13 +9,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
 import { z } from 'zod';
 import {
-  createConsentEntry,
+  createConsentLedgerEntry,
+  resolveActorContextByAuth0UserId,
   type ConsentPolicy,
-  type CreateConsentEntryParams,
-} from '@/lib/consent-ledger';
+} from '@/lib/hdicr/consent-client';
 
 // ===========================================
 // REQUEST SCHEMA
@@ -83,31 +82,16 @@ export async function POST(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    // 2. Get user profile
-    const profileResult = await query(
-      'SELECT id, role FROM user_profiles WHERE auth0_user_id = $1',
-      [auth0UserId]
-    );
+    const actorContext = await resolveActorContextByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
-      return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
-    }
-
-    const profile = profileResult.rows[0];
-
-    // 3. Find actor record
-    const actorResult = await query('SELECT id FROM actors WHERE user_profile_id = $1', [
-      profile.id,
-    ]);
-
-    if (actorResult.rows.length === 0) {
+    if (!actorContext) {
       return NextResponse.json(
         { error: 'Actor record not found. Only actors can manage consent.' },
         { status: 403 }
       );
     }
 
-    const actorId = actorResult.rows[0].id;
+    const { actorId, userProfileId } = actorContext;
 
     // 4. Parse request body
     const body = await request.json();
@@ -133,16 +117,14 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || undefined;
 
     // 6. Create consent entry
-    const params: CreateConsentEntryParams = {
+    const entry = await createConsentLedgerEntry({
       actorId,
       policy: policy as ConsentPolicy,
       reason,
-      updatedBy: profile.id,
+      updatedBy: userProfileId,
       ipAddress,
       userAgent,
-    };
-
-    const entry = await createConsentEntry(params);
+    });
 
     return NextResponse.json({
       success: true,
