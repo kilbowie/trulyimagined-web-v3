@@ -37,7 +37,10 @@ describe('GET /api/credentials/list contract', () => {
 
   it('returns credentials and metadata shape', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue({ user: { sub: 'auth0|abc' } } as never);
-    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({ id: 'profile-1', role: 'Actor' } as never);
+    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({
+      id: 'profile-1',
+      role: 'Actor',
+    } as never);
     vi.mocked(listCredentialsByProfileId).mockResolvedValue([
       {
         id: 'cred-1',
@@ -56,7 +59,9 @@ describe('GET /api/credentials/list contract', () => {
     ] as never);
 
     const response = await GET(
-      new Request('http://localhost/api/credentials/list?includeRevoked=true&includeExpired=true') as never
+      new Request(
+        'http://localhost/api/credentials/list?includeRevoked=true&includeExpired=true'
+      ) as never
     );
 
     expect(response.status).toBe(200);

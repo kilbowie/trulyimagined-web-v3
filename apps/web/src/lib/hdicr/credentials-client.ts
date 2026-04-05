@@ -128,7 +128,9 @@ export async function listCredentialsByProfileId(options: {
         }
 
         if (Array.isArray(payload.credentials)) {
-          return payload.credentials.map(mapRemoteCredentialToRow).filter(Boolean) as CredentialListRow[];
+          return payload.credentials
+            .map(mapRemoteCredentialToRow)
+            .filter(Boolean) as CredentialListRow[];
         }
 
         console.warn(
@@ -140,7 +142,10 @@ export async function listCredentialsByProfileId(options: {
         );
       }
     } catch (error) {
-      console.warn('[HDICR] Remote credentials list request failed. Falling back to local adapter.', error);
+      console.warn(
+        '[HDICR] Remote credentials list request failed. Falling back to local adapter.',
+        error
+      );
     }
   }
 

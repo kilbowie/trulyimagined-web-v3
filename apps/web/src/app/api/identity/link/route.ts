@@ -75,7 +75,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    const existingLink = await getIdentityLinkByProviderAndProviderUser(userId, provider, providerUserId);
+    const existingLink = await getIdentityLinkByProviderAndProviderUser(
+      userId,
+      provider,
+      providerUserId
+    );
 
     if (existingLink) {
       const existing = existingLink;

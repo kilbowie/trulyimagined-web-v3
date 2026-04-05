@@ -27,7 +27,10 @@ describe('POST /api/credentials/revoke contract', () => {
 
   it('returns 403 when user is not owner/admin', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue({ user: { sub: 'auth0|viewer' } } as never);
-    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({ id: 'profile-viewer', role: 'Actor' } as never);
+    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({
+      id: 'profile-viewer',
+      role: 'Actor',
+    } as never);
     vi.mocked(getCredentialById).mockResolvedValue({
       user_profile_id: 'profile-owner',
       is_revoked: false,
@@ -49,7 +52,10 @@ describe('POST /api/credentials/revoke contract', () => {
 
   it('returns revoke success contract for owner', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue({ user: { sub: 'auth0|owner' } } as never);
-    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({ id: 'profile-owner', role: 'Actor' } as never);
+    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({
+      id: 'profile-owner',
+      role: 'Actor',
+    } as never);
     vi.mocked(getCredentialById).mockResolvedValue({
       user_profile_id: 'profile-owner',
       is_revoked: false,

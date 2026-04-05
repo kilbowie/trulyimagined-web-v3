@@ -35,9 +35,12 @@ describe('GET/DELETE /api/credentials/[credentialId] contract', () => {
   it('GET returns 401 when unauthenticated', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue(null as never);
 
-    const response = await GET(new Request(`http://localhost/api/credentials/${credentialId}`) as never, {
-      params: Promise.resolve({ credentialId }),
-    });
+    const response = await GET(
+      new Request(`http://localhost/api/credentials/${credentialId}`) as never,
+      {
+        params: Promise.resolve({ credentialId }),
+      }
+    );
 
     expect(response.status).toBe(401);
     await expect(response.json()).resolves.toMatchObject({
@@ -48,7 +51,10 @@ describe('GET/DELETE /api/credentials/[credentialId] contract', () => {
 
   it('GET returns credential payload with metadata and verification', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue({ user: { sub: 'auth0|owner' } } as never);
-    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({ id: 'profile-owner', role: 'Actor' } as never);
+    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({
+      id: 'profile-owner',
+      role: 'Actor',
+    } as never);
     vi.mocked(getCredentialById).mockResolvedValue({
       id: credentialId,
       user_profile_id: 'profile-owner',
@@ -97,7 +103,10 @@ describe('GET/DELETE /api/credentials/[credentialId] contract', () => {
 
   it('DELETE enforces owner/admin and returns revocation contract', async () => {
     vi.mocked(auth0.getSession).mockResolvedValue({ user: { sub: 'auth0|owner' } } as never);
-    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({ id: 'profile-owner', role: 'Actor' } as never);
+    vi.mocked(getUserProfileByAuth0UserId).mockResolvedValue({
+      id: 'profile-owner',
+      role: 'Actor',
+    } as never);
     vi.mocked(getCredentialById).mockResolvedValue({
       user_profile_id: 'profile-owner',
     } as never);

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import {
-  getUserProfileIdByAuth0UserId,
-  listIdentityLinks,
-} from '@/lib/hdicr/identity-client';
+import { getUserProfileIdByAuth0UserId, listIdentityLinks } from '@/lib/hdicr/identity-client';
 
 interface IdentityLink {
   linkId: string;
