@@ -1,66 +1,75 @@
 /**
- * Migration 007: Consent Ledger + Licensing System
+ * Run Database Migration 007: Bitstring Status Lists
  *
- * Run: pnpm exec ts-node infra/database/src/migrate-007.ts
+ * This script creates the bitstringstatuslist infrastructure for W3C credential revocation.
  *
- * This migration creates:
- * - consent_ledger table (versioned, immutable consent policies)
- * - licenses table (license grants with permission snapshots)
- * - api_clients table (external API consumers)
- * - license_usage_log table (audit trail)
+ * Usage:
+ *   pnpm tsx infra/database/src/migrate-007.ts
  */
 
 import { Pool } from 'pg';
-import { readFileSync } from 'fs';
-import { join } from 'path';
+import * as fs from 'fs';
+import * as path from 'path';
 import * as dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: join(__dirname, '../../../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../../.env.local') });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
 });
 
-async function migrate() {
-  console.log('\n🔄 Running Migration 007: Consent Ledger + Licensing System\n');
+async function runMigration() {
+  console.log('🚀 Starting Migration 007: Bitstring Status Lists...\n');
 
   try {
-    // Read SQL file
-    const sqlPath = join(__dirname, '../migrations/007_consent_ledger_licenses.sql');
-    const sql = readFileSync(sqlPath, 'utf-8');
+    // Read migration file
+    const migrationPath = path.join(__dirname, '../migrations/007_bitstring_status_lists.sql');
+    const migrationSQL = fs.readFileSync(migrationPath, 'utf-8');
 
-    // Execute migration in a transaction
-    console.log('📝 Executing SQL migration...');
-    await pool.query('BEGIN');
+    console.log('📄 Executing SQL migration...');
 
-    await pool.query(sql);
+    // Execute migration
+    await pool.query(migrationSQL);
 
-    await pool.query('COMMIT');
+    console.log('✅ Migration 007 completed successfully!\n');
 
-    console.log('✅ Migration 007 completed successfully!');
-    console.log();
-    console.log('Created tables:');
-    console.log('  • api_clients');
-    console.log('  • consent_ledger');
-    console.log('  • licenses');
-    console.log('  • license_usage_log');
-    console.log();
-    console.log('Created functions:');
-    console.log('  • get_latest_consent(actor_id)');
-    console.log('  • get_next_consent_version(actor_id)');
-    console.log();
+    // Verify tables were created
+    console.log('🔍 Verifying tables...');
 
-    process.exit(0);
+    const tables = await pool.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+        AND table_name IN ('bitstring_status_lists', 'credential_status_entries')
+      ORDER BY table_name
+    `);
+
+    console.log(`\n✅ Created tables:`);
+    tables.rows.forEach((row) => {
+      console.log(`   - ${row.table_name}`);
+    });
+
+    // Check for credential_id column
+    const credentialIdColumn = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'verifiable_credentials' 
+        AND column_name = 'credential_id'
+    `);
+
+    if (credentialIdColumn.rows.length > 0) {
+      console.log('\n✅ Added credential_id column to verifiable_credentials table');
+    }
+
+    console.log('\n🎉 Migration 006 complete! Bitstring Status Lists are ready.');
   } catch (error) {
-    await pool.query('ROLLBACK');
     console.error('❌ Migration failed:', error);
-    console.error(error);
-    process.exit(1);
+    throw error;
   } finally {
     await pool.end();
   }
 }
 
-migrate();
+runMigration();

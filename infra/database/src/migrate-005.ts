@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Run Migration 005: Verifiable Credentials
- *
- * This script applies only migration 005, skipping earlier migrations
- * that have already been applied.
+ * Single Migration Runner - Run only migration 005: Actor Media
  */
 
 import { DatabaseClient } from './client';
@@ -12,29 +9,41 @@ import fs from 'fs';
 import path from 'path';
 
 async function runMigration005() {
-  console.log('[MIGRATION] Running migration 005: Verifiable Credentials...\n');
+  console.log('[MIGRATION] Running migration 005_actor_media.sql...\n');
 
   const db = DatabaseClient.getInstance();
-  const migrationPath = path.join(__dirname, '../migrations/005_verifiable_credentials.sql');
+  const migrationFile = path.join(__dirname, '../migrations/005_actor_media.sql');
 
   try {
     // Check if migration file exists
-    if (!fs.existsSync(migrationPath)) {
-      console.error(`[MIGRATION] Migration file not found: ${migrationPath}`);
+    if (!fs.existsSync(migrationFile)) {
+      console.error(`[MIGRATION] Migration file not found: ${migrationFile}`);
       process.exit(1);
     }
 
     // Read and execute migration
-    const sql = fs.readFileSync(migrationPath, 'utf-8');
-    await db.query(sql);
+    const sql = fs.readFileSync(migrationFile, 'utf-8');
 
-    console.log('[MIGRATION] ✓ Migration 005 completed successfully\n');
+    console.log('[MIGRATION] Executing SQL...');
+    await db.query(sql);
+    console.log('[MIGRATION] ✓ Migration completed successfully!\n');
+
+    await db.close();
     process.exit(0);
   } catch (error: any) {
-    console.error('[MIGRATION] ✗ Migration 005 failed:');
+    console.error('[MIGRATION] ✗ Migration failed:');
     console.error(error.message);
+    console.error('\nFull error:', error);
+    await db.close();
     process.exit(1);
   }
 }
 
 runMigration005();
+
+// Run if executed directly
+if (require.main === module) {
+  runMigration004();
+}
+
+export { runMigration004 };
