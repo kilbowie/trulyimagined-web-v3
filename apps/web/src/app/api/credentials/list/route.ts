@@ -22,9 +22,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { pool } from '@/lib/db';
 import { decryptJSON } from '@trulyimagined/utils';
 import type { VerifiableCredential } from '@/lib/verifiable-credentials';
+import {
+  getUserProfileByAuth0UserId,
+  listCredentialsByProfileId,
+} from '@/lib/hdicr/credentials-client';
 
 function parseStoredCredential(value: unknown): VerifiableCredential {
   if (typeof value === 'string') {
@@ -52,60 +55,28 @@ export async function GET(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    // 2. Get user profile
-    const profileResult = await pool.query(
-      `SELECT id FROM user_profiles WHERE auth0_user_id = $1`,
-      [auth0UserId]
-    );
+    const profile = await getUserProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
-
     // 3. Parse query parameters
     const { searchParams } = new URL(request.url);
     const includeRevoked = searchParams.get('includeRevoked') === 'true';
     const includeExpired = searchParams.get('includeExpired') === 'true';
 
-    // 4. Build query
-    let query = `
-      SELECT 
-        id,
-        credential_type,
-        credential_json,
-        issuer_did,
-        holder_did,
-        issued_at,
-        expires_at,
-        is_revoked,
-        revoked_at,
-        revocation_reason,
-        verification_method,
-        proof_type
-      FROM verifiable_credentials
-      WHERE user_profile_id = $1
-    `;
-
-    if (!includeRevoked) {
-      query += ' AND is_revoked = FALSE';
-    }
-
-    if (!includeExpired) {
-      query += ' AND (expires_at IS NULL OR expires_at > NOW())';
-    }
-
-    query += ' ORDER BY issued_at DESC';
-
-    // 5. Fetch credentials
-    const credentialsResult = await pool.query(query, [profile.id]);
+    const credentialsRows = await listCredentialsByProfileId({
+      userProfileId: profile.id,
+      includeRevoked,
+      includeExpired,
+    });
 
     // 6. Format response
-    const credentials = credentialsResult.rows.map((row) => {
+    const credentials = credentialsRows.map((row) => {
       const credential = parseStoredCredential(row.credential_json);
 
       return {

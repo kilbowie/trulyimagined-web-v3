@@ -31,8 +31,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
-import { resolveIdentity } from '@/lib/identity-resolution';
+import { getIdentityResolution } from '@/lib/hdicr/identity-client';
 
 export async function GET(_request: NextRequest) {
   try {
@@ -43,19 +42,11 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile ID
-    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
-      session.user.sub,
-    ]);
-
-    if (userResult.rows.length === 0) {
+    const identityResolution = await getIdentityResolution(session.user.sub);
+    if (!identityResolution) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
-
-    const userProfileId = userResult.rows[0].id;
-
-    // Resolve identity and calculate confidence
-    const resolution = await resolveIdentity(userProfileId);
+    const { userProfileId, resolution } = identityResolution;
 
     console.log('[IDENTITY RESOLUTION] Calculated confidence:', {
       userProfileId,

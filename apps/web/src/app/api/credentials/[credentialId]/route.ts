@@ -28,9 +28,13 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { pool } from '@/lib/db';
 import { verifyCredential, type VerifiableCredential } from '@/lib/verifiable-credentials';
 import { decryptJSON } from '@trulyimagined/utils';
+import {
+  getCredentialById,
+  getUserProfileByAuth0UserId,
+  revokeCredentialById,
+} from '@/lib/hdicr/credentials-client';
 
 function parseStoredCredential(value: unknown): VerifiableCredential {
   if (typeof value === 'string') {
@@ -76,47 +80,20 @@ export async function GET(
 
     const auth0UserId = session.user.sub;
 
-    // 2. Get user profile
-    const profileResult = await pool.query(
-      `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
-      [auth0UserId]
-    );
+    const profile = await getUserProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
+    const credentialData = await getCredentialById(credentialId);
 
-    // 3. Fetch credential from database
-    const credentialResult = await pool.query(
-      `SELECT 
-        id,
-        user_profile_id,
-        credential_type,
-        credential_json,
-        issuer_did,
-        holder_did,
-        issued_at,
-        expires_at,
-        is_revoked,
-        revoked_at,
-        revocation_reason,
-        verification_method,
-        proof_type
-      FROM verifiable_credentials
-      WHERE id = $1`,
-      [credentialId]
-    );
-
-    if (credentialResult.rows.length === 0) {
+    if (!credentialData) {
       return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
-
-    const credentialData = credentialResult.rows[0];
 
     // 4. Authorization check: User must own the credential or be Admin
     if (credentialData.user_profile_id !== profile.id && profile.role !== 'Admin') {
@@ -216,31 +193,21 @@ export async function DELETE(
     const auth0UserId = session.user.sub;
 
     // 2. Get user profile
-    const profileResult = await pool.query(
-      `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
-      [auth0UserId]
-    );
+    const profile = await getUserProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
-
-    // 3. Check ownership
-    const ownershipResult = await pool.query(
-      `SELECT user_profile_id FROM verifiable_credentials WHERE id = $1`,
-      [credentialId]
-    );
-
-    if (ownershipResult.rows.length === 0) {
+    const credentialData = await getCredentialById(credentialId);
+    if (!credentialData) {
       return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
 
-    const ownerId = ownershipResult.rows[0].user_profile_id;
+    const ownerId = credentialData.user_profile_id;
 
     // Only owner or Admin can revoke
     if (ownerId !== profile.id && profile.role !== 'Admin') {
@@ -254,21 +221,24 @@ export async function DELETE(
     const body = await request.json().catch(() => ({}));
     const reason = body.reason || 'Revoked by user';
 
-    // 5. Revoke the credential
-    await pool.query(
-      `UPDATE verifiable_credentials
-       SET is_revoked = TRUE,
-           revoked_at = NOW(),
-           revocation_reason = $2
-       WHERE id = $1`,
-      [credentialId, reason]
-    );
+    const revokeResult = await revokeCredentialById(credentialId, reason);
+
+    if (!revokeResult.found) {
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
+    }
+
+    if (revokeResult.alreadyRevoked) {
+      return NextResponse.json(
+        { success: false, error: 'Credential is already revoked' },
+        { status: 400 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: 'Credential revoked successfully',
       credentialId,
-      revokedAt: new Date().toISOString(),
+      revokedAt: revokeResult.revokedAt || new Date().toISOString(),
     });
   } catch (error) {
     console.error('Error revoking credential:', error);

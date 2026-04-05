@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import {
+  getUserProfileIdByAuth0UserId,
+  listIdentityLinks,
+} from '@/lib/hdicr/identity-client';
 
 interface IdentityLink {
   linkId: string;
@@ -36,55 +39,16 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const activeOnly = searchParams.get('activeOnly') === 'true';
 
-    // Get user profile ID from Auth0 user ID
-    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
-      session.user.sub,
-    ]);
-
-    if (userResult.rows.length === 0) {
+    const userId = await getUserProfileIdByAuth0UserId(session.user.sub);
+    if (!userId) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
-
-    const userId = userResult.rows[0].id;
-
-    // Build query
-    let sql = `
-      SELECT 
-        id,
-        provider,
-        provider_type,
-        verification_level,
-        assurance_level,
-        verified_at,
-        linked_at,
-        last_verified_at,
-        expires_at,
-        is_active,
-        metadata
-      FROM identity_links 
-      WHERE user_profile_id = $1
-    `;
-
-    if (activeOnly) {
-      sql += ` AND is_active = TRUE`;
-    }
-
-    sql += ` ORDER BY 
-      CASE verification_level 
-        WHEN 'very-high' THEN 4 
-        WHEN 'high' THEN 3 
-        WHEN 'medium' THEN 2 
-        WHEN 'low' THEN 1 
-        ELSE 0 
-      END DESC,
-      linked_at DESC`;
-
-    const result = await query(sql, [userId]);
+    const rows = await listIdentityLinks(userId, activeOnly);
 
     const now = new Date();
 
     // Transform and enrich results
-    const links: IdentityLink[] = result.rows.map((row: Record<string, unknown>) => {
+    const links: IdentityLink[] = rows.map((row: Record<string, unknown>) => {
       const expiresAt = row.expires_at ? new Date(row.expires_at as string) : null;
       const isExpired = expiresAt ? expiresAt < now : false;
 

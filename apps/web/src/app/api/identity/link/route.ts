@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
-import { encryptJSON } from '@trulyimagined/utils';
+import {
+  createIdentityLink,
+  getIdentityLinkByProviderAndProviderUser,
+  getUserProfileIdByAuth0UserId,
+  reactivateIdentityLink,
+} from '@/lib/hdicr/identity-client';
 
 /**
  * POST /api/identity/link
@@ -66,53 +70,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user profile ID from Auth0 user ID
-    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
-      session.user.sub,
-    ]);
-
-    if (userResult.rows.length === 0) {
+    const userId = await getUserProfileIdByAuth0UserId(session.user.sub);
+    if (!userId) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    const userId = userResult.rows[0].id;
+    const existingLink = await getIdentityLinkByProviderAndProviderUser(userId, provider, providerUserId);
 
-    // Check if link already exists
-    const existingLink = await query(
-      `SELECT id, is_active FROM identity_links 
-       WHERE user_profile_id = $1 AND provider = $2 AND provider_user_id = $3`,
-      [userId, provider, providerUserId]
-    );
-
-    if (existingLink.rows.length > 0) {
-      const existing = existingLink.rows[0];
+    if (existingLink) {
+      const existing = existingLink;
 
       // If exists but inactive, reactivate it
       if (!existing.is_active) {
-        // Encrypt credential_data before storing (Step 11: Database Encryption)
-        const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
-
-        await query(
-          `UPDATE identity_links 
-           SET is_active = TRUE, 
-               linked_at = NOW(), 
-               verification_level = COALESCE($1, verification_level),
-               assurance_level = COALESCE($2, assurance_level),
-               credential_data = COALESCE($3, credential_data),
-               metadata = COALESCE($4, metadata),
-               expires_at = $5,
-               last_verified_at = NOW(),
-               updated_at = NOW()
-           WHERE id = $6`,
-          [
-            verificationLevel || null,
-            assuranceLevel || null,
-            encryptedCredentialData,
-            metadata ? JSON.stringify(metadata) : null,
-            expiresAt || null,
-            existing.id,
-          ]
-        );
+        await reactivateIdentityLink({
+          linkId: existing.id,
+          verificationLevel,
+          assuranceLevel,
+          credentialData,
+          metadata,
+          expiresAt,
+        });
 
         console.log('[IDENTITY-LINK] Reactivated existing link:', {
           linkId: existing.id,
@@ -144,39 +121,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new identity link
-    // Encrypt credential_data before storing (Step 11: Database Encryption)
-    const encryptedCredentialData = credentialData ? encryptJSON(credentialData) : null;
-
-    const result = await query(
-      `INSERT INTO identity_links (
-        user_profile_id,
-        provider,
-        provider_user_id,
-        provider_type,
-        verification_level,
-        assurance_level,
-        credential_data,
-        metadata,
-        verified_at,
-        expires_at,
-        last_verified_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), $9, NOW())
-      RETURNING id, provider, verification_level, assurance_level`,
-      [
-        userId,
-        provider,
-        providerUserId,
-        providerType,
-        verificationLevel || 'medium',
-        assuranceLevel || null,
-        encryptedCredentialData,
-        metadata ? JSON.stringify(metadata) : null,
-        expiresAt || null,
-      ]
-    );
-
-    const newLink = result.rows[0];
+    const newLink = await createIdentityLink({
+      userProfileId: userId,
+      provider,
+      providerUserId,
+      providerType,
+      verificationLevel,
+      assuranceLevel,
+      credentialData,
+      metadata,
+      expiresAt,
+    });
 
     console.log('[IDENTITY-LINK] Created new identity link:', {
       linkId: newLink.id,

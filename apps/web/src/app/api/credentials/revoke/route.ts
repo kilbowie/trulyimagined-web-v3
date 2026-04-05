@@ -26,9 +26,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { pool } from '@/lib/db';
-import { updateCredentialStatus } from '@/lib/status-list-manager';
 import { z } from 'zod';
+import {
+  getCredentialById,
+  getUserProfileByAuth0UserId,
+  revokeCredentialById,
+} from '@/lib/hdicr/credentials-client';
 
 // ===========================================
 // REQUEST SCHEMA
@@ -70,34 +73,20 @@ export async function POST(request: NextRequest) {
 
     const { credentialId, reason } = validationResult.data;
 
-    // 3. Fetch user profile
-    const profileResult = await pool.query(
-      `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
-      [auth0UserId]
-    );
+    const profile = await getUserProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
+    const credential = await getCredentialById(credentialId);
 
-    // 4. Fetch credential
-    const credentialResult = await pool.query(
-      `SELECT user_profile_id, is_revoked, credential_type 
-       FROM verifiable_credentials 
-       WHERE id = $1`,
-      [credentialId]
-    );
-
-    if (credentialResult.rows.length === 0) {
+    if (!credential) {
       return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
     }
-
-    const credential = credentialResult.rows[0];
 
     // 5. Authorization check: user must own credential OR be admin
     const isOwner = credential.user_profile_id === profile.id;
@@ -113,7 +102,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 6. Check if already revoked
     if (credential.is_revoked) {
       return NextResponse.json(
         {
@@ -124,63 +112,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 7. Check if credential has status list entry (new credentials)
-    const statusEntryResult = await pool.query(
-      `SELECT id FROM credential_status_entries WHERE credential_id = $1 AND status_purpose = 'revocation'`,
-      [credentialId]
-    );
+    const revokeResult = await revokeCredentialById(credentialId, reason);
 
-    const hasStatusEntry = statusEntryResult.rows.length > 0;
+    if (!revokeResult.found) {
+      return NextResponse.json({ success: false, error: 'Credential not found' }, { status: 404 });
+    }
 
-    // 8. Revoke credential
-    if (hasStatusEntry) {
-      // New credential with W3C Bitstring Status List
-      await updateCredentialStatus(pool, {
-        credentialId,
-        statusPurpose: 'revocation',
-        statusValue: 1, // 1 = revoked
-      });
-    } else {
-      // Legacy credential without status list - just update database
-      console.log(
-        `Legacy credential ${credentialId} does not have status list entry. Marking as revoked in database only.`
-      );
-      await pool.query(
-        `UPDATE verifiable_credentials 
-         SET is_revoked = true, revoked_at = NOW(), updated_at = NOW() 
-         WHERE id = $1`,
-        [credentialId]
+    if (revokeResult.alreadyRevoked) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Credential is already revoked',
+        },
+        { status: 400 }
       );
     }
 
-    // 9. Update revocation reason if provided
-    if (reason) {
-      await pool.query(
-        `UPDATE verifiable_credentials 
-         SET revocation_reason = $1, updated_at = NOW() 
-         WHERE id = $2`,
-        [reason, credentialId]
-      );
-    }
-
-    // 10. Get updated credential info
-    const updatedResult = await pool.query(
-      `SELECT revoked_at FROM verifiable_credentials WHERE id = $1`,
-      [credentialId]
-    );
-
-    const revokedAt = updatedResult.rows[0].revoked_at;
+    const revokedAt = revokeResult.revokedAt;
 
     // 11. Return success response
     return NextResponse.json({
       success: true,
-      message: hasStatusEntry
+      message: revokeResult.hasStatusEntry
         ? 'Credential revoked successfully (W3C Bitstring Status List updated)'
         : 'Legacy credential revoked successfully (database-only revocation)',
       credentialId,
       revokedAt,
       reason: reason || null,
-      legacy: !hasStatusEntry,
+      legacy: !revokeResult.hasStatusEntry,
     });
   } catch (error) {
     console.error('Error revoking credential:', error);

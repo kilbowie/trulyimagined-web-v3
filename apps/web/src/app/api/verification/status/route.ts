@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import { getVerificationLinksSummary } from '@/lib/hdicr/identity-client';
 
 /**
  * GET /api/verification/status?provider={provider}
@@ -17,41 +17,12 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user profile ID
-    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
-      session.user.sub,
-    ]);
-
-    if (userResult.rows.length === 0) {
+    const verificationData = await getVerificationLinksSummary(session.user.sub);
+    if (!verificationData) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
-
-    const userId = userResult.rows[0].id;
-
-    // Get all active identity links
-    const linksResult = await query(
-      `SELECT 
-        provider,
-        provider_type,
-        verification_level,
-        assurance_level,
-        verified_at,
-        linked_at,
-        last_verified_at
-      FROM identity_links
-      WHERE user_profile_id = $1 AND is_active = TRUE
-      ORDER BY 
-        CASE verification_level 
-          WHEN 'very-high' THEN 4 
-          WHEN 'high' THEN 3 
-          WHEN 'medium' THEN 2 
-          WHEN 'low' THEN 1 
-          ELSE 0 
-        END DESC`,
-      [userId]
-    );
-
-    const links = linksResult.rows;
+    const userId = verificationData.userProfileId;
+    const links = verificationData.links;
 
     // Calculate overall verification status
     const status = calculateVerificationStatus(links);

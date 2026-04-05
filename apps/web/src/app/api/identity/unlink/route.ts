@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import {
+  getUserProfileIdByAuth0UserId,
+  unlinkIdentityById,
+  unlinkIdentityByProvider,
+} from '@/lib/hdicr/identity-client';
 
 /**
  * POST /api/identity/unlink
@@ -31,29 +35,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user profile ID from Auth0 user ID
-    const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
-      session.user.sub,
-    ]);
-
-    if (userResult.rows.length === 0) {
+    const userId = await getUserProfileIdByAuth0UserId(session.user.sub);
+    if (!userId) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
-
-    const userId = userResult.rows[0].id;
 
     let result;
     let unlinkedProvider = '';
 
     if (linkId) {
       // Unlink by specific link ID
-      result = await query(
-        `UPDATE identity_links 
-         SET is_active = FALSE, updated_at = NOW()
-         WHERE id = $1 AND user_profile_id = $2
-         RETURNING provider`,
-        [linkId, userId]
-      );
+      result = { rows: await unlinkIdentityById(linkId, userId) };
 
       if (result.rows.length === 0) {
         return NextResponse.json(
@@ -67,13 +59,7 @@ export async function POST(request: NextRequest) {
       unlinkedProvider = result.rows[0].provider;
     } else if (provider) {
       // Unlink all links for this provider
-      result = await query(
-        `UPDATE identity_links 
-         SET is_active = FALSE, updated_at = NOW()
-         WHERE user_profile_id = $1 AND provider = $2 AND is_active = TRUE
-         RETURNING id`,
-        [userId, provider]
-      );
+      result = { rows: await unlinkIdentityByProvider(provider, userId) };
 
       if (result.rows.length === 0) {
         return NextResponse.json(

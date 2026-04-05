@@ -42,8 +42,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pool } from '@/lib/db';
-import { getStatusListCredential } from '@/lib/status-list-manager';
+import { getStatusListById } from '@/lib/hdicr/credentials-client';
 
 export async function GET(
   request: NextRequest,
@@ -66,7 +65,7 @@ export async function GET(
     }
 
     // Retrieve status list credential
-    const statusListCredential = await getStatusListCredential(pool, listId);
+    const statusListCredential = await getStatusListById(listId);
 
     if (!statusListCredential) {
       return NextResponse.json(
