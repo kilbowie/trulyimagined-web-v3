@@ -24,7 +24,10 @@ export async function GET(request: NextRequest) {
     const registryId = request.nextUrl.searchParams.get('registryId')?.trim();
 
     if (!registryId) {
-      return NextResponse.json({ error: 'registryId query parameter is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'registryId query parameter is required' },
+        { status: 400 }
+      );
     }
 
     const agent = await getAgentByRegistryId(registryId);

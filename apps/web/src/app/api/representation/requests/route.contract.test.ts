@@ -44,7 +44,9 @@ describe('GET /api/representation/requests - Contract Test', () => {
     vi.mocked(auth0.getSession).mockResolvedValueOnce({ user: { sub: 'agent-user-123' } } as any);
     vi.mocked(getUserRoles).mockResolvedValueOnce(['Agent']);
     vi.mocked(getAgentByAuth0UserId).mockResolvedValueOnce({ id: 'agent-123' } as any);
-    vi.mocked(listIncomingRequests).mockResolvedValueOnce([{ id: 'req-1', status: 'pending' }] as any);
+    vi.mocked(listIncomingRequests).mockResolvedValueOnce([
+      { id: 'req-1', status: 'pending' },
+    ] as any);
 
     const response = await GET();
     const data = await response.json();
@@ -60,7 +62,9 @@ describe('GET /api/representation/requests - Contract Test', () => {
     vi.mocked(getUserRoles).mockResolvedValueOnce(['Actor']);
     vi.mocked(getAgentTeamMembership).mockResolvedValueOnce(null as any);
     vi.mocked(getActorByAuth0UserId).mockResolvedValueOnce({ id: 'actor-123' } as any);
-    vi.mocked(listOutgoingRequests).mockResolvedValueOnce([{ id: 'req-2', status: 'pending' }] as any);
+    vi.mocked(listOutgoingRequests).mockResolvedValueOnce([
+      { id: 'req-2', status: 'pending' },
+    ] as any);
 
     const response = await GET();
     const data = await response.json();

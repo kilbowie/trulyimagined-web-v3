@@ -133,7 +133,10 @@ export async function createStripeIdentityLinkRequiresInput(params: {
   );
 }
 
-export async function markStripeIdentityLinkCanceled(linkId: string, metadata: Record<string, unknown>) {
+export async function markStripeIdentityLinkCanceled(
+  linkId: string,
+  metadata: Record<string, unknown>
+) {
   await query(
     `UPDATE identity_links
      SET is_active = FALSE,
