@@ -47,12 +47,17 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
     const { userProfileId, resolution } = identityResolution;
+    const resolutionSummary = (resolution || {}) as {
+      confidencePercentage?: number;
+      assuranceLevel?: string;
+      linkedProvidersCount?: number;
+    };
 
     console.log('[IDENTITY RESOLUTION] Calculated confidence:', {
       userProfileId,
-      confidence: resolution.confidencePercentage,
-      level: resolution.assuranceLevel,
-      linkedProviders: resolution.linkedProvidersCount,
+      confidence: resolutionSummary.confidencePercentage,
+      level: resolutionSummary.assuranceLevel,
+      linkedProviders: resolutionSummary.linkedProvidersCount,
     });
 
     return NextResponse.json(resolution, { status: 200 });

@@ -39,11 +39,9 @@ async function runMigration005() {
   }
 }
 
-runMigration005();
-
 // Run if executed directly
 if (require.main === module) {
-  runMigration004();
+  runMigration005();
 }
 
-export { runMigration004 };
+export { runMigration005 };

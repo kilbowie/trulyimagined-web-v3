@@ -39,7 +39,7 @@ async function migrate() {
 
     await pool.query('COMMIT');
 
-    console.log('✅ Migration 008 completed successfully!');}
+    console.log('✅ Migration 008 completed successfully!');
     console.log();
     console.log('Created tables:');
     console.log('  • api_clients');

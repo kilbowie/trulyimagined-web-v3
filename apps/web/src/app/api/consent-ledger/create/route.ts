@@ -126,6 +126,16 @@ export async function POST(request: NextRequest) {
       userAgent,
     });
 
+    if (!entry) {
+      return NextResponse.json(
+        {
+          error: 'Failed to create consent entry',
+          details: 'No entry returned by consent adapter',
+        },
+        { status: 500 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
       entry: {
