@@ -14,6 +14,48 @@ import {
 
 warnIfRemoteModeEnabled('consent');
 
+function isConsentRemoteMode() {
+  return getHdicrAdapterMode('consent') === 'remote';
+}
+
+function getConsentRemoteBaseUrlOrThrow(operation: string) {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Consent ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
+
+async function invokeConsentRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const baseUrl = getConsentRemoteBaseUrlOrThrow(params.operation);
+  const url = new URL(params.path, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote consent ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
 export interface ConsentGrantInput {
   actorId: string;
   consentType: string;
@@ -55,6 +97,18 @@ export interface ActorContext {
 export async function resolveActorContextByAuth0UserId(
   auth0UserId: string
 ): Promise<ActorContext | null> {
+  if (isConsentRemoteMode()) {
+    const payload = await invokeConsentRemote<{
+      context?: { userProfileId: string; actorId: string } | null;
+    }>({
+      path: `/consent/actor-context?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'actor-context-resolve',
+    });
+
+    return payload.context ?? null;
+  }
+
   const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
     auth0UserId,
   ]);
@@ -239,7 +293,10 @@ export async function revokeConsent(input: ConsentRevokeInput) {
         cache: 'no-store',
       });
       if (response.ok) {
-        return (await response.json()) as { notFound: boolean; record: Record<string, unknown> | null };
+        return (await response.json()) as {
+          notFound: boolean;
+          record: Record<string, unknown> | null;
+        };
       }
       throw new Error(
         `[HDICR] Remote consent revoke failed with status ${response.status} (fail-closed).`
@@ -257,6 +314,19 @@ export async function revokeConsent(input: ConsentRevokeInput) {
 }
 
 export async function checkConsent(input: ConsentCheckInput) {
+  if (isConsentRemoteMode()) {
+    const payload = await invokeConsentRemote<{ consent?: Record<string, unknown> | null }>({
+      path:
+        `/consent/check?actorId=${encodeURIComponent(input.actorId)}` +
+        `&consentType=${encodeURIComponent(input.consentType)}` +
+        `${input.projectId ? `&projectId=${encodeURIComponent(input.projectId)}` : ''}`,
+      method: 'GET',
+      operation: 'consent-check',
+    });
+
+    return payload.consent ?? null;
+  }
+
   let sqlQuery = `
     SELECT * FROM consent_log 
     WHERE actor_id = $1 
@@ -276,6 +346,26 @@ export async function checkConsent(input: ConsentCheckInput) {
 }
 
 export async function listConsentRecords(input: ConsentListInput) {
+  if (isConsentRemoteMode()) {
+    const payload = await invokeConsentRemote<{
+      rows?: Array<Record<string, unknown>>;
+      totalCount?: number;
+    }>({
+      path:
+        `/consent/list?actorId=${encodeURIComponent(input.actorId)}` +
+        `&limit=${input.limit ?? 100}` +
+        `&offset=${input.offset ?? 0}` +
+        `${input.action ? `&action=${encodeURIComponent(input.action)}` : ''}`,
+      method: 'GET',
+      operation: 'consent-list',
+    });
+
+    return {
+      rows: payload.rows || [],
+      totalCount: payload.totalCount || 0,
+    };
+  }
+
   const limit = input.limit ?? 100;
   const offset = input.offset ?? 0;
 
@@ -312,10 +402,35 @@ export async function listConsentRecords(input: ConsentListInput) {
 }
 
 export async function createConsentLedgerEntry(params: CreateConsentEntryParams) {
+  if (isConsentRemoteMode()) {
+    const payload = await invokeConsentRemote<{ entry?: Record<string, unknown> }>({
+      path: '/consent-ledger/create',
+      method: 'POST',
+      operation: 'consent-ledger-create',
+      body: params,
+    });
+
+    return payload.entry;
+  }
+
   return createConsentEntry(params);
 }
 
 export async function getCurrentConsentLedger(actorId: string, includeHistory: boolean) {
+  if (isConsentRemoteMode()) {
+    return invokeConsentRemote<{
+      current: Record<string, unknown> | null;
+      history: Array<Record<string, unknown>>;
+      licensesOnCurrentVersion: number;
+    }>({
+      path:
+        `/consent-ledger/current?actorId=${encodeURIComponent(actorId)}` +
+        `&includeHistory=${includeHistory ? 'true' : 'false'}`,
+      method: 'GET',
+      operation: 'consent-ledger-current',
+    });
+  }
+
   const current = await getLatestConsent(actorId);
   const history = includeHistory ? await getConsentHistory(actorId, 20) : [];
 

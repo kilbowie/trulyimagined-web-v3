@@ -8,7 +8,59 @@ import {
 
 warnIfRemoteModeEnabled('licensing');
 
+function isLicensingRemoteMode() {
+  return getHdicrAdapterMode('licensing') === 'remote';
+}
+
+function getLicensingRemoteBaseUrlOrThrow(operation: string) {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Licensing ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
+
+async function invokeLicensingRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const baseUrl = getLicensingRemoteBaseUrlOrThrow(params.operation);
+  const url = new URL(params.path, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote licensing ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
 export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{ actorId?: string | null }>({
+      path: `/licensing/actor-id?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'actor-id-resolve',
+    });
+
+    return payload.actorId ?? null;
+  }
+
   const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
     auth0UserId,
   ]);
@@ -29,6 +81,24 @@ export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<
 }
 
 export async function listActorLicensingRequests(actorId: string, status?: string) {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{
+      requests?: Array<Record<string, unknown>>;
+      pendingCount?: number;
+    }>({
+      path:
+        `/licensing/actor-requests?actorId=${encodeURIComponent(actorId)}` +
+        `${status ? `&status=${encodeURIComponent(status)}` : ''}`,
+      method: 'GET',
+      operation: 'actor-requests-list',
+    });
+
+    return {
+      requests: payload.requests || [],
+      pendingCount: payload.pendingCount || 0,
+    };
+  }
+
   const validStatuses = ['pending', 'approved', 'rejected', 'expired'];
 
   let sql: string;
@@ -100,6 +170,16 @@ export async function listActorLicensingRequests(actorId: string, status?: strin
 }
 
 export async function getLicensingRequestById(requestId: string) {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{ request?: Record<string, unknown> | null }>({
+      path: `/licensing/request?id=${encodeURIComponent(requestId)}`,
+      method: 'GET',
+      operation: 'request-by-id',
+    });
+
+    return payload.request ?? null;
+  }
+
   const existing = await query(
     `SELECT id, actor_id, status, requester_name, project_name
      FROM licensing_requests
@@ -153,29 +233,20 @@ export async function applyLicensingDecision(
   action: 'approve' | 'reject',
   rejectionReason?: string
 ) {
-  const mode = getHdicrAdapterMode('licensing');
-  const baseUrl = getHdicrRemoteBaseUrl();
-
-  if (mode === 'remote') {
-    if (!baseUrl) {
-      throw new Error(
-        '[HDICR] Licensing decision is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
-      );
-    }
+  if (isLicensingRemoteMode()) {
     try {
-      const url = new URL('/licensing/decision', baseUrl);
-      const response = await fetch(url.toString(), {
+      const payload = await invokeLicensingRemote<{ decision?: Record<string, unknown> | null }>({
+        path: '/licensing/decision',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ requestId, actorId, action, rejectionReason }),
-        cache: 'no-store',
+        operation: 'decision',
+        body: { requestId, actorId, action, rejectionReason },
       });
-      if (response.ok) {
-        return (await response.json()) as Record<string, unknown> | null;
+
+      if (payload.decision !== undefined) {
+        return payload.decision;
       }
-      throw new Error(
-        `[HDICR] Remote licensing decision failed with status ${response.status} (fail-closed).`
-      );
+
+      return payload as Record<string, unknown>;
     } catch (error) {
       throw new Error(
         `[HDICR] Remote licensing decision request failed (fail-closed): ${
@@ -189,6 +260,24 @@ export async function applyLicensingDecision(
 }
 
 export async function getActorLicensesAndStats(actorId: string, statusFilter?: string) {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{
+      licenses?: Array<Record<string, unknown>>;
+      stats?: Record<string, unknown>;
+    }>({
+      path:
+        `/licensing/actor/licenses-and-stats?actorId=${encodeURIComponent(actorId)}` +
+        `${statusFilter ? `&status=${encodeURIComponent(statusFilter)}` : ''}`,
+      method: 'GET',
+      operation: 'licenses-and-stats',
+    });
+
+    return {
+      licenses: payload.licenses || [],
+      stats: payload.stats || {},
+    };
+  }
+
   const status = statusFilter as 'active' | 'revoked' | 'expired' | 'suspended' | undefined;
   const licenses = await getActorLicenses(actorId, status);
   const stats = await getLicenseStats(actorId);
@@ -197,6 +286,18 @@ export async function getActorLicensesAndStats(actorId: string, statusFilter?: s
 }
 
 export async function verifyActiveRepresentation(actorId: string, agentId: string) {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{ active?: boolean }>({
+      path:
+        `/licensing/representation/active?actorId=${encodeURIComponent(actorId)}` +
+        `&agentId=${encodeURIComponent(agentId)}`,
+      method: 'GET',
+      operation: 'representation-active-check',
+    });
+
+    return Boolean(payload.active);
+  }
+
   const relationship = await query(
     `SELECT 1
      FROM actor_agent_relationships
@@ -211,6 +312,22 @@ export async function verifyActiveRepresentation(actorId: string, agentId: strin
 }
 
 export async function getAgentActorLicensingData(actorId: string) {
+  if (isLicensingRemoteMode()) {
+    const payload = await invokeLicensingRemote<{
+      licensingRequests?: Array<Record<string, unknown>>;
+      licenses?: Array<Record<string, unknown>>;
+    }>({
+      path: `/licensing/agent-actor-data?actorId=${encodeURIComponent(actorId)}`,
+      method: 'GET',
+      operation: 'agent-actor-data',
+    });
+
+    return {
+      licensingRequests: payload.licensingRequests || [],
+      licenses: payload.licenses || [],
+    };
+  }
+
   const requests = await query(
     `SELECT *
      FROM licensing_requests

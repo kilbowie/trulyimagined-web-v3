@@ -107,4 +107,43 @@ describe('consent-client - HDICR flag-awareness', () => {
       })
     ).rejects.toThrow('fail-closed');
   });
+
+  it('checkConsent throws in remote mode without base URL', async () => {
+    process.env.HDICR_ADAPTER_MODE = 'remote';
+
+    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
+    vi.doMock('@/lib/consent-ledger', () => ({
+      createConsentEntry: vi.fn(),
+      getConsentHistory: vi.fn(),
+      getLatestConsent: vi.fn(),
+    }));
+
+    const { checkConsent } = await import('@/lib/hdicr/consent-client');
+
+    await expect(
+      checkConsent({
+        actorId: 'actor-123',
+        consentType: 'voice_synthesis',
+      })
+    ).rejects.toThrow('fail-closed');
+  });
+
+  it('listConsentRecords throws in remote mode without base URL', async () => {
+    process.env.HDICR_ADAPTER_MODE = 'remote';
+
+    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
+    vi.doMock('@/lib/consent-ledger', () => ({
+      createConsentEntry: vi.fn(),
+      getConsentHistory: vi.fn(),
+      getLatestConsent: vi.fn(),
+    }));
+
+    const { listConsentRecords } = await import('@/lib/hdicr/consent-client');
+
+    await expect(
+      listConsentRecords({
+        actorId: 'actor-123',
+      })
+    ).rejects.toThrow('fail-closed');
+  });
 });
