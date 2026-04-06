@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@trulyimagined/types": "workspace:*",
-    "@aws-sdk/client-secrets-manager": "^3.515.0",
-    "uuid": "^9.0.1"
+    "@aws-sdk/client-secrets-manager": "^3.1024.0",
+    "uuid": "^13.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.19.0",
