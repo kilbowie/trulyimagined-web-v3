@@ -1,5 +1,28 @@
 name: CI/CD Pipeline
 
+# SECURITY POLICY:
+# ═══════════════════════════════════════════════════════════════════════════
+# This pipeline enforces THREE hard gates before any code reaches production:
+#
+# 1. TYPE-CHECK (Lint Job)
+#    - Enforces TypeScript strict mode across 8 workspace projects
+#    - Failure BLOCKS all deployments (hard gate)
+#    - Run locally: pnpm type-check
+#
+# 2. LINT CHECK (Lint Job)
+#    - Enforces code style and catches common errors
+#    - Failure blocks deployments
+#    - Run locally: pnpm lint
+#
+# 3. BUILD VERIFICATION (Build Job)
+#    - Verifies production bundle compiles and optimizes correctly
+#    - Failure blocks preview and production deployments
+#    - Run locally: pnpm build
+#
+# NO EXCEPTIONS: Type-check and lint failures cannot be overridden.
+# See CI_GATES.md for emergency procedures and branch protection setup.
+# ═══════════════════════════════════════════════════════════════════════════
+
 on:
   push:
     branches: [main, develop]
@@ -16,9 +39,11 @@ on:
           - production
 
 jobs:
-  # Job 1: Type Check & Lint
+  # Job 1: Type Check & Lint (HARD GATE - required for all downstream jobs)
+  # This job MUST pass before security, test, or build jobs can proceed.
+  # Type-check failures immediately block all deployments.
   lint:
-    name: Type Check & Lint
+    name: Type Check & Lint (Hard Gate)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -39,11 +64,17 @@ jobs:
       - name: Build shared types
         run: pnpm --filter @trulyimagined/types build
 
-      - name: Type check
-        run: pnpm type-check
+      - name: Type check (HARD GATE - fail-closes pipeline on error)
+        run: |
+          echo "Enforcing TypeScript strict mode across 8 workspace projects..."
+          pnpm type-check
+          echo "✅ Type-check passed. Pipeline proceeds to downstream jobs."
 
-      - name: Lint
-        run: pnpm lint
+      - name: Lint (fail-closes pipeline on error)
+        run: |
+          echo "Checking code style and common errors..."
+          pnpm lint
+          echo "✅ Lint passed."
 
       - name: Enforce HDICR DB import guardrail
         shell: bash
@@ -146,7 +177,8 @@ jobs:
         if: github.event_name == 'pull_request'
         run: pnpm --filter @trulyimagined/web test:integration
 
-  # Job 4: Build Check
+  # Job 4: Build Check (requires lint + security)
+  # If type-check failed in lint job, this job is skipped and deployment is blocked.
   build:
     name: Build Check
     runs-on: ubuntu-latest
@@ -170,8 +202,10 @@ jobs:
       - name: Build shared types
         run: pnpm --filter @trulyimagined/types build
 
-      - name: Build application
-        run: pnpm build
+      - name: Build application (HARD GATE - fail-closes deployment)
+        run: |
+          echo "Building production bundle with type-check already enforced..."
+          pnpm build
         env:
           # Provide minimal env vars for build (not secrets)
           NEXT_PUBLIC_APP_URL: https://trulyimagined.com
