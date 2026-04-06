@@ -1,6 +1,55 @@
 import { query } from '@/lib/db';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
 
-export async function getStripeIdentityLinkBySessionId(sessionId: string) {
+warnIfRemoteModeEnabled('payments');
+
+function isPaymentsRemoteMode() {
+  return getHdicrAdapterMode('payments') === 'remote';
+}
+
+function getPaymentsRemoteBaseUrlOrThrow(operation: string) {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Payments ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
+
+async function invokePaymentsRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const baseUrl = getPaymentsRemoteBaseUrlOrThrow(params.operation);
+  const url = new URL(params.path, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote payments ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+async function getStripeIdentityLinkBySessionIdLocal(sessionId: string) {
   const existingLink = await query(
     `SELECT id FROM identity_links WHERE provider_user_id = $1 AND provider = 'stripe-identity'`,
     [sessionId]
@@ -9,7 +58,25 @@ export async function getStripeIdentityLinkBySessionId(sessionId: string) {
   return existingLink.rows[0] || null;
 }
 
-export async function updateStripeIdentityLinkVerified(params: {
+export async function getStripeIdentityLinkBySessionId(sessionId: string) {
+  if (isPaymentsRemoteMode()) {
+    const payload = await invokePaymentsRemote<{ link?: { id?: string } | null; id?: string }>({
+      path: `/payments/stripe/identity-link/by-session?sessionId=${encodeURIComponent(sessionId)}`,
+      method: 'GET',
+      operation: 'stripe-identity-link-by-session',
+    });
+
+    if (payload.link !== undefined) {
+      return payload.link;
+    }
+
+    return payload.id ? { id: payload.id } : null;
+  }
+
+  return getStripeIdentityLinkBySessionIdLocal(sessionId);
+}
+
+async function updateStripeIdentityLinkVerifiedLocal(params: {
   linkId: string;
   verificationLevel: string;
   assuranceLevel: string;
@@ -38,7 +105,28 @@ export async function updateStripeIdentityLinkVerified(params: {
   );
 }
 
-export async function createStripeIdentityLinkVerified(params: {
+export async function updateStripeIdentityLinkVerified(params: {
+  linkId: string;
+  verificationLevel: string;
+  assuranceLevel: string;
+  encryptedCredentialData: unknown;
+  metadata: Record<string, unknown>;
+  verifiedAt: Date;
+}) {
+  if (isPaymentsRemoteMode()) {
+    await invokePaymentsRemote<{ success?: boolean }>({
+      path: '/payments/stripe/identity-link/update-verified',
+      method: 'POST',
+      operation: 'stripe-identity-link-update-verified',
+      body: params,
+    });
+    return;
+  }
+
+  await updateStripeIdentityLinkVerifiedLocal(params);
+}
+
+async function createStripeIdentityLinkVerifiedLocal(params: {
   userProfileId: string;
   sessionId: string;
   verificationLevel: string;
@@ -77,7 +165,28 @@ export async function createStripeIdentityLinkVerified(params: {
   return result.rows[0] || null;
 }
 
-export async function updateStripeIdentityLinkRequiresInput(params: {
+export async function createStripeIdentityLinkVerified(params: {
+  userProfileId: string;
+  sessionId: string;
+  verificationLevel: string;
+  assuranceLevel: string;
+  encryptedCredentialData: unknown;
+  metadata: Record<string, unknown>;
+  verifiedAt: Date;
+}) {
+  if (isPaymentsRemoteMode()) {
+    return invokePaymentsRemote<{ id?: string } | null>({
+      path: '/payments/stripe/identity-link/create-verified',
+      method: 'POST',
+      operation: 'stripe-identity-link-create-verified',
+      body: params,
+    });
+  }
+
+  return createStripeIdentityLinkVerifiedLocal(params);
+}
+
+async function updateStripeIdentityLinkRequiresInputLocal(params: {
   linkId: string;
   verificationLevel: string;
   assuranceLevel: string;
@@ -100,7 +209,26 @@ export async function updateStripeIdentityLinkRequiresInput(params: {
   );
 }
 
-export async function createStripeIdentityLinkRequiresInput(params: {
+export async function updateStripeIdentityLinkRequiresInput(params: {
+  linkId: string;
+  verificationLevel: string;
+  assuranceLevel: string;
+  metadata: Record<string, unknown>;
+}) {
+  if (isPaymentsRemoteMode()) {
+    await invokePaymentsRemote<{ success?: boolean }>({
+      path: '/payments/stripe/identity-link/update-requires-input',
+      method: 'POST',
+      operation: 'stripe-identity-link-update-requires-input',
+      body: params,
+    });
+    return;
+  }
+
+  await updateStripeIdentityLinkRequiresInputLocal(params);
+}
+
+async function createStripeIdentityLinkRequiresInputLocal(params: {
   userProfileId: string;
   sessionId: string;
   verificationLevel: string;
@@ -133,7 +261,28 @@ export async function createStripeIdentityLinkRequiresInput(params: {
   );
 }
 
-export async function markStripeIdentityLinkCanceled(
+export async function createStripeIdentityLinkRequiresInput(params: {
+  userProfileId: string;
+  sessionId: string;
+  verificationLevel: string;
+  assuranceLevel: string;
+  encryptedCredentialData: unknown;
+  metadata: Record<string, unknown>;
+}) {
+  if (isPaymentsRemoteMode()) {
+    await invokePaymentsRemote<{ success?: boolean }>({
+      path: '/payments/stripe/identity-link/create-requires-input',
+      method: 'POST',
+      operation: 'stripe-identity-link-create-requires-input',
+      body: params,
+    });
+    return;
+  }
+
+  await createStripeIdentityLinkRequiresInputLocal(params);
+}
+
+async function markStripeIdentityLinkCanceledLocal(
   linkId: string,
   metadata: Record<string, unknown>
 ) {
@@ -145,4 +294,21 @@ export async function markStripeIdentityLinkCanceled(
      WHERE id = $2`,
     [JSON.stringify(metadata), linkId]
   );
+}
+
+export async function markStripeIdentityLinkCanceled(
+  linkId: string,
+  metadata: Record<string, unknown>
+) {
+  if (isPaymentsRemoteMode()) {
+    await invokePaymentsRemote<{ success?: boolean }>({
+      path: '/payments/stripe/identity-link/mark-canceled',
+      method: 'POST',
+      operation: 'stripe-identity-link-mark-canceled',
+      body: { linkId, metadata },
+    });
+    return;
+  }
+
+  await markStripeIdentityLinkCanceledLocal(linkId, metadata);
 }

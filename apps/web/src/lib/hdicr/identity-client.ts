@@ -3,16 +3,76 @@ import { encryptJSON } from '@trulyimagined/utils';
 import { resolveIdentity } from '@/lib/identity-resolution';
 import { createUniqueRegistryId } from '@/lib/registry-id';
 import { ensureActorRegistryId } from '@/lib/registry-id';
-import { warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
 
 warnIfRemoteModeEnabled('identity');
 
-export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boolean> {
+function isIdentityRemoteMode() {
+  return getHdicrAdapterMode('identity') === 'remote';
+}
+
+function getIdentityRemoteBaseUrlOrThrow(operation: string): string {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Identity ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
+
+async function invokeIdentityRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const baseUrl = getIdentityRemoteBaseUrlOrThrow(params.operation);
+  const url = new URL(params.path, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote identity ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+async function actorExistsByAuth0UserIdLocal(auth0UserId: string): Promise<boolean> {
   const result = await query('SELECT id FROM actors WHERE auth0_user_id = $1', [auth0UserId]);
   return result.rows.length > 0;
 }
 
-export async function createActorRegistration(params: {
+export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boolean> {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{ exists?: boolean }>({
+      path: `/identity/actors/exists?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'actor-exists-check',
+    });
+
+    return Boolean(payload.exists);
+  }
+
+  return actorExistsByAuth0UserIdLocal(auth0UserId);
+}
+
+async function createActorRegistrationLocal(params: {
   auth0UserId: string;
   email: string | undefined;
   firstName: string;
@@ -66,7 +126,28 @@ export async function createActorRegistration(params: {
   return result.rows[0] || null;
 }
 
-export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
+export async function createActorRegistration(params: {
+  auth0UserId: string;
+  email: string | undefined;
+  firstName: string;
+  lastName: string;
+  stageName?: string;
+  location?: string;
+  bio?: string;
+}) {
+  if (isIdentityRemoteMode()) {
+    return invokeIdentityRemote<Record<string, unknown>>({
+      path: '/identity/register',
+      method: 'POST',
+      operation: 'actor-registration-create',
+      body: params,
+    });
+  }
+
+  return createActorRegistrationLocal(params);
+}
+
+async function getUserProfileIdByAuth0UserIdLocal(auth0UserId: string): Promise<string | null> {
   const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [
     auth0UserId,
   ]);
@@ -78,7 +159,21 @@ export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promis
   return userResult.rows[0].id as string;
 }
 
-export async function getIdentityLinkByProviderAndProviderUser(
+export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{ userProfileId?: string | null }>({
+      path: `/identity/user-profile-id?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'user-profile-id-resolve',
+    });
+
+    return payload.userProfileId ?? null;
+  }
+
+  return getUserProfileIdByAuth0UserIdLocal(auth0UserId);
+}
+
+async function getIdentityLinkByProviderAndProviderUserLocal(
   userProfileId: string,
   provider: string,
   providerUserId: string
@@ -93,7 +188,40 @@ export async function getIdentityLinkByProviderAndProviderUser(
   return existingLink.rows[0] || null;
 }
 
-export async function reactivateIdentityLink(params: {
+export async function getIdentityLinkByProviderAndProviderUser(
+  userProfileId: string,
+  provider: string,
+  providerUserId: string
+) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{
+      link?: Record<string, unknown> | null;
+      id?: string;
+      is_active?: boolean;
+    }>({
+      path:
+        `/identity/link/by-provider?userProfileId=${encodeURIComponent(userProfileId)}` +
+        `&provider=${encodeURIComponent(provider)}` +
+        `&providerUserId=${encodeURIComponent(providerUserId)}`,
+      method: 'GET',
+      operation: 'identity-link-lookup',
+    });
+
+    if (payload.link !== undefined) {
+      return payload.link;
+    }
+
+    if (payload.id) {
+      return { id: payload.id, is_active: payload.is_active ?? true };
+    }
+
+    return null;
+  }
+
+  return getIdentityLinkByProviderAndProviderUserLocal(userProfileId, provider, providerUserId);
+}
+
+async function reactivateIdentityLinkLocal(params: {
   linkId: string;
   verificationLevel?: string;
   assuranceLevel?: string;
@@ -126,7 +254,28 @@ export async function reactivateIdentityLink(params: {
   );
 }
 
-export async function createIdentityLink(params: {
+export async function reactivateIdentityLink(params: {
+  linkId: string;
+  verificationLevel?: string;
+  assuranceLevel?: string;
+  credentialData?: unknown;
+  metadata?: Record<string, unknown>;
+  expiresAt?: string;
+}) {
+  if (isIdentityRemoteMode()) {
+    await invokeIdentityRemote<{ success?: boolean }>({
+      path: '/identity/link/reactivate',
+      method: 'POST',
+      operation: 'identity-link-reactivate',
+      body: params,
+    });
+    return;
+  }
+
+  await reactivateIdentityLinkLocal(params);
+}
+
+async function createIdentityLinkLocal(params: {
   userProfileId: string;
   provider: string;
   providerUserId: string;
@@ -170,7 +319,30 @@ export async function createIdentityLink(params: {
   return result.rows[0] || null;
 }
 
-export async function unlinkIdentityById(linkId: string, userProfileId: string) {
+export async function createIdentityLink(params: {
+  userProfileId: string;
+  provider: string;
+  providerUserId: string;
+  providerType: string;
+  verificationLevel?: string;
+  assuranceLevel?: string;
+  credentialData?: unknown;
+  metadata?: Record<string, unknown>;
+  expiresAt?: string;
+}) {
+  if (isIdentityRemoteMode()) {
+    return invokeIdentityRemote<Record<string, unknown>>({
+      path: '/identity/link/create',
+      method: 'POST',
+      operation: 'identity-link-create',
+      body: params,
+    });
+  }
+
+  return createIdentityLinkLocal(params);
+}
+
+async function unlinkIdentityByIdLocal(linkId: string, userProfileId: string) {
   const result = await query(
     `UPDATE identity_links
      SET is_active = FALSE, updated_at = NOW()
@@ -182,7 +354,22 @@ export async function unlinkIdentityById(linkId: string, userProfileId: string) 
   return result.rows;
 }
 
-export async function unlinkIdentityByProvider(provider: string, userProfileId: string) {
+export async function unlinkIdentityById(linkId: string, userProfileId: string) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, unknown>> }>({
+      path: '/identity/link/unlink-by-id',
+      method: 'POST',
+      operation: 'identity-link-unlink-by-id',
+      body: { linkId, userProfileId },
+    });
+
+    return payload.rows || [];
+  }
+
+  return unlinkIdentityByIdLocal(linkId, userProfileId);
+}
+
+async function unlinkIdentityByProviderLocal(provider: string, userProfileId: string) {
   const result = await query(
     `UPDATE identity_links
      SET is_active = FALSE, updated_at = NOW()
@@ -194,7 +381,22 @@ export async function unlinkIdentityByProvider(provider: string, userProfileId: 
   return result.rows;
 }
 
-export async function listIdentityLinks(userProfileId: string, activeOnly: boolean) {
+export async function unlinkIdentityByProvider(provider: string, userProfileId: string) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, unknown>> }>({
+      path: '/identity/link/unlink-by-provider',
+      method: 'POST',
+      operation: 'identity-link-unlink-by-provider',
+      body: { provider, userProfileId },
+    });
+
+    return payload.rows || [];
+  }
+
+  return unlinkIdentityByProviderLocal(provider, userProfileId);
+}
+
+async function listIdentityLinksLocal(userProfileId: string, activeOnly: boolean) {
   let sql = `
     SELECT
       id,
@@ -230,7 +432,34 @@ export async function listIdentityLinks(userProfileId: string, activeOnly: boole
   return result.rows;
 }
 
-export async function getActorRegistrationStatus(auth0UserId: string) {
+export async function listIdentityLinks(userProfileId: string, activeOnly: boolean) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{
+      rows?: Array<Record<string, unknown>>;
+      links?: Array<Record<string, unknown>>;
+    }>({
+      path:
+        `/identity/links?userProfileId=${encodeURIComponent(userProfileId)}` +
+        `&activeOnly=${activeOnly ? 'true' : 'false'}`,
+      method: 'GET',
+      operation: 'identity-links-list',
+    });
+
+    if (Array.isArray(payload.rows)) {
+      return payload.rows;
+    }
+
+    if (Array.isArray(payload.links)) {
+      return payload.links;
+    }
+
+    throw new Error('[HDICR] Remote identity links list returned an unexpected payload.');
+  }
+
+  return listIdentityLinksLocal(userProfileId, activeOnly);
+}
+
+async function getActorRegistrationStatusLocal(auth0UserId: string) {
   const result = await query(
     `SELECT
       a.id,
@@ -276,8 +505,22 @@ export async function getActorRegistrationStatus(auth0UserId: string) {
   };
 }
 
-export async function getIdentityResolution(auth0UserId: string) {
-  const userProfileId = await getUserProfileIdByAuth0UserId(auth0UserId);
+export async function getActorRegistrationStatus(auth0UserId: string) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{ status?: Record<string, unknown> | null }>({
+      path: `/identity/registration-status?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'actor-registration-status',
+    });
+
+    return payload.status ?? null;
+  }
+
+  return getActorRegistrationStatusLocal(auth0UserId);
+}
+
+async function getIdentityResolutionLocal(auth0UserId: string) {
+  const userProfileId = await getUserProfileIdByAuth0UserIdLocal(auth0UserId);
   if (!userProfileId) {
     return null;
   }
@@ -289,8 +532,32 @@ export async function getIdentityResolution(auth0UserId: string) {
   };
 }
 
-export async function getVerificationLinksSummary(auth0UserId: string) {
-  const userProfileId = await getUserProfileIdByAuth0UserId(auth0UserId);
+export async function getIdentityResolution(auth0UserId: string) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{
+      userProfileId?: string;
+      resolution?: Record<string, unknown>;
+    }>({
+      path: `/identity/resolution?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'identity-resolution',
+    });
+
+    if (!payload.userProfileId) {
+      return null;
+    }
+
+    return {
+      userProfileId: payload.userProfileId,
+      resolution: payload.resolution,
+    };
+  }
+
+  return getIdentityResolutionLocal(auth0UserId);
+}
+
+async function getVerificationLinksSummaryLocal(auth0UserId: string) {
+  const userProfileId = await getUserProfileIdByAuth0UserIdLocal(auth0UserId);
   if (!userProfileId) {
     return null;
   }
@@ -321,4 +588,28 @@ export async function getVerificationLinksSummary(auth0UserId: string) {
     userProfileId,
     links: linksResult.rows,
   };
+}
+
+export async function getVerificationLinksSummary(auth0UserId: string) {
+  if (isIdentityRemoteMode()) {
+    const payload = await invokeIdentityRemote<{
+      userProfileId?: string;
+      links?: Array<Record<string, unknown>>;
+    }>({
+      path: `/identity/verification-links-summary?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+      method: 'GET',
+      operation: 'identity-verification-links-summary',
+    });
+
+    if (!payload.userProfileId) {
+      return null;
+    }
+
+    return {
+      userProfileId: payload.userProfileId,
+      links: payload.links || [],
+    };
+  }
+
+  return getVerificationLinksSummaryLocal(auth0UserId);
 }

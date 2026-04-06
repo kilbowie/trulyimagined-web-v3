@@ -1,4 +1,12 @@
-type HdicrDomain = 'consent' | 'licensing' | 'identity' | 'credentials';
+type HdicrDomain =
+  | 'consent'
+  | 'licensing'
+  | 'identity'
+  | 'credentials'
+  | 'representation'
+  | 'usage'
+  | 'billing'
+  | 'payments';
 type AdapterMode = 'local' | 'remote';
 
 const warnedDomains = new Set<string>();
@@ -40,12 +48,12 @@ export function warnIfRemoteModeEnabled(domain: HdicrDomain) {
   const baseUrl = getHdicrRemoteBaseUrl();
   if (!baseUrl) {
     console.warn(
-      `[HDICR] ${domain} adapter is set to remote mode without HDICR_REMOTE_BASE_URL. Falling back to local adapter implementation.`
+      `[HDICR] ${domain} adapter is set to remote mode without HDICR_REMOTE_BASE_URL. Remote operations should fail closed.`
     );
     return;
   }
 
   console.warn(
-    `[HDICR] ${domain} adapter is configured for remote mode (${baseUrl}) but is currently using local fallback implementation.`
+    `[HDICR] ${domain} adapter is configured for remote mode (${baseUrl}).`
   );
 }
