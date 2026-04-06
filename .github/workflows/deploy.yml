@@ -45,6 +45,27 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Enforce HDICR DB import guardrail
+        shell: bash
+        run: |
+          protected_paths=(
+            "apps/web/src/app/api/consent"
+            "apps/web/src/app/api/consent-ledger"
+            "apps/web/src/app/api/licenses"
+            "apps/web/src/app/api/actor/licensing-requests"
+            "apps/web/src/app/api/identity"
+            "apps/web/src/app/api/credentials"
+            "apps/web/src/app/api/representation"
+            "apps/web/src/app/api/usage"
+            "apps/web/src/app/api/billing"
+            "apps/web/src/app/api/webhooks/stripe"
+          )
+
+          if grep -R --line-number -E "from ['\"]@/lib/db(\.ts)?['\"]" "${protected_paths[@]}"; then
+            echo "Guardrail failed: direct DB imports are forbidden in protected HDICR API paths."
+            exit 1
+          fi
+
   # Job 2: Security Scan
   security:
     name: Security Scan
