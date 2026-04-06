@@ -287,7 +287,12 @@ export async function revokeCredentialById(credentialId: string, reason?: string
           '[HDICR] Remote credential revoke returned an unexpected payload. Falling back to local adapter.'
         );
       } else if (response.status === 404) {
-        return { found: false as const, alreadyRevoked: false, hasStatusEntry: false, revokedAt: null };
+        return {
+          found: false as const,
+          alreadyRevoked: false,
+          hasStatusEntry: false,
+          revokedAt: null,
+        };
       } else {
         console.warn(
           `[HDICR] Remote credential revoke failed with status ${response.status}. Falling back to local adapter.`

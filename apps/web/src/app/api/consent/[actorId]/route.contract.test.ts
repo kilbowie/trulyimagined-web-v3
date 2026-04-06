@@ -96,9 +96,12 @@ describe('GET /api/consent/[actorId] - Contract Test', () => {
       totalCount: 1,
     } as any);
 
-    const request = new NextRequest('http://localhost:3000/api/consent/actor-123?limit=50&offset=0', {
-      method: 'GET',
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/consent/actor-123?limit=50&offset=0',
+      {
+        method: 'GET',
+      }
+    );
 
     const response = await GET(request, {
       params: Promise.resolve({ actorId: 'actor-123' }),
@@ -131,10 +134,9 @@ describe('GET /api/consent/[actorId] - Contract Test', () => {
       totalCount: 0,
     } as any);
 
-    const request = new NextRequest(
-      'http://localhost:3000/api/consent/actor-123?action=granted',
-      { method: 'GET' }
-    );
+    const request = new NextRequest('http://localhost:3000/api/consent/actor-123?action=granted', {
+      method: 'GET',
+    });
 
     const response = await GET(request, {
       params: Promise.resolve({ actorId: 'actor-123' }),

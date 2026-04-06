@@ -9,8 +9,12 @@
 
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
-import { randomUUID } from 'crypto';
+import {
+  actorExistsById,
+  createUsageAuditLog,
+  createUsageTrackingRecord,
+  getLicensingRequestStatusById,
+} from '@/lib/hdicr/usage-client';
 
 // Type definitions
 interface TrackUsageRequest {
@@ -79,27 +83,25 @@ export async function POST(req: Request) {
     }
 
     // 6. Verify actor exists
-    const actorCheck = await query('SELECT id FROM actors WHERE id = $1', [actorId]);
+    const actorExists = await actorExistsById(actorId);
 
-    if (actorCheck.rows.length === 0) {
+    if (!actorExists) {
       return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
     }
 
     // 7. If licensing_request_id provided, verify it exists and is approved
     if (licensingRequestId) {
-      const licenseCheck = await query('SELECT id, status FROM licensing_requests WHERE id = $1', [
-        licensingRequestId,
-      ]);
+      const licensingRequest = await getLicensingRequestStatusById(licensingRequestId);
 
-      if (licenseCheck.rows.length === 0) {
+      if (!licensingRequest) {
         return NextResponse.json({ error: 'Licensing request not found' }, { status: 404 });
       }
 
-      if (licenseCheck.rows[0].status !== 'approved') {
+      if (licensingRequest.status !== 'approved') {
         return NextResponse.json(
           {
             error: 'Licensing request not approved',
-            status: licenseCheck.rows[0].status,
+            status: licensingRequest.status,
           },
           { status: 403 }
         );
@@ -107,51 +109,33 @@ export async function POST(req: Request) {
     }
 
     // 8. Log usage
-    const id = randomUUID();
-    const result = await query(
-      `INSERT INTO usage_tracking (
-        id, actor_id, licensing_request_id, usage_type, quantity, unit,
-        project_name, generated_by, metadata, created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-      RETURNING *`,
-      [
-        id,
+    const usage = await createUsageTrackingRecord({
+      actorId,
+      licensingRequestId,
+      usageType,
+      quantity,
+      unit,
+      projectName,
+      generatedBy: generatedBy || session.user?.sub || 'system',
+      metadata,
+    });
+
+    // 9. Log to audit trail
+    if (usage?.id) {
+      await createUsageAuditLog({
         actorId,
-        licensingRequestId || null,
+        resourceId: usage.id,
         usageType,
         quantity,
         unit,
-        projectName || null,
-        generatedBy || session.user?.sub || 'system',
-        JSON.stringify(metadata),
-      ]
-    );
-
-    // 9. Log to audit trail
-    await query(
-      `INSERT INTO audit_log (
-        actor_id, action, resource_type, resource_id, metadata,
-        created_at
-      ) VALUES ($1, $2, $3, $4, $5, NOW())`,
-      [
-        actorId,
-        'usage_tracked',
-        'usage_tracking',
-        id,
-        JSON.stringify({
-          actorId,
-          usageType,
-          quantity,
-          unit,
-        }),
-      ]
-    );
+      });
+    }
 
     // 10. Return success
     return NextResponse.json(
       {
         success: true,
-        usage: result.rows[0],
+        usage,
         message: `Successfully tracked ${quantity} ${unit} of ${usageType}`,
       },
       { status: 201 }

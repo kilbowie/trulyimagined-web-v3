@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { getActorByAuth0Id, getActiveRepresentationForActor } from '@/lib/representation';
+import {
+  createRepresentationRequest,
+  getActiveRepresentationForActor,
+  getActorByAuth0UserId,
+  getAgentByRegistryId,
+  hasPendingRequest,
+} from '@/lib/hdicr/representation-client';
 
 interface RequestPayload {
   agentRegistryId?: string;
@@ -27,7 +32,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
-    const actor = await getActorByAuth0Id(user.sub);
+    const actor = await getActorByAuth0UserId(user.sub);
     if (!actor) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
@@ -49,22 +54,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Agent registry ID is required' }, { status: 400 });
     }
 
-    const agentResult = await query(
-      `SELECT id, agency_name, profile_completed
-       FROM agents
-       WHERE registry_id = $1
-         AND deleted_at IS NULL`,
-      [agentRegistryId]
-    );
+    const agent = await getAgentByRegistryId(agentRegistryId);
 
-    if (agentResult.rows.length === 0) {
+    if (!agent) {
       return NextResponse.json(
         { error: 'Agent not found for the provided registry ID' },
         { status: 404 }
       );
     }
-
-    const agent = agentResult.rows[0];
 
     if (!agent.profile_completed) {
       return NextResponse.json(
@@ -73,42 +70,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const duplicatePending = await query(
-      `SELECT 1
-       FROM representation_requests
-       WHERE actor_id = $1
-         AND agent_id = $2
-         AND status = 'pending'
-       LIMIT 1`,
-      [actor.id, agent.id]
-    );
+    const duplicatePending = await hasPendingRequest(actor.id, agent.id);
 
-    if (duplicatePending.rows.length > 0) {
+    if (duplicatePending) {
       return NextResponse.json(
         { error: 'You already have a pending request with this agent.' },
         { status: 409 }
       );
     }
 
-    const result = await query(
-      `INSERT INTO representation_requests (
-        actor_id,
-        agent_id,
-        status,
-        message,
-        requested_at,
-        created_at,
-        updated_at
-      ) VALUES (
-        $1, $2, 'pending', $3, NOW(), NOW(), NOW()
-      )
-      RETURNING *`,
-      [actor.id, agent.id, payload.message?.trim() || null]
-    );
+    const createdRequest = await createRepresentationRequest({
+      actorId: actor.id,
+      agentId: agent.id,
+      message: payload.message,
+    });
 
     return NextResponse.json({
       success: true,
-      request: result.rows[0],
+      request: createdRequest,
       message: `Representation request sent to ${agent.agency_name}.`,
     });
   } catch (error) {

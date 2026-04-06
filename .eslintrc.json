@@ -22,6 +22,39 @@
       }
     ]
   },
+  "overrides": [
+    {
+      "files": [
+        "apps/web/src/app/api/consent/**/*.ts",
+        "apps/web/src/app/api/consent-ledger/**/*.ts",
+        "apps/web/src/app/api/licenses/**/*.ts",
+        "apps/web/src/app/api/actor/licensing-requests/**/*.ts",
+        "apps/web/src/app/api/identity/**/*.ts",
+        "apps/web/src/app/api/credentials/**/*.ts",
+        "apps/web/src/app/api/representation/**/*.ts",
+        "apps/web/src/app/api/usage/**/*.ts",
+        "apps/web/src/app/api/billing/**/*.ts",
+        "apps/web/src/app/api/webhooks/stripe/**/*.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "@/lib/db",
+                "message": "Direct DB access is forbidden in HDICR-owned API routes. Use adapters under @/lib/hdicr instead."
+              },
+              {
+                "name": "@/lib/db.ts",
+                "message": "Direct DB access is forbidden in HDICR-owned API routes. Use adapters under @/lib/hdicr instead."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
   "env": {
     "node": true,
     "es2022": true

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { getAgentByRegistryId } from '@/lib/hdicr/representation-client';
 
 /**
  * GET /api/representation/lookup?registryId=XXXX-XXXX-XXXX
@@ -27,27 +27,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'registryId query parameter is required' }, { status: 400 });
     }
 
-    const result = await query(
-      `SELECT
-         id,
-         registry_id,
-         agency_name,
-         verification_status,
-         profile_image_url,
-         location,
-         website_url,
-         profile_completed
-       FROM agents
-       WHERE registry_id = $1
-         AND deleted_at IS NULL`,
-      [registryId]
-    );
+    const agent = await getAgentByRegistryId(registryId);
 
-    if (result.rows.length === 0) {
+    if (!agent) {
       return NextResponse.json({ error: 'Agent not found' }, { status: 404 });
     }
-
-    const agent = result.rows[0];
 
     if (!agent.profile_completed) {
       return NextResponse.json(

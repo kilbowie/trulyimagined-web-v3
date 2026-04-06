@@ -1,10 +1,70 @@
 import { query } from '@/lib/db';
 import { encryptJSON } from '@trulyimagined/utils';
 import { resolveIdentity } from '@/lib/identity-resolution';
+import { createUniqueRegistryId } from '@/lib/registry-id';
 import { ensureActorRegistryId } from '@/lib/registry-id';
 import { warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
 
 warnIfRemoteModeEnabled('identity');
+
+export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boolean> {
+  const result = await query('SELECT id FROM actors WHERE auth0_user_id = $1', [auth0UserId]);
+  return result.rows.length > 0;
+}
+
+export async function createActorRegistration(params: {
+  auth0UserId: string;
+  email: string | undefined;
+  firstName: string;
+  lastName: string;
+  stageName?: string;
+  location?: string;
+  bio?: string;
+}) {
+  const registryId = await createUniqueRegistryId();
+
+  const result = await query(
+    `INSERT INTO actors (
+      auth0_user_id,
+      email,
+      registry_id,
+      first_name,
+      last_name,
+      stage_name,
+      location,
+      bio,
+      verification_status,
+      is_founding_member,
+      created_at,
+      updated_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
+    RETURNING
+      id,
+      registry_id,
+      first_name,
+      last_name,
+      stage_name,
+      location,
+      bio,
+      verification_status,
+      is_founding_member,
+      created_at`,
+    [
+      params.auth0UserId,
+      params.email,
+      registryId,
+      params.firstName,
+      params.lastName,
+      params.stageName || null,
+      params.location || null,
+      params.bio || null,
+      'pending',
+      false,
+    ]
+  );
+
+  return result.rows[0] || null;
+}
 
 export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
   const userResult = await query(`SELECT id FROM user_profiles WHERE auth0_user_id = $1`, [

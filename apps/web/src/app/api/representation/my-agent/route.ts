@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { getActorByAuth0Id, getActiveRepresentationForActor } from '@/lib/representation';
+import {
+  getActiveRepresentationForActor,
+  getActorByAuth0UserId,
+} from '@/lib/hdicr/representation-client';
 
 /**
  * GET /api/representation/my-agent
@@ -21,7 +24,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
-    const actor = await getActorByAuth0Id(user.sub);
+    const actor = await getActorByAuth0UserId(user.sub);
     if (!actor) {
       return NextResponse.json({ representation: null });
     }

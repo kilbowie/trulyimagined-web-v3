@@ -1,12 +1,15 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
 import {
   findStripeCustomerByAuth0User,
   getPlanPriceId,
   getPlansForRoles,
   isStripeBillingConfigured,
 } from '@/lib/billing';
+import {
+  getBillingOpportunities,
+  getBillingProfileByAuth0UserId,
+} from '@/lib/hdicr/billing-client';
 import { stripe } from '@/lib/stripe';
 
 export async function GET() {
@@ -17,19 +20,15 @@ export async function GET() {
     }
 
     const auth0UserId = session.user.sub;
-    const profileResult = await query(
-      'SELECT id, role, email, username FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1',
-      [auth0UserId]
-    );
+    const profile = await getBillingProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
     const roles = profile.role ? [profile.role] : [];
 
     const availablePlans = getPlansForRoles(roles).map((plan) => ({
@@ -48,26 +47,7 @@ export async function GET() {
         billingHistory: [],
         paymentsHistory: [],
         cards: [],
-        opportunities: {
-          canMonetizeLicensing: profile.role === 'Actor',
-          recommendedActions:
-            profile.role === 'Actor'
-              ? [
-                  {
-                    label: 'Manage License Grants',
-                    href: '/dashboard/licenses',
-                  },
-                  {
-                    label: 'Issue Verifiable Credentials',
-                    href: '/dashboard/verifiable-credentials',
-                  },
-                  {
-                    label: 'Refine Consent Preferences',
-                    href: '/dashboard/consent-preferences',
-                  },
-                ]
-              : [],
-        },
+        opportunities: getBillingOpportunities(profile.role || null),
         availablePlans,
       });
     }
@@ -84,26 +64,7 @@ export async function GET() {
         billingHistory: [],
         paymentsHistory: [],
         cards: [],
-        opportunities: {
-          canMonetizeLicensing: profile.role === 'Actor',
-          recommendedActions:
-            profile.role === 'Actor'
-              ? [
-                  {
-                    label: 'Manage License Grants',
-                    href: '/dashboard/licenses',
-                  },
-                  {
-                    label: 'Issue Verifiable Credentials',
-                    href: '/dashboard/verifiable-credentials',
-                  },
-                  {
-                    label: 'Refine Consent Preferences',
-                    href: '/dashboard/consent-preferences',
-                  },
-                ]
-              : [],
-        },
+        opportunities: getBillingOpportunities(profile.role || null),
         availablePlans,
       });
     }
@@ -216,26 +177,7 @@ export async function GET() {
       billingHistory,
       paymentsHistory,
       cards,
-      opportunities: {
-        canMonetizeLicensing: profile.role === 'Actor',
-        recommendedActions:
-          profile.role === 'Actor'
-            ? [
-                {
-                  label: 'Manage License Grants',
-                  href: '/dashboard/licenses',
-                },
-                {
-                  label: 'Issue Verifiable Credentials',
-                  href: '/dashboard/verifiable-credentials',
-                },
-                {
-                  label: 'Refine Consent Preferences',
-                  href: '/dashboard/consent-preferences',
-                },
-              ]
-            : [],
-      },
+      opportunities: getBillingOpportunities(profile.role || null),
       availablePlans,
     });
   } catch (error) {

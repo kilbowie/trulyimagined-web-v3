@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isActor } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { createUniqueRegistryId } from '@/lib/registry-id';
+import { actorExistsByAuth0UserId, createActorRegistration } from '@/lib/hdicr/identity-client';
 
 /**
  * Actor Registration API Route (Development)
@@ -41,59 +40,24 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user is already registered
-    const existingActor = await query('SELECT id FROM actors WHERE auth0_user_id = $1', [user.sub]);
+    const existingActor = await actorExistsByAuth0UserId(user.sub);
 
-    if (existingActor.rows.length > 0) {
+    if (existingActor) {
       return NextResponse.json(
         { error: 'User already registered' },
         { status: 409 } // Conflict
       );
     }
 
-    const registryId = await createUniqueRegistryId();
-
-    // Insert actor into database
-    const result = await query(
-      `INSERT INTO actors (
-        auth0_user_id,
-        email,
-        registry_id,
-        first_name,
-        last_name,
-        stage_name,
-        location,
-        bio,
-        verification_status,
-        is_founding_member,
-        created_at,
-        updated_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())
-      RETURNING 
-        id,
-        registry_id,
-        first_name,
-        last_name,
-        stage_name,
-        location,
-        bio,
-        verification_status,
-        is_founding_member,
-        created_at`,
-      [
-        user.sub,
-        user.email,
-        registryId,
-        firstName,
-        lastName,
-        stageName || null,
-        location || null,
-        bio || null,
-        'pending', // Default verification status
-        false, // Default not founding member
-      ]
-    );
-
-    const actor = result.rows[0];
+    const actor = await createActorRegistration({
+      auth0UserId: user.sub,
+      email: user.email,
+      firstName,
+      lastName,
+      stageName,
+      location,
+      bio,
+    });
 
     console.log('[IDENTITY] Registration successful:', {
       actorId: actor.actor_id,

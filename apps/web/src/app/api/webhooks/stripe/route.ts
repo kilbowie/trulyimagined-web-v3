@@ -18,7 +18,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe, mapStripeStatusToVerificationLevel, getVerifiedIdentityData } from '@/lib/stripe';
-import { query } from '@/lib/db';
+import {
+  createStripeIdentityLinkRequiresInput,
+  createStripeIdentityLinkVerified,
+  getStripeIdentityLinkBySessionId,
+  markStripeIdentityLinkCanceled,
+  updateStripeIdentityLinkRequiresInput,
+  updateStripeIdentityLinkVerified,
+} from '@/lib/hdicr/stripe-webhook-client';
 import { encryptJSON } from '@trulyimagined/utils';
 import Stripe from 'stripe';
 
@@ -131,45 +138,31 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
     const levels = mapStripeStatusToVerificationLevel('verified');
 
     // Check if identity link already exists for this session
-    const existingLink = await query(
-      `SELECT id FROM identity_links WHERE provider_user_id = $1 AND provider = 'stripe-identity'`,
-      [session.id]
-    );
+    const existingLink = await getStripeIdentityLinkBySessionId(session.id);
 
-    if (existingLink.rows.length > 0) {
+    if (existingLink) {
       console.log('[STRIPE WEBHOOK] Identity link already exists, updating:', {
-        linkId: existingLink.rows[0].id,
+        linkId: existingLink.id,
       });
 
       // Encrypt credential_data before storing (Step 11: Database Encryption)
       const encryptedCredentialData = encryptJSON(verifiedData);
 
       // Update existing link
-      await query(
-        `UPDATE identity_links 
-         SET verification_level = $1,
-             assurance_level = $2,
-             credential_data = $3,
-             metadata = $4,
-             verified_at = $5,
-             last_verified_at = NOW(),
-             updated_at = NOW()
-         WHERE id = $6`,
-        [
-          levels.verification_level,
-          levels.assurance_level,
-          encryptedCredentialData,
-          JSON.stringify({
-            stripe_session_id: session.id,
-            gpg45_confidence: levels.gpg45_confidence,
-            eidas_level: levels.eidas_level,
-            last_error: session.last_error?.reason || null,
-            verified_at: new Date().toISOString(),
-          }),
-          new Date(),
-          existingLink.rows[0].id,
-        ]
-      );
+      await updateStripeIdentityLinkVerified({
+        linkId: existingLink.id,
+        verificationLevel: levels.verification_level,
+        assuranceLevel: levels.assurance_level,
+        encryptedCredentialData,
+        metadata: {
+          stripe_session_id: session.id,
+          gpg45_confidence: levels.gpg45_confidence,
+          eidas_level: levels.eidas_level,
+          last_error: session.last_error?.reason || null,
+          verified_at: new Date().toISOString(),
+        },
+        verifiedAt: new Date(),
+      });
 
       console.log('[STRIPE WEBHOOK] Updated existing identity link');
     } else {
@@ -177,39 +170,22 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
       const encryptedCredentialData = encryptJSON(verifiedData);
 
       // Create new identity link
-      const linkResult = await query(
-        `INSERT INTO identity_links (
-          user_profile_id,
-          provider,
-          provider_user_id,
-          provider_type,
-          verification_level,
-          assurance_level,
-          credential_data,
-          metadata,
-          verified_at,
-          last_verified_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-        RETURNING id`,
-        [
-          userProfileId,
-          'stripe-identity',
-          session.id,
-          'kyc',
-          levels.verification_level,
-          levels.assurance_level,
-          encryptedCredentialData,
-          JSON.stringify({
-            stripe_session_id: session.id,
-            gpg45_confidence: levels.gpg45_confidence,
-            eidas_level: levels.eidas_level,
-            verified_at: new Date().toISOString(),
-          }),
-          new Date(),
-        ]
-      );
+      const linkResult = await createStripeIdentityLinkVerified({
+        userProfileId,
+        sessionId: session.id,
+        verificationLevel: levels.verification_level,
+        assuranceLevel: levels.assurance_level,
+        encryptedCredentialData,
+        metadata: {
+          stripe_session_id: session.id,
+          gpg45_confidence: levels.gpg45_confidence,
+          eidas_level: levels.eidas_level,
+          verified_at: new Date().toISOString(),
+        },
+        verifiedAt: new Date(),
+      });
 
-      const linkId = linkResult.rows[0].id;
+      const linkId = linkResult?.id;
 
       console.log('[STRIPE WEBHOOK] Created identity link:', {
         linkId,
@@ -246,34 +222,22 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
   const levels = mapStripeStatusToVerificationLevel('requires_input');
 
   // Check if identity link exists
-  const existingLink = await query(
-    `SELECT id FROM identity_links WHERE provider_user_id = $1 AND provider = 'stripe-identity'`,
-    [session.id]
-  );
+  const existingLink = await getStripeIdentityLinkBySessionId(session.id);
 
-  if (existingLink.rows.length > 0) {
+  if (existingLink) {
     // Update existing link with requires_input status
-    await query(
-      `UPDATE identity_links 
-       SET verification_level = $1,
-           assurance_level = $2,
-           metadata = $3,
-           last_verified_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $4`,
-      [
-        levels.verification_level,
-        levels.assurance_level,
-        JSON.stringify({
-          stripe_session_id: session.id,
-          gpg45_confidence: levels.gpg45_confidence,
-          eidas_level: levels.eidas_level,
-          last_error: session.last_error?.reason || 'requires_input',
-          status: 'requires_input',
-        }),
-        existingLink.rows[0].id,
-      ]
-    );
+    await updateStripeIdentityLinkRequiresInput({
+      linkId: existingLink.id,
+      verificationLevel: levels.verification_level,
+      assuranceLevel: levels.assurance_level,
+      metadata: {
+        stripe_session_id: session.id,
+        gpg45_confidence: levels.gpg45_confidence,
+        eidas_level: levels.eidas_level,
+        last_error: session.last_error?.reason || 'requires_input',
+        status: 'requires_input',
+      },
+    });
 
     console.log('[STRIPE WEBHOOK] Updated identity link to requires_input status');
   } else {
@@ -285,35 +249,20 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
     const encryptedCredentialData = encryptJSON(credentialData);
 
     // Create new link with requires_input status
-    await query(
-      `INSERT INTO identity_links (
-        user_profile_id,
-        provider,
-        provider_user_id,
-        provider_type,
-        verification_level,
-        assurance_level,
-        credential_data,
-        metadata,
-        last_verified_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())`,
-      [
-        userProfileId,
-        'stripe-identity',
-        session.id,
-        'kyc',
-        levels.verification_level,
-        levels.assurance_level,
-        encryptedCredentialData,
-        JSON.stringify({
-          stripe_session_id: session.id,
-          gpg45_confidence: levels.gpg45_confidence,
-          eidas_level: levels.eidas_level,
-          last_error: session.last_error?.reason || 'requires_input',
-          status: 'requires_input',
-        }),
-      ]
-    );
+    await createStripeIdentityLinkRequiresInput({
+      userProfileId,
+      sessionId: session.id,
+      verificationLevel: levels.verification_level,
+      assuranceLevel: levels.assurance_level,
+      encryptedCredentialData,
+      metadata: {
+        stripe_session_id: session.id,
+        gpg45_confidence: levels.gpg45_confidence,
+        eidas_level: levels.eidas_level,
+        last_error: session.last_error?.reason || 'requires_input',
+        status: 'requires_input',
+      },
+    });
 
     console.log('[STRIPE WEBHOOK] Created identity link with requires_input status');
   }
@@ -353,27 +302,14 @@ async function handleVerificationCanceled(session: Stripe.Identity.VerificationS
   });
 
   // Check if identity link exists and mark as canceled
-  const existingLink = await query(
-    `SELECT id FROM identity_links WHERE provider_user_id = $1 AND provider = 'stripe-identity'`,
-    [session.id]
-  );
+  const existingLink = await getStripeIdentityLinkBySessionId(session.id);
 
-  if (existingLink.rows.length > 0) {
-    await query(
-      `UPDATE identity_links 
-       SET is_active = FALSE,
-           metadata = $1,
-           updated_at = NOW()
-       WHERE id = $2`,
-      [
-        JSON.stringify({
-          stripe_session_id: session.id,
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
-        }),
-        existingLink.rows[0].id,
-      ]
-    );
+  if (existingLink) {
+    await markStripeIdentityLinkCanceled(existingLink.id, {
+      stripe_session_id: session.id,
+      status: 'canceled',
+      canceled_at: new Date().toISOString(),
+    });
 
     console.log('[STRIPE WEBHOOK] Marked identity link as inactive (canceled)');
   }

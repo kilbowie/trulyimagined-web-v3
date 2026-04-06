@@ -8,7 +8,11 @@
 
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import {
+  getActorUsageRecords,
+  getActorUsageStats,
+  getUsageActorById,
+} from '@/lib/hdicr/usage-client';
 
 export async function GET(req: Request, { params }: { params: Promise<{ actorId: string }> }) {
   try {
@@ -26,48 +30,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ actorId:
     const offset = parseInt(url.searchParams.get('offset') || '0');
 
     // 3. Verify actor exists
-    const actorCheck = await query(
-      'SELECT id, first_name, last_name, stage_name FROM actors WHERE id = $1',
-      [actorId]
-    );
+    const actor = await getUsageActorById(actorId);
 
-    if (actorCheck.rows.length === 0) {
+    if (!actor) {
       return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
     }
 
-    const actor = actorCheck.rows[0];
-
     // 4. Get usage records
-    const usageResult = await query(
-      `SELECT * FROM usage_tracking 
-       WHERE actor_id = $1
-       ORDER BY created_at DESC
-       LIMIT $2 OFFSET $3`,
-      [actorId, limit, offset]
-    );
+    const usage = await getActorUsageRecords(actorId, limit, offset);
 
     // 5. Get usage stats
-    const statsResult = await query(
-      `SELECT 
-        usage_type,
-        unit,
-        SUM(quantity) as total_quantity,
-        COUNT(*) as total_records,
-        MIN(created_at) as first_usage,
-        MAX(created_at) as last_usage
-      FROM usage_tracking
-      WHERE actor_id = $1
-      GROUP BY usage_type, unit`,
-      [actorId]
-    );
-
-    // 6. Get total minutes (key metric)
-    const minutesResult = await query(
-      `SELECT SUM(quantity) as total_minutes
-       FROM usage_tracking
-       WHERE actor_id = $1 AND usage_type = 'voice_minutes' AND unit = 'minutes'`,
-      [actorId]
-    );
+    const usageStats = await getActorUsageStats(actorId);
 
     // 7. Return response
     return NextResponse.json({
@@ -75,13 +48,13 @@ export async function GET(req: Request, { params }: { params: Promise<{ actorId:
         id: actor.id,
         name: actor.stage_name || `${actor.first_name} ${actor.last_name}`,
       },
-      usage: usageResult.rows,
-      stats: statsResult.rows,
-      totalMinutes: parseFloat(minutesResult.rows[0]?.total_minutes || '0'),
+      usage,
+      stats: usageStats.stats,
+      totalMinutes: usageStats.totalMinutes,
       pagination: {
         limit,
         offset,
-        count: usageResult.rows.length,
+        count: usage.length,
       },
     });
   } catch (error) {

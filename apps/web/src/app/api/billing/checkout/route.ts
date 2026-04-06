@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
 import { z } from 'zod';
 import {
   getOrCreateStripeCustomer,
@@ -9,6 +8,7 @@ import {
   getPlansForRoles,
   isStripeBillingConfigured,
 } from '@/lib/billing';
+import { getBillingProfileByAuth0UserId } from '@/lib/hdicr/billing-client';
 import { stripe } from '@/lib/stripe';
 
 const CheckoutSchema = z.object({
@@ -38,19 +38,15 @@ export async function POST(request: NextRequest) {
     }
 
     const auth0UserId = session.user.sub;
-    const profileResult = await query(
-      'SELECT id, role, email, username FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1',
-      [auth0UserId]
-    );
+    const profile = await getBillingProfileByAuth0UserId(auth0UserId);
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
         { status: 404 }
       );
     }
 
-    const profile = profileResult.rows[0];
     const roles = profile.role ? [profile.role] : [];
     const allowedPlans = getPlansForRoles(roles);
 

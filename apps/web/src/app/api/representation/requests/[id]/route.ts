@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { getActorByAuth0Id, getAgentByAuth0Id } from '@/lib/representation';
+import {
+  actorHasActiveRelationship,
+  createActorAgentRelationship,
+  getActorByAuth0UserId,
+  getAgentByAuth0UserId,
+  getRepresentationRequestById,
+  updateRepresentationRequest,
+} from '@/lib/hdicr/representation-client';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -36,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     let agentRecord: { id: string; profile_completed?: boolean } | null = null;
 
     if (hasAgentRole) {
-      agentRecord = await getAgentByAuth0Id(user.sub);
+      agentRecord = await getAgentByAuth0UserId(user.sub);
       agentId = agentRecord?.id ?? null;
     } else {
       const membership = await getAgentTeamMembership();
@@ -51,7 +57,7 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
       return NextResponse.json({ error: 'Forbidden: insufficient permissions' }, { status: 403 });
     }
 
-    const actor = hasActorRole ? await getActorByAuth0Id(user.sub) : null;
+    const actor = hasActorRole ? await getActorByAuth0UserId(user.sub) : null;
 
     const { id } = await params;
     const body = (await req.json()) as UpdateRequestPayload;
@@ -63,18 +69,11 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
       );
     }
 
-    const requestResult = await query(
-      `SELECT id, actor_id, agent_id, status
-       FROM representation_requests
-       WHERE id = $1`,
-      [id]
-    );
+    const targetRequest = await getRepresentationRequestById(id);
 
-    if (requestResult.rows.length === 0) {
+    if (!targetRequest) {
       return NextResponse.json({ error: 'Representation request not found' }, { status: 404 });
     }
-
-    const targetRequest = requestResult.rows[0];
 
     if (targetRequest.status !== 'pending') {
       return NextResponse.json(
@@ -88,20 +87,15 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
 
-      const withdrawnResult = await query(
-        `UPDATE representation_requests
-         SET status = 'withdrawn',
-             response_note = COALESCE($2, response_note),
-             responded_at = NOW(),
-             updated_at = NOW()
-         WHERE id = $1
-         RETURNING *`,
-        [id, body.responseNote?.trim() || 'Withdrawn by actor']
-      );
+      const withdrawnRequest = await updateRepresentationRequest({
+        requestId: id,
+        action: 'withdraw',
+        responseNote: body.responseNote,
+      });
 
       return NextResponse.json({
         success: true,
-        request: withdrawnResult.rows[0],
+        request: withdrawnRequest,
         message: 'Representation request withdrawn.',
       });
     }
@@ -125,16 +119,9 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     }
 
     if (body.action === 'approve') {
-      const existingRelationship = await query(
-        `SELECT id
-         FROM actor_agent_relationships
-         WHERE actor_id = $1
-           AND ended_at IS NULL
-         LIMIT 1`,
-        [targetRequest.actor_id]
-      );
+      const existingRelationship = await actorHasActiveRelationship(targetRequest.actor_id);
 
-      if (existingRelationship.rows.length > 0) {
+      if (existingRelationship) {
         return NextResponse.json(
           {
             error:
@@ -144,55 +131,38 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
         );
       }
 
-      const approvedResult = await query(
-        `UPDATE representation_requests
-         SET status = 'approved',
-             response_note = $2,
-             responded_at = NOW(),
-             updated_at = NOW()
-         WHERE id = $1
-           AND status = 'pending'
-         RETURNING *`,
-        [id, body.responseNote?.trim() || null]
-      );
+      const approvedRequest = await updateRepresentationRequest({
+        requestId: id,
+        action: 'approve',
+        responseNote: body.responseNote,
+      });
 
-      if (approvedResult.rows.length === 0) {
+      if (!approvedRequest) {
         return NextResponse.json({ error: 'Request is no longer pending' }, { status: 409 });
       }
 
-      await query(
-        `INSERT INTO actor_agent_relationships (
-          actor_id,
-          agent_id,
-          representation_request_id,
-          started_at,
-          created_at,
-          updated_at
-        ) VALUES ($1, $2, $3, NOW(), NOW(), NOW())`,
-        [targetRequest.actor_id, targetRequest.agent_id, id]
-      );
+      await createActorAgentRelationship({
+        actorId: targetRequest.actor_id,
+        agentId: targetRequest.agent_id,
+        representationRequestId: id,
+      });
 
       return NextResponse.json({
         success: true,
-        request: approvedResult.rows[0],
+        request: approvedRequest,
         message: 'Representation request approved and actor linked to your roster.',
       });
     }
 
-    const rejectedResult = await query(
-      `UPDATE representation_requests
-       SET status = 'rejected',
-           response_note = $2,
-           responded_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [id, body.responseNote?.trim() || null]
-    );
+    const rejectedRequest = await updateRepresentationRequest({
+      requestId: id,
+      action: 'reject',
+      responseNote: body.responseNote,
+    });
 
     return NextResponse.json({
       success: true,
-      request: rejectedResult.rows[0],
+      request: rejectedRequest,
       message: 'Representation request rejected.',
     });
   } catch (error) {
