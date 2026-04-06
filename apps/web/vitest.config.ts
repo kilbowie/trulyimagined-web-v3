@@ -4,7 +4,7 @@ import path from 'node:path';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['src/app/api/**/*.contract.test.ts'],
+    include: ['src/app/api/**/*.contract.test.ts', 'src/lib/hdicr/**/*.test.ts'],
     clearMocks: true,
     restoreMocks: true,
     mockReset: true,
