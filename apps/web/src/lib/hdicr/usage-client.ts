@@ -1,12 +1,75 @@
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
 
-export async function actorExistsById(actorId: string): Promise<boolean> {
+warnIfRemoteModeEnabled('usage');
+
+function isUsageRemoteMode() {
+  return getHdicrAdapterMode('usage') === 'remote';
+}
+
+function getUsageRemoteBaseUrlOrThrow(operation: string) {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Usage ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
+
+async function invokeUsageRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const baseUrl = getUsageRemoteBaseUrlOrThrow(params.operation);
+  const url = new URL(params.path, baseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote usage ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+async function actorExistsByIdLocal(actorId: string): Promise<boolean> {
   const actorCheck = await query('SELECT id FROM actors WHERE id = $1', [actorId]);
   return actorCheck.rows.length > 0;
 }
 
-export async function getLicensingRequestStatusById(licensingRequestId: string) {
+export async function actorExistsById(actorId: string): Promise<boolean> {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{ exists?: boolean }>({
+      path: `/usage/actor/exists?actorId=${encodeURIComponent(actorId)}`,
+      method: 'GET',
+      operation: 'actor-exists-check',
+    });
+
+    return Boolean(payload.exists);
+  }
+
+  return actorExistsByIdLocal(actorId);
+}
+
+async function getLicensingRequestStatusByIdLocal(licensingRequestId: string) {
   const licenseCheck = await query('SELECT id, status FROM licensing_requests WHERE id = $1', [
     licensingRequestId,
   ]);
@@ -14,7 +77,21 @@ export async function getLicensingRequestStatusById(licensingRequestId: string) 
   return licenseCheck.rows[0] || null;
 }
 
-export async function createUsageTrackingRecord(params: {
+export async function getLicensingRequestStatusById(licensingRequestId: string) {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{ request?: Record<string, unknown> | null }>({
+      path: `/usage/licensing-request-status?id=${encodeURIComponent(licensingRequestId)}`,
+      method: 'GET',
+      operation: 'licensing-request-status',
+    });
+
+    return payload.request ?? null;
+  }
+
+  return getLicensingRequestStatusByIdLocal(licensingRequestId);
+}
+
+async function createUsageTrackingRecordLocal(params: {
   actorId: string;
   licensingRequestId?: string;
   usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
@@ -48,7 +125,31 @@ export async function createUsageTrackingRecord(params: {
   return result.rows[0] || null;
 }
 
-export async function createUsageAuditLog(params: {
+export async function createUsageTrackingRecord(params: {
+  actorId: string;
+  licensingRequestId?: string;
+  usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
+  quantity: number;
+  unit: 'minutes' | 'images' | 'seconds';
+  projectName?: string;
+  generatedBy: string;
+  metadata: Record<string, unknown>;
+}) {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{ usage?: Record<string, unknown> | null }>({
+      path: '/usage/track',
+      method: 'POST',
+      operation: 'usage-track-create',
+      body: params,
+    });
+
+    return payload.usage ?? null;
+  }
+
+  return createUsageTrackingRecordLocal(params);
+}
+
+async function createUsageAuditLogLocal(params: {
   actorId: string;
   resourceId: string;
   usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
@@ -75,7 +176,27 @@ export async function createUsageAuditLog(params: {
   );
 }
 
-export async function getUsageActorById(actorId: string) {
+export async function createUsageAuditLog(params: {
+  actorId: string;
+  resourceId: string;
+  usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
+  quantity: number;
+  unit: 'minutes' | 'images' | 'seconds';
+}) {
+  if (isUsageRemoteMode()) {
+    await invokeUsageRemote<{ success?: boolean }>({
+      path: '/usage/audit-log',
+      method: 'POST',
+      operation: 'usage-audit-log-create',
+      body: params,
+    });
+    return;
+  }
+
+  await createUsageAuditLogLocal(params);
+}
+
+async function getUsageActorByIdLocal(actorId: string) {
   const actorResult = await query(
     'SELECT id, first_name, last_name, stage_name FROM actors WHERE id = $1',
     [actorId]
@@ -88,7 +209,21 @@ export async function getUsageActorById(actorId: string) {
   return actorResult.rows[0];
 }
 
-export async function getActorUsageRecords(actorId: string, limit: number, offset: number) {
+export async function getUsageActorById(actorId: string) {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{ actor?: Record<string, unknown> | null }>({
+      path: `/usage/actor?id=${encodeURIComponent(actorId)}`,
+      method: 'GET',
+      operation: 'usage-actor-lookup',
+    });
+
+    return payload.actor ?? null;
+  }
+
+  return getUsageActorByIdLocal(actorId);
+}
+
+async function getActorUsageRecordsLocal(actorId: string, limit: number, offset: number) {
   const usageResult = await query(
     `SELECT * FROM usage_tracking
      WHERE actor_id = $1
@@ -100,7 +235,23 @@ export async function getActorUsageRecords(actorId: string, limit: number, offse
   return usageResult.rows;
 }
 
-export async function getActorUsageStats(actorId: string) {
+export async function getActorUsageRecords(actorId: string, limit: number, offset: number) {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{ rows?: Array<Record<string, unknown>> }>({
+      path:
+        `/usage/actor/records?actorId=${encodeURIComponent(actorId)}` +
+        `&limit=${limit}&offset=${offset}`,
+      method: 'GET',
+      operation: 'usage-records-list',
+    });
+
+    return payload.rows || [];
+  }
+
+  return getActorUsageRecordsLocal(actorId, limit, offset);
+}
+
+async function getActorUsageStatsLocal(actorId: string) {
   const statsResult = await query(
     `SELECT
       usage_type,
@@ -128,7 +279,27 @@ export async function getActorUsageStats(actorId: string) {
   };
 }
 
-export async function getGlobalUsageStats() {
+export async function getActorUsageStats(actorId: string) {
+  if (isUsageRemoteMode()) {
+    const payload = await invokeUsageRemote<{
+      stats?: Array<Record<string, unknown>>;
+      totalMinutes?: number;
+    }>({
+      path: `/usage/actor/stats?actorId=${encodeURIComponent(actorId)}`,
+      method: 'GET',
+      operation: 'usage-stats-by-actor',
+    });
+
+    return {
+      stats: payload.stats || [],
+      totalMinutes: payload.totalMinutes || 0,
+    };
+  }
+
+  return getActorUsageStatsLocal(actorId);
+}
+
+async function getGlobalUsageStatsLocal() {
   const statsQuery = `
     SELECT
       usage_type,
@@ -196,4 +367,21 @@ export async function getGlobalUsageStats() {
     topActors: topActorsResult.rows,
     totals: totalsResult.rows[0] || null,
   };
+}
+
+export async function getGlobalUsageStats() {
+  if (isUsageRemoteMode()) {
+    return invokeUsageRemote<{
+      stats: Array<Record<string, unknown>>;
+      recentActivity: Array<Record<string, unknown>>;
+      topActors: Array<Record<string, unknown>>;
+      totals: Record<string, unknown> | null;
+    }>({
+      path: '/usage/stats/global',
+      method: 'GET',
+      operation: 'usage-global-stats',
+    });
+  }
+
+  return getGlobalUsageStatsLocal();
 }
