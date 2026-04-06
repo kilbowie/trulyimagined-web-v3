@@ -1,5 +1,12 @@
 import { query } from '@/lib/db';
 import { getActorLicenses, getLicenseStats } from '@/lib/licensing';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
+
+warnIfRemoteModeEnabled('licensing');
 
 export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
   const profileResult = await query('SELECT id FROM user_profiles WHERE auth0_user_id = $1', [
@@ -104,7 +111,7 @@ export async function getLicensingRequestById(requestId: string) {
   return existing.rows[0] || null;
 }
 
-export async function applyLicensingDecision(
+async function applyLicensingDecisionLocal(
   requestId: string,
   actorId: string,
   action: 'approve' | 'reject',
@@ -138,6 +145,47 @@ export async function applyLicensingDecision(
     [requestId, actorId, rejectionReason?.trim() || null]
   );
   return result.rows[0] || null;
+}
+
+export async function applyLicensingDecision(
+  requestId: string,
+  actorId: string,
+  action: 'approve' | 'reject',
+  rejectionReason?: string
+) {
+  const mode = getHdicrAdapterMode('licensing');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Licensing decision is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+    try {
+      const url = new URL('/licensing/decision', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ requestId, actorId, action, rejectionReason }),
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        return (await response.json()) as Record<string, unknown> | null;
+      }
+      throw new Error(
+        `[HDICR] Remote licensing decision failed with status ${response.status} (fail-closed).`
+      );
+    } catch (error) {
+      throw new Error(
+        `[HDICR] Remote licensing decision request failed (fail-closed): ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
+  return applyLicensingDecisionLocal(requestId, actorId, action, rejectionReason);
 }
 
 export async function getActorLicensesAndStats(actorId: string, statusFilter?: string) {

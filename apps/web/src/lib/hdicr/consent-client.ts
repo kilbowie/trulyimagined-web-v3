@@ -6,6 +6,13 @@ import {
   type ConsentPolicy,
   type CreateConsentEntryParams,
 } from '@/lib/consent-ledger';
+import {
+  getHdicrAdapterMode,
+  getHdicrRemoteBaseUrl,
+  warnIfRemoteModeEnabled,
+} from '@/lib/hdicr/flags';
+
+warnIfRemoteModeEnabled('consent');
 
 export interface ConsentGrantInput {
   actorId: string;
@@ -75,7 +82,7 @@ export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<
   return context?.actorId || null;
 }
 
-export async function grantConsent(input: ConsentGrantInput) {
+async function grantConsentLocal(input: ConsentGrantInput) {
   const scope = (input.scope || {}) as {
     projectName?: string;
     projectDescription?: string;
@@ -110,7 +117,43 @@ export async function grantConsent(input: ConsentGrantInput) {
   return result.rows[0];
 }
 
-export async function revokeConsent(input: ConsentRevokeInput) {
+export async function grantConsent(input: ConsentGrantInput) {
+  const mode = getHdicrAdapterMode('consent');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Consent grant is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+    try {
+      const url = new URL('/consent/grant', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(input),
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        return (await response.json()) as Record<string, unknown>;
+      }
+      throw new Error(
+        `[HDICR] Remote consent grant failed with status ${response.status} (fail-closed).`
+      );
+    } catch (error) {
+      throw new Error(
+        `[HDICR] Remote consent grant request failed (fail-closed): ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
+  return grantConsentLocal(input);
+}
+
+async function revokeConsentLocal(input: ConsentRevokeInput) {
   let result;
 
   if (input.consentId) {
@@ -175,6 +218,42 @@ export async function revokeConsent(input: ConsentRevokeInput) {
   }
 
   return { notFound: false as const, record: result.rows[0] };
+}
+
+export async function revokeConsent(input: ConsentRevokeInput) {
+  const mode = getHdicrAdapterMode('consent');
+  const baseUrl = getHdicrRemoteBaseUrl();
+
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Consent revoke is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+    try {
+      const url = new URL('/consent/revoke', baseUrl);
+      const response = await fetch(url.toString(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(input),
+        cache: 'no-store',
+      });
+      if (response.ok) {
+        return (await response.json()) as { notFound: boolean; record: Record<string, unknown> | null };
+      }
+      throw new Error(
+        `[HDICR] Remote consent revoke failed with status ${response.status} (fail-closed).`
+      );
+    } catch (error) {
+      throw new Error(
+        `[HDICR] Remote consent revoke request failed (fail-closed): ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      );
+    }
+  }
+
+  return revokeConsentLocal(input);
 }
 
 export async function checkConsent(input: ConsentCheckInput) {
