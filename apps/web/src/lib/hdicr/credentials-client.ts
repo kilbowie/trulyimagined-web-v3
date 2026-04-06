@@ -248,7 +248,13 @@ export async function revokeCredentialById(credentialId: string, reason?: string
   const mode = getHdicrAdapterMode('credentials');
   const baseUrl = getHdicrRemoteBaseUrl();
 
-  if (mode === 'remote' && baseUrl) {
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Credentials revoke is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+
     try {
       const url = new URL('/credentials/revoke', baseUrl);
       const response = await fetch(url.toString(), {
@@ -283,8 +289,8 @@ export async function revokeCredentialById(credentialId: string, reason?: string
           };
         }
 
-        console.warn(
-          '[HDICR] Remote credential revoke returned an unexpected payload. Falling back to local adapter.'
+        throw new Error(
+          '[HDICR] Remote credentials revoke returned an unexpected payload in fail-closed mode.'
         );
       } else if (response.status === 404) {
         return {
@@ -294,14 +300,15 @@ export async function revokeCredentialById(credentialId: string, reason?: string
           revokedAt: null,
         };
       } else {
-        console.warn(
-          `[HDICR] Remote credential revoke failed with status ${response.status}. Falling back to local adapter.`
+        throw new Error(
+          `[HDICR] Remote credentials revoke failed with status ${response.status} in fail-closed mode.`
         );
       }
     } catch (error) {
-      console.warn(
-        '[HDICR] Remote credential revoke request failed. Falling back to local adapter.',
-        error
+      throw new Error(
+        `[HDICR] Remote credentials revoke request failed in fail-closed mode: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }
@@ -395,7 +402,13 @@ export async function createCredentialPlaceholderRecord(params: {
   const mode = getHdicrAdapterMode('credentials');
   const baseUrl = getHdicrRemoteBaseUrl();
 
-  if (mode === 'remote' && baseUrl) {
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Credential placeholder creation is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+
     try {
       const url = new URL('/credentials/create-placeholder', baseUrl);
       const response = await fetch(url.toString(), {
@@ -417,18 +430,19 @@ export async function createCredentialPlaceholderRecord(params: {
           return payload.id;
         }
 
-        console.warn(
-          '[HDICR] Remote create credential placeholder returned an unexpected payload. Falling back to local adapter.'
+        throw new Error(
+          '[HDICR] Remote create credential placeholder returned an unexpected payload in fail-closed mode.'
         );
       } else {
-        console.warn(
-          `[HDICR] Remote create credential placeholder failed with status ${response.status}. Falling back to local adapter.`
+        throw new Error(
+          `[HDICR] Remote create credential placeholder failed with status ${response.status} in fail-closed mode.`
         );
       }
     } catch (error) {
-      console.warn(
-        '[HDICR] Remote create credential placeholder request failed. Falling back to local adapter.',
-        error
+      throw new Error(
+        `[HDICR] Remote create credential placeholder request failed in fail-closed mode: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }
@@ -474,7 +488,13 @@ export async function finalizeIssuedCredentialRecord(params: {
   const mode = getHdicrAdapterMode('credentials');
   const baseUrl = getHdicrRemoteBaseUrl();
 
-  if (mode === 'remote' && baseUrl) {
+  if (mode === 'remote') {
+    if (!baseUrl) {
+      throw new Error(
+        '[HDICR] Credential finalization is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
+      );
+    }
+
     try {
       const url = new URL('/credentials/finalize', baseUrl);
       const response = await fetch(url.toString(), {
@@ -490,14 +510,15 @@ export async function finalizeIssuedCredentialRecord(params: {
       if (response.ok) {
         return;
       } else {
-        console.warn(
-          `[HDICR] Remote finalize credential failed with status ${response.status}. Falling back to local adapter.`
+        throw new Error(
+          `[HDICR] Remote finalize credential failed with status ${response.status} in fail-closed mode.`
         );
       }
     } catch (error) {
-      console.warn(
-        '[HDICR] Remote finalize credential request failed. Falling back to local adapter.',
-        error
+      throw new Error(
+        `[HDICR] Remote finalize credential request failed in fail-closed mode: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
       );
     }
   }

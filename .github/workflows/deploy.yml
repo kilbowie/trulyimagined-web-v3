@@ -41,11 +41,9 @@ jobs:
 
       - name: Type check
         run: pnpm type-check
-        continue-on-error: false
 
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
   # Job 2: Security Scan
   security:
@@ -122,7 +120,6 @@ jobs:
 
       - name: Run tests
         run: pnpm test
-        continue-on-error: true
 
       - name: Run web integration contract tests
         if: github.event_name == 'pull_request'
