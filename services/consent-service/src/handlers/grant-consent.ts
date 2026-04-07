@@ -55,7 +55,7 @@ function validationErrorResponse(error: z.ZodError | string) {
   };
 }
 
-export async function grantConsent(event: APIGatewayProxyEvent) {
+export async function grantConsent(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     let rawBody: unknown = {};
     try {
@@ -78,13 +78,14 @@ export async function grantConsent(event: APIGatewayProxyEvent) {
     // Insert into consent_log (append-only)
     const result = await pool.query(
       `INSERT INTO consent_log (
-        actor_id, action, consent_type, consent_scope,
+        tenant_id, actor_id, action, consent_type, consent_scope,
         project_name, project_description,
         requester_id, requester_type,
         ip_address, user_agent, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *`,
       [
+        tenantId,
         actorId,
         'granted',
         consentType,

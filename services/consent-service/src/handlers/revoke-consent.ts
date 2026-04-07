@@ -43,7 +43,7 @@ function validationErrorResponse(error: z.ZodError | string) {
   };
 }
 
-export async function revokeConsent(event: APIGatewayProxyEvent) {
+export async function revokeConsent(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     let rawBody: unknown = {};
     try {
@@ -69,8 +69,8 @@ export async function revokeConsent(event: APIGatewayProxyEvent) {
     if (consentId) {
       // Fetch the original consent to copy its details
       const original = await pool.query(
-        `SELECT * FROM consent_log WHERE id = $1 AND actor_id = $2 ORDER BY created_at DESC LIMIT 1`,
-        [consentId, actorId]
+        `SELECT * FROM consent_log WHERE id = $1 AND actor_id = $2 AND tenant_id = $3 ORDER BY created_at DESC LIMIT 1`,
+        [consentId, actorId, tenantId]
       );
 
       if (original.rows.length === 0) {
@@ -85,12 +85,13 @@ export async function revokeConsent(event: APIGatewayProxyEvent) {
       // Insert revocation record
       result = await pool.query(
         `INSERT INTO consent_log (
-          actor_id, action, consent_type, consent_scope,
+          tenant_id, actor_id, action, consent_type, consent_scope,
           project_name, project_description,
           ip_address, user_agent, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
         RETURNING *`,
         [
+          tenantId,
           actorId,
           'revoked',
           originalConsent.consent_type,
@@ -111,11 +112,12 @@ export async function revokeConsent(event: APIGatewayProxyEvent) {
     else if (consentType) {
       result = await pool.query(
         `INSERT INTO consent_log (
-          actor_id, action, consent_type, consent_scope,
+          tenant_id, actor_id, action, consent_type, consent_scope,
           ip_address, user_agent, metadata
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         RETURNING *`,
         [
+          tenantId,
           actorId,
           'revoked',
           consentType,

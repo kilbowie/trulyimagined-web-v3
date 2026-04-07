@@ -92,6 +92,8 @@ export interface AuthUser {
   name?: string;
   picture?: string;
   roles?: string[];
+  clientId?: string; // OAuth client_id/azp for M2M callers
+  tenantId?: string; // Tenant resolved from explicit JWT claim or client identity mapping
   scopes?: string[]; // OAuth 2.1 scopes from the validated JWT
 }
 

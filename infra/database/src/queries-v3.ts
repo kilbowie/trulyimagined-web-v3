@@ -87,7 +87,8 @@ export const queries = {
         a.verification_status,
         a.registry_id
       FROM user_profiles up
-      LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id AND a.deleted_at IS NULL
+      LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id AND a.deleted_at IS NULL AND a.tenant_id = $1
+      WHERE a.tenant_id = $1 OR a.id IS NULL
       ORDER BY up.created_at DESC;
     `,
   },
@@ -99,21 +100,21 @@ export const queries = {
   actors: {
     create: `
       INSERT INTO actors (
-        auth0_user_id, email, first_name, last_name, stage_name, bio, location
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        tenant_id, auth0_user_id, email, first_name, last_name, stage_name, bio, location
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       RETURNING *;
     `,
 
     getById: `
-      SELECT * FROM actors WHERE id = $1 AND deleted_at IS NULL;
+      SELECT * FROM actors WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL;
     `,
 
     getByAuth0Id: `
-      SELECT * FROM actors WHERE auth0_user_id = $1 AND deleted_at IS NULL;
+      SELECT * FROM actors WHERE auth0_user_id = $1 AND tenant_id = $2 AND deleted_at IS NULL;
     `,
 
     getByEmail: `
-      SELECT * FROM actors WHERE email = $1 AND deleted_at IS NULL;
+      SELECT * FROM actors WHERE email = $1 AND tenant_id = $2 AND deleted_at IS NULL;
     `,
 
     update: `
@@ -124,7 +125,7 @@ export const queries = {
           bio = COALESCE($5, bio),
           location = COALESCE($6, location),
           profile_image_url = COALESCE($7, profile_image_url)
-      WHERE id = $1 AND deleted_at IS NULL
+      WHERE id = $1 AND tenant_id = $8 AND deleted_at IS NULL
       RETURNING *;
     `,
 
@@ -133,7 +134,7 @@ export const queries = {
       SET verification_status = 'verified',
           verified_at = NOW(),
           verified_by = $2
-      WHERE id = $1 AND deleted_at IS NULL
+      WHERE id = $1 AND tenant_id = $3 AND deleted_at IS NULL
       RETURNING *;
     `,
 
@@ -141,9 +142,9 @@ export const queries = {
       SELECT id, auth0_user_id, email, first_name, last_name, stage_name, 
              verification_status, is_founding_member, registry_id, created_at
       FROM actors 
-      WHERE deleted_at IS NULL
+      WHERE tenant_id = $1 AND deleted_at IS NULL
       ORDER BY created_at DESC
-      LIMIT $1 OFFSET $2;
+      LIMIT $2 OFFSET $3;
     `,
   },
 
@@ -154,23 +155,23 @@ export const queries = {
   consent: {
     log: `
       INSERT INTO consent_log (
-        actor_id, action, consent_type, consent_scope, 
+        tenant_id, actor_id, action, consent_type, consent_scope, 
         project_name, project_description, requester_id, requester_type,
         ip_address, user_agent, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
       RETURNING *;
     `,
 
     getHistory: `
       SELECT * FROM consent_log 
-      WHERE actor_id = $1
+      WHERE tenant_id = $1 AND actor_id = $2
       ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3;
+      LIMIT $3 OFFSET $4;
     `,
 
     getLatest: `
       SELECT * FROM consent_log 
-      WHERE actor_id = $1 AND consent_type = $2
+      WHERE tenant_id = $1 AND actor_id = $2 AND consent_type = $3
       ORDER BY created_at DESC
       LIMIT 1;
     `,
@@ -181,8 +182,8 @@ export const queries = {
         a.first_name as actor_first_name,
         a.last_name as actor_last_name
       FROM consent_log cl
-      JOIN actors a ON cl.actor_id = a.id
-      WHERE cl.actor_id = $1
+      JOIN actors a ON cl.actor_id = a.id AND a.tenant_id = $1
+      WHERE cl.tenant_id = $1 AND cl.actor_id = $2
       ORDER BY cl.created_at DESC;
     `,
   },
@@ -194,48 +195,49 @@ export const queries = {
   licensing: {
     create: `
       INSERT INTO licensing_requests (
+        tenant_id,
         actor_id, requester_name, requester_email, requester_organization,
         project_name, project_description, usage_type, intended_use,
         duration_start, duration_end, compensation_offered, compensation_currency
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *;
     `,
 
     getById: `
       SELECT lr.*, a.first_name, a.last_name, a.email as actor_email
       FROM licensing_requests lr
-      JOIN actors a ON lr.actor_id = a.id
-      WHERE lr.id = $1;
+      JOIN actors a ON lr.actor_id = a.id AND a.tenant_id = $2
+      WHERE lr.id = $1 AND lr.tenant_id = $2;
     `,
 
     getByActor: `
       SELECT * FROM licensing_requests 
-      WHERE actor_id = $1
+      WHERE tenant_id = $1 AND actor_id = $2
       ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3;
+      LIMIT $3 OFFSET $4;
     `,
 
     approve: `
       UPDATE licensing_requests 
       SET status = 'approved', approved_at = NOW()
-      WHERE id = $1
+      WHERE id = $1 AND tenant_id = $2
       RETURNING *;
     `,
 
     reject: `
       UPDATE licensing_requests 
       SET status = 'rejected', rejected_at = NOW(), rejection_reason = $2
-      WHERE id = $1
+      WHERE id = $1 AND tenant_id = $3
       RETURNING *;
     `,
 
     listPending: `
       SELECT lr.*, a.first_name, a.last_name
       FROM licensing_requests lr
-      JOIN actors a ON lr.actor_id = a.id
-      WHERE lr.status = 'pending'
+      JOIN actors a ON lr.actor_id = a.id AND a.tenant_id = $1
+      WHERE lr.tenant_id = $1 AND lr.status = 'pending'
       ORDER BY lr.created_at DESC
-      LIMIT $1 OFFSET $2;
+      LIMIT $2 OFFSET $3;
     `,
   },
 
@@ -246,17 +248,17 @@ export const queries = {
   usage: {
     log: `
       INSERT INTO usage_tracking (
-        actor_id, licensing_request_id, usage_type, quantity, unit,
+        tenant_id, actor_id, licensing_request_id, usage_type, quantity, unit,
         project_name, generated_by, metadata
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `,
 
     getByActor: `
       SELECT * FROM usage_tracking 
-      WHERE actor_id = $1
+      WHERE tenant_id = $1 AND actor_id = $2
       ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3;
+      LIMIT $3 OFFSET $4;
     `,
 
     getStats: `
@@ -268,7 +270,7 @@ export const queries = {
         MIN(created_at) as first_usage,
         MAX(created_at) as last_usage
       FROM usage_tracking
-      WHERE actor_id = $1
+      WHERE tenant_id = $1 AND actor_id = $2
       GROUP BY usage_type, unit;
     `,
 
@@ -276,7 +278,7 @@ export const queries = {
       SELECT 
         SUM(quantity) as total_minutes
       FROM usage_tracking
-      WHERE actor_id = $1 AND usage_type = 'voice_minutes' AND unit = 'minutes';
+      WHERE tenant_id = $1 AND actor_id = $2 AND usage_type = 'voice_minutes' AND unit = 'minutes';
     `,
   },
 
@@ -287,31 +289,31 @@ export const queries = {
   audit: {
     log: `
       INSERT INTO audit_log (
-        user_id, user_type, action, resource_type, resource_id,
+        tenant_id, user_id, user_type, action, resource_type, resource_id,
         changes, ip_address, user_agent
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       RETURNING *;
     `,
 
     getByResource: `
       SELECT * FROM audit_log
-      WHERE resource_type = $1 AND resource_id = $2
+      WHERE tenant_id = $1 AND resource_type = $2 AND resource_id = $3
       ORDER BY created_at DESC
-      LIMIT $3 OFFSET $4;
+      LIMIT $4 OFFSET $5;
     `,
 
     getByUser: `
       SELECT * FROM audit_log
-      WHERE user_id = $1
+      WHERE tenant_id = $1 AND user_id = $2
       ORDER BY created_at DESC
-      LIMIT $2 OFFSET $3;
+      LIMIT $3 OFFSET $4;
     `,
 
     search: `
       SELECT * FROM audit_log
-      WHERE action = $1 OR resource_type = $2
+      WHERE tenant_id = $1 AND (action = $2 OR resource_type = $3)
       ORDER BY created_at DESC
-      LIMIT $3 OFFSET $4;
+      LIMIT $4 OFFSET $5;
     `,
   },
 

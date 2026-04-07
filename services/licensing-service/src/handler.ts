@@ -127,21 +127,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    const tenantId = user.tenantId ?? process.env.HDICR_DEFAULT_TENANT_ID ?? 'trulyimagined';
+
     // Route based on path and method
     if (path === '/v1/license/request' && httpMethod === 'POST') {
-      return await requestLicense(event);
+      return await requestLicense(event, tenantId);
     }
 
     if (path.startsWith('/v1/license/actor/') && httpMethod === 'GET') {
-      return await getLicenseRequests(event);
+      return await getLicenseRequests(event, tenantId);
     }
 
     if (path.startsWith('/v1/license/') && path.endsWith('/approve') && httpMethod === 'POST') {
-      return await approveLicense(event);
+      return await approveLicense(event, tenantId);
     }
 
     if (path.startsWith('/v1/license/') && path.endsWith('/reject') && httpMethod === 'POST') {
-      return await rejectLicense(event);
+      return await rejectLicense(event, tenantId);
     }
 
     return {
@@ -165,7 +167,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 /**
  * Request a license from an actor
  */
-async function requestLicense(event: APIGatewayProxyEvent) {
+async function requestLicense(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const parsedBody = parseJsonBody(event, RequestLicenseSchema);
     if (!parsedBody.success) {
@@ -188,6 +190,7 @@ async function requestLicense(event: APIGatewayProxyEvent) {
     } = parsedBody.data;
 
     const result = await db.query(queries.licensing.create, [
+      tenantId,
       actorId,
       requesterName,
       requesterEmail,
@@ -235,7 +238,7 @@ async function requestLicense(event: APIGatewayProxyEvent) {
 /**
  * Get license requests for an actor
  */
-async function getLicenseRequests(event: APIGatewayProxyEvent) {
+async function getLicenseRequests(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
   if (!parsedPath.success) {
     return validationErrorResponse(parsedPath.error);
@@ -249,7 +252,7 @@ async function getLicenseRequests(event: APIGatewayProxyEvent) {
   const { actorId } = parsedPath.data;
   const { limit, offset } = parsedQuery.data;
 
-  const result = await db.query(queries.licensing.getByActor, [actorId, limit, offset]);
+  const result = await db.query(queries.licensing.getByActor, [tenantId, actorId, limit, offset]);
 
   return {
     statusCode: 200,
@@ -278,7 +281,7 @@ async function getLicenseRequests(event: APIGatewayProxyEvent) {
 /**
  * Approve a license request
  */
-async function approveLicense(event: APIGatewayProxyEvent) {
+async function approveLicense(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedPath = RequestIdPathSchema.safeParse(event.pathParameters ?? {});
   if (!parsedPath.success) {
     return validationErrorResponse(parsedPath.error);
@@ -286,7 +289,7 @@ async function approveLicense(event: APIGatewayProxyEvent) {
 
   const { requestId } = parsedPath.data;
 
-  const result = await db.query(queries.licensing.approve, [requestId]);
+  const result = await db.query(queries.licensing.approve, [requestId, tenantId]);
 
   if (result.rows.length === 0) {
     return {
@@ -316,7 +319,7 @@ async function approveLicense(event: APIGatewayProxyEvent) {
 /**
  * Reject a license request
  */
-async function rejectLicense(event: APIGatewayProxyEvent) {
+async function rejectLicense(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedPath = RequestIdPathSchema.safeParse(event.pathParameters ?? {});
   if (!parsedPath.success) {
     return validationErrorResponse(parsedPath.error);
@@ -330,7 +333,7 @@ async function rejectLicense(event: APIGatewayProxyEvent) {
   const { requestId } = parsedPath.data;
   const { reason } = parsedBody.data;
 
-  const result = await db.query(queries.licensing.reject, [requestId, reason]);
+  const result = await db.query(queries.licensing.reject, [requestId, reason, tenantId]);
 
   if (result.rows.length === 0) {
     return {

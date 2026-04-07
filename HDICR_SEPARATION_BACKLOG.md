@@ -56,7 +56,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [x]    |
 | SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [x]    |
 | SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [ ]    |
-| SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [ ]    |
+| SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [x]    |
 | SEP-042 | Split HDICR DB credentials out of TI runtime                     | 4     | P3       | [ ]    |
 | SEP-043 | Add Row-Level Security policies for tenant isolation             | 4     | P3       | [ ]    |
 | SEP-044 | Separate HDICR deploy pipeline from TI Vercel deploy             | 4     | P3       | [ ]    |
@@ -1192,10 +1192,13 @@ CREATE INDEX IF NOT EXISTS idx_consent_actor_tenant ON consent_log(tenant_id, ac
 
 **Acceptance criteria:**
 
-- [ ] Migration file committed and applied
-- [ ] All HDICR service queries include `WHERE tenant_id = $n`
-- [ ] `tenant_id` extracted from JWT claims in service handlers (from `client_id` or a dedicated claim)
-- [ ] TI's records have `tenant_id = 'trulyimagined'` (existing data backfilled by default)
+- [x] Migration file committed as `infra/database/migrations/016_tenant_isolation.sql`
+- [x] Active HDICR service queries include tenant scoping / tenant-aware inserts
+- [x] `tenant_id` extracted from JWT claims in middleware and used by service handlers
+- [x] TI's records will backfill to `tenant_id = 'trulyimagined'` via `NOT NULL DEFAULT 'trulyimagined'`
+- [ ] Migration applied to a live database
+
+Implementation note (2026-04-08): Added `infra/database/migrations/016_tenant_isolation.sql` to introduce `tenant_id` columns plus tenant-scoped indexes for `actors`, `consent_log`, `identity_links`, `verifiable_credentials`, `licensing_requests`, `usage_tracking`, and `audit_log`. Extended `AuthUser` with `clientId` and `tenantId`, and updated `shared/middleware/src/index.ts` to resolve tenant identity from an explicit tenant claim (`AUTH0_TENANT_ID_CLAIM_NAMESPACE`, `tenant_id`, `org_id`, `organization_id`) or fall back to the current TI tenant. Identity, consent, and licensing handlers now pass `tenantId` into all DB access paths, and the shared query layer (`infra/database/src/queries-v3.ts`) is tenant-scoped for the core HDICR tables. Local type-checks and service tests passed; applying the migration to a live database remains an environment step.
 
 ---
 
@@ -1240,9 +1243,11 @@ Remove from TI env (move to HDICR service deployment only):
 
 **Acceptance criteria:**
 
-- [ ] `.env.example` reorganised with clear ownership sections
-- [ ] HDICR internal secrets listed as "not for TI" with a removal target date
-- [ ] `samconfig.toml` for HDICR services has its own separate param block
+- [x] `.env.example` reorganised with clear ownership sections
+- [x] HDICR internal secrets listed as "not for TI" with a removal target date
+- [x] `samconfig.toml` for HDICR services has its own separate param block
+
+Implementation note (2026-04-08): Reworked `apps/web/.env.example` into explicit ownership sections for TI application runtime, TI integrations, HDICR client credentials, and HDICR-internal secrets that must not live in TI config. Added a removal target date of `2026-06-30` for the TI config surface to stop carrying HDICR-only secrets. Reorganized `infra/api-gateway/samconfig.toml` and `samconfig.toml.example` into named HDICR deployment blocks (`hdicr-production`, `hdicr-local`) and replaced the tracked live-looking `DatabaseURL` value with placeholders.
 
 ---
 

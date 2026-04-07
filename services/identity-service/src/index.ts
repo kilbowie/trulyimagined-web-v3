@@ -127,25 +127,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    const tenantId = user.tenantId ?? process.env.HDICR_DEFAULT_TENANT_ID ?? 'trulyimagined';
+
     // Route based on path and method
     if (path === '/v1/identity/register' && httpMethod === 'POST') {
-      return await registerActor(event);
+      return await registerActor(event, tenantId);
     }
 
     if (path === '/v1/identity/admin/users' && httpMethod === 'GET') {
-      return await listAdminUsers();
+      return await listAdminUsers(tenantId);
     }
 
     if (path.startsWith('/v1/identity/') && httpMethod === 'GET') {
-      return await getActorById(event);
+      return await getActorById(event, tenantId);
     }
 
     if (path === '/v1/identity' && httpMethod === 'GET') {
-      return await listActors(event);
+      return await listActors(event, tenantId);
     }
 
     if (path.startsWith('/v1/identity/') && httpMethod === 'PUT') {
-      return await updateActor(event);
+      return await updateActor(event, tenantId);
     }
 
     return {
@@ -169,7 +171,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 /**
  * Register a new actor in the Identity Registry
  */
-async function registerActor(event: APIGatewayProxyEvent) {
+async function registerActor(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const parsedBody = parseJsonBody(event, RegisterActorSchema);
     if (!parsedBody.success) {
@@ -180,6 +182,7 @@ async function registerActor(event: APIGatewayProxyEvent) {
 
     // Create actor
     const result = await db.query(queries.actors.create, [
+      tenantId,
       auth0UserId,
       email,
       firstName,
@@ -231,7 +234,7 @@ async function registerActor(event: APIGatewayProxyEvent) {
 /**
  * Get actor by ID
  */
-async function getActorById(event: APIGatewayProxyEvent) {
+async function getActorById(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
   if (!parsedPath.success) {
     return validationErrorResponse(parsedPath.error);
@@ -239,7 +242,7 @@ async function getActorById(event: APIGatewayProxyEvent) {
 
   const { id: actorId } = parsedPath.data;
 
-  const result = await db.query(queries.actors.getById, [actorId]);
+  const result = await db.query(queries.actors.getById, [actorId, tenantId]);
 
   if (result.rows.length === 0) {
     return {
@@ -276,7 +279,7 @@ async function getActorById(event: APIGatewayProxyEvent) {
 /**
  * List all actors (with pagination)
  */
-async function listActors(event: APIGatewayProxyEvent) {
+async function listActors(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedQuery = PaginationQuerySchema.safeParse(event.queryStringParameters ?? {});
   if (!parsedQuery.success) {
     return validationErrorResponse(parsedQuery.error);
@@ -284,7 +287,7 @@ async function listActors(event: APIGatewayProxyEvent) {
 
   const { limit, offset } = parsedQuery.data;
 
-  const result = await db.query(queries.actors.list, [limit, offset]);
+  const result = await db.query(queries.actors.list, [tenantId, limit, offset]);
 
   return {
     statusCode: 200,
@@ -310,8 +313,8 @@ async function listActors(event: APIGatewayProxyEvent) {
   };
 }
 
-async function listAdminUsers() {
-  const result = await db.query(queries.userProfiles.listAdminUsersWithActors);
+async function listAdminUsers(tenantId: string) {
+  const result = await db.query(queries.userProfiles.listAdminUsersWithActors, [tenantId]);
 
   return {
     statusCode: 200,
@@ -326,7 +329,7 @@ async function listAdminUsers() {
 /**
  * Update actor profile
  */
-async function updateActor(event: APIGatewayProxyEvent) {
+async function updateActor(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
   if (!parsedPath.success) {
     return validationErrorResponse(parsedPath.error);
@@ -349,6 +352,7 @@ async function updateActor(event: APIGatewayProxyEvent) {
     bio,
     location,
     profileImageUrl,
+    tenantId,
   ]);
 
   if (result.rows.length === 0) {

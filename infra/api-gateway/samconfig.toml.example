@@ -2,12 +2,26 @@
 
 version = 0.1
 
-[default.deploy.parameters]
+[default.global.parameters]
+stack_name = "trulyimagined-v3"
+
+[hdicr-local.deploy.parameters]
 stack_name = "trulyimagined-v3"
 region = "eu-west-2"
 capabilities = "CAPABILITY_IAM"
 parameter_overrides = [
   "DatabaseURL=\"postgresql://user:pass@localhost:5432/trulyimagined\"",
+  "Auth0Domain=\"your-tenant.auth0.com\"",
+  "Auth0Audience=\"https://api.trulyimagined.com\""
+]
+
+[hdicr-production.deploy.parameters]
+stack_name = "trulyimagined-v3"
+region = "eu-west-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = [
+  "Environment=production",
+  "DatabaseURL=\"postgresql://user:pass@your-rds-host:5432/trulyimagined\"",
   "Auth0Domain=\"your-tenant.auth0.com\"",
   "Auth0Audience=\"https://api.trulyimagined.com\""
 ]

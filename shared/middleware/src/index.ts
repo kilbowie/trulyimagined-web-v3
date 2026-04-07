@@ -30,6 +30,19 @@ function getKey(header: any, callback: any) {
   });
 }
 
+function getStringClaim(decoded: Record<string, unknown>, key?: string): string | undefined {
+  if (!key) {
+    return undefined;
+  }
+
+  const value = decoded[key];
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function getSubjectClientId(sub: unknown): string | undefined {
+  return typeof sub === 'string' && sub.endsWith('@clients') ? sub.slice(0, -8) : undefined;
+}
+
 // ==================== AUTH0 JWT VALIDATION ====================
 
 export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<AuthUser | null> {
@@ -79,6 +92,20 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
         : [];
 
     const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
+    const decodedClaims = decoded as Record<string, unknown>;
+    const clientId =
+      getStringClaim(decodedClaims, 'client_id') ||
+      getStringClaim(decodedClaims, 'azp') ||
+      getSubjectClientId(decoded.sub);
+    const tenantClaimNamespace = process.env.AUTH0_TENANT_ID_CLAIM_NAMESPACE?.trim();
+    const defaultTenantId = process.env.HDICR_DEFAULT_TENANT_ID?.trim() || 'trulyimagined';
+    const tenantId =
+      getStringClaim(decodedClaims, tenantClaimNamespace) ||
+      getStringClaim(decodedClaims, 'tenant_id') ||
+      getStringClaim(decodedClaims, 'org_id') ||
+      getStringClaim(decodedClaims, 'organization_id') ||
+      defaultTenantId;
+
     const user: AuthUser = {
       sub: decoded.sub,
       email: decoded.email as string | undefined,
@@ -86,11 +113,15 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
       name: decoded.name as string | undefined,
       picture: decoded.picture as string | undefined,
       roles: (rolesClaimNamespace ? decoded[rolesClaimNamespace] : undefined) ?? [],
+      clientId,
+      tenantId,
       scopes,
     };
 
     const identity = user.email ? user.email : `M2M:${user.sub}`;
-    console.log(`[AUTH] Authenticated: ${identity} (scopes: ${scopes.join(', ') || 'none'})`);
+    console.log(
+      `[AUTH] Authenticated: ${identity} (tenant: ${tenantId}, scopes: ${scopes.join(', ') || 'none'})`
+    );
     return user;
   } catch (error) {
     console.error('[AUTH] Token validation failed:', error);

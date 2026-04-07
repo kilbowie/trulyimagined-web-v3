@@ -62,29 +62,31 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       };
     }
 
+    const tenantId = user.tenantId ?? process.env.HDICR_DEFAULT_TENANT_ID ?? 'trulyimagined';
+
     // Route to handlers
     if (path === '/v1/consent/grant' && httpMethod === 'POST') {
-      const response = await grantConsent(event);
+      const response = await grantConsent(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 
     if (path === '/v1/consent/revoke' && httpMethod === 'POST') {
-      const response = await revokeConsent(event);
+      const response = await revokeConsent(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 
     if (path === '/v1/consent/check' && httpMethod === 'GET') {
-      const response = await checkConsent(event);
+      const response = await checkConsent(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 
     if (path === '/v1/consent/list' && httpMethod === 'GET') {
-      const response = await listConsents(event);
+      const response = await listConsents(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 
     if (path.startsWith('/v1/consent/') && httpMethod === 'GET') {
-      const response = await listConsents(event);
+      const response = await listConsents(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 

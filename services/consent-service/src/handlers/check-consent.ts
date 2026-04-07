@@ -37,7 +37,7 @@ function validationErrorResponse(error: z.ZodError) {
   };
 }
 
-export async function checkConsent(event: APIGatewayProxyEvent) {
+export async function checkConsent(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const parsedQuery = CheckConsentQuerySchema.safeParse(event.queryStringParameters ?? {});
     if (!parsedQuery.success) {
@@ -49,14 +49,15 @@ export async function checkConsent(event: APIGatewayProxyEvent) {
     // Query for most recent consent action (granted or revoked)
     let query = `
       SELECT * FROM consent_log 
-      WHERE actor_id = $1 
-        AND consent_type = $2
+      WHERE tenant_id = $1
+        AND actor_id = $2 
+        AND consent_type = $3
     `;
-    const queryParams: (string | number)[] = [actorId, consentType];
+    const queryParams: (string | number)[] = [tenantId, actorId, consentType];
 
     // Optional: filter by project ID if provided
     if (projectId) {
-      query += ` AND (consent_scope->>'projectId' = $3 OR consent_scope->>'projectId' IS NULL)`;
+      query += ` AND (consent_scope->>'projectId' = $4 OR consent_scope->>'projectId' IS NULL)`;
       queryParams.push(projectId);
     }
 

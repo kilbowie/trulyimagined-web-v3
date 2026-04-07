@@ -67,7 +67,7 @@ interface ConsentSummary {
   metadata?: Record<string, unknown>;
 }
 
-export async function listConsents(event: APIGatewayProxyEvent) {
+export async function listConsents(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const parsedQuery = ListConsentsQuerySchema.safeParse({
       actorId: event.pathParameters?.actorId || event.queryStringParameters?.actorId,
@@ -84,9 +84,9 @@ export async function listConsents(event: APIGatewayProxyEvent) {
     // Build query
     let query = `
       SELECT * FROM consent_log 
-      WHERE actor_id = $1
+      WHERE tenant_id = $1 AND actor_id = $2
     `;
-    const queryParams: (string | number)[] = [actorId];
+    const queryParams: (string | number)[] = [tenantId, actorId];
 
     // Optional filter by action
     if (action) {
@@ -101,11 +101,11 @@ export async function listConsents(event: APIGatewayProxyEvent) {
     const result = await pool.query(query, queryParams);
 
     // Get total count (for pagination)
-    let countQuery = `SELECT COUNT(*) FROM consent_log WHERE actor_id = $1`;
-    const countParams: (string | number)[] = [actorId];
+    let countQuery = `SELECT COUNT(*) FROM consent_log WHERE tenant_id = $1 AND actor_id = $2`;
+    const countParams: (string | number)[] = [tenantId, actorId];
 
     if (action) {
-      countQuery += ` AND action = $2`;
+      countQuery += ` AND action = $3`;
       countParams.push(action);
     }
 
