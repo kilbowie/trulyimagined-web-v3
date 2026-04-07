@@ -159,6 +159,11 @@ jobs:
         env:
           HDICR_ADAPTER_MODE: local
 
+      - name: Run web API contract gate
+        run: pnpm --filter @trulyimagined/web test:contract
+        env:
+          HDICR_ADAPTER_MODE: local
+
       - name: Run web integration contract tests
         if: github.event_name == 'pull_request'
         run: pnpm --filter @trulyimagined/web test:integration

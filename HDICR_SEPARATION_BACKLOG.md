@@ -46,7 +46,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [x]    |
 | SEP-023 | Define OpenAPI spec — HDICR Representation service               | 2     | P2       | [ ]    |
 | SEP-024 | Add `/v1` path prefix to all HDICR service handlers              | 2     | P2       | [x]    |
-| SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [ ]    |
+| SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [x]    |
 | SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [ ]    |
 | SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [ ]    |
 | SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [ ]    |
@@ -760,9 +760,11 @@ Contract tests exist in the codebase but there is no CI gate that validates TI i
 
 **Acceptance criteria:**
 
-- [ ] Contract tests run in CI test job
-- [ ] Any TI call to a non-existent HDICR endpoint fails CI
-- [ ] Any response shape mismatch between HDICR OpenAPI and TI client fails CI
+- [x] Contract tests run in CI test job
+- [x] Any TI call to a non-existent HDICR endpoint fails CI
+- [x] Any response shape mismatch between HDICR OpenAPI and TI client fails CI
+
+Implementation note (2026-04-07): Added a dedicated web contract gate command (`pnpm --filter @trulyimagined/web test:contract`) using `apps/web/vitest.contract.config.ts`; CI test job now runs this command. Added `openapi-contract-gate.contract.test.ts` to enforce that TI HDICR client paths (identity/consent/licensing) are documented in `services/*/openapi.yaml` and that response schema fields consumed by clients remain present.
 
 ---
 
