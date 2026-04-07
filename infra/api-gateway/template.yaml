@@ -84,7 +84,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /identity/register
+            Path: /v1/identity/register
             Method: POST
         ListAdminUsers:
           Type: Api
@@ -96,19 +96,19 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /identity/{id}
+            Path: /v1/identity/{id}
             Method: GET
         ListActors:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /identity
+            Path: /v1/identity
             Method: GET
         UpdateActor:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /identity/{id}
+            Path: /v1/identity/{id}
             Method: PUT
 
   # ========================================
@@ -123,17 +123,35 @@ Resources:
       Handler: index.handler
       Description: Consent Ledger - Immutable consent recording
       Events:
-        LogConsent:
+        GrantConsent:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /consent/log
+            Path: /v1/consent/grant
             Method: POST
+        RevokeConsent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/consent/revoke
+            Method: POST
+        CheckConsent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/consent/check
+            Method: GET
         GetConsentHistory:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /consent/{actorId}
+            Path: /v1/consent/{actorId}
+            Method: GET
+        ListConsentHistory:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/consent/list
             Method: GET
 
   # ========================================
@@ -152,25 +170,25 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /license/request
+            Path: /v1/license/request
             Method: POST
         GetLicenseRequests:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /license/actor/{actorId}
+            Path: /v1/license/actor/{actorId}
             Method: GET
         ApproveLicense:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /license/{requestId}/approve
+            Path: /v1/license/{requestId}/approve
             Method: POST
         RejectLicense:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
-            Path: /license/{requestId}/reject
+            Path: /v1/license/{requestId}/reject
             Method: POST
 
 # ========================================

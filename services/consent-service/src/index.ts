@@ -40,22 +40,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Route to handlers
-    if (path === '/consent/grant' && httpMethod === 'POST') {
+    if (path === '/v1/consent/grant' && httpMethod === 'POST') {
       const response = await grantConsent(event);
       return { ...response, headers: corsHeaders };
     }
 
-    if (path === '/consent/revoke' && httpMethod === 'POST') {
+    if (path === '/v1/consent/revoke' && httpMethod === 'POST') {
       const response = await revokeConsent(event);
       return { ...response, headers: corsHeaders };
     }
 
-    if (path === '/consent/check' && httpMethod === 'GET') {
+    if (path === '/v1/consent/check' && httpMethod === 'GET') {
       const response = await checkConsent(event);
       return { ...response, headers: corsHeaders };
     }
 
-    if (path.startsWith('/consent/') && httpMethod === 'GET') {
+    if (path === '/v1/consent/list' && httpMethod === 'GET') {
+      const response = await listConsents(event);
+      return { ...response, headers: corsHeaders };
+    }
+
+    if (path.startsWith('/v1/consent/') && httpMethod === 'GET') {
       const response = await listConsents(event);
       return { ...response, headers: corsHeaders };
     }

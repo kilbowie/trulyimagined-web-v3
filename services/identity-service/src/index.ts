@@ -21,10 +21,6 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
-function normalizePath(path: string): string {
-  return path.startsWith('/v1/') ? path.slice(3) : path;
-}
-
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('[IDENTITY-SERVICE] Request received:', {
     path: event.path,
@@ -32,8 +28,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     pathParameters: event.pathParameters,
   });
 
-  const { httpMethod } = event;
-  const path = normalizePath(event.path);
+  const { httpMethod, path } = event;
 
   try {
     // Handle CORS preflight
@@ -42,23 +37,23 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Route based on path and method
-    if (path === '/identity/register' && httpMethod === 'POST') {
+    if (path === '/v1/identity/register' && httpMethod === 'POST') {
       return await registerActor(event);
     }
 
-    if (path === '/identity/admin/users' && httpMethod === 'GET') {
+    if (path === '/v1/identity/admin/users' && httpMethod === 'GET') {
       return await listAdminUsers();
     }
 
-    if (path.startsWith('/identity/') && httpMethod === 'GET') {
+    if (path.startsWith('/v1/identity/') && httpMethod === 'GET') {
       return await getActorById(event);
     }
 
-    if (path === '/identity' && httpMethod === 'GET') {
+    if (path === '/v1/identity' && httpMethod === 'GET') {
       return await listActors(event);
     }
 
-    if (path.startsWith('/identity/') && httpMethod === 'PUT') {
+    if (path.startsWith('/v1/identity/') && httpMethod === 'PUT') {
       return await updateActor(event);
     }
 

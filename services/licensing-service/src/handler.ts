@@ -37,19 +37,19 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Route based on path and method
-    if (path === '/license/request' && httpMethod === 'POST') {
+    if (path === '/v1/license/request' && httpMethod === 'POST') {
       return await requestLicense(event);
     }
 
-    if (path.startsWith('/license/actor/') && httpMethod === 'GET') {
+    if (path.startsWith('/v1/license/actor/') && httpMethod === 'GET') {
       return await getLicenseRequests(event);
     }
 
-    if (path.includes('/approve') && httpMethod === 'POST') {
+    if (path.startsWith('/v1/license/') && path.endsWith('/approve') && httpMethod === 'POST') {
       return await approveLicense(event);
     }
 
-    if (path.includes('/reject') && httpMethod === 'POST') {
+    if (path.startsWith('/v1/license/') && path.endsWith('/reject') && httpMethod === 'POST') {
       return await rejectLicense(event);
     }
 

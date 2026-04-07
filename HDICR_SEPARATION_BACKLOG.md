@@ -42,10 +42,10 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-016 | Route `admin/users` through HDICR IAM API                        | 1     | P1       | [x]    |
 | SEP-017 | Route `agent/roster` actor lookup through HDICR APIs             | 1     | P1       | [x]    |
 | SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [x]    |
-| SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [ ]    |
-| SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [ ]    |
+| SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [x]    |
+| SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [x]    |
 | SEP-023 | Define OpenAPI spec — HDICR Representation service               | 2     | P2       | [ ]    |
-| SEP-024 | Add `/v1` path prefix to all HDICR service handlers              | 2     | P2       | [ ]    |
+| SEP-024 | Add `/v1` path prefix to all HDICR service handlers              | 2     | P2       | [x]    |
 | SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [ ]    |
 | SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [ ]    |
 | SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [ ]    |
@@ -655,10 +655,12 @@ GET    /v1/consent/actor-context
 
 **Acceptance criteria:**
 
-- [ ] OpenAPI 3.1 spec committed
-- [ ] `consent_log` response shape documented (immutable, no delete)
-- [ ] `isGranted` boolean and `latestAction` shape specified precisely
-- [ ] All error codes (400, 401, 403, 404, 409) documented
+- [x] OpenAPI 3.1 spec committed
+- [x] `consent_log` response shape documented (immutable, no delete)
+- [x] `isGranted` boolean and `latestAction` shape specified precisely
+- [x] All error codes (400, 401, 403, 404, 409) documented
+
+Implementation note (2026-04-07): `services/consent-service/openapi.yaml` now documents the consent contract with `/v1` endpoints, immutable `consent_log` semantics, precise `isGranted` + `latestAction` structures, and the specified error response set.
 
 ---
 
@@ -685,9 +687,11 @@ GET    /v1/licensing/agent-actor-data
 
 **Acceptance criteria:**
 
-- [ ] OpenAPI 3.1 spec committed
-- [ ] Status enum values (`pending`, `approved`, `rejected`, `expired`) in spec
-- [ ] Compensation fields typed correctly
+- [x] OpenAPI 3.1 spec committed
+- [x] Status enum values (`pending`, `approved`, `rejected`, `expired`) in spec
+- [x] Compensation fields typed correctly
+
+Implementation note (2026-04-07): `services/licensing-service/openapi.yaml` now defines all listed licensing endpoints and shared schemas, including explicit status enums and typed compensation amount/currency fields.
 
 ---
 
@@ -729,11 +733,13 @@ Update all TI HDICR clients to use `/v1/` paths (SEP-004 through SEP-010 should 
 
 **Acceptance criteria:**
 
-- [ ] All HDICR service handlers respond only to `/v1/` paths
-- [ ] Old paths return `404`
-- [ ] SAM template updated
-- [ ] All TI HDICR client paths include `/v1/`
-- [ ] OpenAPI specs reference `/v1/` base path
+- [x] All HDICR service handlers respond only to `/v1/` paths
+- [x] Old paths return `404`
+- [x] SAM template updated
+- [x] All TI HDICR client paths include `/v1/`
+- [x] OpenAPI specs reference `/v1/` base path
+
+Implementation note (2026-04-07): `/v1`-only ingress is now enforced in identity, consent, and licensing handlers, API Gateway event paths were updated to `/v1/*`, and licensing now exports the production handler from `src/handler.ts` through `src/index.ts`.
 
 ---
 

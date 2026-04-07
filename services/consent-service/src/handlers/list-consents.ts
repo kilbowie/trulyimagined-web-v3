@@ -49,7 +49,7 @@ interface ConsentSummary {
 
 export async function listConsents(event: APIGatewayProxyEvent) {
   try {
-    const actorId = event.pathParameters?.actorId;
+    const actorId = event.pathParameters?.actorId || event.queryStringParameters?.actorId;
 
     if (!actorId) {
       return {
