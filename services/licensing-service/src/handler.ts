@@ -59,9 +59,7 @@ const RejectLicenseSchema = z.object({
 
 function validationErrorResponse(error: z.ZodError | string) {
   const details =
-    typeof error === 'string'
-      ? { formErrors: [error], fieldErrors: {} }
-      : error.flatten();
+    typeof error === 'string' ? { formErrors: [error], fieldErrors: {} } : error.flatten();
 
   return {
     statusCode: 400,
