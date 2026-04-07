@@ -1,40 +1,17 @@
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-function getBillingRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Billing ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
-const billingRemoteBaseUrl = getBillingRemoteBaseUrlOrThrow('client-initialization');
+const billingRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('billing', 'client-initialization');
 
 export async function getBillingProfileByAuth0UserId(auth0UserId: string) {
-  const url = new URL(
-    `/v1/billing/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
-    billingRemoteBaseUrl
-  );
-
-  const response = await fetch(url.toString(), {
-    method: 'GET',
-    headers: {
-      Accept: 'application/json',
-    },
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote billing profile lookup failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  const payload = (await response.json()) as {
+  const payload = await invokeHdicrRemote<{
     profile?: Record<string, any> | null;
-  };
+  }>({
+    domain: 'billing',
+    baseUrl: billingRemoteBaseUrl,
+    path: `/v1/billing/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    method: 'GET',
+    operation: 'profile-by-auth0',
+  });
 
   return payload.profile ?? null;
 }

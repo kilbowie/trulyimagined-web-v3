@@ -1,16 +1,6 @@
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-function getLicensingRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Licensing ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
-const licensingRemoteBaseUrl = getLicensingRemoteBaseUrlOrThrow('client-initialization');
+const licensingRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('licensing', 'client-initialization');
 
 async function invokeLicensingRemote<T>(params: {
   path: string;
@@ -18,25 +8,11 @@ async function invokeLicensingRemote<T>(params: {
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const url = new URL(params.path, licensingRemoteBaseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  return invokeHdicrRemote<T>({
+    domain: 'licensing',
+    baseUrl: licensingRemoteBaseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote licensing ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<string | null> {

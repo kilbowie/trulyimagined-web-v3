@@ -1,18 +1,11 @@
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
 type RepresentationRequestAction = 'approve' | 'reject' | 'withdraw';
 
-function getRepresentationRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Representation ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
-const representationRemoteBaseUrl = getRepresentationRemoteBaseUrlOrThrow('client-initialization');
+const representationRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow(
+  'representation',
+  'client-initialization'
+);
 
 async function invokeRepresentationRemote<T>(params: {
   path: string;
@@ -20,25 +13,11 @@ async function invokeRepresentationRemote<T>(params: {
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const url = new URL(params.path, representationRemoteBaseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  return invokeHdicrRemote<T>({
+    domain: 'representation',
+    baseUrl: representationRemoteBaseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote representation ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 export async function getActorByAuth0UserId(auth0UserId: string) {

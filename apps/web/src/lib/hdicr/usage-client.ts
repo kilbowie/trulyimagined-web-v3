@@ -1,16 +1,6 @@
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-function getUsageRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Usage ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
-const usageRemoteBaseUrl = getUsageRemoteBaseUrlOrThrow('client-initialization');
+const usageRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('usage', 'client-initialization');
 
 async function invokeUsageRemote<T>(params: {
   path: string;
@@ -18,25 +8,11 @@ async function invokeUsageRemote<T>(params: {
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const url = new URL(params.path, usageRemoteBaseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  return invokeHdicrRemote<T>({
+    domain: 'usage',
+    baseUrl: usageRemoteBaseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote usage ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 export async function actorExistsById(actorId: string): Promise<boolean> {

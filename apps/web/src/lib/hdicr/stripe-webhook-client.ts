@@ -1,7 +1,7 @@
 import { query } from '@/lib/db';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 import {
   getHdicrAdapterMode,
-  getHdicrRemoteBaseUrl,
   warnIfRemoteModeEnabled,
 } from '@/lib/hdicr/flags';
 
@@ -11,42 +11,18 @@ function isPaymentsRemoteMode() {
   return getHdicrAdapterMode('payments') === 'remote';
 }
 
-function getPaymentsRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Payments ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
 async function invokePaymentsRemote<T>(params: {
   path: string;
   method: 'GET' | 'POST';
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const baseUrl = getPaymentsRemoteBaseUrlOrThrow(params.operation);
-  const url = new URL(params.path, baseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  const baseUrl = getHdicrRemoteBaseUrlOrThrow('payments', params.operation);
+  return invokeHdicrRemote<T>({
+    domain: 'payments',
+    baseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote payments ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 async function getStripeIdentityLinkBySessionIdLocal(sessionId: string) {

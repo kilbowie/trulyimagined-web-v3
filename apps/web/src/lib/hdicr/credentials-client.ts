@@ -1,4 +1,4 @@
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
 type CredentialListRow = {
   id: string;
@@ -15,18 +15,10 @@ type CredentialListRow = {
   proof_type: string | null;
 };
 
-function getCredentialsRemoteBaseUrlOrThrow(operation: string): string {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Credentials ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-
-  return baseUrl;
-}
-
-const credentialsRemoteBaseUrl = getCredentialsRemoteBaseUrlOrThrow('client-initialization');
+const credentialsRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow(
+  'credentials',
+  'client-initialization'
+);
 
 async function invokeCredentialsRemote<T>(params: {
   path: string;
@@ -34,25 +26,11 @@ async function invokeCredentialsRemote<T>(params: {
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const url = new URL(params.path, credentialsRemoteBaseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  return invokeHdicrRemote<T>({
+    domain: 'credentials',
+    baseUrl: credentialsRemoteBaseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote credentials ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 function mapRemoteCredentialToRow(item: Record<string, unknown>): CredentialListRow | null {

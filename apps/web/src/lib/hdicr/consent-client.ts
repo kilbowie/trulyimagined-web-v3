@@ -1,17 +1,7 @@
 import type { ConsentPolicy, CreateConsentEntryParams } from '@/lib/consent-ledger';
-import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
+import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-function getConsentRemoteBaseUrlOrThrow(operation: string) {
-  const baseUrl = getHdicrRemoteBaseUrl();
-  if (!baseUrl) {
-    throw new Error(
-      `[HDICR] Consent ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
-    );
-  }
-  return baseUrl;
-}
-
-const consentRemoteBaseUrl = getConsentRemoteBaseUrlOrThrow('client-initialization');
+const consentRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('consent', 'client-initialization');
 
 async function invokeConsentRemote<T>(params: {
   path: string;
@@ -19,25 +9,11 @@ async function invokeConsentRemote<T>(params: {
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const url = new URL(params.path, consentRemoteBaseUrl);
-
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
+  return invokeHdicrRemote<T>({
+    domain: 'consent',
+    baseUrl: consentRemoteBaseUrl,
+    ...params,
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `[HDICR] Remote consent ${params.operation} failed with status ${response.status} (fail-closed).`
-    );
-  }
-
-  return (await response.json()) as T;
 }
 
 export interface ConsentGrantInput {

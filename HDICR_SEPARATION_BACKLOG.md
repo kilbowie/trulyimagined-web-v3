@@ -928,11 +928,13 @@ HDICR_CLIENT_SECRET=<m2m-app-client-secret>
 
 **Acceptance criteria:**
 
-- [ ] `hdicr-http-client.ts` created and used by all domain clients
-- [ ] Token is cached with a 30s safety buffer before expiry
-- [ ] `HDICR_CLIENT_ID` and `HDICR_CLIENT_SECRET` added to `.env.example`
-- [ ] Token acquisition failure returns 503 to the caller, not a 500 crash
+- [x] `hdicr-http-client.ts` created and used by all domain clients
+- [x] Token is cached with a 30s safety buffer before expiry
+- [x] `HDICR_CLIENT_ID` and `HDICR_CLIENT_SECRET` added to `.env.example`
+- [x] Token acquisition failure returns 503 to the caller, not a 500 crash
 - [ ] M2M app registered in Auth0 with appropriate scopes
+
+Implementation note (2026-04-07): Added `apps/web/src/lib/hdicr/hdicr-http-client.ts` with OAuth 2.1 client-credentials token acquisition, a 30-second refresh safety window, and `HdicrHttpError` (`statusCode`) fail-closed behavior. Migrated HDICR domain clients (`identity`, `consent`, `licensing`, `credentials`, `representation`, `usage`, `billing`, and remote `payments` paths in stripe-webhook client) to the shared transport. Added env examples for `HDICR_CLIENT_ID` and `HDICR_CLIENT_SECRET` in `apps/web/.env.example` and coverage in `hdicr-http-client.test.ts`. Remaining manual step: register/configure the Auth0 M2M app and scopes in provider settings.
 
 ---
 
