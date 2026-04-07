@@ -96,10 +96,9 @@ describe('GET /api/agent/roster - Contract Test', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(query).toHaveBeenCalledWith(
-      expect.stringContaining('FROM actor_agent_relationships'),
-      ['agent-123']
-    );
+    expect(query).toHaveBeenCalledWith(expect.stringContaining('FROM actor_agent_relationships'), [
+      'agent-123',
+    ]);
     expect(getActorById).toHaveBeenCalledWith('actor-123');
     expect(getCurrentConsentLedger).toHaveBeenCalledWith('actor-123', false);
     expect(data).toEqual({

@@ -69,9 +69,10 @@ export async function GET() {
             return null;
           }
 
-          const currentConsent = consent.current as
-            | { version?: number; policy?: Record<string, unknown> | null }
-            | null;
+          const currentConsent = consent.current as {
+            version?: number;
+            policy?: Record<string, unknown> | null;
+          } | null;
           const consentPolicy = currentConsent?.policy ?? null;
 
           return {
