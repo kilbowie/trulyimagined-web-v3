@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { Pool } from 'pg';
+import { z } from 'zod';
 
 /**
  * Grant Consent Handler
@@ -13,47 +14,62 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
-interface GrantConsentRequest {
-  actorId: string;
-  consentType: 'voice_synthesis' | 'image_usage' | 'full_likeness' | string;
-  scope: {
-    projectName?: string;
-    projectId?: string;
-    projectDescription?: string;
-    duration?: {
-      startDate?: string;
-      endDate?: string;
-    };
-    usageTypes?: string[]; // ['advertising', 'promotional', 'editorial']
-    territories?: string[]; // ['UK', 'US', 'global']
-    exclusions?: string[]; // ['political', 'adult-content']
+const NonEmptyString = z.string().trim().min(1);
+
+const GrantConsentSchema = z.object({
+  actorId: NonEmptyString,
+  consentType: NonEmptyString,
+  scope: z
+    .object({
+      projectName: NonEmptyString.optional(),
+      projectId: NonEmptyString.optional(),
+      projectDescription: NonEmptyString.optional(),
+      duration: z
+        .object({
+          startDate: NonEmptyString.optional(),
+          endDate: NonEmptyString.optional(),
+        })
+        .optional(),
+      usageTypes: z.array(NonEmptyString).optional(),
+      territories: z.array(NonEmptyString).optional(),
+      exclusions: z.array(NonEmptyString).optional(),
+    })
+    .passthrough()
+    .default({}),
+  requesterId: NonEmptyString.optional(),
+  requesterType: z.enum(['actor', 'agent', 'studio', 'admin', 'enterprise']).optional(),
+});
+
+function validationErrorResponse(error: z.ZodError | string) {
+  const details =
+    typeof error === 'string'
+      ? { formErrors: [error], fieldErrors: {} }
+      : error.flatten();
+
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details,
+    }),
   };
-  requesterId?: string;
-  requesterType?: 'actor' | 'agent' | 'studio' | 'admin' | 'enterprise';
 }
 
 export async function grantConsent(event: APIGatewayProxyEvent) {
   try {
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Request body is required' }),
-      };
+    let rawBody: unknown = {};
+    try {
+      rawBody = JSON.parse(event.body ?? '{}');
+    } catch {
+      return validationErrorResponse('Invalid JSON body');
     }
 
-    const body: GrantConsentRequest = JSON.parse(event.body);
-    const { actorId, consentType, scope, requesterId, requesterType } = body;
-
-    // Validation
-    if (!actorId || !consentType) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Missing required fields',
-          required: ['actorId', 'consentType'],
-        }),
-      };
+    const parsedBody = GrantConsentSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return validationErrorResponse(parsedBody.error);
     }
+
+    const { actorId, consentType, scope, requesterId, requesterType } = parsedBody.data;
 
     // Get IP and User Agent from request context
     const ipAddress = event.requestContext?.identity?.sourceIp || null;

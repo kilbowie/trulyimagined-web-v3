@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { Pool } from 'pg';
+import { z } from 'zod';
 
 /**
  * List Consents Handler
@@ -12,6 +13,25 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
+
+const NonEmptyString = z.string().trim().min(1);
+
+const ListConsentsQuerySchema = z.object({
+  actorId: NonEmptyString,
+  limit: z.coerce.number().int().min(0).max(500).default(100),
+  offset: z.coerce.number().int().min(0).default(0),
+  action: NonEmptyString.optional(),
+});
+
+function validationErrorResponse(error: z.ZodError) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details: error.flatten(),
+    }),
+  };
+}
 
 interface ConsentRecord {
   id: string;
@@ -49,19 +69,17 @@ interface ConsentSummary {
 
 export async function listConsents(event: APIGatewayProxyEvent) {
   try {
-    const actorId = event.pathParameters?.actorId || event.queryStringParameters?.actorId;
-
-    if (!actorId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Actor ID is required in path' }),
-      };
+    const parsedQuery = ListConsentsQuerySchema.safeParse({
+      actorId: event.pathParameters?.actorId || event.queryStringParameters?.actorId,
+      limit: event.queryStringParameters?.limit,
+      offset: event.queryStringParameters?.offset,
+      action: event.queryStringParameters?.action,
+    });
+    if (!parsedQuery.success) {
+      return validationErrorResponse(parsedQuery.error);
     }
 
-    // Pagination parameters
-    const limit = parseInt(event.queryStringParameters?.limit || '100');
-    const offset = parseInt(event.queryStringParameters?.offset || '0');
-    const action = event.queryStringParameters?.action; // Optional filter by action
+    const { actorId, limit, offset, action } = parsedQuery.data;
 
     // Build query
     let query = `

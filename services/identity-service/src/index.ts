@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
 import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { z } from 'zod';
 
 /**
  * Identity Service - Lambda Handler
@@ -21,6 +22,73 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET,POST,PUT,OPTIONS',
   'Content-Type': 'application/json',
 };
+
+const NonEmptyString = z.string().trim().min(1);
+
+const ActorIdPathSchema = z.object({
+  id: NonEmptyString,
+});
+
+const PaginationQuerySchema = z.object({
+  limit: z.coerce.number().int().min(0).max(500).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+const RegisterActorSchema = z.object({
+  auth0UserId: NonEmptyString,
+  email: z.string().trim().email(),
+  firstName: NonEmptyString,
+  lastName: NonEmptyString,
+  stageName: NonEmptyString.optional(),
+  bio: NonEmptyString.optional(),
+  location: NonEmptyString.optional(),
+});
+
+const UpdateActorSchema = z
+  .object({
+    firstName: NonEmptyString.optional(),
+    lastName: NonEmptyString.optional(),
+    stageName: NonEmptyString.optional(),
+    bio: NonEmptyString.optional(),
+    location: NonEmptyString.optional(),
+    profileImageUrl: z.string().trim().url().optional(),
+  })
+  .refine((value) => Object.values(value).some((field) => field !== undefined), {
+    message: 'At least one updatable field is required',
+  });
+
+function validationErrorResponse(error: z.ZodError | string) {
+  const details =
+    typeof error === 'string'
+      ? { formErrors: [error], fieldErrors: {} }
+      : error.flatten();
+
+  return {
+    statusCode: 400,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details,
+    }),
+  };
+}
+
+function parseJsonBody<T>(event: APIGatewayProxyEvent, schema: z.ZodType<T>) {
+  let rawBody: unknown = {};
+
+  try {
+    rawBody = JSON.parse(event.body ?? '{}');
+  } catch {
+    return { success: false as const, response: validationErrorResponse('Invalid JSON body') };
+  }
+
+  const parsed = schema.safeParse(rawBody);
+  if (!parsed.success) {
+    return { success: false as const, response: validationErrorResponse(parsed.error) };
+  }
+
+  return { success: true as const, data: parsed.data };
+}
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('[IDENTITY-SERVICE] Request received:', {
@@ -47,8 +115,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Scope-based authorization: require appropriate scope per HTTP method.
-    const requiredScope =
-      httpMethod === 'GET' ? 'hdicr:identity:read' : 'hdicr:identity:write';
+    const requiredScope = httpMethod === 'GET' ? 'hdicr:identity:read' : 'hdicr:identity:write';
     if (!hasScope(user, requiredScope)) {
       return {
         statusCode: 403,
@@ -104,20 +171,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
  */
 async function registerActor(event: APIGatewayProxyEvent) {
   try {
-    const body = JSON.parse(event.body || '{}');
-    const { auth0UserId, email, firstName, lastName, stageName, bio, location } = body;
-
-    // Validation
-    if (!auth0UserId || !email || !firstName || !lastName) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: 'Missing required fields',
-          required: ['auth0UserId', 'email', 'firstName', 'lastName'],
-        }),
-      };
+    const parsedBody = parseJsonBody(event, RegisterActorSchema);
+    if (!parsedBody.success) {
+      return parsedBody.response;
     }
+
+    const { auth0UserId, email, firstName, lastName, stageName, bio, location } = parsedBody.data;
 
     // Create actor
     const result = await db.query(queries.actors.create, [
@@ -173,15 +232,12 @@ async function registerActor(event: APIGatewayProxyEvent) {
  * Get actor by ID
  */
 async function getActorById(event: APIGatewayProxyEvent) {
-  const actorId = event.pathParameters?.id;
-
-  if (!actorId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Actor ID is required' }),
-    };
+  const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
+  if (!parsedPath.success) {
+    return validationErrorResponse(parsedPath.error);
   }
+
+  const { id: actorId } = parsedPath.data;
 
   const result = await db.query(queries.actors.getById, [actorId]);
 
@@ -221,8 +277,12 @@ async function getActorById(event: APIGatewayProxyEvent) {
  * List all actors (with pagination)
  */
 async function listActors(event: APIGatewayProxyEvent) {
-  const limit = parseInt(event.queryStringParameters?.limit || '50');
-  const offset = parseInt(event.queryStringParameters?.offset || '0');
+  const parsedQuery = PaginationQuerySchema.safeParse(event.queryStringParameters ?? {});
+  if (!parsedQuery.success) {
+    return validationErrorResponse(parsedQuery.error);
+  }
+
+  const { limit, offset } = parsedQuery.data;
 
   const result = await db.query(queries.actors.list, [limit, offset]);
 
@@ -267,18 +327,19 @@ async function listAdminUsers() {
  * Update actor profile
  */
 async function updateActor(event: APIGatewayProxyEvent) {
-  const actorId = event.pathParameters?.id;
-
-  if (!actorId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Actor ID is required' }),
-    };
+  const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
+  if (!parsedPath.success) {
+    return validationErrorResponse(parsedPath.error);
   }
 
-  const body = JSON.parse(event.body || '{}');
-  const { firstName, lastName, stageName, bio, location, profileImageUrl } = body;
+  const parsedBody = parseJsonBody(event, UpdateActorSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { id: actorId } = parsedPath.data;
+
+  const { firstName, lastName, stageName, bio, location, profileImageUrl } = parsedBody.data;
 
   const result = await db.query(queries.actors.update, [
     actorId,

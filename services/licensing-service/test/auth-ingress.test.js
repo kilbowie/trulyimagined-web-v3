@@ -24,7 +24,7 @@ vi.mock('@trulyimagined/database', () => ({
 import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/handler';
 
-function makeEvent(method, path) {
+function makeEvent(method, path, overrides = {}) {
   return {
     body: null,
     headers: {},
@@ -38,6 +38,7 @@ function makeEvent(method, path) {
     stageVariables: null,
     resource: path,
     requestContext: {},
+    ...overrides,
   };
 }
 
@@ -55,11 +56,7 @@ describe('licensing-service auth ingress', () => {
     vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
-    const response = await handler(
-      makeEvent('GET', '/v1/license/actor/actor-123'),
-      {},
-      () => {}
-    );
+    const response = await handler(makeEvent('GET', '/v1/license/actor/actor-123'), {}, () => {});
 
     expect(response?.statusCode).toBe(403);
     expect(response?.body).toContain('hdicr:licensing:read');
@@ -76,6 +73,46 @@ describe('licensing-service auth ingress', () => {
 
     expect(response?.statusCode).toBe(403);
     expect(response?.body).toContain('hdicr:licensing:write');
+  });
+
+  it('returns structured 400 details for invalid request payloads', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
+    const response = await handler(
+      makeEvent('POST', '/v1/license/request', {
+        body: JSON.stringify({
+          actorId: '',
+          requesterName: 'Requester',
+          requesterEmail: 'not-an-email',
+        }),
+      }),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('actorId');
+    expect(response?.body).toContain('requesterEmail');
+  });
+
+  it('returns structured 400 details for invalid licensing pagination queries', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
+    const response = await handler(
+      makeEvent('GET', '/v1/license/actor/actor-123', {
+        pathParameters: { actorId: 'actor-123' },
+        queryStringParameters: { limit: '-1', offset: '0' },
+      }),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('limit');
   });
 
   it('keeps CORS preflight unauthenticated', async () => {

@@ -27,7 +27,7 @@ vi.mock('@trulyimagined/database', () => ({
 import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/index';
 
-function makeEvent(method, path) {
+function makeEvent(method, path, overrides = {}) {
   return {
     body: null,
     headers: {},
@@ -41,6 +41,7 @@ function makeEvent(method, path) {
     stageVariables: null,
     resource: path,
     requestContext: {},
+    ...overrides,
   };
 }
 
@@ -71,14 +72,45 @@ describe('identity-service auth ingress', () => {
     });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
+    const response = await handler(makeEvent('POST', '/v1/identity/register'), {}, () => {});
+
+    expect(response?.statusCode).toBe(403);
+    expect(response?.body).toContain('hdicr:identity:write');
+  });
+
+  it('returns structured 400 details for invalid register payloads', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
     const response = await handler(
-      makeEvent('POST', '/v1/identity/register'),
+      makeEvent('POST', '/v1/identity/register', {
+        body: JSON.stringify({ auth0UserId: '', email: 'not-an-email', firstName: 'Ada' }),
+      }),
       {},
       () => {}
     );
 
-    expect(response?.statusCode).toBe(403);
-    expect(response?.body).toContain('hdicr:identity:write');
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('email');
+    expect(response?.body).toContain('lastName');
+  });
+
+  it('returns structured 400 details for invalid pagination queries', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
+    const response = await handler(
+      makeEvent('GET', '/v1/identity', {
+        queryStringParameters: { limit: '-1', offset: '0' },
+      }),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('limit');
   });
 
   it('keeps CORS preflight unauthenticated', async () => {

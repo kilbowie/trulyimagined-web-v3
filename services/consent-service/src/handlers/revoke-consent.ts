@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { Pool } from 'pg';
+import { z } from 'zod';
 
 /**
  * Revoke Consent Handler
@@ -13,44 +14,50 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
-interface RevokeConsentRequest {
-  actorId: string;
-  consentId?: string; // Optional: revoke specific consent
-  consentType?: string; // Optional: revoke all consents of this type
-  projectId?: string; // Optional: revoke consents for specific project
-  reason?: string;
+const NonEmptyString = z.string().trim().min(1);
+
+const RevokeConsentSchema = z
+  .object({
+    actorId: NonEmptyString,
+    consentId: NonEmptyString.optional(),
+    consentType: NonEmptyString.optional(),
+    projectId: NonEmptyString.optional(),
+    reason: NonEmptyString.optional(),
+  })
+  .refine((value) => Boolean(value.consentId || value.consentType || value.projectId), {
+    message: 'At least one of consentId, consentType, or projectId is required',
+  });
+
+function validationErrorResponse(error: z.ZodError | string) {
+  const details =
+    typeof error === 'string'
+      ? { formErrors: [error], fieldErrors: {} }
+      : error.flatten();
+
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details,
+    }),
+  };
 }
 
 export async function revokeConsent(event: APIGatewayProxyEvent) {
   try {
-    if (!event.body) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Request body is required' }),
-      };
+    let rawBody: unknown = {};
+    try {
+      rawBody = JSON.parse(event.body ?? '{}');
+    } catch {
+      return validationErrorResponse('Invalid JSON body');
     }
 
-    const body: RevokeConsentRequest = JSON.parse(event.body);
-    const { actorId, consentId, consentType, projectId, reason } = body;
-
-    // Validation
-    if (!actorId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Missing required field: actorId',
-        }),
-      };
+    const parsedBody = RevokeConsentSchema.safeParse(rawBody);
+    if (!parsedBody.success) {
+      return validationErrorResponse(parsedBody.error);
     }
 
-    if (!consentId && !consentType && !projectId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Must provide consentId, consentType, or projectId to revoke',
-        }),
-      };
-    }
+    const { actorId, consentId, consentType, projectId, reason } = parsedBody.data;
 
     // Get IP and User Agent
     const ipAddress = event.requestContext?.identity?.sourceIp || null;

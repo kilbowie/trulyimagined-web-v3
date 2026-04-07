@@ -1,6 +1,7 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
 import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { z } from 'zod';
 
 /**
  * Licensing Service - Lambda Handler
@@ -21,6 +22,73 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
   'Content-Type': 'application/json',
 };
+
+const NonEmptyString = z.string().trim().min(1);
+
+const ActorIdPathSchema = z.object({
+  actorId: NonEmptyString,
+});
+
+const RequestIdPathSchema = z.object({
+  requestId: NonEmptyString,
+});
+
+const PaginationQuerySchema = z.object({
+  limit: z.coerce.number().int().min(0).max(500).default(50),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+
+const RequestLicenseSchema = z.object({
+  actorId: NonEmptyString,
+  requesterName: NonEmptyString,
+  requesterEmail: z.string().trim().email(),
+  requesterOrganization: NonEmptyString.optional(),
+  projectName: NonEmptyString,
+  projectDescription: NonEmptyString,
+  usageType: NonEmptyString,
+  intendedUse: NonEmptyString,
+  durationStart: NonEmptyString.optional(),
+  durationEnd: NonEmptyString.optional(),
+  compensationOffered: z.union([z.number(), NonEmptyString]).optional(),
+  compensationCurrency: NonEmptyString.default('USD'),
+});
+
+const RejectLicenseSchema = z.object({
+  reason: NonEmptyString.optional(),
+});
+
+function validationErrorResponse(error: z.ZodError | string) {
+  const details =
+    typeof error === 'string'
+      ? { formErrors: [error], fieldErrors: {} }
+      : error.flatten();
+
+  return {
+    statusCode: 400,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details,
+    }),
+  };
+}
+
+function parseJsonBody<T>(event: APIGatewayProxyEvent, schema: z.ZodType<T>) {
+  let rawBody: unknown = {};
+
+  try {
+    rawBody = JSON.parse(event.body ?? '{}');
+  } catch {
+    return { success: false as const, response: validationErrorResponse('Invalid JSON body') };
+  }
+
+  const parsed = schema.safeParse(rawBody);
+  if (!parsed.success) {
+    return { success: false as const, response: validationErrorResponse(parsed.error) };
+  }
+
+  return { success: true as const, data: parsed.data };
+}
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('[LICENSING-SERVICE] Request received:', {
@@ -47,8 +115,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Scope-based authorization: require appropriate scope per HTTP method.
-    const requiredScope =
-      httpMethod === 'GET' ? 'hdicr:licensing:read' : 'hdicr:licensing:write';
+    const requiredScope = httpMethod === 'GET' ? 'hdicr:licensing:read' : 'hdicr:licensing:write';
     if (!hasScope(user, requiredScope)) {
       return {
         statusCode: 403,
@@ -100,7 +167,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
  */
 async function requestLicense(event: APIGatewayProxyEvent) {
   try {
-    const body = JSON.parse(event.body || '{}');
+    const parsedBody = parseJsonBody(event, RequestLicenseSchema);
+    if (!parsedBody.success) {
+      return parsedBody.response;
+    }
+
     const {
       actorId,
       requesterName,
@@ -113,36 +184,8 @@ async function requestLicense(event: APIGatewayProxyEvent) {
       durationStart,
       durationEnd,
       compensationOffered,
-      compensationCurrency = 'USD',
-    } = body;
-
-    // Validation
-    if (
-      !actorId ||
-      !requesterName ||
-      !requesterEmail ||
-      !projectName ||
-      !projectDescription ||
-      !usageType ||
-      !intendedUse
-    ) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: 'Missing required fields',
-          required: [
-            'actorId',
-            'requesterName',
-            'requesterEmail',
-            'projectName',
-            'projectDescription',
-            'usageType',
-            'intendedUse',
-          ],
-        }),
-      };
-    }
+      compensationCurrency,
+    } = parsedBody.data;
 
     const result = await db.query(queries.licensing.create, [
       actorId,
@@ -193,18 +236,18 @@ async function requestLicense(event: APIGatewayProxyEvent) {
  * Get license requests for an actor
  */
 async function getLicenseRequests(event: APIGatewayProxyEvent) {
-  const actorId = event.pathParameters?.actorId;
-
-  if (!actorId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Actor ID is required' }),
-    };
+  const parsedPath = ActorIdPathSchema.safeParse(event.pathParameters ?? {});
+  if (!parsedPath.success) {
+    return validationErrorResponse(parsedPath.error);
   }
 
-  const limit = parseInt(event.queryStringParameters?.limit || '50');
-  const offset = parseInt(event.queryStringParameters?.offset || '0');
+  const parsedQuery = PaginationQuerySchema.safeParse(event.queryStringParameters ?? {});
+  if (!parsedQuery.success) {
+    return validationErrorResponse(parsedQuery.error);
+  }
+
+  const { actorId } = parsedPath.data;
+  const { limit, offset } = parsedQuery.data;
 
   const result = await db.query(queries.licensing.getByActor, [actorId, limit, offset]);
 
@@ -236,15 +279,12 @@ async function getLicenseRequests(event: APIGatewayProxyEvent) {
  * Approve a license request
  */
 async function approveLicense(event: APIGatewayProxyEvent) {
-  const requestId = event.pathParameters?.requestId;
-
-  if (!requestId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Request ID is required' }),
-    };
+  const parsedPath = RequestIdPathSchema.safeParse(event.pathParameters ?? {});
+  if (!parsedPath.success) {
+    return validationErrorResponse(parsedPath.error);
   }
+
+  const { requestId } = parsedPath.data;
 
   const result = await db.query(queries.licensing.approve, [requestId]);
 
@@ -277,18 +317,18 @@ async function approveLicense(event: APIGatewayProxyEvent) {
  * Reject a license request
  */
 async function rejectLicense(event: APIGatewayProxyEvent) {
-  const requestId = event.pathParameters?.requestId;
-
-  if (!requestId) {
-    return {
-      statusCode: 400,
-      headers: corsHeaders,
-      body: JSON.stringify({ error: 'Request ID is required' }),
-    };
+  const parsedPath = RequestIdPathSchema.safeParse(event.pathParameters ?? {});
+  if (!parsedPath.success) {
+    return validationErrorResponse(parsedPath.error);
   }
 
-  const body = JSON.parse(event.body || '{}');
-  const { reason } = body;
+  const parsedBody = parseJsonBody(event, RejectLicenseSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { requestId } = parsedPath.data;
+  const { reason } = parsedBody.data;
 
   const result = await db.query(queries.licensing.reject, [requestId, reason]);
 

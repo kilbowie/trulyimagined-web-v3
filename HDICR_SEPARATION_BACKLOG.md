@@ -52,7 +52,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [x]    |
 | SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [x]    |
 | SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [x]    |
-| SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [ ]    |
+| SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [x]    |
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [ ]    |
 | SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [x]    |
 | SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [ ]    |
@@ -1076,10 +1076,12 @@ export async function grantConsent(event: APIGatewayProxyEvent) {
 
 **Acceptance criteria:**
 
-- [ ] Every handler function validates input with Zod
-- [ ] `400` responses include structured error details
-- [ ] Schema definitions are co-located with handler files
-- [ ] `zod` added to each service `package.json` if not present
+- [x] Every handler function validates input with Zod
+- [x] `400` responses include structured error details
+- [x] Schema definitions are co-located with handler files
+- [x] `zod` already present in each service `package.json` (no dependency change required)
+
+Implementation note (2026-04-08): Replaced manual field checks in `services/identity-service/src/index.ts`, `services/licensing-service/src/handler.ts`, and the consent sub-handlers (`grant-consent.ts`, `revoke-consent.ts`, `check-consent.ts`, `list-consents.ts`) with co-located Zod schemas. Added structured `400` responses in the form `{ error: 'Validation failed', details: error.flatten() }`, plus explicit invalid-JSON handling for body-based endpoints. Expanded route-level service tests to cover validation failures alongside the existing auth ingress checks.
 
 ---
 

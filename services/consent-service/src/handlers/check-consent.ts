@@ -1,5 +1,6 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
 import { Pool } from 'pg';
+import { z } from 'zod';
 
 /**
  * Check Consent Handler
@@ -18,29 +19,32 @@ const pool = new Pool({
   ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
 });
 
+const NonEmptyString = z.string().trim().min(1);
+
+const CheckConsentQuerySchema = z.object({
+  actorId: NonEmptyString,
+  consentType: NonEmptyString,
+  projectId: NonEmptyString.optional(),
+});
+
+function validationErrorResponse(error: z.ZodError) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      error: 'Validation failed',
+      details: error.flatten(),
+    }),
+  };
+}
+
 export async function checkConsent(event: APIGatewayProxyEvent) {
   try {
-    const params = event.queryStringParameters;
-
-    if (!params) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Query parameters required' }),
-      };
+    const parsedQuery = CheckConsentQuerySchema.safeParse(event.queryStringParameters ?? {});
+    if (!parsedQuery.success) {
+      return validationErrorResponse(parsedQuery.error);
     }
 
-    const { actorId, consentType, projectId } = params;
-
-    // Validation
-    if (!actorId || !consentType) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          error: 'Missing required parameters',
-          required: ['actorId', 'consentType'],
-        }),
-      };
-    }
+    const { actorId, consentType, projectId } = parsedQuery.data;
 
     // Query for most recent consent action (granted or revoked)
     let query = `

@@ -8,7 +8,7 @@ vi.mock('@trulyimagined/middleware', () => ({
 import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/index';
 
-function makeEvent(method, path) {
+function makeEvent(method, path, overrides = {}) {
   return {
     body: null,
     headers: {},
@@ -22,6 +22,7 @@ function makeEvent(method, path) {
     stageVariables: null,
     resource: path,
     requestContext: {},
+    ...overrides,
   };
 }
 
@@ -56,6 +57,41 @@ describe('consent-service auth ingress', () => {
 
     expect(response?.statusCode).toBe(403);
     expect(response?.body).toContain('hdicr:consent:write');
+  });
+
+  it('returns structured 400 details for invalid grant payloads', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
+    const response = await handler(
+      makeEvent('POST', '/v1/consent/grant', {
+        body: JSON.stringify({ actorId: '', consentType: '' }),
+      }),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('actorId');
+    expect(response?.body).toContain('consentType');
+  });
+
+  it('returns structured 400 details for invalid consent-check queries', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(true);
+
+    const response = await handler(
+      makeEvent('GET', '/v1/consent/check', {
+        queryStringParameters: { consentType: 'voice_synthesis' },
+      }),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(400);
+    expect(response?.body).toContain('Validation failed');
+    expect(response?.body).toContain('actorId');
   });
 
   it('keeps CORS preflight unauthenticated', async () => {
