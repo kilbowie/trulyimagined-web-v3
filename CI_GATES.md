@@ -37,6 +37,7 @@ This document defines the mandatory stage gates that must pass before code merge
 **Purpose:** Enforce TypeScript strict mode across the entire monorepo
 
 **Scope:** 8 workspace projects
+
 - `shared/types`
 - `infra/database`
 - `shared/utils`
@@ -49,11 +50,13 @@ This document defines the mandatory stage gates that must pass before code merge
 **Failure behavior:** Blocks all downstream jobs (security, test, build, deploy)
 
 **Local validation before push:**
+
 ```bash
 pnpm type-check
 ```
 
 **Key rules:**
+
 - No `any` without explicit justification (use `any` pragmatically for external APIs only)
 - Strict null checking enabled (no implicit `undefined`)
 - No missing imports or unresolved symbols
@@ -65,6 +68,7 @@ pnpm type-check
 **Failure behavior:** Blocks all downstream jobs
 
 **Local validation:**
+
 ```bash
 pnpm lint
 ```
@@ -100,6 +104,7 @@ pnpm lint
 These workflow jobs must be enabled as **required status checks** in GitHub branch settings:
 
 **For `main` branch:**
+
 - `lint` (Type Check & Lint job) — **REQUIRED**
 - `build` (Build Check job) — **REQUIRED**
 - `test` (Unit Tests job) — **REQUIRED**
@@ -108,6 +113,7 @@ These workflow jobs must be enabled as **required status checks** in GitHub bran
 - Require PR reviews before merging — **ENABLED** (e.g., 1 approval)
 
 **For `develop` branch:**
+
 - `lint` — **REQUIRED**
 - `build` — **REQUIRED**
 - `test` — **REQUIRED**
@@ -132,6 +138,7 @@ pnpm build
 ```
 
 **Or use the fast-path for rapid iteration:**
+
 ```bash
 # Quick check (30s)
 pnpm type-check && pnpm lint
@@ -146,8 +153,9 @@ pnpm type-check && pnpm lint
 If a type-check failure is a false positive:
 
 1. **Document the issue** in the code comment immediately above the violation
+
    ```typescript
-   // @ts-expect-error -- HDICR-1234: External API returns untyped response. 
+   // @ts-expect-error -- HDICR-1234: External API returns untyped response.
    // Remove when API contract is documented.
    const data = await externalAPI.fetch();
    ```
@@ -191,20 +199,22 @@ gh api repos/{owner}/{repo}/branches/main/protection
 
 ### Common CI Failures
 
-| Failure | Root Cause | Fix |
-|---------|-----------|-----|
-| `pnpm type-check` errors | Uncommitted type violations | `pnpm type-check` locally, review error, add type annotations |
-| `pnpm lint` fails | Style violations | `pnpm lint --fix` and recommit |
-| Build fails | Missing imports after refactor | Check all adapter clients for completeness |
-| Integration tests fail | Adapter mode mismatch | Ensure env vars match test suite expectations |
+| Failure                  | Root Cause                     | Fix                                                           |
+| ------------------------ | ------------------------------ | ------------------------------------------------------------- |
+| `pnpm type-check` errors | Uncommitted type violations    | `pnpm type-check` locally, review error, add type annotations |
+| `pnpm lint` fails        | Style violations               | `pnpm lint --fix` and recommit                                |
+| Build fails              | Missing imports after refactor | Check all adapter clients for completeness                    |
+| Integration tests fail   | Adapter mode mismatch          | Ensure env vars match test suite expectations                 |
 
 ### Bypass Procedures
 
 **GitHub UI:**
+
 - Admins can dismiss failed checks via "Allow auto-merge" → "Require branches to be up to date before merging"
 - Creates audit trail for security review
 
 **CLI (for maintainers):**
+
 ```bash
 git push --force-with-lease  # Last resort; should trigger post-incident review
 ```

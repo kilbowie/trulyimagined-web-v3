@@ -67,10 +67,10 @@ The web tier currently shares one physical PostgreSQL instance with HDICR servic
 
 ### Canonical Table Ownership
 
-| Owner | Tables | Notes |
-| --- | --- | --- |
-| HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, HDICR-facing `audit_log` entries | Core identity, consent, credential, and licensing records. Web access must go through HDICR APIs. |
-| TI | `user_profiles`, `agents`, `actor_agent_relationships`, `representation_requests`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables | Product/workflow tables that remain in direct web control until the Phase 4 split. |
+| Owner | Tables                                                                                                                                                                                                                     | Notes                                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, HDICR-facing `audit_log` entries                                                   | Core identity, consent, credential, and licensing records. Web access must go through HDICR APIs. |
+| TI    | `user_profiles`, `agents`, `actor_agent_relationships`, `representation_requests`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables | Product/workflow tables that remain in direct web control until the Phase 4 split.                |
 
 ### Transitional Clarifications
 

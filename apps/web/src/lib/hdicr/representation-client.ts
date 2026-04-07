@@ -12,9 +12,7 @@ function getRepresentationRemoteBaseUrlOrThrow(operation: string) {
   return baseUrl;
 }
 
-const representationRemoteBaseUrl = getRepresentationRemoteBaseUrlOrThrow(
-  'client-initialization'
-);
+const representationRemoteBaseUrl = getRepresentationRemoteBaseUrlOrThrow('client-initialization');
 
 async function invokeRepresentationRemote<T>(params: {
   path: string;
@@ -64,13 +62,11 @@ export async function getAgentByAuth0UserId(auth0UserId: string) {
 }
 
 export async function getActiveRepresentationForActor(actorId: string) {
-  const payload = await invokeRepresentationRemote<{ relationship?: Record<string, any> | null }>(
-    {
-      path: `/v1/representation/active?actorId=${encodeURIComponent(actorId)}`,
-      method: 'GET',
-      operation: 'active-representation-by-actor',
-    }
-  );
+  const payload = await invokeRepresentationRemote<{ relationship?: Record<string, any> | null }>({
+    path: `/v1/representation/active?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'active-representation-by-actor',
+  });
 
   return payload.relationship ?? null;
 }

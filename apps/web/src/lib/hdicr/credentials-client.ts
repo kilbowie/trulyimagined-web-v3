@@ -194,7 +194,9 @@ export async function createCredentialPlaceholderRecord(params: {
   });
 
   if (typeof payload.id !== 'string') {
-    throw new Error('[HDICR] Remote create placeholder returned an unexpected payload (fail-closed).');
+    throw new Error(
+      '[HDICR] Remote create placeholder returned an unexpected payload (fail-closed).'
+    );
   }
 
   return payload.id;

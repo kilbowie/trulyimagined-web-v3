@@ -36,12 +36,12 @@ function isValidOptionalUrl(value?: string): boolean {
 function computeProfileCompleted(payload: AgentProfilePayload): boolean {
   return Boolean(
     normalizeText(payload.agencyName) &&
-      normalizeText(payload.registeredCompanyName) &&
-      normalizeText(payload.companyRegistrationNumber) &&
-      normalizeText(payload.registeredAddressLine1) &&
-      normalizeText(payload.registeredAddressCity) &&
-      normalizeText(payload.registeredAddressPostcode) &&
-      normalizeText(payload.registeredAddressCountry)
+    normalizeText(payload.registeredCompanyName) &&
+    normalizeText(payload.companyRegistrationNumber) &&
+    normalizeText(payload.registeredAddressLine1) &&
+    normalizeText(payload.registeredAddressCity) &&
+    normalizeText(payload.registeredAddressPostcode) &&
+    normalizeText(payload.registeredAddressCountry)
   );
 }
 
@@ -139,7 +139,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (!isValidOptionalUrl(payload.websiteUrl)) {
-      return NextResponse.json({ error: 'Website URL must start with http:// or https://' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Website URL must start with http:// or https://' },
+        { status: 400 }
+      );
     }
 
     const existing = await query('SELECT id, registry_id FROM agents WHERE auth0_user_id = $1', [
@@ -233,7 +236,10 @@ export async function PUT(request: NextRequest) {
     }
 
     if (!isValidOptionalUrl(payload.websiteUrl)) {
-      return NextResponse.json({ error: 'Website URL must start with http:// or https://' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Website URL must start with http:// or https://' },
+        { status: 400 }
+      );
     }
 
     const existingResult = await query(

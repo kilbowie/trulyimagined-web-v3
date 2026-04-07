@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { createVerificationSession } from '@/lib/stripe';
-import {
-  createIdentityLink,
-  getUserProfileIdByAuth0UserId,
-} from '@/lib/hdicr/identity-client';
+import { createIdentityLink, getUserProfileIdByAuth0UserId } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
