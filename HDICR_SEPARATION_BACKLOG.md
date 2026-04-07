@@ -27,9 +27,9 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-001 | Rotate exposed secrets immediately                               | 0     | P0       | [x]    |
 | SEP-002 | Inventory and classify all direct DB access in web routes        | 1     | P0       | [ ]    |
 | SEP-003 | Add CI guardrail blocking new HDICR direct-DB imports            | 1     | P0       | [x]    |
-| SEP-004 | Remove local adapter paths from `identity-client.ts`             | 1     | P1       | [ ]    |
-| SEP-005 | Remove local adapter paths from `consent-client.ts`              | 1     | P1       | [ ]    |
-| SEP-006 | Remove local adapter paths from `licensing-client.ts`            | 1     | P1       | [ ]    |
+| SEP-004 | Remove local adapter paths from `identity-client.ts`             | 1     | P1       | [x]    |
+| SEP-005 | Remove local adapter paths from `consent-client.ts`              | 1     | P1       | [x]    |
+| SEP-006 | Remove local adapter paths from `licensing-client.ts`            | 1     | P1       | [x]    |
 | SEP-007 | Remove local adapter paths from `representation-client.ts`       | 1     | P1       | [ ]    |
 | SEP-008 | Remove local adapter paths from `usage-client.ts`                | 1     | P1       | [ ]    |
 | SEP-009 | Remove local adapter paths from `credentials-client.ts`          | 1     | P1       | [ ]    |
@@ -249,13 +249,15 @@ export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boo
 
 **Acceptance criteria:**
 
-- [ ] All `*Local` functions deleted from `identity-client.ts`
-- [ ] `import { query } from '@/lib/db'` removed from the file
-- [ ] `getHdicrAdapterMode` and mode-check logic removed
-- [ ] `invokeIdentityRemote` is the only execution path
-- [ ] `HDICR_REMOTE_BASE_URL` missing causes startup error, not silent fallback
-- [ ] All unit tests updated to mock `fetch` rather than the `query` function
-- [ ] `identity-client.test.ts` passes with `HDICR_ADAPTER_MODE` env deleted
+- [x] All `*Local` functions deleted from `identity-client.ts`
+- [x] `import { query } from '@/lib/db'` removed from the file
+- [x] `getHdicrAdapterMode` and mode-check logic removed
+- [x] `invokeIdentityRemote` is the only execution path
+- [x] `HDICR_REMOTE_BASE_URL` missing causes startup error, not silent fallback
+- [x] All unit tests updated to mock `fetch` rather than the `query` function
+- [x] `identity-client.test.ts` passes with `HDICR_ADAPTER_MODE` env deleted
+
+Implementation note (2026-04-07): identity client endpoints now use `/v1/identity/*` paths and fail closed during module initialization if `HDICR_REMOTE_BASE_URL` is absent.
 
 ---
 
@@ -275,11 +277,13 @@ export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boo
 
 **Acceptance criteria:**
 
-- [ ] All `*Local` functions deleted
-- [ ] `import { query } from '@/lib/db'` removed
-- [ ] `import { createConsentEntry, getConsentHistory, getLatestConsent } from '@/lib/consent-ledger'` removed (internal ledger module bypassed by TI)
-- [ ] All consent operations route through `invokeConsentRemote`
-- [ ] `consent-client.test.ts` passes with fetch mocked
+- [x] All `*Local` functions deleted
+- [x] `import { query } from '@/lib/db'` removed
+- [x] `import { createConsentEntry, getConsentHistory, getLatestConsent } from '@/lib/consent-ledger'` removed (internal ledger module bypassed by TI)
+- [x] All consent operations route through `invokeConsentRemote`
+- [x] `consent-client.test.ts` passes with fetch mocked
+
+Implementation note (2026-04-07): consent client now initializes fail-closed when `HDICR_REMOTE_BASE_URL` is missing and routes all calls through `/v1/consent/*` and `/v1/consent-ledger/*` endpoints.
 
 ---
 
@@ -301,9 +305,11 @@ export async function actorExistsByAuth0UserId(auth0UserId: string): Promise<boo
 
 **Acceptance criteria:**
 
-- [ ] All local SQL and imports from `@/lib/licensing` removed
-- [ ] `import { query } from '@/lib/db'` removed
-- [ ] `licensing-client.test.ts` passes with fetch mocked
+- [x] All local SQL and imports from `@/lib/licensing` removed
+- [x] `import { query } from '@/lib/db'` removed
+- [x] `licensing-client.test.ts` passes with fetch mocked
+
+Implementation note (2026-04-07): licensing client now runs remote-only with fail-closed initialization and `/v1/licensing/*` endpoints.
 
 ---
 

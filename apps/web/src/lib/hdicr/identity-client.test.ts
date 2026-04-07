@@ -9,29 +9,17 @@ describe('identity-client - remote authoritative behavior', () => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_IDENTITY_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
+    vi.restoreAllMocks();
   });
 
-  it('createActorRegistration uses local adapter in local mode', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'local';
-
-    const mockQuery = vi.fn().mockResolvedValue({
-      rows: [
-        {
-          id: 'actor-123',
-          registry_id: 'REG-123',
-          first_name: 'Ada',
-          last_name: 'Lovelace',
-        },
-      ],
+  it('createActorRegistration calls remote identity endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 'actor-123' }),
     });
-
-    vi.doMock('@/lib/db', () => ({ query: mockQuery }));
-    vi.doMock('@/lib/identity-resolution', () => ({ resolveIdentity: vi.fn() }));
-    vi.doMock('@/lib/registry-id', () => ({
-      createUniqueRegistryId: vi.fn().mockResolvedValue('REG-123'),
-      ensureActorRegistryId: vi.fn().mockResolvedValue('REG-123'),
-    }));
-    vi.doMock('@trulyimagined/utils', () => ({ encryptJSON: vi.fn((value) => value) }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { createActorRegistration } = await import('@/lib/hdicr/identity-client');
 
@@ -42,47 +30,33 @@ describe('identity-client - remote authoritative behavior', () => {
       lastName: 'Lovelace',
     });
 
-    expect(mockQuery).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/identity/register',
+      expect.objectContaining({ method: 'POST' })
+    );
     expect(result).toHaveProperty('id', 'actor-123');
   });
 
-  it('createActorRegistration fails closed in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/identity-resolution', () => ({ resolveIdentity: vi.fn() }));
-    vi.doMock('@/lib/registry-id', () => ({
-      createUniqueRegistryId: vi.fn(),
-      ensureActorRegistryId: vi.fn(),
-    }));
-    vi.doMock('@trulyimagined/utils', () => ({ encryptJSON: vi.fn((value) => value) }));
-
-    const { createActorRegistration } = await import('@/lib/hdicr/identity-client');
-
-    await expect(
-      createActorRegistration({
-        auth0UserId: 'auth0|123',
-        email: 'actor@example.com',
-        firstName: 'Ada',
-        lastName: 'Lovelace',
-      })
-    ).rejects.toThrow('fail-closed');
+  it('fails closed at import time when remote base URL is missing', async () => {
+    await expect(import('@/lib/hdicr/identity-client')).rejects.toThrow('fail-closed');
   });
 
-  it('domain override enforces remote mode over global local', async () => {
+  it('actorExistsByAuth0UserId remains remote-only even with local mode env', async () => {
     process.env.HDICR_ADAPTER_MODE = 'local';
-    process.env.HDICR_IDENTITY_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/identity-resolution', () => ({ resolveIdentity: vi.fn() }));
-    vi.doMock('@/lib/registry-id', () => ({
-      createUniqueRegistryId: vi.fn(),
-      ensureActorRegistryId: vi.fn(),
-    }));
-    vi.doMock('@trulyimagined/utils', () => ({ encryptJSON: vi.fn((value) => value) }));
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ exists: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { actorExistsByAuth0UserId } = await import('@/lib/hdicr/identity-client');
 
-    await expect(actorExistsByAuth0UserId('auth0|123')).rejects.toThrow('fail-closed');
+    await expect(actorExistsByAuth0UserId('auth0|123')).resolves.toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/identity/actors/exists?auth0UserId=auth0%7C123',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });

@@ -9,18 +9,17 @@ describe('consent-client - HDICR flag-awareness', () => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_CONSENT_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
+    vi.restoreAllMocks();
   });
 
-  it('grantConsent calls local adapter in local mode', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'local';
-
-    const mockQuery = vi.fn().mockResolvedValue({ rows: [{ id: 'consent-123' }] });
-    vi.doMock('@/lib/db', () => ({ query: mockQuery }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
+  it('grantConsent calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ id: 'consent-123' }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { grantConsent } = await import('@/lib/hdicr/consent-client');
 
@@ -33,43 +32,25 @@ describe('consent-client - HDICR flag-awareness', () => {
       userAgent: 'test',
     });
 
-    expect(mockQuery).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/consent/grant',
+      expect.objectContaining({ method: 'POST' })
+    );
     expect(result).toHaveProperty('id', 'consent-123');
   });
 
-  it('grantConsent throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
-
-    const { grantConsent } = await import('@/lib/hdicr/consent-client');
-
-    await expect(
-      grantConsent({
-        actorId: 'actor-123',
-        consentType: 'voice_synthesis',
-        requesterId: 'req-1',
-        requesterType: 'agent',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test',
-      })
-    ).rejects.toThrow('fail-closed');
+  it('fails closed at import time when remote base URL is missing', async () => {
+    await expect(import('@/lib/hdicr/consent-client')).rejects.toThrow('fail-closed');
   });
 
-  it('revokeConsent throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
+  it('revokeConsent calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ notFound: false, record: { id: 'consent-123' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { revokeConsent } = await import('@/lib/hdicr/consent-client');
 
@@ -80,43 +61,22 @@ describe('consent-client - HDICR flag-awareness', () => {
         ipAddress: '127.0.0.1',
         userAgent: 'test',
       })
-    ).rejects.toThrow('fail-closed');
+    ).resolves.toEqual({ notFound: false, record: { id: 'consent-123' } });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/consent/revoke',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 
-  it('domain-level override takes precedence over global mode', async () => {
+  it('checkConsent remains remote-only even with local mode env', async () => {
     process.env.HDICR_ADAPTER_MODE = 'local';
-    process.env.HDICR_CONSENT_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
-
-    const { grantConsent } = await import('@/lib/hdicr/consent-client');
-
-    await expect(
-      grantConsent({
-        actorId: 'actor-123',
-        consentType: 'voice_synthesis',
-        requesterId: 'req-1',
-        requesterType: 'agent',
-        ipAddress: '127.0.0.1',
-        userAgent: 'test',
-      })
-    ).rejects.toThrow('fail-closed');
-  });
-
-  it('checkConsent throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ consent: { id: 'consent-123' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { checkConsent } = await import('@/lib/hdicr/consent-client');
 
@@ -125,25 +85,10 @@ describe('consent-client - HDICR flag-awareness', () => {
         actorId: 'actor-123',
         consentType: 'voice_synthesis',
       })
-    ).rejects.toThrow('fail-closed');
-  });
-
-  it('listConsentRecords throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/consent-ledger', () => ({
-      createConsentEntry: vi.fn(),
-      getConsentHistory: vi.fn(),
-      getLatestConsent: vi.fn(),
-    }));
-
-    const { listConsentRecords } = await import('@/lib/hdicr/consent-client');
-
-    await expect(
-      listConsentRecords({
-        actorId: 'actor-123',
-      })
-    ).rejects.toThrow('fail-closed');
+    ).resolves.toEqual({ id: 'consent-123' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/consent/check?actorId=actor-123&consentType=voice_synthesis',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });

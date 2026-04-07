@@ -9,84 +9,52 @@ describe('licensing-client - HDICR flag-awareness', () => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_LICENSING_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
+    vi.restoreAllMocks();
   });
 
-  it('applyLicensingDecision calls local adapter in local mode', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'local';
-
-    const mockQuery = vi.fn().mockResolvedValue({ rows: [{ id: 'req-123', status: 'approved' }] });
-    vi.doMock('@/lib/db', () => ({ query: mockQuery }));
-    vi.doMock('@/lib/licensing', () => ({
-      getActorLicenses: vi.fn(),
-      getLicenseStats: vi.fn(),
-    }));
+  it('applyLicensingDecision calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ decision: { id: 'req-123', status: 'approved' } }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { applyLicensingDecision } = await import('@/lib/hdicr/licensing-client');
 
     const result = await applyLicensingDecision('req-123', 'actor-123', 'approve');
 
-    expect(mockQuery).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/licensing/decision',
+      expect.objectContaining({ method: 'POST' })
+    );
     expect(result).toHaveProperty('status', 'approved');
   });
 
-  it('applyLicensingDecision throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/licensing', () => ({
-      getActorLicenses: vi.fn(),
-      getLicenseStats: vi.fn(),
-    }));
-
-    const { applyLicensingDecision } = await import('@/lib/hdicr/licensing-client');
-
-    await expect(applyLicensingDecision('req-123', 'actor-123', 'approve')).rejects.toThrow(
-      'fail-closed'
-    );
+  it('fails closed at import time when remote base URL is missing', async () => {
+    await expect(import('@/lib/hdicr/licensing-client')).rejects.toThrow('fail-closed');
   });
 
-  it('domain-level override takes precedence over global mode', async () => {
+  it('listActorLicensingRequests remains remote-only even with local mode env', async () => {
     process.env.HDICR_ADAPTER_MODE = 'local';
-    process.env.HDICR_LICENSING_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/licensing', () => ({
-      getActorLicenses: vi.fn(),
-      getLicenseStats: vi.fn(),
-    }));
-
-    const { applyLicensingDecision } = await import('@/lib/hdicr/licensing-client');
-
-    await expect(
-      applyLicensingDecision('req-123', 'actor-123', 'reject', 'Not accepted')
-    ).rejects.toThrow('fail-closed');
-  });
-
-  it('listActorLicensingRequests throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/licensing', () => ({
-      getActorLicenses: vi.fn(),
-      getLicenseStats: vi.fn(),
-    }));
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ requests: [], pendingCount: 0 }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { listActorLicensingRequests } = await import('@/lib/hdicr/licensing-client');
 
-    await expect(listActorLicensingRequests('actor-123')).rejects.toThrow('fail-closed');
-  });
-
-  it('getActorLicensesAndStats throws in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-    vi.doMock('@/lib/licensing', () => ({
-      getActorLicenses: vi.fn(),
-      getLicenseStats: vi.fn(),
-    }));
-
-    const { getActorLicensesAndStats } = await import('@/lib/hdicr/licensing-client');
-
-    await expect(getActorLicensesAndStats('actor-123')).rejects.toThrow('fail-closed');
+    await expect(listActorLicensingRequests('actor-123')).resolves.toEqual({
+      requests: [],
+      pendingCount: 0,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/licensing/actor-requests?actorId=actor-123',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 });
