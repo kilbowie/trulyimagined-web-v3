@@ -1,0 +1,57 @@
+# Gitleaks configuration
+# https://github.com/gitleaks/gitleaks
+#
+# Extends the default ruleset with project-specific allowlists.
+# Run locally: gitleaks detect --source=. --config=.gitleaks.toml
+
+[extend]
+# Use the upstream default ruleset as the baseline
+useDefault = true
+
+# ── Global allowlist ─────────────────────────────────────────────────────────
+[allowlist]
+description = "Allowlist for test fixtures and environment-example placeholder values"
+
+# Paths that only ever contain intentional example / placeholder values
+paths = [
+  # Environment example files — contain placeholders like "your_secret_here"
+  '''^apps/web/\.env\.example$''',
+  '''^\.env\.example$''',
+  # Archived snapshots and documentation — may contain historical stubs
+  '''^ARCHIVE_MASTER\.md$''',
+  '''^docs/''',
+  # Test files — contain deterministic fake tokens used only in unit tests
+  '''\.test\.ts$''',
+  '''\.test\.js$''',
+  '''\.spec\.ts$''',
+  '''\.spec\.js$''',
+  # Key-generation scripts — only output or prompt for values, never embed them
+  '''^scripts/generate-''',
+  '''^apps/web/scripts/generate-''',
+]
+
+# Regex patterns that identify known-safe placeholder strings across the codebase.
+# These patterns MUST NOT match real secret formats; keep them narrow.
+regexes = [
+  # Generic "your_..._here" placeholder convention used in .env.example files
+  '''your_[a-z_]+_here''',
+  # Auth0 example domain used in test and doc examples only
+  '''tenant\.example\.com''',
+  # Deterministic test bearer tokens emitted by hdicr-http-client in test mode
+  '''test-token''',
+  # Placeholder client credential values in transport tests
+  '''client-(id|secret)''',
+]
+
+# ── Per-rule overrides ────────────────────────────────────────────────────────
+# Suppress false-positives from specific upstream rules that fire on project
+# conventions (e.g. Auth0 audience URLs stored in env-example files).
+
+[[rules]]
+id       = "env-example-auth0-audience"
+description = "Suppress high-entropy false-positives in env.example Auth0 audience URLs"
+# This rule deliberately has no regex so it doesn't add new detections; it
+# is here as a named anchor for the allowlist below.
+regex    = '''__NEVER_MATCHES__'''
+[rules.allowlist]
+paths    = ['''^apps/web/\.env\.example$''']

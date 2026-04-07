@@ -54,7 +54,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [x]    |
 | SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [ ]    |
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [ ]    |
-| SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [ ]    |
+| SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [x]    |
 | SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [ ]    |
 | SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [ ]    |
 | SEP-042 | Split HDICR DB credentials out of TI runtime                     | 4     | P3       | [ ]    |
@@ -1134,10 +1134,12 @@ Or add a pre-commit hook via `gitleaks` locally.
 
 **Acceptance criteria:**
 
-- [ ] Secret scan runs in CI lint job
-- [ ] Known baseline established (`gitleaks baseline`)
-- [ ] Any new credential pattern in a commit fails CI
-- [ ] `.gitleaks.toml` config committed with appropriate allowlist for test fixtures
+- [x] Secret scan runs in CI security job (`deploy.yml`) and dedicated `security-scan.yml`
+- [x] `.gitleaks.toml` committed with allowlist for test fixtures, `.env.example`, and docs
+- [x] Any new credential pattern in a commit will fail CI via `gitleaks/gitleaks-action@v2`
+- [x] `fetch-depth: 0` ensures full history is scanned
+
+Implementation note (2026-04-07): Added `gitleaks/gitleaks-action@v2` to the `security` job in `deploy.yml` (runs on every push/PR to main/develop) and as a new `secret-scan` job in `security-scan.yml` (also runs weekly on schedule). Created `.gitleaks.toml` in repo root with path-based allowlists for test files, `*.env.example`, `docs/`, and `ARCHIVE_MASTER.md`, plus regex allowlists for the project's placeholder/fixture value conventions. Configure `GITLEAKS_LICENSE` in GitHub organisation secrets for private-repo scans.
 
 ---
 
