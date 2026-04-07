@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add representation request and relationship tables
 -- Date: 2026-04-04
 -- Description: Adds actor-agent request workflow and active representation links

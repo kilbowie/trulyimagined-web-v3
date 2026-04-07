@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Truly Imagined v3 - Migration 004: Identity Links
 -- Multi-Provider Identity Linking Infrastructure
 -- Enables linking to government IDs, financial institutions, KYC providers

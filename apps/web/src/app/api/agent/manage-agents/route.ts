@@ -5,6 +5,8 @@ import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
 import { sendAgencyTeamInviteEmail } from '@/lib/email';
 
+// DB-OWNER: TI
+
 interface TeamMemberPermissions {
   canManageRoster: boolean;
   canManageRequests: boolean;

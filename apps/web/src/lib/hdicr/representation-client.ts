@@ -1,79 +1,100 @@
-import { query } from '@/lib/db';
+import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
 
 type RepresentationRequestAction = 'approve' | 'reject' | 'withdraw';
 
-export async function getActorByAuth0UserId(auth0UserId: string) {
-  const result = await query(
-    `SELECT a.id, a.auth0_user_id, a.registry_id, a.stage_name, a.first_name, a.last_name
-     FROM actors a
-     WHERE a.auth0_user_id = $1
-       AND a.deleted_at IS NULL`,
-    [auth0UserId]
-  );
+function getRepresentationRemoteBaseUrlOrThrow(operation: string) {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Representation ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+  return baseUrl;
+}
 
-  return result.rows[0] || null;
+const representationRemoteBaseUrl = getRepresentationRemoteBaseUrlOrThrow(
+  'client-initialization'
+);
+
+async function invokeRepresentationRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const url = new URL(params.path, representationRemoteBaseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote representation ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
+
+export async function getActorByAuth0UserId(auth0UserId: string) {
+  const payload = await invokeRepresentationRemote<{ actor?: Record<string, any> | null }>({
+    path: `/v1/representation/actor?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    method: 'GET',
+    operation: 'actor-by-auth0',
+  });
+
+  return payload.actor ?? null;
 }
 
 export async function getAgentByAuth0UserId(auth0UserId: string) {
-  const result = await query(
-    `SELECT a.id, a.auth0_user_id, a.registry_id, a.agency_name, a.verification_status, a.profile_completed
-     FROM agents a
-     WHERE a.auth0_user_id = $1
-       AND a.deleted_at IS NULL`,
-    [auth0UserId]
-  );
+  const payload = await invokeRepresentationRemote<{ agent?: Record<string, any> | null }>({
+    path: `/v1/representation/agent?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    method: 'GET',
+    operation: 'agent-by-auth0',
+  });
 
-  return result.rows[0] || null;
+  return payload.agent ?? null;
 }
 
 export async function getActiveRepresentationForActor(actorId: string) {
-  const result = await query(
-    `SELECT r.id,
-            r.actor_id,
-            r.agent_id,
-            r.started_at,
-            ag.registry_id,
-            ag.agency_name,
-            ag.verification_status,
-            ag.profile_image_url,
-            ag.location,
-            ag.website_url
-     FROM actor_agent_relationships r
-     INNER JOIN agents ag ON ag.id = r.agent_id
-     WHERE r.actor_id = $1
-       AND r.ended_at IS NULL
-       AND ag.deleted_at IS NULL
-     LIMIT 1`,
-    [actorId]
+  const payload = await invokeRepresentationRemote<{ relationship?: Record<string, any> | null }>(
+    {
+      path: `/v1/representation/active?actorId=${encodeURIComponent(actorId)}`,
+      method: 'GET',
+      operation: 'active-representation-by-actor',
+    }
   );
 
-  return result.rows[0] || null;
+  return payload.relationship ?? null;
 }
 
 export async function getAgentByRegistryId(registryId: string) {
-  const result = await query(
-    `SELECT id, registry_id, agency_name, verification_status, profile_image_url, location, website_url, profile_completed
-     FROM agents
-     WHERE registry_id = $1
-       AND deleted_at IS NULL`,
-    [registryId]
-  );
+  const payload = await invokeRepresentationRemote<{ agent?: Record<string, any> | null }>({
+    path: `/v1/representation/agent-by-registry?registryId=${encodeURIComponent(registryId)}`,
+    method: 'GET',
+    operation: 'agent-by-registry',
+  });
 
-  return result.rows[0] || null;
+  return payload.agent ?? null;
 }
 
 export async function hasPendingRequest(actorId: string, agentId: string) {
-  const result = await query(
-    `SELECT 1
-     FROM representation_requests
-     WHERE actor_id = $1
-       AND agent_id = $2
-       AND status = 'pending'
-     LIMIT 1`,
-    [actorId, agentId]
-  );
+  const payload = await invokeRepresentationRemote<{ pending?: boolean }>({
+    path:
+      `/v1/representation/request/pending?actorId=${encodeURIComponent(actorId)}` +
+      `&agentId=${encodeURIComponent(agentId)}`,
+    method: 'GET',
+    operation: 'pending-request-check',
+  });
 
-  return result.rows.length > 0;
+  return Boolean(payload.pending);
 }
 
 export async function createRepresentationRequest(params: {
@@ -81,89 +102,48 @@ export async function createRepresentationRequest(params: {
   agentId: string;
   message?: string | null;
 }) {
-  const result = await query(
-    `INSERT INTO representation_requests (
-      actor_id,
-      agent_id,
-      status,
-      message,
-      requested_at,
-      created_at,
-      updated_at
-    ) VALUES (
-      $1, $2, 'pending', $3, NOW(), NOW(), NOW()
-    )
-    RETURNING *`,
-    [params.actorId, params.agentId, params.message?.trim() || null]
-  );
+  const payload = await invokeRepresentationRemote<{ request?: Record<string, any> | null }>({
+    path: '/v1/representation/request',
+    method: 'POST',
+    operation: 'request-create',
+    body: {
+      actorId: params.actorId,
+      agentId: params.agentId,
+      message: params.message?.trim() || null,
+    },
+  });
 
-  return result.rows[0] || null;
+  return payload.request ?? null;
 }
 
 export async function listIncomingRequests(agentId: string) {
-  const incoming = await query(
-    `SELECT
-      rr.id,
-      rr.actor_id,
-      rr.agent_id,
-      rr.status,
-      rr.message,
-      rr.response_note,
-      rr.requested_at,
-      rr.responded_at,
-      rr.created_at,
-      rr.updated_at,
-      a.stage_name,
-      a.first_name,
-      a.last_name,
-      a.registry_id AS actor_registry_id
-     FROM representation_requests rr
-     INNER JOIN actors a ON a.id = rr.actor_id
-     WHERE rr.agent_id = $1
-     ORDER BY rr.requested_at DESC`,
-    [agentId]
-  );
+  const payload = await invokeRepresentationRemote<{ requests?: Array<Record<string, any>> }>({
+    path: `/v1/representation/requests/incoming?agentId=${encodeURIComponent(agentId)}`,
+    method: 'GET',
+    operation: 'incoming-requests-list',
+  });
 
-  return incoming.rows;
+  return payload.requests || [];
 }
 
 export async function listOutgoingRequests(actorId: string) {
-  const outgoing = await query(
-    `SELECT
-      rr.id,
-      rr.actor_id,
-      rr.agent_id,
-      rr.status,
-      rr.message,
-      rr.response_note,
-      rr.requested_at,
-      rr.responded_at,
-      rr.created_at,
-      rr.updated_at,
-      ag.agency_name,
-      ag.registry_id AS agent_registry_id,
-      ag.verification_status,
-      ag.profile_image_url
-     FROM representation_requests rr
-     INNER JOIN agents ag ON ag.id = rr.agent_id
-     WHERE rr.actor_id = $1
-       AND ag.deleted_at IS NULL
-     ORDER BY rr.requested_at DESC`,
-    [actorId]
-  );
+  const payload = await invokeRepresentationRemote<{ requests?: Array<Record<string, any>> }>({
+    path: `/v1/representation/requests/outgoing?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'outgoing-requests-list',
+  });
 
-  return outgoing.rows;
+  return payload.requests || [];
 }
 
 export async function getRepresentationRequestById(requestId: string) {
-  const result = await query(
-    `SELECT id, actor_id, agent_id, status
-     FROM representation_requests
-     WHERE id = $1`,
-    [requestId]
-  );
+  const payload = await invokeRepresentationRemote<{ request?: Record<string, any> | null }>({
+    path: `/v1/representation/request?id=${encodeURIComponent(requestId)}`,
+    method: 'GET',
+    operation: 'request-by-id',
+  });
 
-  return result.rows[0] || null;
+  return payload.request ?? null;
 }
 
 export async function updateRepresentationRequest(params: {
@@ -171,62 +151,28 @@ export async function updateRepresentationRequest(params: {
   action: RepresentationRequestAction;
   responseNote?: string | null;
 }) {
-  if (params.action === 'withdraw') {
-    const withdrawnResult = await query(
-      `UPDATE representation_requests
-       SET status = 'withdrawn',
-           response_note = COALESCE($2, response_note),
-           responded_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $1
-       RETURNING *`,
-      [params.requestId, params.responseNote?.trim() || 'Withdrawn by actor']
-    );
+  const payload = await invokeRepresentationRemote<{ request?: Record<string, any> | null }>({
+    path: '/v1/representation/request/update',
+    method: 'POST',
+    operation: 'request-update',
+    body: {
+      requestId: params.requestId,
+      action: params.action,
+      responseNote: params.responseNote?.trim() || null,
+    },
+  });
 
-    return withdrawnResult.rows[0] || null;
-  }
-
-  if (params.action === 'approve') {
-    const approvedResult = await query(
-      `UPDATE representation_requests
-       SET status = 'approved',
-           response_note = $2,
-           responded_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $1
-         AND status = 'pending'
-       RETURNING *`,
-      [params.requestId, params.responseNote?.trim() || null]
-    );
-
-    return approvedResult.rows[0] || null;
-  }
-
-  const rejectedResult = await query(
-    `UPDATE representation_requests
-     SET status = 'rejected',
-         response_note = $2,
-         responded_at = NOW(),
-         updated_at = NOW()
-     WHERE id = $1
-     RETURNING *`,
-    [params.requestId, params.responseNote?.trim() || null]
-  );
-
-  return rejectedResult.rows[0] || null;
+  return payload.request ?? null;
 }
 
 export async function actorHasActiveRelationship(actorId: string) {
-  const result = await query(
-    `SELECT id
-     FROM actor_agent_relationships
-     WHERE actor_id = $1
-       AND ended_at IS NULL
-     LIMIT 1`,
-    [actorId]
-  );
+  const payload = await invokeRepresentationRemote<{ active?: boolean }>({
+    path: `/v1/representation/relationship/active?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'active-relationship-check',
+  });
 
-  return result.rows.length > 0;
+  return Boolean(payload.active);
 }
 
 export async function createActorAgentRelationship(params: {
@@ -234,28 +180,28 @@ export async function createActorAgentRelationship(params: {
   agentId: string;
   representationRequestId: string;
 }) {
-  await query(
-    `INSERT INTO actor_agent_relationships (
-      actor_id,
-      agent_id,
-      representation_request_id,
-      started_at,
-      created_at,
-      updated_at
-    ) VALUES ($1, $2, $3, NOW(), NOW(), NOW())`,
-    [params.actorId, params.agentId, params.representationRequestId]
-  );
+  await invokeRepresentationRemote<{ success?: boolean }>({
+    path: '/v1/representation/relationship',
+    method: 'POST',
+    operation: 'relationship-create',
+    body: {
+      actorId: params.actorId,
+      agentId: params.agentId,
+      representationRequestId: params.representationRequestId,
+    },
+  });
 }
 
 export async function getRelationshipById(relationshipId: string) {
-  const result = await query(
-    `SELECT id, actor_id, agent_id, ended_at
-     FROM actor_agent_relationships
-     WHERE id = $1`,
-    [relationshipId]
-  );
+  const payload = await invokeRepresentationRemote<{
+    relationship?: Record<string, any> | null;
+  }>({
+    path: `/v1/representation/relationship?id=${encodeURIComponent(relationshipId)}`,
+    method: 'GET',
+    operation: 'relationship-by-id',
+  });
 
-  return result.rows[0] || null;
+  return payload.relationship ?? null;
 }
 
 export async function endRelationship(params: {
@@ -263,16 +209,18 @@ export async function endRelationship(params: {
   endedByAuth0UserId: string;
   endedBy: 'actor' | 'agent';
 }) {
-  const updated = await query(
-    `UPDATE actor_agent_relationships
-     SET ended_at = NOW(),
-         ended_by_auth0_id = $2,
-         ended_reason = $3,
-         updated_at = NOW()
-     WHERE id = $1
-     RETURNING *`,
-    [params.relationshipId, params.endedByAuth0UserId, `Ended by ${params.endedBy}`]
-  );
+  const payload = await invokeRepresentationRemote<{
+    relationship?: Record<string, any> | null;
+  }>({
+    path: '/v1/representation/relationship/end',
+    method: 'POST',
+    operation: 'relationship-end',
+    body: {
+      relationshipId: params.relationshipId,
+      endedByAuth0UserId: params.endedByAuth0UserId,
+      endedBy: params.endedBy,
+    },
+  });
 
-  return updated.rows[0] || null;
+  return payload.relationship ?? null;
 }

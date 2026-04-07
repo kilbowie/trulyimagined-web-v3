@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Migration: Link actors table to user_profiles
 -- Date: 2026-03-23
 -- Description: Establish proper foreign key relationship between user_profiles and actors

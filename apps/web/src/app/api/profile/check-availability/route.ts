@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// DB-OWNER: TI
+
 /**
  * Check username/professional name/spotlight ID availability
  *

@@ -4,6 +4,8 @@ import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
 
+// DB-OWNER: HDICR
+
 /**
  * GET /api/agent/roster
  * Returns active actor roster for the authenticated agent or an active team member

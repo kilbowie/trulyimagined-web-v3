@@ -5,6 +5,8 @@ import { getAgentByAuth0Id } from '@/lib/representation';
 import { getCurrentConsentLedger, listConsentRecords } from '@/lib/hdicr/consent-client';
 import { verifyActiveRepresentation } from '@/lib/hdicr/licensing-client';
 
+// DB-OWNER: HDICR
+
 interface RouteParams {
   params: Promise<{ actorId: string }>;
 }

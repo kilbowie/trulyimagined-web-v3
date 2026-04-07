@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 import { deleteFromS3 } from '@/lib/s3';
 
+// DB-OWNER: TI
+
 /**
  * PUT /api/media/[id]
  * Update media metadata (title, photo_credit, description)

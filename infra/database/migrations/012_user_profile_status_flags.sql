@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add manual account status flags for IAM management
 -- Date: 2026-03-31
 -- Description: Adds verified and pro status flags to user_profiles for admin IAM controls

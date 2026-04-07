@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 
+// DB-OWNER: TI
+
 /**
  * PUT /api/media/[id]/set-primary
  * Set a headshot as primary and update display orders

@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Migration 007: Consent Ledger + Licensing System
 -- Date: 2026-03-24
 -- Purpose: Implement immutable consent ledger with versioning and license-based access control

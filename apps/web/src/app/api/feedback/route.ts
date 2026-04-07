@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 import { sendFeedbackNotificationEmail } from '@/lib/email';
 
+// DB-OWNER: TI
+
 /**
  * GET /api/feedback
  * Get all feedback (Admin only) or user's own feedback

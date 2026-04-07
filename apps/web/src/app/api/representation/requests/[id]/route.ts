@@ -42,7 +42,10 @@ export async function PUT(req: NextRequest, { params }: RouteParams): Promise<Ne
     let agentRecord: { id: string; profile_completed?: boolean } | null = null;
 
     if (hasAgentRole) {
-      agentRecord = await getAgentByAuth0UserId(user.sub);
+      agentRecord = (await getAgentByAuth0UserId(user.sub)) as {
+        id: string;
+        profile_completed?: boolean;
+      } | null;
       agentId = agentRecord?.id ?? null;
     } else {
       const membership = await getAgentTeamMembership();

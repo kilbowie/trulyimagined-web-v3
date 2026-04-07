@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Truly Imagined v3 - Migration 006: Bitstring Status Lists
 -- W3C Bitstring Status List v1.0 Implementation
 -- Standards: https://www.w3.org/TR/vc-bitstring-status-list/

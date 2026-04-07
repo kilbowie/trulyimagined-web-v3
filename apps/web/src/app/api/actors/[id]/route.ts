@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { getActorById, updateActorProfile } from '@/lib/hdicr/identity-client';
 
+// DB-OWNER: HDICR
+
 /**
  * PUT /api/actors/[id]
  * Update actor profile information

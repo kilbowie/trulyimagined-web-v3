@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 import { uploadToS3, generateS3Key, validateFileType, validateFileSize } from '@/lib/s3';
 
+// DB-OWNER: TI
+
 /**
  * POST /api/media/upload
  * Upload media file (headshot, audio reel, or video reel) to S3 and create database record

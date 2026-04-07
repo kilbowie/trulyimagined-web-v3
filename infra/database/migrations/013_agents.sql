@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add agents table for agency profile data
 -- Date: 2026-04-04
 -- Description: Creates agent profiles with business details and verification/billing scaffolding

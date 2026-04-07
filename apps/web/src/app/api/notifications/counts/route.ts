@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getActorByAuth0Id, getAgentByAuth0Id } from '@/lib/representation';
 
+// DB-OWNER: TI
+
 /**
  * GET /api/notifications/counts
  * Get notification counts for sidebar badges

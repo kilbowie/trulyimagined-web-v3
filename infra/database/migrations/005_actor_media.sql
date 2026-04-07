@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add actor_media table for headshots, audio, and video reels
 -- Date: 2026-03-25
 -- Description: Stores uploaded media (headshots, audio reels, video reels) with S3 URLs

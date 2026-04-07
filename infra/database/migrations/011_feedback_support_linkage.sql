@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration 010: Link Feedback to Support Tickets
 -- Created: 2026-03-28
 -- Purpose: Add relationship between feedback and support tickets for reply functionality

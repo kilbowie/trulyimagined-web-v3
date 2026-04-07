@@ -5,6 +5,8 @@ import { query } from '@/lib/db';
 import { uploadToS3 } from '@/lib/s3';
 import { getAgentByAuth0Id } from '@/lib/representation';
 
+// DB-OWNER: TI
+
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 

@@ -6,6 +6,8 @@ import {
   getUserProfileIdByAuth0UserId,
 } from '@/lib/hdicr/identity-client';
 
+// DB-OWNER: HDICR
+
 /**
  * POST /api/verification/start
  * Initiates identity verification with a KYC provider

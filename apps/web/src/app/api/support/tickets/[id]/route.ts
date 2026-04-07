@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 
+// DB-OWNER: TI
+
 /**
  * GET /api/support/tickets/[id]
  * Get a specific ticket with all messages

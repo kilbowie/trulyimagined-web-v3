@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Truly Imagined v3 - Migration 005: Verifiable Credentials
 -- W3C Verifiable Credentials Issuance Infrastructure
 -- Enables issuing privacy-preserving, cryptographically-signed credentials

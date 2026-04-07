@@ -4,6 +4,8 @@ import { getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { ensureAgentRegistryId } from '@/lib/registry-id';
 
+// DB-OWNER: TI
+
 interface AgentProfilePayload {
   agencyName?: string;
   bio?: string;

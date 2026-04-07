@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
 
+// DB-OWNER: TI
+
 /**
  * Get user profile
  *

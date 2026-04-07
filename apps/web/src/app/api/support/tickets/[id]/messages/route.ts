@@ -3,6 +3,8 @@ import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { sendSupportTicketResponseEmail, sendSupportTicketCreatedEmail } from '@/lib/email';
 
+// DB-OWNER: TI
+
 /**
  * POST /api/support/tickets/[id]/messages
  * Add a message to a ticket

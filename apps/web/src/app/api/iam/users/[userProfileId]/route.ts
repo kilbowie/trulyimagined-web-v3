@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
 import { query } from '@/lib/db';
 
+// DB-OWNER: TI
+
 interface RouteParams {
   params: Promise<{ userProfileId: string }>;
 }

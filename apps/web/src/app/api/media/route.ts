@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { queries } from '@database/queries-v3';
 
+// DB-OWNER: TI
+
 /**
  * GET /api/media
  * Get all media for the current user

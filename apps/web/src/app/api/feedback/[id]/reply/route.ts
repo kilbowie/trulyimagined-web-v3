@@ -3,6 +3,8 @@ import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { sendFeedbackResponseEmail } from '@/lib/email';
 
+// DB-OWNER: TI
+
 /**
  * POST /api/feedback/[id]/reply
  * Reply to feedback - creates a support ticket and sends email notification (Admin only)

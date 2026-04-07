@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 
+// DB-OWNER: TI
+
 /**
  * PATCH /api/feedback/[id]
  * Mark feedback as read or update admin notes (Admin only)

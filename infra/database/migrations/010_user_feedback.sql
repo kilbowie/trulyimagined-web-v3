@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration 009: User Feedback System
 -- Created: 2026-03-28
 -- Purpose: Store and manage user feedback submissions from dashboard

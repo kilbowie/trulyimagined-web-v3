@@ -54,6 +54,30 @@ Build a **production-grade, modular, standards-compliant identity orchestration 
 - **Storage**: AWS S3 (media storage)
 - **Infrastructure**: AWS SAM, TypeScript, `pg` driver
 
+## Database Ownership Boundary
+
+The web tier currently shares one physical PostgreSQL instance with HDICR services, but that does not imply shared ownership. Until the Phase 4 database split lands, code must treat table ownership as a logical boundary enforced in application code, CI, and backlog tracking.
+
+### Route Classification Rule
+
+- A route is `DB-OWNER: HDICR` if it directly reads or writes any HDICR-owned table, or if it composes TI data with HDICR-owned records in the same request.
+- A route is `DB-OWNER: TI` only when it operates exclusively on TI-owned tables.
+- `DB-OWNER: HDICR` routes must migrate behind HDICR APIs and may not add new direct SQL access from the web tier.
+- `DB-OWNER: TI` routes may keep direct SQL access temporarily until the TI/HDICR database split in Phase 4.
+
+### Canonical Table Ownership
+
+| Owner | Tables | Notes |
+| --- | --- | --- |
+| HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, HDICR-facing `audit_log` entries | Core identity, consent, credential, and licensing records. Web access must go through HDICR APIs. |
+| TI | `user_profiles`, `agents`, `actor_agent_relationships`, `representation_requests`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables | Product/workflow tables that remain in direct web control until the Phase 4 split. |
+
+### Transitional Clarifications
+
+- `user_profiles` remains TI-owned for now even though HDICR tables reference it. Any route that joins `user_profiles` with HDICR-owned tables is still classified `DB-OWNER: HDICR` because the boundary violation is driven by the HDICR side of the query.
+- `representation_requests` and `actor_agent_relationships` remain TI-owned in Phase 1. SEP-026 may later promote representation into a full HDICR service, at which point ownership will be revisited.
+- Migration files under `infra/database/migrations` must declare ownership explicitly with a `-- TABLE OWNER: HDICR | TI` header so schema changes remain reviewable during the shared-database period.
+
 ---
 
 # 📐 1. High-Level Architecture

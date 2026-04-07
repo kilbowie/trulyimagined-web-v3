@@ -1,3 +1,4 @@
+-- TABLE OWNER: HDICR
 -- Truly Imagined v3 - Initial Database Schema
 -- PostgreSQL 15+
 -- Phase 1: Identity Registry + Consent Ledger

@@ -30,7 +30,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-004 | Remove local adapter paths from `identity-client.ts`             | 1     | P1       | [x]    |
 | SEP-005 | Remove local adapter paths from `consent-client.ts`              | 1     | P1       | [x]    |
 | SEP-006 | Remove local adapter paths from `licensing-client.ts`            | 1     | P1       | [x]    |
-| SEP-007 | Remove local adapter paths from `representation-client.ts`       | 1     | P1       | [ ]    |
+| SEP-007 | Remove local adapter paths from `representation-client.ts`       | 1     | P1       | [x]    |
 | SEP-008 | Remove local adapter paths from `usage-client.ts`                | 1     | P1       | [x]    |
 | SEP-009 | Remove local adapter paths from `credentials-client.ts`          | 1     | P1       | [x]    |
 | SEP-010 | Remove local adapter paths from `billing-client.ts`              | 1     | P1       | [x]    |
@@ -38,7 +38,9 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-012 | Route `agent/actors/[actorId]/consent` through HDICR consent API | 1     | P1       | [x]    |
 | SEP-013 | Route `verification/start` through HDICR identity API            | 1     | P1       | [x]    |
 | SEP-014 | Remove global `HDICR_ADAPTER_MODE=local` default                 | 1     | P1       | [x]    |
-| SEP-015 | Define canonical DB ownership boundary (HDICR vs TI tables)      | 1     | P1       | [ ]    |
+| SEP-015 | Define canonical DB ownership boundary (HDICR vs TI tables)      | 1     | P1       | [x]    |
+| SEP-016 | Route `admin/users` through HDICR IAM API                        | 1     | P1       | [ ]    |
+| SEP-017 | Route `agent/roster` actor lookup through HDICR APIs             | 1     | P1       | [ ]    |
 | SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [ ]    |
 | SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [ ]    |
 | SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [ ]    |
@@ -110,14 +112,14 @@ Work through this table. For each route, confirm whether it queries HDICR-owned 
 | `apps/web/src/app/api/actors/[id]/route.ts`                    | `actors`                   | **HDICR**            | SEP-011                           |
 | `apps/web/src/app/api/agent/actors/[actorId]/consent/route.ts` | `consent_log`, `actors`    | **HDICR**            | SEP-012                           |
 | `apps/web/src/app/api/verification/start/route.ts`             | `identity_links`           | **HDICR**            | SEP-013                           |
-| `apps/web/src/app/api/admin/users/route.ts`                    | `user_profiles` + `actors` | **HDICR**            | Route via HDICR iam API           |
+| `apps/web/src/app/api/admin/users/route.ts`                    | `user_profiles` + `actors` | **HDICR**            | SEP-016                           |
 | `apps/web/src/app/api/profile/route.ts`                        | `user_profiles`            | TI                   | Keep; migrate to TI DB in Phase 4 |
 | `apps/web/src/app/api/profile/check-availability/route.ts`     | `user_profiles`            | TI                   | Keep; migrate to TI DB in Phase 4 |
 | `apps/web/src/app/api/agent/manage-agents/route.ts`            | `agency_team_members`      | TI                   | Keep; migrate to TI DB            |
 | `apps/web/src/app/api/agent/manage-agents/[memberId]/route.ts` | `agency_team_members`      | TI                   | Keep; migrate to TI DB            |
 | `apps/web/src/app/api/agent-profile/route.ts`                  | `agents`                   | TI                   | Keep; migrate to TI DB            |
 | `apps/web/src/app/api/agent-profile/upload-photo/route.ts`     | `agents`                   | TI                   | Keep; migrate to TI DB            |
-| `apps/web/src/app/api/agent/roster/route.ts`                   | `actors` JOIN agents       | **HDICR** (`actors`) | Route actors lookup via HDICR     |
+| `apps/web/src/app/api/agent/roster/route.ts`                   | `actors` JOIN agents       | **HDICR** (`actors`) | SEP-017                           |
 | `apps/web/src/app/api/agency-invite/accept/route.ts`           | `agency_team_members`      | TI                   | Keep; migrate to TI DB            |
 | `apps/web/src/app/api/notifications/counts/route.ts`           | `representation_requests`  | TI                   | Keep; migrate to TI DB            |
 | `apps/web/src/app/api/notifications/pending-requests/route.ts` | `representation_requests`  | TI                   | Keep; migrate to TI DB            |
@@ -136,9 +138,43 @@ Work through this table. For each route, confirm whether it queries HDICR-owned 
 
 **Acceptance criteria:**
 
-- [ ] Every route in the table above is annotated with a comment: `// DB-OWNER: HDICR | TI`
-- [ ] HDICR-owned routes have corresponding tickets created and linked
+- [x] Every route in the table above is annotated with a comment: `// DB-OWNER: HDICR | TI`
+- [x] HDICR-owned routes have corresponding tickets created and linked
 - [ ] Classification reviewed and agreed before Phase 4 DB split
+
+Implementation note (2026-04-07): Route ownership comments are now present across all inventoried files, and follow-on backlog tickets were added for the remaining HDICR-owned direct DB routes.
+
+---
+
+### SEP-016 · Route `admin/users` through HDICR IAM API
+
+**Priority:** P1  
+**Files:** `apps/web/src/app/api/admin/users/route.ts`
+
+**Problem:**  
+This route still joins HDICR-owned identity tables directly from the web tier, bypassing an HDICR-owned IAM boundary.
+
+**Acceptance criteria:**
+
+- [ ] Route no longer imports `@/lib/db`
+- [ ] User and actor data are resolved through an HDICR client/API
+- [ ] Existing admin route behavior is preserved with contract coverage
+
+---
+
+### SEP-017 · Route `agent/roster` actor lookup through HDICR APIs
+
+**Priority:** P1  
+**Files:** `apps/web/src/app/api/agent/roster/route.ts`
+
+**Problem:**  
+This route still queries the HDICR-owned `actors` table directly while composing the agent roster response.
+
+**Acceptance criteria:**
+
+- [ ] Route no longer imports `@/lib/db` for HDICR-owned actor lookups
+- [ ] Actor roster data is sourced through HDICR client/API calls
+- [ ] Existing roster response behavior remains covered by tests
 
 ---
 
@@ -341,10 +377,12 @@ Functions to migrate to HTTP:
 
 **Acceptance criteria:**
 
-- [ ] File converted to HTTP client following same pattern as `identity-client.ts`
+- [x] File converted to HTTP client following same pattern as `identity-client.ts`
 - [ ] HDICR Representation service exists to receive these calls (SEP-026)
-- [ ] `import { query } from '@/lib/db'` removed
-- [ ] All representation routes using the old direct functions pass tests
+- [x] `import { query } from '@/lib/db'` removed
+- [x] All representation routes using the old direct functions pass tests
+
+Implementation note (2026-04-07): representation client now initializes fail-closed and routes all calls through `/v1/representation/*` endpoints, but the corresponding HDICR service handlers remain pending under SEP-026.
 
 ---
 
@@ -549,9 +587,11 @@ No documented rule defines which database tables belong to HDICR vs TI. This cau
 
 **Acceptance criteria:**
 
-- [ ] `TECHNICAL_ARCHITECTURE.md` updated with ownership table
-- [ ] Each migration file prefixed with a comment block: `-- TABLE OWNER: HDICR | TI`
-- [ ] Decision documented and linked from `HDICR_SEPARATION_BACKLOG.md`
+- [x] `TECHNICAL_ARCHITECTURE.md` updated with ownership table
+- [x] Each migration file prefixed with a comment block: `-- TABLE OWNER: HDICR | TI`
+- [x] Decision documented and linked from `HDICR_SEPARATION_BACKLOG.md`
+
+Implementation note (2026-04-07): `TECHNICAL_ARCHITECTURE.md` now defines the canonical ownership rule, route classification policy, and table-level boundary, and every current migration file carries an explicit owner header.
 
 ---
 

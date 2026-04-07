@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add agency team member management
 -- Date: 2026-04-04
 -- Description: Supports inviting and managing additional agents/assistants inside an agency

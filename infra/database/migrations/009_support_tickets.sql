@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration 008: Support Ticket System
 -- Created: 2026-03-26
 -- Purpose: In-app support ticket system with user-admin communication

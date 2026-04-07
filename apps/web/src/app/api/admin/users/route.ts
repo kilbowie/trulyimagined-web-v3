@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
 import { query } from '@/lib/db';
 
+// DB-OWNER: HDICR
+
 /**
  * Role-Protected API Route Example
  *

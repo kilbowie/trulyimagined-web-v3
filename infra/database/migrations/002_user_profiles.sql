@@ -1,3 +1,4 @@
+-- TABLE OWNER: TI
 -- Migration: Add user_profiles table for database-backed roles
 -- Date: 2026-03-23
 -- Description: Replace Auth0 RBAC with PostgreSQL-based role system
