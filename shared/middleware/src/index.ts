@@ -72,12 +72,11 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
     // user RBAC tokens from Auth0 may use a 'permissions' array instead.
     const rawScope: unknown = decoded.scope;
     const rawPermissions: unknown = decoded.permissions;
-    const scopes: string[] =
-      Array.isArray(rawPermissions)
-        ? (rawPermissions as string[])
-        : typeof rawScope === 'string' && rawScope.length > 0
-          ? rawScope.split(' ')
-          : [];
+    const scopes: string[] = Array.isArray(rawPermissions)
+      ? (rawPermissions as string[])
+      : typeof rawScope === 'string' && rawScope.length > 0
+        ? rawScope.split(' ')
+        : [];
 
     const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
     const user: AuthUser = {
@@ -91,9 +90,7 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
     };
 
     const identity = user.email ? user.email : `M2M:${user.sub}`;
-    console.log(
-      `[AUTH] Authenticated: ${identity} (scopes: ${scopes.join(', ') || 'none'})`
-    );
+    console.log(`[AUTH] Authenticated: ${identity} (scopes: ${scopes.join(', ') || 'none'})`);
     return user;
   } catch (error) {
     console.error('[AUTH] Token validation failed:', error);
@@ -235,7 +232,11 @@ export async function requireConsent(
       },
     });
 
-    const data = await response.json() as { error?: string; isGranted: boolean; latestAction?: { reason?: string } };
+    const data = (await response.json()) as {
+      error?: string;
+      isGranted: boolean;
+      latestAction?: { reason?: string };
+    };
 
     if (!response.ok) {
       throw new Error(`Consent check failed: ${data.error || 'Unknown error'}`);

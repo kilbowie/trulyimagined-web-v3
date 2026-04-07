@@ -50,8 +50,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     // Scope-based authorization: require appropriate scope per HTTP method.
-    const requiredScope =
-      httpMethod === 'GET' ? 'hdicr:consent:read' : 'hdicr:consent:write';
+    const requiredScope = httpMethod === 'GET' ? 'hdicr:consent:read' : 'hdicr:consent:write';
     if (!hasScope(user, requiredScope)) {
       return {
         statusCode: 403,

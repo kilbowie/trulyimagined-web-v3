@@ -1,6 +1,6 @@
 /**
  * Shared TypeScript Types for Truly Imagined v3
- * 
+ *
  * Core Principles: Identity, Consent, Control, Auditability
  */
 
