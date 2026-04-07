@@ -68,13 +68,14 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
       return null;
     }
 
+    const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
     const user: AuthUser = {
       sub: decoded.sub,
       email: decoded.email,
       emailVerified: decoded.email_verified || false,
       name: decoded.name,
       picture: decoded.picture,
-      roles: decoded['https://trulyimagined.com/roles'] || [],
+      roles: (rolesClaimNamespace ? decoded[rolesClaimNamespace] : undefined) ?? [],
     };
 
     console.log(
@@ -119,32 +120,15 @@ export function hasRole(user: AuthUser | null, role: string): boolean {
   return (user.roles || []).includes(role);
 }
 
-/**
- * Check if user is an Actor
- */
-export function isActor(user: AuthUser | null): boolean {
-  return hasRole(user, 'Actor');
-}
-
-/**
- * Check if user is an Agent
- */
-export function isAgent(user: AuthUser | null): boolean {
+// Internal helpers — role predicates are intentionally NOT exported from shared/middleware
+// to avoid coupling this package to TI-specific role naming.
+// Define equivalent helpers (isActor, isAgent, isEnterprise, …) in each consuming application.
+function isAgent(user: AuthUser | null): boolean {
   return hasRole(user, 'Agent');
 }
 
-/**
- * Check if user is an Admin
- */
-export function isAdmin(user: AuthUser | null): boolean {
+function isAdmin(user: AuthUser | null): boolean {
   return hasRole(user, 'Admin');
-}
-
-/**
- * Check if user is Enterprise
- */
-export function isEnterprise(user: AuthUser | null): boolean {
-  return hasRole(user, 'Enterprise');
 }
 
 /**

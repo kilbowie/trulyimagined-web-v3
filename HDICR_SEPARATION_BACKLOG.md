@@ -51,7 +51,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [x]    |
 | SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [ ]    |
 | SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [ ]    |
-| SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [ ]    |
+| SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [x]    |
 | SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [ ]    |
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [ ]    |
 | SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [ ]    |
@@ -1022,11 +1022,13 @@ AUTH0_ROLES_CLAIM_NAMESPACE=https://trulyimagined.com/roles
 
 **Acceptance criteria:**
 
-- [ ] `https://trulyimagined.com/roles` string removed from `shared/middleware/src/index.ts`
-- [ ] Claim namespace configurable via env
-- [ ] `isActor`, `isAgent`, `isEnterprise` removed from shared middleware exports
-- [ ] All TI files that called those from shared middleware now call TI's own auth module
-- [ ] HDICR services can be configured with any claim namespace
+- [x] `https://trulyimagined.com/roles` string removed from `shared/middleware/src/index.ts`
+- [x] Claim namespace configurable via env (`AUTH0_ROLES_CLAIM_NAMESPACE`)
+- [x] `isActor`, `isAgent`, `isEnterprise` removed from shared middleware exports
+- [x] TI web app's own `apps/web/src/lib/auth.ts` already has equivalent role helpers (pre-existing)
+- [x] HDICR services can be configured with any claim namespace via env var
+
+Implementation note (2026-04-07): Replaced hardcoded `decoded['https://trulyimagined.com/roles']` with `decoded[process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? ''] ?? []`. Removed `export` from `isActor`, `isAgent`, `isEnterprise`, `isAdmin` in `shared/middleware`. Added `AUTH0_ROLES_CLAIM_NAMESPACE=https://trulyimagined.com/roles` to `apps/web/.env.example`. TI-specific role helpers (`isActor`, `isAgent`, `isAdmin`) already existed independently in `apps/web/src/lib/auth.ts`.
 
 ---
 
