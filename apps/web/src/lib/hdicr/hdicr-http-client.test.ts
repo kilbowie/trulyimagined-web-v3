@@ -4,6 +4,7 @@ describe('hdicr-http-client', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.restoreAllMocks();
+    process.env.HDICR_REAL_TOKEN_IN_TEST = 'true';
   });
 
   afterEach(() => {
@@ -13,6 +14,7 @@ describe('hdicr-http-client', () => {
     delete process.env.HDICR_CLIENT_ID;
     delete process.env.HDICR_CLIENT_SECRET;
     delete process.env.HDICR_TEST_M2M_TOKEN;
+    delete process.env.HDICR_REAL_TOKEN_IN_TEST;
     vi.restoreAllMocks();
   });
 
@@ -43,9 +45,8 @@ describe('hdicr-http-client', () => {
 
     vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
-    const { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } = await import(
-      '@/lib/hdicr/hdicr-http-client'
-    );
+    const { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } =
+      await import('@/lib/hdicr/hdicr-http-client');
 
     const baseUrl = getHdicrRemoteBaseUrlOrThrow('identity', 'client-initialization');
 

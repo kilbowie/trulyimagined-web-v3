@@ -32,9 +32,9 @@ export class HdicrHttpError extends Error {
 export function isHdicrHttpError(error: unknown): error is HdicrHttpError {
   return Boolean(
     error &&
-      typeof error === 'object' &&
-      'statusCode' in error &&
-      typeof (error as { statusCode?: unknown }).statusCode === 'number'
+    typeof error === 'object' &&
+    'statusCode' in error &&
+    typeof (error as { statusCode?: unknown }).statusCode === 'number'
   );
 }
 
@@ -50,8 +50,9 @@ export function getHdicrRemoteBaseUrlOrThrow(domain: HdicrDomain, operation: str
 }
 
 async function getHdicrToken(): Promise<string> {
-  // Keep tests deterministic and single-fetch for existing client tests.
-  if (process.env.NODE_ENV === 'test') {
+  // Keep domain-client tests deterministic. Set HDICR_REAL_TOKEN_IN_TEST=true to
+  // exercise real token acquisition within a test (e.g. transport-level tests).
+  if (process.env.NODE_ENV === 'test' && process.env.HDICR_REAL_TOKEN_IN_TEST !== 'true') {
     return process.env.HDICR_TEST_M2M_TOKEN || 'test-token';
   }
 

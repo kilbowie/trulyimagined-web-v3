@@ -36,7 +36,11 @@ const REQUIRED_SCHEMA_KEYS: Array<{ service: ServiceKey; schemaName: string; key
   },
   { service: 'licensing', schemaName: 'RequestByIdResponse', keys: ['request'] },
   { service: 'licensing', schemaName: 'ApplyDecisionResponse', keys: ['decision'] },
-  { service: 'licensing', schemaName: 'ActorLicensesAndStatsResponse', keys: ['licenses', 'stats'] },
+  {
+    service: 'licensing',
+    schemaName: 'ActorLicensesAndStatsResponse',
+    keys: ['licenses', 'stats'],
+  },
   { service: 'licensing', schemaName: 'ActiveRepresentationResponse', keys: ['active'] },
   {
     service: 'licensing',
@@ -129,7 +133,9 @@ describe('HDICR OpenAPI contract gate', () => {
     for (const service of Object.keys(CLIENT_FILES) as ServiceKey[]) {
       const clientPaths = extractClientPaths(readText(CLIENT_FILES[service]));
       for (const clientPath of clientPaths) {
-        const matchesSpec = documentedByService[service].some((pattern) => pattern.test(clientPath));
+        const matchesSpec = documentedByService[service].some((pattern) =>
+          pattern.test(clientPath)
+        );
         if (!matchesSpec) {
           missing.push(`${service}:${clientPath}`);
         }
@@ -163,6 +169,8 @@ describe('HDICR OpenAPI contract gate', () => {
       }
     }
 
-    expect(missing, `Missing schema fields used by HDICR clients: ${missing.join(', ')}`).toEqual([]);
+    expect(missing, `Missing schema fields used by HDICR clients: ${missing.join(', ')}`).toEqual(
+      []
+    );
   });
 });

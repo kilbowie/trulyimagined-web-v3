@@ -8,7 +8,5 @@
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"],
-  "references": [
-    { "path": "../../shared/middleware" }
-  ]
+  "references": [{ "path": "../../shared/middleware" }]
 }

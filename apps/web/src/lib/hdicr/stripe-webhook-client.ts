@@ -1,9 +1,6 @@
 import { query } from '@/lib/db';
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
-import {
-  getHdicrAdapterMode,
-  warnIfRemoteModeEnabled,
-} from '@/lib/hdicr/flags';
+import { getHdicrAdapterMode, warnIfRemoteModeEnabled } from '@/lib/hdicr/flags';
 
 warnIfRemoteModeEnabled('payments');
 
