@@ -13,6 +13,7 @@
     "dev": "pnpm --filter web dev",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
+    "check:hdicr-db-coimport": "bash scripts/check-hdicr-db-coimport.sh",
     "type-check": "pnpm -r type-check",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",

@@ -79,23 +79,7 @@ jobs:
       - name: Enforce HDICR DB import guardrail
         shell: bash
         run: |
-          protected_paths=(
-            "apps/web/src/app/api/consent"
-            "apps/web/src/app/api/consent-ledger"
-            "apps/web/src/app/api/licenses"
-            "apps/web/src/app/api/actor/licensing-requests"
-            "apps/web/src/app/api/identity"
-            "apps/web/src/app/api/credentials"
-            "apps/web/src/app/api/representation"
-            "apps/web/src/app/api/usage"
-            "apps/web/src/app/api/billing"
-            "apps/web/src/app/api/webhooks/stripe"
-          )
-
-          if grep -R --line-number -E "from ['\"]@/lib/db(\.ts)?['\"]" "${protected_paths[@]}"; then
-            echo "Guardrail failed: direct DB imports are forbidden in protected HDICR API paths."
-            exit 1
-          fi
+          bash scripts/check-hdicr-db-coimport.sh
 
   # Job 2: Security Scan
   security:
@@ -172,10 +156,14 @@ jobs:
 
       - name: Run tests
         run: pnpm test
+        env:
+          HDICR_ADAPTER_MODE: local
 
       - name: Run web integration contract tests
         if: github.event_name == 'pull_request'
         run: pnpm --filter @trulyimagined/web test:integration
+        env:
+          HDICR_ADAPTER_MODE: local
 
   # Job 4: Build Check (requires lint + security)
   # If type-check failed in lint job, this job is skipped and deployment is blocked.
@@ -210,6 +198,8 @@ jobs:
           # Provide minimal env vars for build (not secrets)
           NEXT_PUBLIC_APP_URL: https://trulyimagined.com
           NODE_ENV: production
+          HDICR_ADAPTER_MODE: remote
+          HDICR_REMOTE_BASE_URL: https://api.trulyimagined.com
 
   # Job 5: Deploy to Vercel
   deploy:
