@@ -1,5 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
+import { validateAuth0Token } from '@trulyimagined/middleware';
 
 /**
  * Identity Service - Lambda Handler
@@ -34,6 +35,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
+
+    const user = await validateAuth0Token(event);
+    if (!user) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      };
     }
 
     // Route based on path and method

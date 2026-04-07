@@ -1,4 +1,5 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
+import { validateAuth0Token } from '@trulyimagined/middleware';
 import { grantConsent } from './handlers/grant-consent';
 import { revokeConsent } from './handlers/revoke-consent';
 import { checkConsent } from './handlers/check-consent';
@@ -37,6 +38,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
+
+    const user = await validateAuth0Token(event);
+    if (!user) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      };
     }
 
     // Route to handlers

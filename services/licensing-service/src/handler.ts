@@ -1,10 +1,11 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
+import { validateAuth0Token } from '@trulyimagined/middleware';
 
 /**
  * Licensing Service - Lambda Handler
  * Step 10: Licensing Service MVP (Phase 2)
- * 
+ *
  * Handles licensing requests and approvals:
  * - POST /license/request - Request license from actor
  * - GET /license/actor/{actorId} - Get license requests for actor
@@ -34,6 +35,15 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
       return { statusCode: 200, headers: corsHeaders, body: '' };
+    }
+
+    const user = await validateAuth0Token(event);
+    if (!user) {
+      return {
+        statusCode: 401,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      };
     }
 
     // Route based on path and method
@@ -93,13 +103,29 @@ async function requestLicense(event: APIGatewayProxyEvent) {
     } = body;
 
     // Validation
-    if (!actorId || !requesterName || !requesterEmail || !projectName || !projectDescription || !usageType || !intendedUse) {
+    if (
+      !actorId ||
+      !requesterName ||
+      !requesterEmail ||
+      !projectName ||
+      !projectDescription ||
+      !usageType ||
+      !intendedUse
+    ) {
       return {
         statusCode: 400,
         headers: corsHeaders,
         body: JSON.stringify({
           error: 'Missing required fields',
-          required: ['actorId', 'requesterName', 'requesterEmail', 'projectName', 'projectDescription', 'usageType', 'intendedUse'],
+          required: [
+            'actorId',
+            'requesterName',
+            'requesterEmail',
+            'projectName',
+            'projectDescription',
+            'usageType',
+            'intendedUse',
+          ],
         }),
       };
     }

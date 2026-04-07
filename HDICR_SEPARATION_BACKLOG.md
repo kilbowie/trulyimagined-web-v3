@@ -48,7 +48,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-024 | Add `/v1` path prefix to all HDICR service handlers              | 2     | P2       | [x]    |
 | SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [x]    |
 | SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [ ]    |
-| SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [ ]    |
+| SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [x]    |
 | SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [ ]    |
 | SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [ ]    |
 | SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [ ]    |
@@ -853,10 +853,12 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
 **Acceptance criteria:**
 
-- [ ] All HDICR service handlers validate Bearer token before routing
-- [ ] `401` returned for missing or invalid token
-- [ ] Unit tests added for auth failure cases in each service
-- [ ] Shared middleware `validateAuth0Token` is used without modification of TI-specific claims (see SEP-033)
+- [x] All HDICR service handlers validate Bearer token before routing
+- [x] `401` returned for missing or invalid token
+- [x] Unit tests added for auth failure cases in each service
+- [x] Shared middleware `validateAuth0Token` is used without modification of TI-specific claims (see SEP-033)
+
+Implementation note (2026-04-07): Added ingress JWT validation via `validateAuth0Token` in `identity-service`, `consent-service`, and `licensing-service` handlers (after CORS preflight and before route dispatch), with fail-closed `401` responses for missing/invalid tokens. Added service-level auth-ingress unit tests under each service `test/` folder and wired service-local Vitest configs/scripts. Representation-service coverage remains pending service creation under SEP-026.
 
 ---
 
