@@ -41,7 +41,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-015 | Define canonical DB ownership boundary (HDICR vs TI tables)      | 1     | P1       | [x]    |
 | SEP-016 | Route `admin/users` through HDICR IAM API                        | 1     | P1       | [x]    |
 | SEP-017 | Route `agent/roster` actor lookup through HDICR APIs             | 1     | P1       | [x]    |
-| SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [ ]    |
+| SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [x]    |
 | SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [ ]    |
 | SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [ ]    |
 | SEP-023 | Define OpenAPI spec — HDICR Representation service               | 2     | P2       | [ ]    |
@@ -628,11 +628,13 @@ GET    /v1/identity/registration-status
 
 **Acceptance criteria:**
 
-- [ ] OpenAPI 3.1 spec committed at `services/identity-service/openapi.yaml`
-- [ ] All request/response schemas defined with strict types
-- [ ] Authentication scheme defined (Bearer JWT)
-- [ ] Semantic version tag in spec info block
-- [ ] Spec validated with `redocly lint` or equivalent
+- [x] OpenAPI 3.1 spec committed at `services/identity-service/openapi.yaml`
+- [x] All request/response schemas defined with strict types
+- [x] Authentication scheme defined (Bearer JWT)
+- [x] Semantic version tag in spec info block
+- [x] Spec validated with `redocly lint` or equivalent
+
+Implementation note (2026-04-07): `services/identity-service/openapi.yaml` documents the current HDICR identity contract, including actor registration, actor lookup/update, identity-linking operations, and the admin user listing endpoint added under SEP-016. The spec validates cleanly with Redocly.
 
 ---
 
