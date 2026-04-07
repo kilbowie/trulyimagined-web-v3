@@ -9,41 +9,45 @@ describe('billing-client - remote authoritative behavior', () => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_BILLING_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
+    vi.restoreAllMocks();
   });
 
-  it('getBillingProfileByAuth0UserId uses local adapter in local mode', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'local';
-
-    const mockQuery = vi.fn().mockResolvedValue({
-      rows: [{ id: 'profile-123', role: 'Actor', email: 'actor@example.com', username: 'actor' }],
+  it('getBillingProfileByAuth0UserId calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ profile: { id: 'profile-123' } }),
     });
-    vi.doMock('@/lib/db', () => ({ query: mockQuery }));
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { getBillingProfileByAuth0UserId } = await import('@/lib/hdicr/billing-client');
 
     const result = await getBillingProfileByAuth0UserId('auth0|123');
-    expect(mockQuery).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/billing/profile?auth0UserId=auth0%7C123',
+      expect.objectContaining({ method: 'GET' })
+    );
     expect(result).toHaveProperty('id', 'profile-123');
   });
 
-  it('getBillingProfileByAuth0UserId fails closed in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-
-    const { getBillingProfileByAuth0UserId } = await import('@/lib/hdicr/billing-client');
-
-    await expect(getBillingProfileByAuth0UserId('auth0|123')).rejects.toThrow('fail-closed');
+  it('fails closed at import when remote base URL is missing', async () => {
+    await expect(import('@/lib/hdicr/billing-client')).rejects.toThrow('fail-closed');
   });
 
-  it('domain override enforces remote mode over global local', async () => {
+  it('ignores local mode env and still calls remote endpoint', async () => {
     process.env.HDICR_ADAPTER_MODE = 'local';
-    process.env.HDICR_BILLING_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ profile: null }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { getBillingProfileByAuth0UserId } = await import('@/lib/hdicr/billing-client');
 
-    await expect(getBillingProfileByAuth0UserId('auth0|123')).rejects.toThrow('fail-closed');
+    await expect(getBillingProfileByAuth0UserId('auth0|123')).resolves.toBeNull();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

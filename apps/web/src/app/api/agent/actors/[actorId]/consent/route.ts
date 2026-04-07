@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
+import { getCurrentConsentLedger, listConsentRecords } from '@/lib/hdicr/consent-client';
+import { verifyActiveRepresentation } from '@/lib/hdicr/licensing-client';
 
 interface RouteParams {
   params: Promise<{ actorId: string }>;
@@ -33,41 +34,19 @@ export async function GET(_req: Request, { params }: RouteParams): Promise<NextR
 
     const { actorId } = await params;
 
-    const relationship = await query(
-      `SELECT 1
-       FROM actor_agent_relationships
-       WHERE actor_id = $1
-         AND agent_id = $2
-         AND ended_at IS NULL
-       LIMIT 1`,
-      [actorId, agent.id]
-    );
-
-    if (relationship.rows.length === 0) {
+    const hasActiveRelationship = await verifyActiveRepresentation(actorId, agent.id);
+    if (!hasActiveRelationship) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const consentLog = await query(
-      `SELECT *
-       FROM consent_log
-       WHERE actor_id = $1
-       ORDER BY created_at DESC
-       LIMIT 100`,
-      [actorId]
-    );
+    const consentLog = await listConsentRecords({ actorId, limit: 100, offset: 0 });
+    const consentLedger = await getCurrentConsentLedger(actorId, true);
 
-    const consentLedger = await query(
-      `SELECT *
-       FROM consent_ledger
-       WHERE actor_id = $1
-       ORDER BY version DESC
-       LIMIT 100`,
-      [actorId]
-    );
+    const ledgerRows = [consentLedger.current, ...(consentLedger.history || [])].filter(Boolean);
 
     return NextResponse.json({
       consentLog: consentLog.rows,
-      consentLedger: consentLedger.rows,
+      consentLedger: ledgerRows,
     });
   } catch (error) {
     console.error('[AGENT_ACTOR_CONSENT] GET error:', error);

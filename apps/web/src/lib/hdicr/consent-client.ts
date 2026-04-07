@@ -119,7 +119,7 @@ export async function revokeConsent(input: ConsentRevokeInput) {
 }
 
 export async function checkConsent(input: ConsentCheckInput) {
-  const payload = await invokeConsentRemote<{ consent?: Record<string, unknown> | null }>({
+  const payload = await invokeConsentRemote<{ consent?: Record<string, any> | null }>({
     path:
       `/v1/consent/check?actorId=${encodeURIComponent(input.actorId)}` +
       `&consentType=${encodeURIComponent(input.consentType)}` +
@@ -133,7 +133,7 @@ export async function checkConsent(input: ConsentCheckInput) {
 
 export async function listConsentRecords(input: ConsentListInput) {
   const payload = await invokeConsentRemote<{
-    rows?: Array<Record<string, unknown>>;
+    rows?: Array<Record<string, any>>;
     totalCount?: number;
   }>({
     path:
@@ -152,7 +152,7 @@ export async function listConsentRecords(input: ConsentListInput) {
 }
 
 export async function createConsentLedgerEntry(params: CreateConsentEntryParams) {
-  const payload = await invokeConsentRemote<{ entry?: Record<string, unknown> }>({
+  const payload = await invokeConsentRemote<{ entry?: Record<string, any> }>({
     path: '/v1/consent-ledger/create',
     method: 'POST',
     operation: 'consent-ledger-create',
@@ -164,8 +164,8 @@ export async function createConsentLedgerEntry(params: CreateConsentEntryParams)
 
 export async function getCurrentConsentLedger(actorId: string, includeHistory: boolean) {
   return invokeConsentRemote<{
-    current: Record<string, unknown> | null;
-    history: Array<Record<string, unknown>>;
+    current: Record<string, any> | null;
+    history: Array<Record<string, any>>;
     licensesOnCurrentVersion: number;
   }>({
     path:

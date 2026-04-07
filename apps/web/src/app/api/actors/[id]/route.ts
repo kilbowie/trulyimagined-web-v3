@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { query } from '@/lib/db';
-import { queries } from '@database/queries-v3';
+import { getActorById, updateActorProfile } from '@/lib/hdicr/identity-client';
 
 /**
  * PUT /api/actors/[id]
@@ -18,34 +17,28 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { id: actorId } = await params;
     const body = await request.json();
 
-    // Get actor record to verify ownership
-    const actorResult = await query(queries.actors.getById, [actorId]);
-
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    const actor = await getActorById(actorId);
+    if (!actor) {
       return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
     }
 
-    const actor = actorResult.rows[0];
-
     // Verify ownership
-    if (actor.auth0_user_id !== user.sub) {
+    if ((actor.auth0_user_id as string | undefined) !== user.sub) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    // Update actor profile
-    const updateResult = await query(queries.actors.update, [
-      actorId,
-      body.firstName || null,
-      body.lastName || null,
-      body.stageName || null,
-      body.bio || null,
-      body.location || null,
-      null, // profile_image_url (updated via media upload)
-    ]);
+    const updatedActor = await updateActorProfile(actorId, {
+      firstName: body.firstName || null,
+      lastName: body.lastName || null,
+      stageName: body.stageName || null,
+      bio: body.bio || null,
+      location: body.location || null,
+      profileImageUrl: null,
+    });
 
     return NextResponse.json({
       success: true,
-      actor: updateResult.rows[0],
+      actor: updatedActor,
     });
   } catch (error) {
     console.error('Update actor error:', error);

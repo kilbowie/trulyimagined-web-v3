@@ -31,12 +31,12 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-005 | Remove local adapter paths from `consent-client.ts`              | 1     | P1       | [x]    |
 | SEP-006 | Remove local adapter paths from `licensing-client.ts`            | 1     | P1       | [x]    |
 | SEP-007 | Remove local adapter paths from `representation-client.ts`       | 1     | P1       | [ ]    |
-| SEP-008 | Remove local adapter paths from `usage-client.ts`                | 1     | P1       | [ ]    |
-| SEP-009 | Remove local adapter paths from `credentials-client.ts`          | 1     | P1       | [ ]    |
-| SEP-010 | Remove local adapter paths from `billing-client.ts`              | 1     | P1       | [ ]    |
-| SEP-011 | Route `actors/[id]` through HDICR identity API                   | 1     | P1       | [ ]    |
-| SEP-012 | Route `agent/actors/[actorId]/consent` through HDICR consent API | 1     | P1       | [ ]    |
-| SEP-013 | Route `verification/start` through HDICR identity API            | 1     | P1       | [ ]    |
+| SEP-008 | Remove local adapter paths from `usage-client.ts`                | 1     | P1       | [x]    |
+| SEP-009 | Remove local adapter paths from `credentials-client.ts`          | 1     | P1       | [x]    |
+| SEP-010 | Remove local adapter paths from `billing-client.ts`              | 1     | P1       | [x]    |
+| SEP-011 | Route `actors/[id]` through HDICR identity API                   | 1     | P1       | [x]    |
+| SEP-012 | Route `agent/actors/[actorId]/consent` through HDICR consent API | 1     | P1       | [x]    |
+| SEP-013 | Route `verification/start` through HDICR identity API            | 1     | P1       | [x]    |
 | SEP-014 | Remove global `HDICR_ADAPTER_MODE=local` default                 | 1     | P1       | [x]    |
 | SEP-015 | Define canonical DB ownership boundary (HDICR vs TI tables)      | 1     | P1       | [ ]    |
 | SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [ ]    |
@@ -355,8 +355,10 @@ Functions to migrate to HTTP:
 
 **Acceptance criteria:**
 
-- [ ] Local SQL paths deleted, all operations route through `invokeUsageRemote`
-- [ ] `usage-client.test.ts` passes with fetch mocked
+- [x] Local SQL paths deleted, all operations route through `invokeUsageRemote`
+- [x] `usage-client.test.ts` passes with fetch mocked
+
+Implementation note (2026-04-07): usage client now initializes fail-closed and routes all calls through `/v1/usage/*` endpoints.
 
 ---
 
@@ -367,8 +369,10 @@ Functions to migrate to HTTP:
 
 **Acceptance criteria:**
 
-- [ ] Local SQL paths deleted, all operations route through credential service HTTP
-- [ ] `credentials-client.test.ts` passes with fetch mocked
+- [x] Local SQL paths deleted, all operations route through credential service HTTP
+- [x] `credentials-client.test.ts` passes with fetch mocked
+
+Implementation note (2026-04-07): credentials client now initializes fail-closed and routes all calls through `/v1/credentials/*` endpoints.
 
 ---
 
@@ -379,8 +383,10 @@ Functions to migrate to HTTP:
 
 **Acceptance criteria:**
 
-- [ ] Local SQL paths deleted, all operations route through billing service HTTP
-- [ ] `billing-client.test.ts` passes with fetch mocked
+- [x] Local SQL paths deleted, all operations route through billing service HTTP
+- [x] `billing-client.test.ts` passes with fetch mocked
+
+Implementation note (2026-04-07): billing client now initializes fail-closed and routes profile lookup through `/v1/billing/profile`.
 
 ---
 
@@ -400,10 +406,12 @@ Replace SQL with calls to `@/lib/hdicr/identity-client` functions:
 
 **Acceptance criteria:**
 
-- [ ] `import { query } from '@/lib/db'` removed from file
-- [ ] Route reads actor data through HDICR identity client
-- [ ] Route writes actor updates through HDICR identity client
-- [ ] Behavior unchanged for end users
+- [x] `import { query } from '@/lib/db'` removed from file
+- [x] Route reads actor data through HDICR identity client
+- [x] Route writes actor updates through HDICR identity client
+- [x] Behavior unchanged for end users
+
+Implementation note (2026-04-07): route now uses `getActorById` and `updateActorProfile` from identity client.
 
 ---
 
@@ -420,8 +428,10 @@ Replace DB queries with `checkConsent` and `listConsentRecords` from `@/lib/hdic
 
 **Acceptance criteria:**
 
-- [ ] `import { query } from '@/lib/db'` removed
-- [ ] Consent data reads through consent client
+- [x] `import { query } from '@/lib/db'` removed
+- [x] Consent data reads through consent client
+
+Implementation note (2026-04-07): route now uses `listConsentRecords` and `getCurrentConsentLedger`; representation authorization uses `verifyActiveRepresentation`.
 
 ---
 
@@ -438,8 +448,10 @@ Move the link creation to call `createIdentityLink` from `@/lib/hdicr/identity-c
 
 **Acceptance criteria:**
 
-- [ ] `import { query } from '@/lib/db'` removed
-- [ ] Verification start writes identity link through HDICR identity client
+- [x] `import { query } from '@/lib/db'` removed
+- [x] Verification start writes identity link through HDICR identity client
+
+Implementation note (2026-04-07): mock verification now calls `createIdentityLink` and profile resolution uses `getUserProfileIdByAuth0UserId`.
 
 ---
 

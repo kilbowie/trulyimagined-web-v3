@@ -14,7 +14,7 @@ const identityRemoteBaseUrl = getIdentityRemoteBaseUrlOrThrow('client-initializa
 
 async function invokeIdentityRemote<T>(params: {
   path: string;
-  method: 'GET' | 'POST';
+  method: 'GET' | 'POST' | 'PUT';
   operation: string;
   body?: unknown;
 }): Promise<T> {
@@ -82,7 +82,7 @@ export async function getIdentityLinkByProviderAndProviderUser(
   providerUserId: string
 ) {
   const payload = await invokeIdentityRemote<{
-    link?: Record<string, unknown> | null;
+    link?: Record<string, any> | null;
     id?: string;
     is_active?: boolean;
   }>({
@@ -143,7 +143,7 @@ export async function createIdentityLink(params: {
 }
 
 export async function unlinkIdentityById(linkId: string, userProfileId: string) {
-  const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, unknown>> }>({
+  const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, any>> }>({
     path: '/v1/identity/link/unlink-by-id',
     method: 'POST',
     operation: 'identity-link-unlink-by-id',
@@ -154,7 +154,7 @@ export async function unlinkIdentityById(linkId: string, userProfileId: string) 
 }
 
 export async function unlinkIdentityByProvider(provider: string, userProfileId: string) {
-  const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, unknown>> }>({
+  const payload = await invokeIdentityRemote<{ rows?: Array<Record<string, any>> }>({
     path: '/v1/identity/link/unlink-by-provider',
     method: 'POST',
     operation: 'identity-link-unlink-by-provider',
@@ -166,8 +166,8 @@ export async function unlinkIdentityByProvider(provider: string, userProfileId: 
 
 export async function listIdentityLinks(userProfileId: string, activeOnly: boolean) {
   const payload = await invokeIdentityRemote<{
-    rows?: Array<Record<string, unknown>>;
-    links?: Array<Record<string, unknown>>;
+    rows?: Array<Record<string, any>>;
+    links?: Array<Record<string, any>>;
   }>({
     path:
       `/v1/identity/links?userProfileId=${encodeURIComponent(userProfileId)}` +
@@ -235,4 +235,38 @@ export async function getVerificationLinksSummary(auth0UserId: string) {
     userProfileId: payload.userProfileId,
     links: payload.links || [],
   };
+}
+
+export async function getActorById(actorId: string) {
+  const payload = await invokeIdentityRemote<{ actor?: Record<string, unknown> | null }>({
+    path: `/v1/identity/${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'actor-by-id',
+  });
+
+  return payload.actor ?? null;
+}
+
+export async function updateActorProfile(
+  actorId: string,
+  params: {
+    firstName?: string | null;
+    lastName?: string | null;
+    stageName?: string | null;
+    bio?: string | null;
+    location?: string | null;
+    profileImageUrl?: string | null;
+  }
+) {
+  const payload = await invokeIdentityRemote<{ actor?: Record<string, unknown> | null }>({
+    path: `/v1/identity/${encodeURIComponent(actorId)}`,
+    method: 'PUT',
+    operation: 'actor-update',
+    body: {
+      ...params,
+      actorId,
+    },
+  });
+
+  return payload.actor ?? null;
 }

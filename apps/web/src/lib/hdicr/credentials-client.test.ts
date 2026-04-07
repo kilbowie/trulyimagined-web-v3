@@ -1,91 +1,70 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/db', () => ({
-  pool: {
-    query: vi.fn(),
-  },
-}));
-
-vi.mock('@/lib/status-list-manager', () => ({
-  getStatusListCredential: vi.fn(),
-  updateCredentialStatus: vi.fn(),
-  allocateStatusIndex: vi.fn(),
-}));
-
-vi.mock('@trulyimagined/utils', () => ({
-  encryptJSON: vi.fn((value) => value),
-}));
-
-import { pool } from '@/lib/db';
-import {
-  createCredentialPlaceholderRecord,
-  finalizeIssuedCredentialRecord,
-  listCredentialsByProfileId,
-  revokeCredentialById,
-} from './credentials-client';
-
-describe('credentials adapter fail-closed remote writes', () => {
+describe('credentials-client - remote authoritative behavior', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_CREDENTIALS_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
-    vi.stubGlobal('fetch', vi.fn());
+    vi.restoreAllMocks();
   });
 
-  it('fails closed for revoke write when remote mode has no base url', async () => {
-    process.env.HDICR_CREDENTIALS_ADAPTER_MODE = 'remote';
-
-    await expect(revokeCredentialById('cred-123')).rejects.toThrow(/fail-closed/i);
+  it('fails closed at import time without remote base URL', async () => {
+    await expect(import('@/lib/hdicr/credentials-client')).rejects.toThrow(/fail-closed/i);
   });
 
-  it('fails closed for create placeholder write when remote mode has no base url', async () => {
-    process.env.HDICR_CREDENTIALS_ADAPTER_MODE = 'remote';
-
-    await expect(
-      createCredentialPlaceholderRecord({
-        userProfileId: 'profile-123',
-        credentialType: 'VerifiableIdentityCredential',
-        holderDid: 'did:web:example.com',
-      })
-    ).rejects.toThrow(/fail-closed/i);
-  });
-
-  it('fails closed for finalize write when remote mode has no base url', async () => {
-    process.env.HDICR_CREDENTIALS_ADAPTER_MODE = 'remote';
-
-    await expect(
-      finalizeIssuedCredentialRecord({
-        credentialDbId: 'cred-db-123',
-        credential: { id: 'vc-123', validUntil: null },
-      })
-    ).rejects.toThrow(/fail-closed/i);
-  });
-
-  it('fails closed when remote revoke responds with non-2xx', async () => {
-    process.env.HDICR_CREDENTIALS_ADAPTER_MODE = 'remote';
+  it('listCredentialsByProfileId calls remote endpoint', async () => {
     process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ rows: [] }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
-    vi.mocked(fetch).mockResolvedValueOnce({
-      ok: false,
-      status: 500,
-    } as Response);
+    const { listCredentialsByProfileId } = await import('@/lib/hdicr/credentials-client');
 
-    await expect(revokeCredentialById('cred-123')).rejects.toThrow(/failed with status 500/i);
+    await expect(
+      listCredentialsByProfileId({
+        userProfileId: 'profile-123',
+        includeRevoked: false,
+        includeExpired: false,
+      })
+    ).resolves.toEqual([]);
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/credentials/list?userProfileId=profile-123&includeRevoked=false&includeExpired=false',
+      expect.objectContaining({ method: 'GET' })
+    );
   });
 
-  it('keeps read path fallback behavior in remote mode', async () => {
-    process.env.HDICR_CREDENTIALS_ADAPTER_MODE = 'remote';
+  it('revokeCredentialById calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        found: true,
+        alreadyRevoked: false,
+        hasStatusEntry: true,
+        revokedAt: null,
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
-    vi.mocked(pool.query).mockResolvedValueOnce({ rows: [] } as never);
+    const { revokeCredentialById } = await import('@/lib/hdicr/credentials-client');
 
-    const result = await listCredentialsByProfileId({
-      userProfileId: 'profile-123',
-      includeRevoked: false,
-      includeExpired: false,
+    await expect(revokeCredentialById('cred-123', 'rotation')).resolves.toMatchObject({
+      found: true,
+      hasStatusEntry: true,
     });
 
-    expect(result).toEqual([]);
-    expect(pool.query).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/credentials/revoke',
+      expect.objectContaining({ method: 'POST' })
+    );
   });
 });

@@ -1,14 +1,4 @@
-import { pool } from '@/lib/db';
-import { getStatusListCredential, updateCredentialStatus } from '@/lib/status-list-manager';
-import { allocateStatusIndex } from '@/lib/status-list-manager';
-import { encryptJSON } from '@trulyimagined/utils';
-import {
-  getHdicrAdapterMode,
-  getHdicrRemoteBaseUrl,
-  warnIfRemoteModeEnabled,
-} from '@/lib/hdicr/flags';
-
-warnIfRemoteModeEnabled('credentials');
+import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
 
 type CredentialListRow = {
   id: string;
@@ -24,6 +14,46 @@ type CredentialListRow = {
   verification_method: string | null;
   proof_type: string | null;
 };
+
+function getCredentialsRemoteBaseUrlOrThrow(operation: string): string {
+  const baseUrl = getHdicrRemoteBaseUrl();
+  if (!baseUrl) {
+    throw new Error(
+      `[HDICR] Credentials ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+    );
+  }
+
+  return baseUrl;
+}
+
+const credentialsRemoteBaseUrl = getCredentialsRemoteBaseUrlOrThrow('client-initialization');
+
+async function invokeCredentialsRemote<T>(params: {
+  path: string;
+  method: 'GET' | 'POST';
+  operation: string;
+  body?: unknown;
+}): Promise<T> {
+  const url = new URL(params.path, credentialsRemoteBaseUrl);
+
+  const response = await fetch(url.toString(), {
+    method: params.method,
+    headers: {
+      Accept: 'application/json',
+      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: params.body ? JSON.stringify(params.body) : undefined,
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote credentials ${params.operation} failed with status ${response.status} (fail-closed).`
+    );
+  }
+
+  return (await response.json()) as T;
+}
 
 function mapRemoteCredentialToRow(item: Record<string, unknown>): CredentialListRow | null {
   const metadata = (item.metadata ?? {}) as Record<string, unknown>;
@@ -48,50 +78,14 @@ function mapRemoteCredentialToRow(item: Record<string, unknown>): CredentialList
   };
 }
 
-async function listCredentialsByProfileIdLocal(options: {
-  userProfileId: string;
-  includeRevoked: boolean;
-  includeExpired: boolean;
-}) {
-  let sql = `
-    SELECT
-      id,
-      credential_type,
-      credential_json,
-      issuer_did,
-      holder_did,
-      issued_at,
-      expires_at,
-      is_revoked,
-      revoked_at,
-      revocation_reason,
-      verification_method,
-      proof_type
-    FROM verifiable_credentials
-    WHERE user_profile_id = $1
-  `;
-
-  if (!options.includeRevoked) {
-    sql += ' AND is_revoked = FALSE';
-  }
-
-  if (!options.includeExpired) {
-    sql += ' AND (expires_at IS NULL OR expires_at > NOW())';
-  }
-
-  sql += ' ORDER BY issued_at DESC';
-
-  const result = await pool.query(sql, [options.userProfileId]);
-  return result.rows as CredentialListRow[];
-}
-
 export async function getUserProfileByAuth0UserId(auth0UserId: string) {
-  const profileResult = await pool.query(
-    `SELECT id, role FROM user_profiles WHERE auth0_user_id = $1`,
-    [auth0UserId]
-  );
+  const payload = await invokeCredentialsRemote<{ profile?: Record<string, any> | null }>({
+    path: `/v1/credentials/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    method: 'GET',
+    operation: 'profile-by-auth0',
+  });
 
-  return profileResult.rows[0] || null;
+  return payload.profile ?? null;
 }
 
 export async function listCredentialsByProfileId(options: {
@@ -99,299 +93,92 @@ export async function listCredentialsByProfileId(options: {
   includeRevoked: boolean;
   includeExpired: boolean;
 }) {
-  const mode = getHdicrAdapterMode('credentials');
-  const baseUrl = getHdicrRemoteBaseUrl();
+  const payload = await invokeCredentialsRemote<{
+    rows?: CredentialListRow[];
+    credentials?: Array<Record<string, unknown>>;
+  }>({
+    path:
+      `/v1/credentials/list?userProfileId=${encodeURIComponent(options.userProfileId)}` +
+      `&includeRevoked=${String(options.includeRevoked)}` +
+      `&includeExpired=${String(options.includeExpired)}`,
+    method: 'GET',
+    operation: 'credentials-list',
+  });
 
-  if (mode === 'remote' && baseUrl) {
-    try {
-      const url = new URL('/credentials/list', baseUrl);
-      url.searchParams.set('userProfileId', options.userProfileId);
-      url.searchParams.set('includeRevoked', String(options.includeRevoked));
-      url.searchParams.set('includeExpired', String(options.includeExpired));
-
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        headers: {
-          Accept: 'application/json',
-        },
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          rows?: CredentialListRow[];
-          credentials?: Array<Record<string, unknown>>;
-        };
-
-        if (Array.isArray(payload.rows)) {
-          return payload.rows;
-        }
-
-        if (Array.isArray(payload.credentials)) {
-          return payload.credentials
-            .map(mapRemoteCredentialToRow)
-            .filter(Boolean) as CredentialListRow[];
-        }
-
-        console.warn(
-          '[HDICR] Remote credentials list returned an unexpected payload. Falling back to local adapter.'
-        );
-      } else {
-        console.warn(
-          `[HDICR] Remote credentials list failed with status ${response.status}. Falling back to local adapter.`
-        );
-      }
-    } catch (error) {
-      console.warn(
-        '[HDICR] Remote credentials list request failed. Falling back to local adapter.',
-        error
-      );
-    }
+  if (Array.isArray(payload.rows)) {
+    return payload.rows;
   }
 
-  return listCredentialsByProfileIdLocal(options);
+  if (Array.isArray(payload.credentials)) {
+    return payload.credentials.map(mapRemoteCredentialToRow).filter(Boolean) as CredentialListRow[];
+  }
+
+  throw new Error('[HDICR] Remote credentials list returned an unexpected payload (fail-closed).');
 }
 
 export async function getCredentialById(credentialId: string) {
-  const credentialResult = await pool.query(
-    `SELECT
-      id,
-      user_profile_id,
-      credential_type,
-      credential_json,
-      issuer_did,
-      holder_did,
-      issued_at,
-      expires_at,
-      is_revoked,
-      revoked_at,
-      revocation_reason,
-      verification_method,
-      proof_type
-    FROM verifiable_credentials
-    WHERE id = $1`,
-    [credentialId]
-  );
+  const payload = await invokeCredentialsRemote<{ credential?: Record<string, any> | null }>({
+    path: `/v1/credentials/by-id?id=${encodeURIComponent(credentialId)}`,
+    method: 'GET',
+    operation: 'credential-by-id',
+  });
 
-  return credentialResult.rows[0] || null;
-}
-
-async function revokeCredentialByIdLocal(credentialId: string, reason?: string) {
-  const credential = await pool.query(
-    `SELECT user_profile_id, is_revoked, credential_type
-     FROM verifiable_credentials
-     WHERE id = $1`,
-    [credentialId]
-  );
-
-  if (credential.rows.length === 0) {
-    return { found: false as const, alreadyRevoked: false, hasStatusEntry: false, revokedAt: null };
-  }
-
-  const credentialRow = credential.rows[0];
-
-  if (credentialRow.is_revoked) {
-    return {
-      found: true as const,
-      alreadyRevoked: true as const,
-      hasStatusEntry: false,
-      revokedAt: null,
-    };
-  }
-
-  const statusEntryResult = await pool.query(
-    `SELECT id FROM credential_status_entries WHERE credential_id = $1 AND status_purpose = 'revocation'`,
-    [credentialId]
-  );
-
-  const hasStatusEntry = statusEntryResult.rows.length > 0;
-
-  if (hasStatusEntry) {
-    await updateCredentialStatus(pool, {
-      credentialId,
-      statusPurpose: 'revocation',
-      statusValue: 1,
-    });
-  } else {
-    await pool.query(
-      `UPDATE verifiable_credentials
-       SET is_revoked = true, revoked_at = NOW(), updated_at = NOW()
-       WHERE id = $1`,
-      [credentialId]
-    );
-  }
-
-  if (reason) {
-    await pool.query(
-      `UPDATE verifiable_credentials
-       SET revocation_reason = $1, updated_at = NOW()
-       WHERE id = $2`,
-      [reason, credentialId]
-    );
-  }
-
-  const updatedResult = await pool.query(
-    `SELECT revoked_at, user_profile_id FROM verifiable_credentials WHERE id = $1`,
-    [credentialId]
-  );
-
-  return {
-    found: true as const,
-    alreadyRevoked: false,
-    hasStatusEntry,
-    revokedAt: updatedResult.rows[0]?.revoked_at || null,
-    ownerUserProfileId: updatedResult.rows[0]?.user_profile_id as string,
-  };
+  return payload.credential ?? null;
 }
 
 export async function revokeCredentialById(credentialId: string, reason?: string) {
-  const mode = getHdicrAdapterMode('credentials');
-  const baseUrl = getHdicrRemoteBaseUrl();
+  const payload = await invokeCredentialsRemote<{
+    found?: boolean;
+    alreadyRevoked?: boolean;
+    hasStatusEntry?: boolean;
+    revokedAt?: string | null;
+    ownerUserProfileId?: string;
+  }>({
+    path: '/v1/credentials/revoke',
+    method: 'POST',
+    operation: 'revoke',
+    body: { credentialId, reason },
+  });
 
-  if (mode === 'remote') {
-    if (!baseUrl) {
-      throw new Error(
-        '[HDICR] Credentials revoke is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
-      );
-    }
-
-    try {
-      const url = new URL('/credentials/revoke', baseUrl);
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify({
-          credentialId,
-          reason,
-        }),
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          found?: boolean;
-          alreadyRevoked?: boolean;
-          hasStatusEntry?: boolean;
-          revokedAt?: string | null;
-          ownerUserProfileId?: string;
-        };
-
-        if (payload.found !== undefined) {
-          return {
-            found: Boolean(payload.found),
-            alreadyRevoked: Boolean(payload.alreadyRevoked),
-            hasStatusEntry: Boolean(payload.hasStatusEntry),
-            revokedAt: payload.revokedAt ?? null,
-            ownerUserProfileId: payload.ownerUserProfileId,
-          };
-        }
-
-        throw new Error(
-          '[HDICR] Remote credentials revoke returned an unexpected payload in fail-closed mode.'
-        );
-      } else if (response.status === 404) {
-        return {
-          found: false as const,
-          alreadyRevoked: false,
-          hasStatusEntry: false,
-          revokedAt: null,
-        };
-      } else {
-        throw new Error(
-          `[HDICR] Remote credentials revoke failed with status ${response.status} in fail-closed mode.`
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `[HDICR] Remote credentials revoke request failed in fail-closed mode: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
-  }
-
-  return revokeCredentialByIdLocal(credentialId, reason);
+  return {
+    found: Boolean(payload.found),
+    alreadyRevoked: Boolean(payload.alreadyRevoked),
+    hasStatusEntry: Boolean(payload.hasStatusEntry),
+    revokedAt: payload.revokedAt ?? null,
+    ownerUserProfileId: payload.ownerUserProfileId,
+  };
 }
 
 export async function getStatusListById(listId: string) {
-  return getStatusListCredential(pool, listId);
+  const payload = await invokeCredentialsRemote<{ statusList?: Record<string, any> | null }>({
+    path: `/v1/credentials/status-list?id=${encodeURIComponent(listId)}`,
+    method: 'GET',
+    operation: 'status-list-by-id',
+  });
+
+  return payload.statusList ?? null;
 }
 
 export async function getIssuanceProfileByAuth0UserId(auth0UserId: string) {
-  const profileResult = await pool.query(
-    `SELECT
-      up.id,
-      up.auth0_user_id,
-      up.email,
-      up.username,
-      up.legal_name,
-      up.professional_name,
-      up.role,
-      up.profile_completed,
-      COALESCE(up.is_verified, FALSE) AS is_verified,
-      a.id AS actor_id,
-      a.verification_status AS actor_verification_status,
-      a.verified_at AS actor_verified_at
-    FROM user_profiles up
-    LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id
-    WHERE up.auth0_user_id = $1`,
-    [auth0UserId]
-  );
+  const payload = await invokeCredentialsRemote<{
+    issuanceProfile?: Record<string, any> | null;
+  }>({
+    path: `/v1/credentials/issuance-profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    method: 'GET',
+    operation: 'issuance-profile-by-auth0',
+  });
 
-  return profileResult.rows[0] || null;
+  return payload.issuanceProfile ?? null;
 }
 
 export async function listActiveIdentityLinksByUserProfileId(userProfileId: string) {
-  const linksResult = await pool.query(
-    `SELECT
-      provider,
-      verification_level,
-      assurance_level,
-      verified_at,
-      is_active
-    FROM identity_links
-    WHERE user_profile_id = $1
-      AND is_active = TRUE
-    ORDER BY verified_at DESC`,
-    [userProfileId]
-  );
+  const payload = await invokeCredentialsRemote<{ links?: Array<Record<string, any>> }>({
+    path: `/v1/credentials/identity-links?userProfileId=${encodeURIComponent(userProfileId)}`,
+    method: 'GET',
+    operation: 'identity-links-by-profile',
+  });
 
-  return linksResult.rows;
-}
-
-async function createCredentialPlaceholderRecordLocal(params: {
-  userProfileId: string;
-  credentialType: string;
-  holderDid: string;
-}) {
-  const preInsertResult = await pool.query(
-    `INSERT INTO verifiable_credentials (
-      user_profile_id,
-      credential_type,
-      credential_json,
-      issuer_did,
-      holder_did,
-      issued_at,
-      verification_method,
-      proof_type
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-    RETURNING id`,
-    [
-      params.userProfileId,
-      params.credentialType,
-      {},
-      'did:web:trulyimagined.com',
-      params.holderDid,
-      new Date().toISOString(),
-      'did:web:trulyimagined.com#key-1',
-      'Ed25519Signature2020',
-    ]
-  );
-
-  return preInsertResult.rows[0]?.id as string;
+  return payload.links || [];
 }
 
 export async function createCredentialPlaceholderRecord(params: {
@@ -399,129 +186,39 @@ export async function createCredentialPlaceholderRecord(params: {
   credentialType: string;
   holderDid: string;
 }) {
-  const mode = getHdicrAdapterMode('credentials');
-  const baseUrl = getHdicrRemoteBaseUrl();
+  const payload = await invokeCredentialsRemote<{ id?: string }>({
+    path: '/v1/credentials/create-placeholder',
+    method: 'POST',
+    operation: 'create-placeholder',
+    body: params,
+  });
 
-  if (mode === 'remote') {
-    if (!baseUrl) {
-      throw new Error(
-        '[HDICR] Credential placeholder creation is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
-      );
-    }
-
-    try {
-      const url = new URL('/credentials/create-placeholder', baseUrl);
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(params),
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        const payload = (await response.json()) as {
-          id?: string;
-        };
-
-        if (typeof payload.id === 'string') {
-          return payload.id;
-        }
-
-        throw new Error(
-          '[HDICR] Remote create credential placeholder returned an unexpected payload in fail-closed mode.'
-        );
-      } else {
-        throw new Error(
-          `[HDICR] Remote create credential placeholder failed with status ${response.status} in fail-closed mode.`
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `[HDICR] Remote create credential placeholder request failed in fail-closed mode: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
+  if (typeof payload.id !== 'string') {
+    throw new Error('[HDICR] Remote create placeholder returned an unexpected payload (fail-closed).');
   }
 
-  return createCredentialPlaceholderRecordLocal(params);
+  return payload.id;
 }
 
-export async function allocateRevocationStatusForCredential(credentialId: string) {
-  return allocateStatusIndex(pool, {
-    credentialId,
-    statusPurpose: 'revocation',
-    statusSize: 1,
+export async function allocateRevocationStatusForCredential(credentialId: string): Promise<any> {
+  const payload = await invokeCredentialsRemote<{ statusEntry?: Record<string, any> }>({
+    path: '/v1/credentials/allocate-revocation-status',
+    method: 'POST',
+    operation: 'allocate-revocation-status',
+    body: { credentialId },
   });
-}
 
-async function finalizeIssuedCredentialRecordLocal(params: {
-  credentialDbId: string;
-  credential: { id: string; validUntil?: string | null };
-}) {
-  const encryptedCredential = encryptJSON(params.credential);
-  const encryptedCredentialJson = JSON.stringify(encryptedCredential);
-
-  await pool.query(
-    `UPDATE verifiable_credentials
-     SET credential_json = $1,
-         credential_id = $2,
-         expires_at = $3,
-         updated_at = NOW()
-     WHERE id = $4`,
-    [
-      encryptedCredentialJson,
-      params.credential.id,
-      params.credential.validUntil || null,
-      params.credentialDbId,
-    ]
-  );
+  return payload.statusEntry;
 }
 
 export async function finalizeIssuedCredentialRecord(params: {
   credentialDbId: string;
   credential: { id: string; validUntil?: string | null };
 }) {
-  const mode = getHdicrAdapterMode('credentials');
-  const baseUrl = getHdicrRemoteBaseUrl();
-
-  if (mode === 'remote') {
-    if (!baseUrl) {
-      throw new Error(
-        '[HDICR] Credential finalization is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).'
-      );
-    }
-
-    try {
-      const url = new URL('/credentials/finalize', baseUrl);
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
-        },
-        body: JSON.stringify(params),
-        cache: 'no-store',
-      });
-
-      if (response.ok) {
-        return;
-      } else {
-        throw new Error(
-          `[HDICR] Remote finalize credential failed with status ${response.status} in fail-closed mode.`
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `[HDICR] Remote finalize credential request failed in fail-closed mode: ${
-          error instanceof Error ? error.message : 'Unknown error'
-        }`
-      );
-    }
-  }
-
-  return finalizeIssuedCredentialRecordLocal(params);
+  await invokeCredentialsRemote<{ success?: boolean }>({
+    path: '/v1/credentials/finalize',
+    method: 'POST',
+    operation: 'finalize',
+    body: params,
+  });
 }

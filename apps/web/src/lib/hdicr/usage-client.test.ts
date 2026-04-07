@@ -9,48 +9,49 @@ describe('usage-client - remote authoritative behavior', () => {
     delete process.env.HDICR_ADAPTER_MODE;
     delete process.env.HDICR_USAGE_ADAPTER_MODE;
     delete process.env.HDICR_REMOTE_BASE_URL;
+    vi.restoreAllMocks();
   });
 
-  it('actorExistsById uses local adapter in local mode', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'local';
-
-    const mockQuery = vi.fn().mockResolvedValue({ rows: [{ id: 'actor-123' }] });
-    vi.doMock('@/lib/db', () => ({ query: mockQuery }));
+  it('actorExistsById calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ exists: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { actorExistsById } = await import('@/lib/hdicr/usage-client');
 
     const result = await actorExistsById('actor-123');
-    expect(mockQuery).toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/usage/actor/exists?actorId=actor-123',
+      expect.objectContaining({ method: 'GET' })
+    );
     expect(result).toBe(true);
   });
 
-  it('createUsageTrackingRecord fails closed in remote mode without base URL', async () => {
-    process.env.HDICR_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
-
-    const { createUsageTrackingRecord } = await import('@/lib/hdicr/usage-client');
-
-    await expect(
-      createUsageTrackingRecord({
-        actorId: 'actor-123',
-        usageType: 'voice_minutes',
-        quantity: 5,
-        unit: 'minutes',
-        generatedBy: 'test',
-        metadata: {},
-      })
-    ).rejects.toThrow('fail-closed');
+  it('fails closed at import when remote base URL is missing', async () => {
+    await expect(import('@/lib/hdicr/usage-client')).rejects.toThrow('fail-closed');
   });
 
-  it('domain override enforces remote mode over global local', async () => {
+  it('getGlobalUsageStats remains remote-only even with local mode env', async () => {
     process.env.HDICR_ADAPTER_MODE = 'local';
-    process.env.HDICR_USAGE_ADAPTER_MODE = 'remote';
-
-    vi.doMock('@/lib/db', () => ({ query: vi.fn() }));
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ stats: [], recentActivity: [], topActors: [], totals: null }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
 
     const { getGlobalUsageStats } = await import('@/lib/hdicr/usage-client');
 
-    await expect(getGlobalUsageStats()).rejects.toThrow('fail-closed');
+    await expect(getGlobalUsageStats()).resolves.toEqual({
+      stats: [],
+      recentActivity: [],
+      topActors: [],
+      totals: null,
+    });
   });
 });

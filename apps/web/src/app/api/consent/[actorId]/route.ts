@@ -87,7 +87,7 @@ export async function GET(
     // Map to track latest action per consent type + project
     const latestByTypeProject = new Map<string, ConsentRecord>();
 
-    for (const record of rows) {
+    for (const record of rows as ConsentRecord[]) {
       const key = `${record.consent_type}:${record.consent_scope?.projectId || 'general'}`;
 
       const existing = latestByTypeProject.get(key);

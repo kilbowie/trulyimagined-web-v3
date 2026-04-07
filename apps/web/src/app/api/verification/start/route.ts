@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
 import { createVerificationSession } from '@/lib/stripe';
-import { encryptJSON } from '@trulyimagined/utils';
+import {
+  createIdentityLink,
+  getUserProfileIdByAuth0UserId,
+} from '@/lib/hdicr/identity-client';
 
 /**
  * POST /api/verification/start
@@ -27,17 +29,17 @@ export async function POST(request: NextRequest) {
       documents = ['passport'], // Document types for verification
     } = body;
 
-    // Get user profile
-    const userResult = await query(
-      `SELECT id, email, legal_name, professional_name FROM user_profiles WHERE auth0_user_id = $1`,
-      [session.user.sub]
-    );
-
-    if (userResult.rows.length === 0) {
+    const userProfileId = await getUserProfileIdByAuth0UserId(session.user.sub);
+    if (!userProfileId) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    const userProfile = userResult.rows[0];
+    const userProfile = {
+      id: userProfileId,
+      email: session.user.email || null,
+      legal_name: session.user.name || null,
+      professional_name: session.user.nickname || null,
+    };
 
     // Handle different providers
     let verificationResult;
@@ -231,41 +233,22 @@ async function startMockVerification(userProfile: Record<string, unknown>) {
     verifiedAt: new Date().toISOString(),
   };
 
-  // Encrypt credential_data before storing (Step 11: Database Encryption)
-  const encryptedCredentialData = encryptJSON(credentialData);
+  const link = await createIdentityLink({
+    userProfileId: userId,
+    provider: 'mock-kyc',
+    providerUserId: verificationId,
+    providerType: 'kyc',
+    verificationLevel: 'high',
+    assuranceLevel: 'high',
+    credentialData,
+    metadata: {
+      provider: 'Mock KYC Provider',
+      environment: 'development',
+      note: 'This is a mock verification for development/testing purposes',
+    },
+  });
 
-  // Create mock identity link with high verification level
-  const linkResult = await query(
-    `INSERT INTO identity_links (
-      user_profile_id,
-      provider,
-      provider_user_id,
-      provider_type,
-      verification_level,
-      assurance_level,
-      credential_data,
-      metadata,
-      verified_at,
-      last_verified_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-    RETURNING id`,
-    [
-      userId,
-      'mock-kyc',
-      verificationId,
-      'kyc',
-      'high',
-      'high',
-      encryptedCredentialData,
-      JSON.stringify({
-        provider: 'Mock KYC Provider',
-        environment: 'development',
-        note: 'This is a mock verification for development/testing purposes',
-      }),
-    ]
-  );
-
-  const linkId = linkResult.rows[0].id;
+  const linkId = (link as { id?: string } | null)?.id || null;
 
   console.log('[VERIFICATION] Created mock verification link:', {
     userId,

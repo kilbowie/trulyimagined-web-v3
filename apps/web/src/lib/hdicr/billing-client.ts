@@ -1,15 +1,4 @@
-import { query } from '@/lib/db';
-import {
-  getHdicrAdapterMode,
-  getHdicrRemoteBaseUrl,
-  warnIfRemoteModeEnabled,
-} from '@/lib/hdicr/flags';
-
-warnIfRemoteModeEnabled('billing');
-
-function isBillingRemoteMode() {
-  return getHdicrAdapterMode('billing') === 'remote';
-}
+import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
 
 function getBillingRemoteBaseUrlOrThrow(operation: string) {
   const baseUrl = getHdicrRemoteBaseUrl();
@@ -21,45 +10,33 @@ function getBillingRemoteBaseUrlOrThrow(operation: string) {
   return baseUrl;
 }
 
-async function getBillingProfileByAuth0UserIdLocal(auth0UserId: string) {
-  const profileResult = await query(
-    'SELECT id, role, email, username FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1',
-    [auth0UserId]
-  );
-
-  return profileResult.rows[0] || null;
-}
+const billingRemoteBaseUrl = getBillingRemoteBaseUrlOrThrow('client-initialization');
 
 export async function getBillingProfileByAuth0UserId(auth0UserId: string) {
-  if (isBillingRemoteMode()) {
-    const baseUrl = getBillingRemoteBaseUrlOrThrow('profile-lookup');
-    const url = new URL(
-      `/billing/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
-      baseUrl
+  const url = new URL(
+    `/v1/billing/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
+    billingRemoteBaseUrl
+  );
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+    },
+    cache: 'no-store',
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `[HDICR] Remote billing profile lookup failed with status ${response.status} (fail-closed).`
     );
-
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json',
-      },
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `[HDICR] Remote billing profile lookup failed with status ${response.status} (fail-closed).`
-      );
-    }
-
-    const payload = (await response.json()) as {
-      profile?: Record<string, unknown> | null;
-    };
-
-    return payload.profile ?? null;
   }
 
-  return getBillingProfileByAuth0UserIdLocal(auth0UserId);
+  const payload = (await response.json()) as {
+    profile?: Record<string, any> | null;
+  };
+
+  return payload.profile ?? null;
 }
 
 export function getBillingOpportunities(role: string | null) {

@@ -1,16 +1,4 @@
-import { query } from '@/lib/db';
-import { randomUUID } from 'crypto';
-import {
-  getHdicrAdapterMode,
-  getHdicrRemoteBaseUrl,
-  warnIfRemoteModeEnabled,
-} from '@/lib/hdicr/flags';
-
-warnIfRemoteModeEnabled('usage');
-
-function isUsageRemoteMode() {
-  return getHdicrAdapterMode('usage') === 'remote';
-}
+import { getHdicrRemoteBaseUrl } from '@/lib/hdicr/flags';
 
 function getUsageRemoteBaseUrlOrThrow(operation: string) {
   const baseUrl = getHdicrRemoteBaseUrl();
@@ -22,14 +10,15 @@ function getUsageRemoteBaseUrlOrThrow(operation: string) {
   return baseUrl;
 }
 
+const usageRemoteBaseUrl = getUsageRemoteBaseUrlOrThrow('client-initialization');
+
 async function invokeUsageRemote<T>(params: {
   path: string;
   method: 'GET' | 'POST';
   operation: string;
   body?: unknown;
 }): Promise<T> {
-  const baseUrl = getUsageRemoteBaseUrlOrThrow(params.operation);
-  const url = new URL(params.path, baseUrl);
+  const url = new URL(params.path, usageRemoteBaseUrl);
 
   const response = await fetch(url.toString(), {
     method: params.method,
@@ -50,79 +39,24 @@ async function invokeUsageRemote<T>(params: {
   return (await response.json()) as T;
 }
 
-async function actorExistsByIdLocal(actorId: string): Promise<boolean> {
-  const actorCheck = await query('SELECT id FROM actors WHERE id = $1', [actorId]);
-  return actorCheck.rows.length > 0;
-}
-
 export async function actorExistsById(actorId: string): Promise<boolean> {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{ exists?: boolean }>({
-      path: `/usage/actor/exists?actorId=${encodeURIComponent(actorId)}`,
-      method: 'GET',
-      operation: 'actor-exists-check',
-    });
+  const payload = await invokeUsageRemote<{ exists?: boolean }>({
+    path: `/v1/usage/actor/exists?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'actor-exists-check',
+  });
 
-    return Boolean(payload.exists);
-  }
-
-  return actorExistsByIdLocal(actorId);
-}
-
-async function getLicensingRequestStatusByIdLocal(licensingRequestId: string) {
-  const licenseCheck = await query('SELECT id, status FROM licensing_requests WHERE id = $1', [
-    licensingRequestId,
-  ]);
-
-  return licenseCheck.rows[0] || null;
+  return Boolean(payload.exists);
 }
 
 export async function getLicensingRequestStatusById(licensingRequestId: string) {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{ request?: Record<string, unknown> | null }>({
-      path: `/usage/licensing-request-status?id=${encodeURIComponent(licensingRequestId)}`,
-      method: 'GET',
-      operation: 'licensing-request-status',
-    });
+  const payload = await invokeUsageRemote<{ request?: Record<string, any> | null }>({
+    path: `/v1/usage/licensing-request-status?id=${encodeURIComponent(licensingRequestId)}`,
+    method: 'GET',
+    operation: 'licensing-request-status',
+  });
 
-    return payload.request ?? null;
-  }
-
-  return getLicensingRequestStatusByIdLocal(licensingRequestId);
-}
-
-async function createUsageTrackingRecordLocal(params: {
-  actorId: string;
-  licensingRequestId?: string;
-  usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
-  quantity: number;
-  unit: 'minutes' | 'images' | 'seconds';
-  projectName?: string;
-  generatedBy: string;
-  metadata: Record<string, unknown>;
-}) {
-  const id = randomUUID();
-
-  const result = await query(
-    `INSERT INTO usage_tracking (
-      id, actor_id, licensing_request_id, usage_type, quantity, unit,
-      project_name, generated_by, metadata, created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-    RETURNING *`,
-    [
-      id,
-      params.actorId,
-      params.licensingRequestId || null,
-      params.usageType,
-      params.quantity,
-      params.unit,
-      params.projectName || null,
-      params.generatedBy,
-      JSON.stringify(params.metadata),
-    ]
-  );
-
-  return result.rows[0] || null;
+  return payload.request ?? null;
 }
 
 export async function createUsageTrackingRecord(params: {
@@ -135,45 +69,14 @@ export async function createUsageTrackingRecord(params: {
   generatedBy: string;
   metadata: Record<string, unknown>;
 }) {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{ usage?: Record<string, unknown> | null }>({
-      path: '/usage/track',
-      method: 'POST',
-      operation: 'usage-track-create',
-      body: params,
-    });
+  const payload = await invokeUsageRemote<{ usage?: Record<string, any> | null }>({
+    path: '/v1/usage/track',
+    method: 'POST',
+    operation: 'usage-track-create',
+    body: params,
+  });
 
-    return payload.usage ?? null;
-  }
-
-  return createUsageTrackingRecordLocal(params);
-}
-
-async function createUsageAuditLogLocal(params: {
-  actorId: string;
-  resourceId: string;
-  usageType: 'voice_minutes' | 'image_generation' | 'video_seconds';
-  quantity: number;
-  unit: 'minutes' | 'images' | 'seconds';
-}) {
-  await query(
-    `INSERT INTO audit_log (
-      actor_id, action, resource_type, resource_id, metadata,
-      created_at
-    ) VALUES ($1, $2, $3, $4, $5, NOW())`,
-    [
-      params.actorId,
-      'usage_tracked',
-      'usage_tracking',
-      params.resourceId,
-      JSON.stringify({
-        actorId: params.actorId,
-        usageType: params.usageType,
-        quantity: params.quantity,
-        unit: params.unit,
-      }),
-    ]
-  );
+  return payload.usage ?? null;
 }
 
 export async function createUsageAuditLog(params: {
@@ -183,205 +86,63 @@ export async function createUsageAuditLog(params: {
   quantity: number;
   unit: 'minutes' | 'images' | 'seconds';
 }) {
-  if (isUsageRemoteMode()) {
-    await invokeUsageRemote<{ success?: boolean }>({
-      path: '/usage/audit-log',
-      method: 'POST',
-      operation: 'usage-audit-log-create',
-      body: params,
-    });
-    return;
-  }
+  await invokeUsageRemote<{ success?: boolean }>({
+    path: '/v1/usage/audit-log',
+    method: 'POST',
+    operation: 'usage-audit-log-create',
+    body: params,
+  });
 
-  await createUsageAuditLogLocal(params);
-}
-
-async function getUsageActorByIdLocal(actorId: string) {
-  const actorResult = await query(
-    'SELECT id, first_name, last_name, stage_name FROM actors WHERE id = $1',
-    [actorId]
-  );
-
-  if (actorResult.rows.length === 0) {
-    return null;
-  }
-
-  return actorResult.rows[0];
+  return;
 }
 
 export async function getUsageActorById(actorId: string) {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{ actor?: Record<string, unknown> | null }>({
-      path: `/usage/actor?id=${encodeURIComponent(actorId)}`,
-      method: 'GET',
-      operation: 'usage-actor-lookup',
-    });
+  const payload = await invokeUsageRemote<{ actor?: Record<string, any> | null }>({
+    path: `/v1/usage/actor?id=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'usage-actor-lookup',
+  });
 
-    return payload.actor ?? null;
-  }
-
-  return getUsageActorByIdLocal(actorId);
-}
-
-async function getActorUsageRecordsLocal(actorId: string, limit: number, offset: number) {
-  const usageResult = await query(
-    `SELECT * FROM usage_tracking
-     WHERE actor_id = $1
-     ORDER BY created_at DESC
-     LIMIT $2 OFFSET $3`,
-    [actorId, limit, offset]
-  );
-
-  return usageResult.rows;
+  return payload.actor ?? null;
 }
 
 export async function getActorUsageRecords(actorId: string, limit: number, offset: number) {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{ rows?: Array<Record<string, unknown>> }>({
-      path:
-        `/usage/actor/records?actorId=${encodeURIComponent(actorId)}` +
-        `&limit=${limit}&offset=${offset}`,
-      method: 'GET',
-      operation: 'usage-records-list',
-    });
+  const payload = await invokeUsageRemote<{ rows?: Array<Record<string, any>> }>({
+    path:
+      `/v1/usage/actor/records?actorId=${encodeURIComponent(actorId)}` +
+      `&limit=${limit}&offset=${offset}`,
+    method: 'GET',
+    operation: 'usage-records-list',
+  });
 
-    return payload.rows || [];
-  }
-
-  return getActorUsageRecordsLocal(actorId, limit, offset);
-}
-
-async function getActorUsageStatsLocal(actorId: string) {
-  const statsResult = await query(
-    `SELECT
-      usage_type,
-      unit,
-      SUM(quantity) as total_quantity,
-      COUNT(*) as total_records,
-      MIN(created_at) as first_usage,
-      MAX(created_at) as last_usage
-    FROM usage_tracking
-    WHERE actor_id = $1
-    GROUP BY usage_type, unit`,
-    [actorId]
-  );
-
-  const minutesResult = await query(
-    `SELECT SUM(quantity) as total_minutes
-     FROM usage_tracking
-     WHERE actor_id = $1 AND usage_type = 'voice_minutes' AND unit = 'minutes'`,
-    [actorId]
-  );
-
-  return {
-    stats: statsResult.rows,
-    totalMinutes: parseFloat(minutesResult.rows[0]?.total_minutes || '0'),
-  };
+  return payload.rows || [];
 }
 
 export async function getActorUsageStats(actorId: string) {
-  if (isUsageRemoteMode()) {
-    const payload = await invokeUsageRemote<{
-      stats?: Array<Record<string, unknown>>;
-      totalMinutes?: number;
-    }>({
-      path: `/usage/actor/stats?actorId=${encodeURIComponent(actorId)}`,
-      method: 'GET',
-      operation: 'usage-stats-by-actor',
-    });
-
-    return {
-      stats: payload.stats || [],
-      totalMinutes: payload.totalMinutes || 0,
-    };
-  }
-
-  return getActorUsageStatsLocal(actorId);
-}
-
-async function getGlobalUsageStatsLocal() {
-  const statsQuery = `
-    SELECT
-      usage_type,
-      unit,
-      COUNT(DISTINCT actor_id) as unique_actors,
-      SUM(quantity) as total_quantity,
-      AVG(quantity) as avg_quantity,
-      COUNT(*) as total_records,
-      MIN(created_at) as first_usage,
-      MAX(created_at) as last_usage
-    FROM usage_tracking
-    GROUP BY usage_type, unit
-    ORDER BY usage_type;
-  `;
-
-  const recentQuery = `
-    SELECT
-      DATE(created_at) as usage_date,
-      usage_type,
-      SUM(quantity) as daily_quantity,
-      COUNT(*) as daily_records
-    FROM usage_tracking
-    WHERE created_at >= NOW() - INTERVAL '30 days'
-    GROUP BY DATE(created_at), usage_type
-    ORDER BY usage_date DESC, usage_type;
-  `;
-
-  const topActorsQuery = `
-    SELECT
-      a.id,
-      a.first_name,
-      a.last_name,
-      a.stage_name,
-      SUM(CASE WHEN ut.usage_type = 'voice_minutes' THEN ut.quantity ELSE 0 END) as total_minutes,
-      SUM(CASE WHEN ut.usage_type = 'image_generation' THEN ut.quantity ELSE 0 END) as total_images,
-      SUM(CASE WHEN ut.usage_type = 'video_seconds' THEN ut.quantity ELSE 0 END) as total_video_seconds,
-      COUNT(*) as total_records
-    FROM usage_tracking ut
-    JOIN actors a ON ut.actor_id = a.id
-    GROUP BY a.id, a.first_name, a.last_name, a.stage_name
-    ORDER BY total_minutes DESC
-    LIMIT 10;
-  `;
-
-  const totalsQuery = `
-    SELECT
-      COUNT(DISTINCT actor_id) as total_actors_with_usage,
-      COUNT(*) as total_usage_records,
-      SUM(CASE WHEN usage_type = 'voice_minutes' THEN quantity ELSE 0 END) as total_voice_minutes,
-      SUM(CASE WHEN usage_type = 'image_generation' THEN quantity ELSE 0 END) as total_images,
-      SUM(CASE WHEN usage_type = 'video_seconds' THEN quantity ELSE 0 END) as total_video_seconds
-    FROM usage_tracking;
-  `;
-
-  const [statsResult, recentResult, topActorsResult, totalsResult] = await Promise.all([
-    query(statsQuery),
-    query(recentQuery),
-    query(topActorsQuery),
-    query(totalsQuery),
-  ]);
+  const payload = await invokeUsageRemote<{
+    stats?: Array<Record<string, any>>;
+    totalMinutes?: number;
+  }>({
+    path: `/v1/usage/actor/stats?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'usage-stats-by-actor',
+  });
 
   return {
-    stats: statsResult.rows,
-    recentActivity: recentResult.rows,
-    topActors: topActorsResult.rows,
-    totals: totalsResult.rows[0] || null,
+    stats: payload.stats || [],
+    totalMinutes: payload.totalMinutes || 0,
   };
 }
 
 export async function getGlobalUsageStats() {
-  if (isUsageRemoteMode()) {
-    return invokeUsageRemote<{
-      stats: Array<Record<string, unknown>>;
-      recentActivity: Array<Record<string, unknown>>;
-      topActors: Array<Record<string, unknown>>;
-      totals: Record<string, unknown> | null;
-    }>({
-      path: '/usage/stats/global',
-      method: 'GET',
-      operation: 'usage-global-stats',
-    });
-  }
-
-  return getGlobalUsageStatsLocal();
+  return invokeUsageRemote<{
+    stats: Array<Record<string, any>>;
+    recentActivity: Array<Record<string, any>>;
+    topActors: Array<Record<string, any>>;
+    totals: Record<string, any> | null;
+  }>({
+    path: '/v1/usage/stats/global',
+    method: 'GET',
+    operation: 'usage-global-stats',
+  });
 }
