@@ -68,6 +68,37 @@ Resources:
           DataTraceEnabled: false # Do not log full request/response bodies (PII risk)
           MetricsEnabled: true
 
+  HdicrClientApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: TrulyImaginedApiProdStage
+    Properties:
+      Name: !Sub hdicr-standard-client-${Environment}
+      Description: API key attached to the standard HDICR usage plan for per-client throttling and metrics.
+      Enabled: true
+
+  HdicrUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: TrulyImaginedApiProdStage
+    Properties:
+      UsagePlanName: !Sub hdicr-standard-plan-${Environment}
+      Description: Lower per-client throttle envelope layered beneath the global stage throttle.
+      ApiStages:
+        - ApiId: !Ref TrulyImaginedApi
+          Stage: prod
+      Throttle:
+        BurstLimit: 50
+        RateLimit: 20
+      Quota:
+        Limit: 10000
+        Period: DAY
+
+  HdicrUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref HdicrClientApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref HdicrUsagePlan
+
   # ========================================
   # Identity Service Lambda (Step 5: Identity Registry MVP)
   # ========================================
@@ -86,30 +117,40 @@ Resources:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/identity/register
             Method: POST
+            Auth:
+              ApiKeyRequired: true
         ListAdminUsers:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/identity/admin/users
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         GetActorById:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/identity/{id}
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         ListActors:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/identity
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         UpdateActor:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/identity/{id}
             Method: PUT
+            Auth:
+              ApiKeyRequired: true
 
   # ========================================
   # Consent Service Lambda (Step 6: Consent Ledger - CRITICAL)
@@ -129,30 +170,40 @@ Resources:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/consent/grant
             Method: POST
+            Auth:
+              ApiKeyRequired: true
         RevokeConsent:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/consent/revoke
             Method: POST
+            Auth:
+              ApiKeyRequired: true
         CheckConsent:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/consent/check
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         GetConsentHistory:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/consent/{actorId}
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         ListConsentHistory:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/consent/list
             Method: GET
+            Auth:
+              ApiKeyRequired: true
 
   # ========================================
   # Licensing Service Lambda (Step 10: Licensing Service MVP)
@@ -172,24 +223,32 @@ Resources:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/license/request
             Method: POST
+            Auth:
+              ApiKeyRequired: true
         GetLicenseRequests:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/license/actor/{actorId}
             Method: GET
+            Auth:
+              ApiKeyRequired: true
         ApproveLicense:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/license/{requestId}/approve
             Method: POST
+            Auth:
+              ApiKeyRequired: true
         RejectLicense:
           Type: Api
           Properties:
             RestApiId: !Ref TrulyImaginedApi
             Path: /v1/license/{requestId}/reject
             Method: POST
+            Auth:
+              ApiKeyRequired: true
 
 # ========================================
 # Outputs
@@ -201,6 +260,14 @@ Outputs:
     Value: !Sub 'https://${TrulyImaginedApi}.execute-api.${AWS::Region}.amazonaws.com/prod'
     Export:
       Name: TrulyImaginedApiUrl
+
+  HdicrUsagePlanId:
+    Description: API Gateway usage plan ID for standard HDICR clients
+    Value: !Ref HdicrUsagePlan
+
+  HdicrClientApiKeyId:
+    Description: API Gateway API key ID for standard HDICR clients
+    Value: !Ref HdicrClientApiKey
 
   IdentityFunctionArn:
     Description: ARN of Identity Service Lambda

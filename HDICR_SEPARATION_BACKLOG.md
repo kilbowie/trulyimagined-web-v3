@@ -53,7 +53,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [x]    |
 | SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [x]    |
 | SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [x]    |
-| SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [ ]    |
+| SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [x]    |
 | SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [x]    |
 | SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [ ]    |
 | SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [ ]    |
@@ -1113,9 +1113,11 @@ For stronger client identity: use AWS API Gateway authorizers with Lambda that v
 
 **Acceptance criteria:**
 
-- [ ] Usage plan defined in SAM template
-- [ ] Per-plan throttle limits lower than global limits
-- [ ] Gateway metrics visible by API Key in CloudWatch
+- [x] Usage plan defined in SAM template
+- [x] Per-plan throttle limits lower than global limits
+- [x] Gateway metrics visible by API Key in CloudWatch via `ApiKeyRequired: true` methods attached to the usage plan
+
+Implementation note (2026-04-08): Added `HdicrClientApiKey`, `HdicrUsagePlan`, and `HdicrUsagePlanKey` to `infra/api-gateway/template.yaml`. The usage plan is bound to the generated `prod` stage with throttle `BurstLimit: 50` / `RateLimit: 20`, which sits below the existing stage-level `100/50` global throttle. All identity, consent, and licensing API events now set `Auth.ApiKeyRequired: true`, enabling per-key usage-plan throttling and CloudWatch metrics by API key. Outputs now expose the usage-plan ID and API-key ID for downstream provisioning/rotation workflows.
 
 ---
 
