@@ -63,23 +63,36 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
       );
     });
 
-    if (!decoded || !decoded.sub || !decoded.email) {
-      console.error('[AUTH] Invalid token structure');
+    if (!decoded || !decoded.sub) {
+      console.error('[AUTH] Invalid token structure: missing sub');
       return null;
     }
+
+    // Extract OAuth scopes: M2M tokens use the 'scope' string claim;
+    // user RBAC tokens from Auth0 may use a 'permissions' array instead.
+    const rawScope: unknown = decoded.scope;
+    const rawPermissions: unknown = decoded.permissions;
+    const scopes: string[] =
+      Array.isArray(rawPermissions)
+        ? (rawPermissions as string[])
+        : typeof rawScope === 'string' && rawScope.length > 0
+          ? rawScope.split(' ')
+          : [];
 
     const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
     const user: AuthUser = {
       sub: decoded.sub,
-      email: decoded.email,
-      emailVerified: decoded.email_verified || false,
-      name: decoded.name,
-      picture: decoded.picture,
+      email: decoded.email as string | undefined,
+      emailVerified: (decoded.email_verified as boolean | undefined) || false,
+      name: decoded.name as string | undefined,
+      picture: decoded.picture as string | undefined,
       roles: (rolesClaimNamespace ? decoded[rolesClaimNamespace] : undefined) ?? [],
+      scopes,
     };
 
+    const identity = user.email ? user.email : `M2M:${user.sub}`;
     console.log(
-      `[AUTH] User authenticated: ${user.email} (roles: ${(user.roles || []).join(', ')})`
+      `[AUTH] Authenticated: ${identity} (scopes: ${scopes.join(', ') || 'none'})`
     );
     return user;
   } catch (error) {
@@ -118,6 +131,16 @@ export function requireRole(user: AuthUser, allowedRoles: string[]) {
 export function hasRole(user: AuthUser | null, role: string): boolean {
   if (!user) return false;
   return (user.roles || []).includes(role);
+}
+
+/**
+ * Check if the authenticated principal has the required OAuth scope.
+ * Works for both user RBAC tokens (permissions array) and M2M client-credentials
+ * tokens (scope string). Returns false for unauthenticated callers.
+ */
+export function hasScope(user: AuthUser | null, scope: string): boolean {
+  if (!user) return false;
+  return (user.scopes ?? []).includes(scope);
 }
 
 // Internal helpers — role predicates are intentionally NOT exported from shared/middleware

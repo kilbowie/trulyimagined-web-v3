@@ -1,5 +1,5 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { validateAuth0Token } from '@trulyimagined/middleware';
+import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { grantConsent } from './handlers/grant-consent';
 import { revokeConsent } from './handlers/revoke-consent';
 import { checkConsent } from './handlers/check-consent';
@@ -46,6 +46,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         statusCode: 401,
         headers: corsHeaders,
         body: JSON.stringify({ error: 'Unauthorized' }),
+      };
+    }
+
+    // Scope-based authorization: require appropriate scope per HTTP method.
+    const requiredScope =
+      httpMethod === 'GET' ? 'hdicr:consent:read' : 'hdicr:consent:write';
+    if (!hasScope(user, requiredScope)) {
+      return {
+        statusCode: 403,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: 'Forbidden',
+          detail: `Missing required scope: ${requiredScope}`,
+        }),
       };
     }
 

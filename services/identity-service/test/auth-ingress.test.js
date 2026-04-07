@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@trulyimagined/middleware', () => ({
   validateAuth0Token: vi.fn(),
+  hasScope: vi.fn().mockReturnValue(false),
 }));
 
 vi.mock('@trulyimagined/database', () => ({
@@ -23,7 +24,7 @@ vi.mock('@trulyimagined/database', () => ({
   },
 }));
 
-import { validateAuth0Token } from '@trulyimagined/middleware';
+import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/index';
 
 function makeEvent(method, path) {
@@ -51,6 +52,33 @@ describe('identity-service auth ingress', () => {
 
     expect(response?.statusCode).toBe(401);
     expect(response?.body).toContain('Unauthorized');
+  });
+
+  it('returns 403 when authenticated but missing required scope', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(hasScope).mockReturnValueOnce(false);
+
+    const response = await handler(makeEvent('GET', '/v1/identity'), {}, () => {});
+
+    expect(response?.statusCode).toBe(403);
+    expect(response?.body).toContain('hdicr:identity:read');
+  });
+
+  it('returns 403 with write scope missing for POST', async () => {
+    vi.mocked(validateAuth0Token).mockResolvedValueOnce({
+      sub: 'client@clients',
+      scopes: ['hdicr:identity:read'],
+    });
+    vi.mocked(hasScope).mockReturnValueOnce(false);
+
+    const response = await handler(
+      makeEvent('POST', '/v1/identity/register'),
+      {},
+      () => {}
+    );
+
+    expect(response?.statusCode).toBe(403);
+    expect(response?.body).toContain('hdicr:identity:write');
   });
 
   it('keeps CORS preflight unauthenticated', async () => {

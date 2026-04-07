@@ -49,8 +49,8 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [x]    |
 | SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [ ]    |
 | SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [x]    |
-| SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [ ]    |
-| SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [ ]    |
+| SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [x]    |
+| SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [x]    |
 | SEP-033 | Move TI Auth0 claim mapping out of `shared/middleware`           | 3     | P1       | [x]    |
 | SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [ ]    |
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [ ]    |
@@ -962,9 +962,15 @@ In Auth0, assign these scopes to the TI M2M application via API permissions.
 
 **Acceptance criteria:**
 
-- [ ] Each HDICR endpoint checks for the appropriate scope
-- [ ] `403` returned when scope is missing
-- [ ] Scope definitions documented in each OpenAPI spec's security scheme
+- [x] Each HDICR endpoint checks for the appropriate scope (`hdicr:{domain}:read` for GET, `hdicr:{domain}:write` for POST/PUT)
+- [x] `403` returned when scope is missing
+- [x] Scope definitions documented in each OpenAPI spec's `securitySchemes` (`hdicrOAuth2` with `clientCredentials` flow)
+- [x] `validateAuth0Token` updated to support M2M tokens (no email claim) and populate `scopes` from JWT `scope`/`permissions` claims
+- [x] `hasScope()` exported from `@trulyimagined/middleware`
+- [x] `AuthUser.scopes?: string[]` and optional `email` added to `@trulyimagined/types`
+- [x] 403-scope-failure tests added to each service (4 tests each: 401, 403 read, 403 write, OPTIONS pass-through)
+
+Implementation note (2026-04-07): Added `hasScope(user, scope)` to `shared/middleware`. Extended `AuthUser` in `shared/types` with optional `email` (M2M tokens have none) and `scopes?: string[]` (populated from `decoded.scope` string or `decoded.permissions` array). Identity/consent/licensing handlers now enforce `hdicr:{domain}:read` for GET and `hdicr:{domain}:write` for POST/PUT. Added `hdicrOAuth2` `clientCredentials` security scheme to all three OpenAPI specs. Scope-failure tests added (4 tests per service, 12 total).
 
 ---
 

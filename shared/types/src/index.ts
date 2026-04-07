@@ -86,12 +86,13 @@ export interface PaginatedResponse<T> extends ApiResponse<T> {
 // ==================== AUTH TYPES ====================
 
 export interface AuthUser {
-  sub: string; // Auth0 user ID
-  email: string;
+  sub: string; // Auth0 user ID (or M2M client ID for client-credentials tokens)
+  email?: string; // Not present on M2M tokens
   emailVerified: boolean;
   name?: string;
   picture?: string;
   roles?: string[];
+  scopes?: string[]; // OAuth 2.1 scopes from the validated JWT
 }
 
 // ==================== AUDIT TYPES ====================

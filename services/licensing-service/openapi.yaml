@@ -329,6 +329,21 @@ components:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: >
+        Auth0 RS256-signed JWT. Required on all endpoints (except OPTIONS
+        preflight). Scope enforcement is applied after signature verification.
+    hdicrOAuth2:
+      type: oauth2
+      description: >
+        OAuth 2.1 client credentials used by TI or any authorised HDICR client.
+        Tokens are acquired via POST /oauth/token with grant_type=client_credentials.
+        The required scope per endpoint determines which operations are permitted.
+      flows:
+        clientCredentials:
+          tokenUrl: https://{auth0Domain}/oauth/token
+          scopes:
+            hdicr:licensing:read: Read licensing requests, decisions, and actor license data
+            hdicr:licensing:write: Create, approve, or reject licensing requests
   parameters:
     ActorIdPath:
       name: actorId

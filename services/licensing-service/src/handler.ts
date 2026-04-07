@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
-import { validateAuth0Token } from '@trulyimagined/middleware';
+import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 
 /**
  * Licensing Service - Lambda Handler
@@ -43,6 +43,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
         statusCode: 401,
         headers: corsHeaders,
         body: JSON.stringify({ error: 'Unauthorized' }),
+      };
+    }
+
+    // Scope-based authorization: require appropriate scope per HTTP method.
+    const requiredScope =
+      httpMethod === 'GET' ? 'hdicr:licensing:read' : 'hdicr:licensing:write';
+    if (!hasScope(user, requiredScope)) {
+      return {
+        statusCode: 403,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: 'Forbidden',
+          detail: `Missing required scope: ${requiredScope}`,
+        }),
       };
     }
 
