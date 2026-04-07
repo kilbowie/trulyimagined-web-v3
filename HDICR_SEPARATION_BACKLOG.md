@@ -1275,6 +1275,8 @@ Implementation note (2026-04-08): Reworked `apps/web/.env.example` into explicit
 - [ ] All user-facing flows tested end-to-end through HDICR APIs only
 - [ ] No SQL errors in TI server logs
 
+Implementation note (2026-04-08): Began draining remaining web-tier HDICR reads by switching actor resolution in dashboard, profile, notifications, and media routes from direct `actors` SQL to existing HDICR representation/identity clients. TI-owned queries still remain local, but `apps/web/src/lib/db.ts` cannot be retired yet because legacy consent, licensing, registry, identity-resolution, and credential-status paths still query HDICR-owned tables directly.
+
 ---
 
 ### SEP-043 · Add Row-Level Security policies for tenant isolation

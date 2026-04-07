@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import { queries } from '@database/queries-v3';
 
 // DB-OWNER: TI
@@ -19,13 +20,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Get actor record
-    const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
 
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
-
-    const actor = actorResult.rows[0];
 
     // Check for type filter
     const { searchParams } = new URL(request.url);
@@ -34,9 +33,9 @@ export async function GET(request: NextRequest) {
     let mediaResult;
 
     if (mediaType && ['headshot', 'audio_reel', 'video_reel'].includes(mediaType)) {
-      mediaResult = await query(queries.actorMedia.getByActorAndType, [actor.id, mediaType]);
+      mediaResult = await query(queries.actorMedia.getByActorAndType, [actorId, mediaType]);
     } else {
-      mediaResult = await query(queries.actorMedia.getByActor, [actor.id]);
+      mediaResult = await query(queries.actorMedia.getByActor, [actorId]);
     }
 
     return NextResponse.json({

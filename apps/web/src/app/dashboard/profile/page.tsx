@@ -1,6 +1,7 @@
 import { getCurrentUser, getUserRoles } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { query } from '@/lib/db';
+import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import { queries } from '@database/queries-v3';
 import ProfileClient from './ProfileClient';
 
@@ -30,22 +31,17 @@ export default async function ProfilePage() {
     );
   }
 
-  // Fetch actor data from database
-  const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
   const profileResult = await query(
     'SELECT is_verified, is_pro FROM user_profiles WHERE auth0_user_id = $1',
     [user.sub]
   );
 
-  let actor = null;
+  const actorRecord = await resolveActorRecordByAuth0UserId(user.sub);
   let headshots = [];
   let accountStatus = { is_verified: false, is_pro: false };
 
-  if (actorResult.rows && actorResult.rows.length > 0) {
-    actor = actorResult.rows[0];
-
-    // Fetch headshots
-    const headshotsResult = await query(queries.actorMedia.getHeadshots, [actor.id]);
+  if (actorRecord) {
+    const headshotsResult = await query(queries.actorMedia.getHeadshots, [actorRecord.id]);
     headshots = headshotsResult.rows || [];
   }
 
@@ -55,6 +51,21 @@ export default async function ProfilePage() {
       is_pro: !!profileResult.rows[0].is_pro,
     };
   }
+
+  const actor = actorRecord
+    ? {
+        id: actorRecord.id,
+        first_name: actorRecord.first_name ?? '',
+        last_name: actorRecord.last_name ?? '',
+        stage_name: actorRecord.stage_name ?? null,
+        email: actorRecord.email ?? user.email ?? '',
+        location: actorRecord.location ?? null,
+        bio: actorRecord.bio ?? null,
+        verification_status: actorRecord.verification_status ?? 'pending',
+        registry_id: actorRecord.registry_id ?? '',
+        profile_image_url: actorRecord.profile_image_url ?? null,
+      }
+    : null;
 
   return (
     <ProfileClient

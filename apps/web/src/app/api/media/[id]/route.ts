@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import { queries } from '@database/queries-v3';
 import { deleteFromS3 } from '@/lib/s3';
 
@@ -22,13 +23,11 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const body = await request.json();
 
     // Get actor record
-    const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
 
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
-
-    const actor = actorResult.rows[0];
 
     // Get media record to verify ownership
     const mediaResult = await query(queries.actorMedia.getById, [mediaId]);
@@ -40,7 +39,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const media = mediaResult.rows[0];
 
     // Verify ownership
-    if (media.actor_id !== actor.id) {
+    if (media.actor_id !== actorId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -82,13 +81,11 @@ export async function DELETE(
     const { id: mediaId } = await params;
 
     // Get actor record
-    const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
 
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
-
-    const actor = actorResult.rows[0];
 
     // Get media record to verify ownership and get S3 key
     const mediaResult = await query(queries.actorMedia.getById, [mediaId]);
@@ -100,7 +97,7 @@ export async function DELETE(
     const media = mediaResult.rows[0];
 
     // Verify ownership
-    if (media.actor_id !== actor.id) {
+    if (media.actor_id !== actorId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 

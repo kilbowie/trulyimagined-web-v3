@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import { queries } from '@database/queries-v3';
 
 // DB-OWNER: TI
@@ -20,13 +21,11 @@ export async function PUT(_request: NextRequest, { params }: { params: Promise<{
     const { id: mediaId } = await params;
 
     // Get actor record
-    const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
 
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json({ error: 'Actor profile not found' }, { status: 404 });
     }
-
-    const actor = actorResult.rows[0];
 
     // Get media record to verify ownership
     const mediaResult = await query(queries.actorMedia.getById, [mediaId]);
@@ -38,7 +37,7 @@ export async function PUT(_request: NextRequest, { params }: { params: Promise<{
     const media = mediaResult.rows[0];
 
     // Verify ownership
-    if (media.actor_id !== actor.id) {
+    if (media.actor_id !== actorId) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -48,7 +47,7 @@ export async function PUT(_request: NextRequest, { params }: { params: Promise<{
     }
 
     // Clear previous primary for this media type
-    await query(queries.actorMedia.clearPrimary, [actor.id, 'headshot']);
+    await query(queries.actorMedia.clearPrimary, [actorId, 'headshot']);
 
     // Set this as primary
     const updateResult = await query(queries.actorMedia.setPrimary, [mediaId]);

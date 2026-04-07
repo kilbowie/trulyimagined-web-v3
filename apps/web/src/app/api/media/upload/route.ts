@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import { queries } from '@database/queries-v3';
 import { uploadToS3, generateS3Key, validateFileType, validateFileSize } from '@/lib/s3';
 
@@ -19,16 +20,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Get actor record
-    const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
+    const actorId = await resolveActorIdByAuth0UserId(user.sub);
 
-    if (!actorResult.rows || actorResult.rows.length === 0) {
+    if (!actorId) {
       return NextResponse.json(
         { error: 'Actor profile not found. Please register your identity first.' },
         { status: 404 }
       );
     }
-
-    const actor = actorResult.rows[0];
 
     // Parse multipart form data
     const formData = await request.formData();
@@ -74,7 +73,7 @@ export async function POST(request: NextRequest) {
       video_reel: 'video',
     } as const;
 
-    const s3Key = generateS3Key(actor.id, s3FolderMap[mediaType], file.name);
+    const s3Key = generateS3Key(actorId, s3FolderMap[mediaType], file.name);
 
     // Upload to S3
     const uploadResult = await uploadToS3({
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest) {
       body: buffer,
       contentType: file.type,
       metadata: {
-        actorId: actor.id,
+        actorId,
         mediaType,
         originalName: file.name,
       },
@@ -94,7 +93,7 @@ export async function POST(request: NextRequest) {
 
     if (mediaType === 'headshot') {
       const existingHeadshotsResult = await query(queries.actorMedia.getByActorAndType, [
-        actor.id,
+        actorId,
         'headshot',
       ]);
 
@@ -109,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     // Create database record
     const mediaRecord = await query(queries.actorMedia.create, [
-      actor.id, // actor_id
+      actorId, // actor_id
       mediaType, // media_type
       file.name, // file_name
       s3Key, // s3_key

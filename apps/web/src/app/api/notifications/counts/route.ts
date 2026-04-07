@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { listActorLicensingRequests } from '@/lib/hdicr/licensing-client';
 import { getActorByAuth0Id, getAgentByAuth0Id } from '@/lib/representation';
 
 // DB-OWNER: TI
@@ -120,14 +121,8 @@ export async function GET(_request: NextRequest) {
         );
         counts.pendingRepresentationRequests = parseInt(pendingRepResult.rows[0].count, 10) || 0;
 
-        const pendingLicResult = await query(
-          `SELECT COUNT(*) AS count
-           FROM licensing_requests
-           WHERE actor_id = $1
-             AND status = 'pending'`,
-          [actor.id]
-        );
-        counts.pendingLicensingRequests = parseInt(pendingLicResult.rows[0].count, 10) || 0;
+        const licensingResult = await listActorLicensingRequests(actor.id, 'pending');
+        counts.pendingLicensingRequests = licensingResult.pendingCount;
       }
     }
 

@@ -2,8 +2,7 @@ import { getCurrentUser, getUserRoles, getAgentTeamMembership } from '@/lib/auth
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
-import { query } from '@/lib/db';
-import { queries } from '@database/queries-v3';
+import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
 import Link from 'next/link';
 import { TrendingUp, FileText, ShieldCheck, Activity, ArrowUpRight } from 'lucide-react';
 
@@ -30,9 +29,8 @@ export default async function DashboardPage() {
   let displayName = user.name || user.email || 'User';
   if (hasActorRole) {
     try {
-      const actorResult = await query(queries.actors.getByAuth0Id, [user.sub]);
-      if (actorResult.rows && actorResult.rows.length > 0) {
-        const actor = actorResult.rows[0];
+      const actor = await resolveActorRecordByAuth0UserId(user.sub);
+      if (actor) {
         // Use stage_name if available, otherwise fall back to first_name
         if (actor.stage_name && actor.stage_name.trim()) {
           displayName = actor.stage_name;

@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 
 export async function getUserProfileByAuth0Id(auth0UserId: string) {
   const result = await query('SELECT id, auth0_user_id, role FROM user_profiles WHERE auth0_user_id = $1', [
@@ -8,15 +9,9 @@ export async function getUserProfileByAuth0Id(auth0UserId: string) {
 }
 
 export async function getActorByAuth0Id(auth0UserId: string) {
-  const result = await query(
-    `SELECT a.id, a.auth0_user_id, a.registry_id, a.stage_name, a.first_name, a.last_name
-     FROM actors a
-     WHERE a.auth0_user_id = $1
-       AND a.deleted_at IS NULL`,
-    [auth0UserId]
-  );
+  const actorId = await resolveActorIdByAuth0UserId(auth0UserId);
 
-  return result.rows[0] || null;
+  return actorId ? { id: actorId } : null;
 }
 
 export async function getAgentByAuth0Id(auth0UserId: string) {
