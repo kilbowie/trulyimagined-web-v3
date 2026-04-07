@@ -65,6 +65,31 @@ export const queries = {
       ORDER BY created_at DESC
       LIMIT $2 OFFSET $3;
     `,
+
+    listAdminUsersWithActors: `
+      SELECT
+        up.id,
+        up.auth0_user_id,
+        up.email,
+        up.role,
+        up.username,
+        up.legal_name,
+        up.professional_name,
+        up.profile_completed,
+        up.is_verified,
+        up.is_pro,
+        up.created_at,
+        up.updated_at,
+        a.id AS actor_id,
+        a.first_name,
+        a.last_name,
+        a.stage_name,
+        a.verification_status,
+        a.registry_id
+      FROM user_profiles up
+      LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id AND a.deleted_at IS NULL
+      ORDER BY up.created_at DESC;
+    `,
   },
 
   // ===========================================

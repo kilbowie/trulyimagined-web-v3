@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { getCurrentConsentLedger } from '@/lib/hdicr/consent-client';
+import { getActorById } from '@/lib/hdicr/identity-client';
 import { getAgentByAuth0Id } from '@/lib/representation';
 
 // DB-OWNER: HDICR
@@ -43,40 +45,61 @@ export async function GET() {
       return NextResponse.json({ roster: [], total: 0 });
     }
 
-    const roster = await query(
+    const relationships = await query(
       `SELECT
-        r.id AS relationship_id,
-        r.started_at,
-        a.id,
-        a.registry_id,
-        a.stage_name,
-        a.first_name,
-        a.last_name,
-        a.verification_status,
-        a.profile_image_url,
-        a.location,
-        lc.version AS consent_version,
-        lc.policy AS consent_policy,
-        COALESCE((lc.policy->>'usageBlocked')::boolean, false) AS consent_usage_blocked
-       FROM actor_agent_relationships r
-       INNER JOIN actors a ON a.id = r.actor_id
-       LEFT JOIN LATERAL (
-         SELECT cl.version, cl.policy
-         FROM consent_ledger cl
-         WHERE cl.actor_id = a.id
-         ORDER BY cl.version DESC
-         LIMIT 1
-       ) lc ON TRUE
-       WHERE r.agent_id = $1
-         AND r.ended_at IS NULL
-         AND a.deleted_at IS NULL
-       ORDER BY r.started_at DESC`,
+        id AS relationship_id,
+        actor_id,
+        started_at
+       FROM actor_agent_relationships
+       WHERE agent_id = $1
+         AND ended_at IS NULL
+       ORDER BY started_at DESC`,
       [agentId]
     );
 
+    const roster = (
+      await Promise.all(
+        relationships.rows.map(async (relationship) => {
+          const [actor, consent] = await Promise.all([
+            getActorById(relationship.actor_id as string),
+            getCurrentConsentLedger(relationship.actor_id as string, false),
+          ]);
+
+          if (!actor) {
+            return null;
+          }
+
+          const currentConsent = consent.current as
+            | { version?: number; policy?: Record<string, unknown> | null }
+            | null;
+          const consentPolicy = currentConsent?.policy ?? null;
+
+          return {
+            relationship_id: relationship.relationship_id,
+            started_at: relationship.started_at,
+            id: actor.id,
+            registry_id: actor.registry_id ?? null,
+            stage_name: actor.stage_name ?? null,
+            first_name: actor.first_name ?? null,
+            last_name: actor.last_name ?? null,
+            verification_status: actor.verification_status ?? null,
+            profile_image_url: actor.profile_image_url ?? null,
+            location: actor.location ?? null,
+            consent_version: currentConsent?.version ?? null,
+            consent_policy: consentPolicy,
+            consent_usage_blocked: Boolean(
+              consentPolicy && typeof consentPolicy === 'object' && 'usageBlocked' in consentPolicy
+                ? consentPolicy.usageBlocked
+                : false
+            ),
+          };
+        })
+      )
+    ).filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
     return NextResponse.json({
-      roster: roster.rows,
-      total: roster.rows.length,
+      roster,
+      total: roster.length,
     });
   } catch (error) {
     console.error('[AGENT_ROSTER] GET error:', error);

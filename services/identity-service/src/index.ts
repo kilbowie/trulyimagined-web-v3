@@ -21,6 +21,10 @@ const corsHeaders = {
   'Content-Type': 'application/json',
 };
 
+function normalizePath(path: string): string {
+  return path.startsWith('/v1/') ? path.slice(3) : path;
+}
+
 export const handler: APIGatewayProxyHandler = async (event) => {
   console.log('[IDENTITY-SERVICE] Request received:', {
     path: event.path,
@@ -28,7 +32,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     pathParameters: event.pathParameters,
   });
 
-  const { httpMethod, path } = event;
+  const { httpMethod } = event;
+  const path = normalizePath(event.path);
 
   try {
     // Handle CORS preflight
@@ -39,6 +44,10 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Route based on path and method
     if (path === '/identity/register' && httpMethod === 'POST') {
       return await registerActor(event);
+    }
+
+    if (path === '/identity/admin/users' && httpMethod === 'GET') {
+      return await listAdminUsers();
     }
 
     if (path.startsWith('/identity/') && httpMethod === 'GET') {
@@ -218,6 +227,19 @@ async function listActors(event: APIGatewayProxyEvent) {
         offset,
         total: result.rowCount,
       },
+    }),
+  };
+}
+
+async function listAdminUsers() {
+  const result = await db.query(queries.userProfiles.listAdminUsersWithActors);
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      users: result.rows,
+      total: result.rows.length,
     }),
   };
 }

@@ -59,4 +59,25 @@ describe('identity-client - remote authoritative behavior', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('listAdminUsers calls remote identity endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ users: [{ id: 'user-1', role: 'Actor' }], total: 1 }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const { listAdminUsers } = await import('@/lib/hdicr/identity-client');
+
+    await expect(listAdminUsers()).resolves.toEqual({
+      users: [{ id: 'user-1', role: 'Actor' }],
+      total: 1,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/identity/admin/users',
+      expect.objectContaining({ method: 'GET' })
+    );
+  });
 });

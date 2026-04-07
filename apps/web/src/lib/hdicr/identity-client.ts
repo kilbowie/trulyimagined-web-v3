@@ -66,6 +66,22 @@ export async function createActorRegistration(params: {
   });
 }
 
+export async function listAdminUsers() {
+  const payload = await invokeIdentityRemote<{
+    users?: Array<Record<string, any>>;
+    total?: number;
+  }>({
+    path: '/v1/identity/admin/users',
+    method: 'GET',
+    operation: 'admin-users-list',
+  });
+
+  return {
+    users: payload.users || [],
+    total: payload.total ?? (payload.users?.length || 0),
+  };
+}
+
 export async function getUserProfileIdByAuth0UserId(auth0UserId: string): Promise<string | null> {
   const payload = await invokeIdentityRemote<{ userProfileId?: string | null }>({
     path: `/v1/identity/user-profile-id?auth0UserId=${encodeURIComponent(auth0UserId)}`,

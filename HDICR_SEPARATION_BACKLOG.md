@@ -39,8 +39,8 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-013 | Route `verification/start` through HDICR identity API            | 1     | P1       | [x]    |
 | SEP-014 | Remove global `HDICR_ADAPTER_MODE=local` default                 | 1     | P1       | [x]    |
 | SEP-015 | Define canonical DB ownership boundary (HDICR vs TI tables)      | 1     | P1       | [x]    |
-| SEP-016 | Route `admin/users` through HDICR IAM API                        | 1     | P1       | [ ]    |
-| SEP-017 | Route `agent/roster` actor lookup through HDICR APIs             | 1     | P1       | [ ]    |
+| SEP-016 | Route `admin/users` through HDICR IAM API                        | 1     | P1       | [x]    |
+| SEP-017 | Route `agent/roster` actor lookup through HDICR APIs             | 1     | P1       | [x]    |
 | SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [ ]    |
 | SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [ ]    |
 | SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [ ]    |
@@ -156,9 +156,11 @@ This route still joins HDICR-owned identity tables directly from the web tier, b
 
 **Acceptance criteria:**
 
-- [ ] Route no longer imports `@/lib/db`
-- [ ] User and actor data are resolved through an HDICR client/API
-- [ ] Existing admin route behavior is preserved with contract coverage
+- [x] Route no longer imports `@/lib/db`
+- [x] User and actor data are resolved through an HDICR client/API
+- [x] Existing admin route behavior is preserved with contract coverage
+
+Implementation note (2026-04-07): `api/admin/users` now resolves through `identity-client.listAdminUsers()`, with an HDICR identity-service admin listing endpoint and route contract coverage preserving the existing response shape.
 
 ---
 
@@ -172,9 +174,11 @@ This route still queries the HDICR-owned `actors` table directly while composing
 
 **Acceptance criteria:**
 
-- [ ] Route no longer imports `@/lib/db` for HDICR-owned actor lookups
-- [ ] Actor roster data is sourced through HDICR client/API calls
-- [ ] Existing roster response behavior remains covered by tests
+- [x] Route no longer imports `@/lib/db` for HDICR-owned actor lookups
+- [x] Actor roster data is sourced through HDICR client/API calls
+- [x] Existing roster response behavior remains covered by tests
+
+Implementation note (2026-04-07): `api/agent/roster` now keeps only the TI-owned relationship query local and resolves actor profile plus consent state through HDICR identity and consent clients.
 
 ---
 

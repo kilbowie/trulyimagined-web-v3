@@ -86,6 +86,12 @@ Resources:
             RestApiId: !Ref TrulyImaginedApi
             Path: /identity/register
             Method: POST
+        ListAdminUsers:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/identity/admin/users
+            Method: GET
         GetActorById:
           Type: Api
           Properties:
