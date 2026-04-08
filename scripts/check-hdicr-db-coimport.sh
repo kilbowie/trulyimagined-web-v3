@@ -7,7 +7,6 @@ API_ROOT="apps/web/src/app/api"
 # Keep this list empty whenever possible.
 EXEMPT_FILES=(
   "apps/web/src/app/api/agent/roster/route.ts"
-  "apps/web/src/app/api/identity/status/route.ts"
 )
 
 is_exempt() {

@@ -7,25 +7,7 @@ import Link from 'next/link';
 import { AlertCircle, Shield } from 'lucide-react';
 import { RegistrationForm } from '@/components/RegistrationForm';
 import { RegistrationStatus } from '@/components/RegistrationStatus';
-import { query } from '@/lib/db';
-import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
-
-type RegistrationStatusActor = {
-  id: string;
-  registryId?: string | null;
-  email: string;
-  firstName: string;
-  lastName: string;
-  stageName?: string;
-  bio?: string;
-  location?: string;
-  verificationStatus: 'pending' | 'verified' | 'rejected';
-  isVerified: boolean;
-  isPro: boolean;
-  isFoundingMember: boolean;
-  createdAt: string;
-  updatedAt?: string;
-};
+import { getActorRegistrationStatusByAuth0UserId } from '@/lib/identity-status';
 
 /**
  * Fetch actor registration status via HDICR identity APIs.
@@ -33,51 +15,7 @@ type RegistrationStatusActor = {
  */
 async function getActorStatus(auth0UserId: string) {
   try {
-    const actorRecord = await resolveActorRecordByAuth0UserId(auth0UserId);
-
-    if (!actorRecord) {
-      return { registered: false, actor: null };
-    }
-
-    const profileResult = await query(
-      `SELECT
-        COALESCE(is_verified, FALSE) AS is_verified,
-        COALESCE(is_pro, FALSE) AS is_pro
-       FROM user_profiles
-       WHERE auth0_user_id = $1
-       LIMIT 1`,
-      [auth0UserId]
-    );
-
-    const profile = profileResult.rows[0] || { is_verified: false, is_pro: false };
-
-    const verificationStatus =
-      actorRecord.verification_status === 'verified' ||
-      actorRecord.verification_status === 'rejected'
-        ? actorRecord.verification_status
-        : 'pending';
-
-    const actor: RegistrationStatusActor = {
-      id: actorRecord.id,
-      registryId: actorRecord.registry_id ?? null,
-      firstName: actorRecord.first_name ?? '',
-      lastName: actorRecord.last_name ?? '',
-      stageName: actorRecord.stage_name ?? undefined,
-      location: actorRecord.location ?? undefined,
-      bio: actorRecord.bio ?? undefined,
-      verificationStatus,
-      isVerified: Boolean(profile.is_verified) || verificationStatus === 'verified',
-      isPro: Boolean(profile.is_pro),
-      isFoundingMember: Boolean(actorRecord.is_founding_member),
-      createdAt: actorRecord.created_at ?? new Date().toISOString(),
-      updatedAt: actorRecord.created_at ?? undefined,
-      email: actorRecord.email ?? '',
-    };
-
-    return {
-      registered: true,
-      actor,
-    };
+    return await getActorRegistrationStatusByAuth0UserId(auth0UserId);
   } catch (error) {
     console.error('[IDENTITY] Status fetch error:', error);
     return { registered: false, actor: null };
