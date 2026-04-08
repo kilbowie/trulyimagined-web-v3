@@ -1,5 +1,62 @@
-import type { ConsentPolicy, CreateConsentEntryParams } from '@/lib/consent-ledger';
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
+
+export type PermissionLevel = 'allow' | 'require_approval' | 'deny';
+
+export interface ConsentPolicy {
+  mediaUsage: {
+    film: PermissionLevel;
+    television: PermissionLevel;
+    streaming: PermissionLevel;
+    gaming: PermissionLevel;
+    voiceReplication: PermissionLevel;
+    virtualReality: PermissionLevel;
+    socialMedia: PermissionLevel;
+    advertising: PermissionLevel;
+    merchandise: PermissionLevel;
+    livePerformance: PermissionLevel;
+  };
+  contentTypes: {
+    explicit: PermissionLevel;
+    political: PermissionLevel;
+    religious: PermissionLevel;
+    violence: PermissionLevel;
+    alcohol: PermissionLevel;
+    tobacco: PermissionLevel;
+    gambling: PermissionLevel;
+    pharmaceutical: PermissionLevel;
+    firearms: PermissionLevel;
+    adultContent: PermissionLevel;
+  };
+  territories: {
+    allowed: string[];
+    denied: string[];
+  };
+  aiControls: {
+    trainingAllowed: boolean;
+    syntheticGenerationAllowed: boolean;
+    biometricAnalysisAllowed: boolean;
+  };
+  commercial: {
+    paymentRequired: boolean;
+    minFee?: number;
+    revenueShare?: number;
+  };
+  attributionRequired: boolean;
+  usageBlocked?: boolean;
+  constraints?: {
+    territory?: string;
+    expiryDate?: string;
+  };
+}
+
+export interface CreateConsentEntryParams {
+  actorId: string;
+  policy: ConsentPolicy;
+  reason?: string;
+  updatedBy: string;
+  ipAddress?: string;
+  userAgent?: string;
+}
 
 const consentRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('consent', 'client-initialization');
 
@@ -169,5 +226,3 @@ export async function getCurrentConsentLedger(actorId: string, includeHistory: b
     operation: 'consent-ledger-current',
   });
 }
-
-export type { ConsentPolicy };
