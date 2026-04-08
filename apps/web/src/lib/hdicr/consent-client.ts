@@ -101,7 +101,12 @@ export interface ConsentCheckInput {
 
 export interface ConsentEnforcementCheckInput {
   actorId: string;
-  requestedUsage: 'film_tv' | 'advertising' | 'ai_training' | 'synthetic_media' | 'voice_replication';
+  requestedUsage:
+    | 'film_tv'
+    | 'advertising'
+    | 'ai_training'
+    | 'synthetic_media'
+    | 'voice_replication';
   apiClientId: string;
   metadata?: Record<string, unknown>;
   ipAddress?: string;

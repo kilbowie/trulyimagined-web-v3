@@ -48,7 +48,8 @@ function evaluateRequestedUsage(
   }
 
   if (requestedUsage === 'ai_training') {
-    const allowed = (policy.aiControls as Record<string, unknown> | undefined)?.trainingAllowed === true;
+    const allowed =
+      (policy.aiControls as Record<string, unknown> | undefined)?.trainingAllowed === true;
     return allowed
       ? { allowed: true }
       : { allowed: false, reason: 'AI training is not permitted by actor consent settings' };
@@ -56,7 +57,8 @@ function evaluateRequestedUsage(
 
   if (requestedUsage === 'synthetic_media') {
     const allowed =
-      (policy.aiControls as Record<string, unknown> | undefined)?.syntheticGenerationAllowed === true;
+      (policy.aiControls as Record<string, unknown> | undefined)?.syntheticGenerationAllowed ===
+      true;
     return allowed
       ? { allowed: true }
       : {
@@ -181,7 +183,8 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
       });
     }
 
-    const { actorId, requestedUsage, apiClientId, metadata, ipAddress, userAgent } = parsedBody.data;
+    const { actorId, requestedUsage, apiClientId, metadata, ipAddress, userAgent } =
+      parsedBody.data;
 
     const apiClientResult = await pool.query(
       `SELECT id

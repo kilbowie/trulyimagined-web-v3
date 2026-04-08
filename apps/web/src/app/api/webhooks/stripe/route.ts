@@ -305,11 +305,15 @@ async function handleVerificationCanceled(session: Stripe.Identity.VerificationS
   const existingLink = await getStripeIdentityLinkBySessionId(session.id, userProfileId);
 
   if (existingLink?.id) {
-    await markStripeIdentityLinkCanceled(existingLink.id, {
-      stripe_session_id: session.id,
-      status: 'canceled',
-      canceled_at: new Date().toISOString(),
-    }, userProfileId);
+    await markStripeIdentityLinkCanceled(
+      existingLink.id,
+      {
+        stripe_session_id: session.id,
+        status: 'canceled',
+        canceled_at: new Date().toISOString(),
+      },
+      userProfileId
+    );
 
     console.log('[STRIPE WEBHOOK] Marked identity link as inactive (canceled)');
   }

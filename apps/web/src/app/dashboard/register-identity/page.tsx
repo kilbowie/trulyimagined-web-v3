@@ -52,7 +52,8 @@ async function getActorStatus(auth0UserId: string) {
     const profile = profileResult.rows[0] || { is_verified: false, is_pro: false };
 
     const verificationStatus =
-      actorRecord.verification_status === 'verified' || actorRecord.verification_status === 'rejected'
+      actorRecord.verification_status === 'verified' ||
+      actorRecord.verification_status === 'rejected'
         ? actorRecord.verification_status
         : 'pending';
 

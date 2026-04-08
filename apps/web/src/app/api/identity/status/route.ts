@@ -41,7 +41,8 @@ export async function GET() {
     const profile = profileResult.rows[0] || { is_verified: false, is_pro: false };
 
     const verificationStatus =
-      actorRecord.verification_status === 'verified' || actorRecord.verification_status === 'rejected'
+      actorRecord.verification_status === 'verified' ||
+      actorRecord.verification_status === 'rejected'
         ? actorRecord.verification_status
         : 'pending';
 
