@@ -1,7 +1,12 @@
 import { Pool, QueryResult } from 'pg';
 
-// Parse DATABASE_URL and remove sslmode parameter to avoid conflicts
-let connectionString = process.env.DATABASE_URL;
+// Prefer TI_DATABASE_URL to decouple TI runtime from legacy HDICR DATABASE_URL usage.
+let connectionString = process.env.TI_DATABASE_URL || process.env.DATABASE_URL;
+
+if (!process.env.TI_DATABASE_URL && process.env.DATABASE_URL) {
+  console.warn('[DB] Using legacy DATABASE_URL. Set TI_DATABASE_URL for TI runtime separation.');
+}
+
 if (connectionString && connectionString.includes('?sslmode=')) {
   connectionString = connectionString.replace(/\?sslmode=\w+/, '');
 }
@@ -29,7 +34,7 @@ const pool = new Pool(
         statement_timeout: 10000, // Cancel queries that take longer than 10 seconds
       }
     : {
-        connectionString: process.env.DATABASE_URL,
+        connectionString,
         ssl: {
           rejectUnauthorized: false,
         },

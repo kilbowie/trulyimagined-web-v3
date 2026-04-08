@@ -65,6 +65,17 @@ export class DatabaseClient {
     }
   }
 
+  public async queryWithTenant<T extends QueryResultRow = any>(
+    tenantId: string,
+    text: string,
+    params?: any[]
+  ): Promise<QueryResult<T>> {
+    return this.transaction(async (client) => {
+      await client.query('SET LOCAL app.current_tenant_id = $1', [tenantId]);
+      return client.query<T>(text, params);
+    });
+  }
+
   public async getClient(): Promise<PoolClient> {
     return this.pool.connect();
   }

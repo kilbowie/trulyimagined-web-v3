@@ -255,7 +255,7 @@ export default async function DebugRolesPage() {
                   The application needs to connect to PostgreSQL to retrieve your role. Check:
                 </p>
                 <ol className="list-decimal list-inside ml-4 space-y-1">
-                  <li>DATABASE_URL is configured in .env.local</li>
+                  <li>TI_DATABASE_URL is configured in .env.local (or legacy DATABASE_URL)</li>
                   <li>SSL configuration is enabled for AWS RDS connection</li>
                   <li>Server logs don't show "no pg_hba.conf entry" errors</li>
                   <li>The user_profiles table exists in the database</li>

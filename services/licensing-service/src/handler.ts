@@ -187,7 +187,7 @@ async function requestLicense(event: APIGatewayProxyEvent, tenantId: string) {
       compensationCurrency,
     } = parsedBody.data;
 
-    const result = await db.query(queries.licensing.create, [
+    const result = await db.queryWithTenant(tenantId, queries.licensing.create, [
       tenantId,
       actorId,
       requesterName,
@@ -250,7 +250,7 @@ async function getLicenseRequests(event: APIGatewayProxyEvent, tenantId: string)
   const { actorId } = parsedPath.data;
   const { limit, offset } = parsedQuery.data;
 
-  const result = await db.query(queries.licensing.getByActor, [tenantId, actorId, limit, offset]);
+  const result = await db.queryWithTenant(tenantId, queries.licensing.getByActor, [tenantId, actorId, limit, offset]);
 
   return {
     statusCode: 200,
@@ -287,7 +287,7 @@ async function approveLicense(event: APIGatewayProxyEvent, tenantId: string) {
 
   const { requestId } = parsedPath.data;
 
-  const result = await db.query(queries.licensing.approve, [requestId, tenantId]);
+  const result = await db.queryWithTenant(tenantId, queries.licensing.approve, [requestId, tenantId]);
 
   if (result.rows.length === 0) {
     return {
@@ -331,7 +331,7 @@ async function rejectLicense(event: APIGatewayProxyEvent, tenantId: string) {
   const { requestId } = parsedPath.data;
   const { reason } = parsedBody.data;
 
-  const result = await db.query(queries.licensing.reject, [requestId, reason, tenantId]);
+  const result = await db.queryWithTenant(tenantId, queries.licensing.reject, [requestId, reason, tenantId]);
 
   if (result.rows.length === 0) {
     return {
@@ -358,3 +358,4 @@ async function rejectLicense(event: APIGatewayProxyEvent, tenantId: string) {
     }),
   };
 }
+
