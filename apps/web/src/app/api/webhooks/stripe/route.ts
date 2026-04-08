@@ -138,9 +138,9 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
     const levels = mapStripeStatusToVerificationLevel('verified');
 
     // Check if identity link already exists for this session
-    const existingLink = await getStripeIdentityLinkBySessionId(session.id);
+    const existingLink = await getStripeIdentityLinkBySessionId(session.id, userProfileId);
 
-    if (existingLink) {
+    if (existingLink?.id) {
       console.log('[STRIPE WEBHOOK] Identity link already exists, updating:', {
         linkId: existingLink.id,
       });
@@ -222,9 +222,9 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
   const levels = mapStripeStatusToVerificationLevel('requires_input');
 
   // Check if identity link exists
-  const existingLink = await getStripeIdentityLinkBySessionId(session.id);
+  const existingLink = await getStripeIdentityLinkBySessionId(session.id, userProfileId);
 
-  if (existingLink) {
+  if (existingLink?.id) {
     // Update existing link with requires_input status
     await updateStripeIdentityLinkRequiresInput({
       linkId: existingLink.id,
@@ -302,14 +302,14 @@ async function handleVerificationCanceled(session: Stripe.Identity.VerificationS
   });
 
   // Check if identity link exists and mark as canceled
-  const existingLink = await getStripeIdentityLinkBySessionId(session.id);
+  const existingLink = await getStripeIdentityLinkBySessionId(session.id, userProfileId);
 
-  if (existingLink) {
+  if (existingLink?.id) {
     await markStripeIdentityLinkCanceled(existingLink.id, {
       stripe_session_id: session.id,
       status: 'canceled',
       canceled_at: new Date().toISOString(),
-    });
+    }, userProfileId);
 
     console.log('[STRIPE WEBHOOK] Marked identity link as inactive (canceled)');
   }

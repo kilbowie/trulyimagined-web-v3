@@ -34,6 +34,57 @@ const PaginationQuerySchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+const BooleanQuerySchema = z
+  .string()
+  .trim()
+  .transform((value) => value.toLowerCase())
+  .refine((value) => value === 'true' || value === 'false', {
+    message: 'Expected boolean string',
+  })
+  .transform((value) => value === 'true');
+
+const IdentityLinkLookupQuerySchema = z.object({
+  userProfileId: NonEmptyString,
+  provider: NonEmptyString,
+  providerUserId: NonEmptyString,
+});
+
+const IdentityLinksListQuerySchema = z.object({
+  userProfileId: NonEmptyString,
+  activeOnly: z.preprocess((value) => value ?? 'true', BooleanQuerySchema),
+});
+
+const CreateIdentityLinkSchema = z.object({
+  userProfileId: NonEmptyString,
+  provider: NonEmptyString,
+  providerUserId: NonEmptyString,
+  providerType: NonEmptyString,
+  verificationLevel: NonEmptyString.optional(),
+  assuranceLevel: NonEmptyString.optional(),
+  credentialData: z.unknown().optional(),
+  metadata: z.record(z.unknown()).optional(),
+  expiresAt: z.string().trim().optional(),
+});
+
+const ReactivateIdentityLinkSchema = z.object({
+  linkId: NonEmptyString,
+  verificationLevel: NonEmptyString.optional(),
+  assuranceLevel: NonEmptyString.optional(),
+  credentialData: z.unknown().optional(),
+  metadata: z.record(z.unknown()).optional(),
+  expiresAt: z.string().trim().optional(),
+});
+
+const UnlinkIdentityByIdSchema = z.object({
+  linkId: NonEmptyString,
+  userProfileId: NonEmptyString,
+});
+
+const UnlinkIdentityByProviderSchema = z.object({
+  provider: NonEmptyString,
+  userProfileId: NonEmptyString,
+});
+
 const RegisterActorSchema = z.object({
   auth0UserId: NonEmptyString,
   email: z.string().trim().email(),
@@ -134,6 +185,30 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (path === '/v1/identity/admin/users' && httpMethod === 'GET') {
       return await listAdminUsers(tenantId);
+    }
+
+    if (path === '/v1/identity/link/by-provider' && httpMethod === 'GET') {
+      return await getIdentityLinkByProviderAndProviderUser(event);
+    }
+
+    if (path === '/v1/identity/links' && httpMethod === 'GET') {
+      return await listIdentityLinks(event);
+    }
+
+    if (path === '/v1/identity/link/create' && httpMethod === 'POST') {
+      return await createIdentityLink(event);
+    }
+
+    if (path === '/v1/identity/link/reactivate' && httpMethod === 'POST') {
+      return await reactivateIdentityLink(event);
+    }
+
+    if (path === '/v1/identity/link/unlink-by-id' && httpMethod === 'POST') {
+      return await unlinkIdentityById(event);
+    }
+
+    if (path === '/v1/identity/link/unlink-by-provider' && httpMethod === 'POST') {
+      return await unlinkIdentityByProvider(event);
     }
 
     if (path.startsWith('/v1/identity/') && httpMethod === 'GET') {
@@ -380,5 +455,213 @@ async function updateActor(event: APIGatewayProxyEvent, tenantId: string) {
         updatedAt: actor.updated_at,
       },
     }),
+  };
+}
+
+async function getIdentityLinkByProviderAndProviderUser(event: APIGatewayProxyEvent) {
+  const parsedQuery = IdentityLinkLookupQuerySchema.safeParse(event.queryStringParameters ?? {});
+  if (!parsedQuery.success) {
+    return validationErrorResponse(parsedQuery.error);
+  }
+
+  const { userProfileId, provider, providerUserId } = parsedQuery.data;
+
+  const result = await db.query(
+    `SELECT *
+     FROM identity_links
+     WHERE user_profile_id = $1
+       AND provider = $2
+       AND provider_user_id = $3
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userProfileId, provider, providerUserId]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      link: result.rows[0] || null,
+    }),
+  };
+}
+
+async function listIdentityLinks(event: APIGatewayProxyEvent) {
+  const parsedQuery = IdentityLinksListQuerySchema.safeParse(event.queryStringParameters ?? {});
+  if (!parsedQuery.success) {
+    return validationErrorResponse(parsedQuery.error);
+  }
+
+  const { userProfileId, activeOnly } = parsedQuery.data;
+
+  const result = await db.query(
+    `SELECT *
+     FROM identity_links
+     WHERE user_profile_id = $1
+       AND ($2::boolean = FALSE OR is_active = TRUE)
+     ORDER BY created_at DESC`,
+    [userProfileId, activeOnly]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      links: result.rows,
+    }),
+  };
+}
+
+async function createIdentityLink(event: APIGatewayProxyEvent) {
+  const parsedBody = parseJsonBody(event, CreateIdentityLinkSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const {
+    userProfileId,
+    provider,
+    providerUserId,
+    providerType,
+    verificationLevel,
+    assuranceLevel,
+    credentialData,
+    metadata,
+    expiresAt,
+  } = parsedBody.data;
+
+  const result = await db.query(
+    `INSERT INTO identity_links (
+      user_profile_id,
+      provider,
+      provider_user_id,
+      provider_type,
+      verification_level,
+      assurance_level,
+      credential_data,
+      metadata,
+      expires_at,
+      is_active,
+      last_verified_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, NULLIF($9, '')::timestamptz, TRUE, NOW())
+    RETURNING *`,
+    [
+      userProfileId,
+      provider,
+      providerUserId,
+      providerType,
+      verificationLevel || 'low',
+      assuranceLevel || 'low',
+      JSON.stringify(credentialData ?? {}),
+      JSON.stringify(metadata ?? {}),
+      expiresAt || null,
+    ]
+  );
+
+  return {
+    statusCode: 201,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      link: result.rows[0] || null,
+      id: result.rows[0]?.id,
+    }),
+  };
+}
+
+async function reactivateIdentityLink(event: APIGatewayProxyEvent) {
+  const parsedBody = parseJsonBody(event, ReactivateIdentityLinkSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { linkId, verificationLevel, assuranceLevel, credentialData, metadata, expiresAt } =
+    parsedBody.data;
+
+  const result = await db.query(
+    `UPDATE identity_links
+     SET is_active = TRUE,
+         verification_level = COALESCE($2, verification_level),
+         assurance_level = COALESCE($3, assurance_level),
+         credential_data = CASE WHEN $4::jsonb IS NULL THEN credential_data ELSE $4::jsonb END,
+         metadata = CASE WHEN $5::jsonb IS NULL THEN metadata ELSE $5::jsonb END,
+         expires_at = COALESCE(NULLIF($6, '')::timestamptz, expires_at),
+         verified_at = COALESCE(verified_at, NOW()),
+         last_verified_at = NOW(),
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [
+      linkId,
+      verificationLevel || null,
+      assuranceLevel || null,
+      credentialData !== undefined ? JSON.stringify(credentialData) : null,
+      metadata !== undefined ? JSON.stringify(metadata) : null,
+      expiresAt || null,
+    ]
+  );
+
+  if (result.rows.length === 0) {
+    return {
+      statusCode: 404,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Identity link not found' }),
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: true,
+      link: result.rows[0],
+    }),
+  };
+}
+
+async function unlinkIdentityById(event: APIGatewayProxyEvent) {
+  const parsedBody = parseJsonBody(event, UnlinkIdentityByIdSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { linkId, userProfileId } = parsedBody.data;
+
+  const result = await db.query(
+    `UPDATE identity_links
+     SET is_active = FALSE,
+         updated_at = NOW()
+     WHERE id = $1 AND user_profile_id = $2
+     RETURNING id, user_profile_id, provider, provider_user_id, is_active, updated_at`,
+    [linkId, userProfileId]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ rows: result.rows }),
+  };
+}
+
+async function unlinkIdentityByProvider(event: APIGatewayProxyEvent) {
+  const parsedBody = parseJsonBody(event, UnlinkIdentityByProviderSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { provider, userProfileId } = parsedBody.data;
+
+  const result = await db.query(
+    `UPDATE identity_links
+     SET is_active = FALSE,
+         updated_at = NOW()
+     WHERE provider = $1 AND user_profile_id = $2
+     RETURNING id, user_profile_id, provider, provider_user_id, is_active, updated_at`,
+    [provider, userProfileId]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ rows: result.rows }),
   };
 }
