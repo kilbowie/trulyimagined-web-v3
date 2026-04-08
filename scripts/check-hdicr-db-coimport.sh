@@ -12,7 +12,6 @@ EXEMPT_FILES=(
   "apps/web/src/app/api/media/upload/route.ts"
   "apps/web/src/app/api/media/[id]/route.ts"
   "apps/web/src/app/api/media/[id]/set-primary/route.ts"
-  "apps/web/src/app/api/notifications/counts/route.ts"
 )
 
 is_exempt() {
