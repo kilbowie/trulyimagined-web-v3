@@ -42,6 +42,15 @@ export interface ConsentCheckInput {
   projectId?: string;
 }
 
+export interface ConsentEnforcementCheckInput {
+  actorId: string;
+  requestedUsage: 'film_tv' | 'advertising' | 'ai_training' | 'synthetic_media' | 'voice_replication';
+  apiClientId: string;
+  metadata?: Record<string, unknown>;
+  ipAddress?: string;
+  userAgent?: string;
+}
+
 export interface ConsentListInput {
   actorId: string;
   limit?: number;
@@ -105,6 +114,15 @@ export async function checkConsent(input: ConsentCheckInput) {
   });
 
   return payload.consent ?? null;
+}
+
+export async function checkConsentEnforcement(input: ConsentEnforcementCheckInput) {
+  return invokeConsentRemote<Record<string, unknown>>({
+    path: '/v1/consent/enforcement/check',
+    method: 'POST',
+    operation: 'consent-enforcement-check',
+    body: input,
+  });
 }
 
 export async function listConsentRecords(input: ConsentListInput) {

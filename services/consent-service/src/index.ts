@@ -3,6 +3,7 @@ import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
 import { grantConsent } from './handlers/grant-consent';
 import { revokeConsent } from './handlers/revoke-consent';
 import { checkConsent } from './handlers/check-consent';
+import { checkConsentEnforcement } from './handlers/check-consent-enforcement';
 import { listConsents } from './handlers/list-consents';
 
 /**
@@ -77,6 +78,11 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (path === '/v1/consent/check' && httpMethod === 'GET') {
       const response = await checkConsent(event, tenantId);
+      return { ...response, headers: corsHeaders };
+    }
+
+    if (path === '/v1/consent/enforcement/check' && httpMethod === 'POST') {
+      const response = await checkConsentEnforcement(event);
       return { ...response, headers: corsHeaders };
     }
 

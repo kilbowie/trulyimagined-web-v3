@@ -1275,7 +1275,7 @@ Implementation note (2026-04-08): Reworked `apps/web/.env.example` into explicit
 - [ ] All user-facing flows tested end-to-end through HDICR APIs only
 - [ ] No SQL errors in TI server logs
 
-Implementation note (2026-04-08): Began draining remaining web-tier HDICR reads by switching actor resolution in dashboard, profile, notifications, media routes, dashboard register-identity, and `/api/identity/status` from direct `actors` SQL to existing HDICR representation/identity clients. Removed unused actor registry-ID assignment helpers from `apps/web/src/lib/registry-id.ts` so this module is now agent-only. TI-owned queries still remain local, but `apps/web/src/lib/db.ts` cannot be retired yet because legacy consent, licensing, identity-resolution, and credential-status paths still query HDICR-owned tables directly.
+Implementation note (2026-04-08): Began draining remaining web-tier HDICR reads by switching actor resolution in dashboard, profile, notifications, media routes, dashboard register-identity, and `/api/identity/status` from direct `actors` SQL to existing HDICR representation/identity clients. Removed unused actor registry-ID assignment helpers from `apps/web/src/lib/registry-id.ts` so this module is now agent-only. Added a new HDICR consent-service endpoint `POST /v1/consent/enforcement/check` (license + consent enforcement decision path), and rewired TI `POST /api/v1/consent/check` to proxy that endpoint through `apps/web/src/lib/hdicr/consent-client.ts` instead of importing local `consent-ledger`/`licensing` DB logic. TI-owned queries still remain local, but `apps/web/src/lib/db.ts` cannot be retired yet because legacy identity-resolution and credential-status paths still query HDICR-owned tables directly.
 
 ---
 

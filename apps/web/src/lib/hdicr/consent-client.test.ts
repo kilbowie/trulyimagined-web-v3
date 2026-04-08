@@ -91,4 +91,29 @@ describe('consent-client - HDICR flag-awareness', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('checkConsentEnforcement calls remote endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ httpStatus: 200, decision: 'allow' }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const { checkConsentEnforcement } = await import('@/lib/hdicr/consent-client');
+
+    await expect(
+      checkConsentEnforcement({
+        actorId: 'a2e2ed95-219f-4bc3-8ef4-197061d4d6e6',
+        requestedUsage: 'film_tv',
+        apiClientId: '47ed5b2e-0f46-4825-bcfe-c03c69559ebf',
+      })
+    ).resolves.toEqual({ httpStatus: 200, decision: 'allow' });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/v1/consent/enforcement/check',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });
