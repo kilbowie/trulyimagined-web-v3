@@ -1,16 +1,18 @@
 import { query } from '@/lib/db';
 
 export async function getNotificationProfileByAuth0UserId(auth0UserId: string) {
-  const profileResult = await query(
-    'SELECT id, role FROM user_profiles WHERE auth0_user_id = $1',
-    [auth0UserId]
-  );
+  const profileResult = await query('SELECT id, role FROM user_profiles WHERE auth0_user_id = $1', [
+    auth0UserId,
+  ]);
 
   return profileResult.rows[0] || null;
 }
 
 export async function countUnreadFeedback() {
-  const result = await query('SELECT COUNT(*) as count FROM user_feedback WHERE is_read = false', []);
+  const result = await query(
+    'SELECT COUNT(*) as count FROM user_feedback WHERE is_read = false',
+    []
+  );
   return parseInt(result.rows[0]?.count ?? '0', 10) || 0;
 }
 

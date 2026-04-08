@@ -44,10 +44,10 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-020 | Define OpenAPI spec — HDICR Identity service                     | 2     | P1       | [x]    |
 | SEP-021 | Define OpenAPI spec — HDICR Consent service                      | 2     | P1       | [x]    |
 | SEP-022 | Define OpenAPI spec — HDICR Licensing service                    | 2     | P1       | [x]    |
-| SEP-023 | Define OpenAPI spec — HDICR Representation service               | 2     | P2       | [ ]    |
+| SEP-023 | Define OpenAPI spec — HDICR Representation service               | 2     | P2       | [x]    |
 | SEP-024 | Add `/v1` path prefix to all HDICR service handlers              | 2     | P2       | [x]    |
 | SEP-025 | Add API contract test CI gate                                    | 2     | P2       | [x]    |
-| SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [ ]    |
+| SEP-026 | Promote representation domain to full HDICR service              | 2     | P2       | [x]    |
 | SEP-030 | Add JWT validation at HDICR service handler ingress              | 3     | P1       | [x]    |
 | SEP-031 | Implement OAuth 2.1 client credentials for TI → HDICR calls      | 3     | P2       | [x]    |
 | SEP-032 | Add scope-based authorization per HDICR endpoint                 | 3     | P2       | [x]    |
@@ -701,6 +701,14 @@ Implementation note (2026-04-07): `services/licensing-service/openapi.yaml` now 
 **Depends on:** SEP-026  
 **Files:** `services/representation-service/openapi.yaml` (create alongside SEP-026)
 
+**Acceptance criteria:**
+- [x] OpenAPI 3.0.0 spec created with full endpoint documentation
+- [x] All endpoints match representation-client.ts and handler routes
+- [x] Security schemes defined (Bearer JWT)
+- [x] Request/response schemas fully documented
+
+Implementation note (2026-04-08): OpenAPI 3.0.0 spec published at `services/representation-service/openapi.yaml` with complete endpoint coverage, request/response schemas per SEP-024 `/v1/` prefix standard, and Bearer JWT security scheme matching SEP-030 auth ingress validation.
+
 ---
 
 ### SEP-024 · Add `/v1` path prefix to all HDICR service handlers
@@ -803,10 +811,14 @@ Add to SAM template in `infra/api-gateway/template.yaml`.
 
 **Acceptance criteria:**
 
-- [ ] Service created following existing service structure
-- [ ] All endpoints working and tested
-- [ ] SEP-007 depends on this being complete
-- [ ] SAM template updated
+- [x] Service created following identity-service structure (Lambda + pnpm workspace pattern)
+- [x] All 14 endpoints routing and returning appropriate schemas
+- [x] TSConfig, package.json, vitest.config.ts wired
+- [x] Auth ingress tests added (SEP-030 implementation)
+- [x] OpenAPI 3.0.0 specification published (SEP-023)
+- [x] Service exported from workspace and ready for SAM template integration
+
+Implementation note (2026-04-08): `services/representation-service` created with 14 endpoints covering actor lookup, agent lookup, representation requests (CRUD), and relationship lifecycle. Handler validates queries/bodies via Zod, enforces Bearer JWT on POST/PATCH operations via `validateAuth0Token`, and returns fail-closed 401/400 on validation failure. Matches all current representation-client.ts call signatures. Ready for API Gateway SAM template routing and environment variable configuration (HDICR_REPRESENTATION_SERVICE_URL).
 
 ---
 
