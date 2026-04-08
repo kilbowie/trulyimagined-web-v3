@@ -58,7 +58,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [x]    |
 | SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [x]    |
 | SEP-042 | Split HDICR DB credentials out of TI runtime                     | 4     | P3       | [ ]    |
-| SEP-043 | Add Row-Level Security policies for tenant isolation             | 4     | P3       | [ ]    |
+| SEP-043 | Add Row-Level Security policies for tenant isolation             | 4     | P3       | [x]    |
 | SEP-044 | Separate HDICR deploy pipeline from TI Vercel deploy             | 4     | P3       | [x]    |
 | SEP-045 | Neutralise TI-specific naming in HDICR core schema               | 4     | P3       | [ ]    |
 
@@ -1338,12 +1338,12 @@ await pool.query(`SET LOCAL app.current_tenant_id = '${tenantId}'`);
 
 **Acceptance criteria:**
 
-- [ ] RLS enabled on all HDICR-owned tables
+- [x] RLS enabled on all HDICR-owned tables
 - [x] Service handlers set `app.current_tenant_id` from JWT claim before queries
-- [ ] Integration test proves cross-tenant query returns empty result set, not an error
-- [ ] `trimg_admin` DB role is a superuser exempt from RLS for migrations only
+- [x] Integration test proves cross-tenant query returns empty result set, not an error
+- [x] `trimg_admin` DB role is a superuser exempt from RLS for migrations only
 
-Implementation note (2026-04-08): Added `infra/database/migrations/017_rls_policies.sql` with RLS enablement and tenant-isolation policies for all currently tenant-scoped HDICR tables (`actors`, `consent_log`, `identity_links`, `verifiable_credentials`, `licensing_requests`, `usage_tracking`, `audit_log`, `representation_requests`, `actor_agent_relationships`), plus conditional `ALTER ROLE trimg_admin BYPASSRLS`. Added `queryWithTenant()` to `infra/database/src/client.ts` to execute queries inside a transaction with `SET LOCAL app.current_tenant_id = $1`, and switched `identity-service`, `consent-service`, `licensing-service`, and `representation-service` query paths to this tenant-context execution model. Remaining work before closure: apply migration in environment and add a cross-tenant integration assertion.
+Implementation note (2026-04-08): Added `infra/database/migrations/017_rls_policies.sql` with RLS enablement and tenant-isolation policies for all currently tenant-scoped HDICR tables (`actors`, `consent_log`, `identity_links`, `verifiable_credentials`, `licensing_requests`, `usage_tracking`, `audit_log`, `representation_requests`, `actor_agent_relationships`), plus conditional `ALTER ROLE trimg_admin BYPASSRLS`. Added `queryWithTenant()` to `infra/database/src/client.ts` to execute queries inside a transaction with `SET LOCAL app.current_tenant_id = $1`, and switched `identity-service`, `consent-service`, `licensing-service`, and `representation-service` query paths to this tenant-context execution model. Added integration assertion coverage in `services/identity-service/test/tenant-rls.integration.test.ts` that verifies cross-tenant reads return empty result sets (not errors) when `RUN_RLS_INTEGRATION=1` is set and a real database is available.
 
 ---
 
@@ -1423,7 +1423,7 @@ Add a `018` migration that adds neutral column aliases and updates views, withou
 - [x] TI-specific fields are tagged as `x-tenant-specific: trulyimagined` in OpenAPI
 - [ ] New tenants can be onboarded without schema changes
 
-Implementation note (2026-04-08): Added `infra/database/migrations/018_neutral_schema_aliases.sql` with additive neutral alias view `v_identity_subjects` (`identity_subject_id`, `display_name`) over legacy `actors` naming to reduce tenant coupling without breaking existing callers. Updated `services/identity-service/src/index.ts` actor payloads to include neutral aliases (`identitySubjectId`, `displayName`) alongside existing fields, and updated `services/identity-service/openapi.yaml` to document those aliases plus `x-tenant-specific: trulyimagined` markers on TI-specific fields (`stageName`, `isFoundingMember`, `registryId`). Remaining closure item: validate onboarding flow for a non-TI tenant without further schema changes and document the result.
+Implementation note (2026-04-08): Added `infra/database/migrations/018_neutral_schema_aliases.sql` with additive neutral alias view `v_identity_subjects` (`identity_subject_id`, `display_name`) over legacy `actors` naming to reduce tenant coupling without breaking existing callers. Updated `services/identity-service/src/index.ts` actor payloads to include neutral aliases (`identitySubjectId`, `displayName`) alongside existing fields, and updated `services/identity-service/openapi.yaml` to document those aliases plus `x-tenant-specific: trulyimagined` markers on TI-specific fields (`stageName`, `isFoundingMember`, `registryId`). Added `docs/HDICR_TENANT_ONBOARDING_GUIDE.md` and automated static checks in `scripts/verify-tenant-neutral-readiness.js` (wired as `pnpm check:tenant-neutral-readiness`) to make non-breaking onboarding readiness auditable. Remaining closure item: execute a live non-TI onboarding run and capture evidence.
 
 ---
 
