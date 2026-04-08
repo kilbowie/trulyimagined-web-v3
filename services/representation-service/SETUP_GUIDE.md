@@ -22,6 +22,7 @@ The Representation Service is now a standalone HDICR microservice. This guide co
 The representation-service Lambda requires:
 
 #### `DATABASE_URL` (HDICR database)
+
 Connection string to the HDICR PostgreSQL database (shared with identity, consent, licensing services).
 
 ```env
@@ -29,6 +30,7 @@ DATABASE_URL=postgresql://hdicr_user:password@hdicr-db.internal:5432/hdicr_core?
 ```
 
 This is the **HDICR database**, not the TI app database. It contains:
+
 - `actors` table (actor profiles)
 - `agents` table (agent profiles, TI-owned but queried by HDICR)
 - `actor_agent_relationships` (relationship ledger)
@@ -106,7 +108,7 @@ RepresentationServiceApiRoute:
     ApiId: !Ref ApiGateway
     RouteKey: 'ANY /v1/representation/{proxy+}'
     Target: !Sub 'integrations/${RepresentationServiceApiIntegration}'
-    AuthorizationType: AWS_IAM  # or custom authorizer if needed
+    AuthorizationType: AWS_IAM # or custom authorizer if needed
 ```
 
 ### Route Pattern
@@ -213,12 +215,12 @@ Or with GitHub Actions (deployed alongside identity/consent/licensing services):
 
 ### Production Deployment
 
-| Variable | Service | Scope | Example |
-| --- | --- | --- | --- |
-| `DATABASE_URL` | representation-service (Lambda env) | HDICR | `postgresql://...` |
-| `HDICR_REPRESENTATION_SERVICE_URL` | apps/web (TI) | TI | `https://api.hdicr.platform/v1/representation` |
-| `NODE_ENV` | representation-service (Lambda env) | HDICR | `production` |
-| `LOG_LEVEL` | representation-service (Lambda env) | HDICR | `info` |
+| Variable                           | Service                             | Scope | Example                                        |
+| ---------------------------------- | ----------------------------------- | ----- | ---------------------------------------------- |
+| `DATABASE_URL`                     | representation-service (Lambda env) | HDICR | `postgresql://...`                             |
+| `HDICR_REPRESENTATION_SERVICE_URL` | apps/web (TI)                       | TI    | `https://api.hdicr.platform/v1/representation` |
+| `NODE_ENV`                         | representation-service (Lambda env) | HDICR | `production`                                   |
+| `LOG_LEVEL`                        | representation-service (Lambda env) | HDICR | `info`                                         |
 
 ### Local Development
 
@@ -248,6 +250,7 @@ npm run dev
 ### After Deployment
 
 1. **Service is live:**
+
    ```bash
    curl https://api.hdicr.platform/v1/representation/actor?auth0UserId=auth0|abc123 \
      -H "Authorization: Bearer <JWT>"
@@ -255,11 +258,13 @@ npm run dev
    ```
 
 2. **CloudWatch logs are flowing:**
+
    ```bash
    aws logs tail /aws/lambda/representation-service --follow
    ```
 
 3. **TI app can reach it:**
+
    ```bash
    # From TI web app, trigger a route that uses representation-client
    curl http://localhost:3000/api/identity/status \
@@ -281,13 +286,13 @@ npm run dev
 
 ### What Changed
 
-| Concern | Before | After |
-| --- | --- | --- |
-| Representation SQL | TI web runtime queries HDICR tables directly | HDICR service Lambda queries; TI calls remote API only |
-| Database access path | TI → shared DB (direct) | TI → API GW → Lambda → HDICR DB |
-| Credential scope | TI env has HDICR DATABASE_URL | Lambda env has HDICR DATABASE_URL; TI env has service URL only |
-| Failure isolation | TI crash can corrupt representation data | TI crash doesn't reach HDICR DB |
-| Audit trail | No service layer to log representation changes | Service logs all changes via CloudWatch |
+| Concern              | Before                                         | After                                                          |
+| -------------------- | ---------------------------------------------- | -------------------------------------------------------------- |
+| Representation SQL   | TI web runtime queries HDICR tables directly   | HDICR service Lambda queries; TI calls remote API only         |
+| Database access path | TI → shared DB (direct)                        | TI → API GW → Lambda → HDICR DB                                |
+| Credential scope     | TI env has HDICR DATABASE_URL                  | Lambda env has HDICR DATABASE_URL; TI env has service URL only |
+| Failure isolation    | TI crash can corrupt representation data       | TI crash doesn't reach HDICR DB                                |
+| Audit trail          | No service layer to log representation changes | Service logs all changes via CloudWatch                        |
 
 This completes **SEP-026** (representation domain promotion) and advances **SEP-042** (DB credential isolation) by removing TI runtime dependence on HDICR DATABASE_URL for representation data.
 
@@ -300,6 +305,7 @@ This completes **SEP-026** (representation domain promotion) and advances **SEP-
 **Cause:** `DATABASE_URL` not set in Lambda environment or network routing broken.
 
 **Fix:**
+
 1. Verify Lambda has `DATABASE_URL` in `infra/api-gateway/template.yaml`
 2. Verify Lambda security group allows egress to RDS on port 5432
 3. Verify RDS endpoint is correct: `aws rds describe-db-instances`
@@ -309,6 +315,7 @@ This completes **SEP-026** (representation domain promotion) and advances **SEP-
 **Cause:** Missing or invalid `Authorization` header on POST/PATCH requests.
 
 **Fix:**
+
 1. POST `/request`, `/request/update`, `/relationship`, `/relationship/end` **require** Bearer JWT
 2. GET endpoints are open (read-only)
 3. Verify JWT is valid: check `token.exp` hasn't expired
@@ -318,6 +325,7 @@ This completes **SEP-026** (representation domain promotion) and advances **SEP-
 **Cause:** Representation helper hasn't been migrated to use the remote client.
 
 **Fix:** This is tracked in phase-4 work. Current status:
+
 - ✅ Route-level co-imports eliminated (SEP-003)
 - ⚠️ Helper-layer mixing still present (`apps/web/src/lib/representation.ts` has local + remote queries)
 - 🔜 Helper consolidation targeted for phase-4 cleanup

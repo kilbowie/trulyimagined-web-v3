@@ -4,7 +4,7 @@ info:
   description: |
     HDICR Representation Service handles actor-agent representation relationships,
     including requests, approvals, and lifecycle management.
-    
+
     **Status:** SEP-023 (Define OpenAPI spec - HDICR Representation service)
     **Part of:** SEP-026 (Promote representation domain to full HDICR service)
   version: 1.0.0

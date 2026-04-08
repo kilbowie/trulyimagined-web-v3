@@ -28,6 +28,12 @@ ALTER TABLE usage_tracking
 ALTER TABLE audit_log
   ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 
+ALTER TABLE representation_requests
+  ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
+
+ALTER TABLE actor_agent_relationships
+  ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
+
 -- ===========================================
 -- TENANT-SCOPED INDEXES
 -- ===========================================
@@ -56,6 +62,14 @@ CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_id ON audit_log(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_resource ON audit_log(tenant_id, resource_type, resource_id);
 CREATE INDEX IF NOT EXISTS idx_audit_log_tenant_user ON audit_log(tenant_id, user_id);
 
+CREATE INDEX IF NOT EXISTS idx_representation_requests_tenant_id ON representation_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_representation_requests_tenant_actor_agent ON representation_requests(tenant_id, actor_id, agent_id);
+CREATE INDEX IF NOT EXISTS idx_representation_requests_tenant_status ON representation_requests(tenant_id, status);
+
+CREATE INDEX IF NOT EXISTS idx_actor_agent_relationships_tenant_id ON actor_agent_relationships(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_actor_agent_relationships_tenant_actor ON actor_agent_relationships(tenant_id, actor_id);
+CREATE INDEX IF NOT EXISTS idx_actor_agent_relationships_tenant_agent ON actor_agent_relationships(tenant_id, agent_id);
+
 -- ===========================================
 -- DOCUMENTATION
 -- ===========================================
@@ -66,3 +80,5 @@ COMMENT ON COLUMN verifiable_credentials.tenant_id IS 'Tenant identifier owning 
 COMMENT ON COLUMN licensing_requests.tenant_id IS 'Tenant identifier owning this licensing request';
 COMMENT ON COLUMN usage_tracking.tenant_id IS 'Tenant identifier owning this usage-tracking record';
 COMMENT ON COLUMN audit_log.tenant_id IS 'Tenant identifier owning this audit event';
+COMMENT ON COLUMN representation_requests.tenant_id IS 'Tenant identifier owning this representation request';
+COMMENT ON COLUMN actor_agent_relationships.tenant_id IS 'Tenant identifier owning this representation relationship';

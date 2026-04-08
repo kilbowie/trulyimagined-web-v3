@@ -20,9 +20,11 @@ The Representation Service is an HDICR domain service that manages actor-agent r
 Retrieve actor by Auth0 user ID.
 
 **Query Parameters**
+
 - `auth0UserId` (string, required) — Auth0 user ID
 
 **Response**
+
 ```json
 {
   "actor": {
@@ -40,9 +42,11 @@ Retrieve actor by Auth0 user ID.
 Retrieve agent by Auth0 user ID.
 
 **Query Parameters**
+
 - `auth0UserId` (string, required) — Auth0 user ID
 
 **Response**
+
 ```json
 {
   "agent": {
@@ -61,9 +65,11 @@ Retrieve agent by Auth0 user ID.
 Get active representation relationship for an actor.
 
 **Query Parameters**
+
 - `actorId` (string, required) — Actor ID
 
 **Response**
+
 ```json
 {
   "relationship": {
@@ -86,9 +92,11 @@ Get active representation relationship for an actor.
 Retrieve agent by registry ID.
 
 **Query Parameters**
+
 - `registryId` (string, required) — Agent registry ID
 
 **Response**
+
 ```json
 {
   "agent": {
@@ -107,10 +115,12 @@ Retrieve agent by registry ID.
 Check if there is a pending representation request between two profiles.
 
 **Query Parameters**
+
 - `actorId` (string, required) — Actor ID
 - `agentId` (string, required) — Agent ID
 
 **Response**
+
 ```json
 {
   "pending": true | false
@@ -124,6 +134,7 @@ Create a new representation request.
 **Authentication:** Required (JWT)
 
 **Body**
+
 ```json
 {
   "actorId": "uuid",
@@ -133,6 +144,7 @@ Create a new representation request.
 ```
 
 **Response**
+
 ```json
 {
   "request": {
@@ -151,9 +163,11 @@ Create a new representation request.
 List incoming representation requests for an agent.
 
 **Query Parameters**
+
 - `agentId` (string, required) — Agent ID
 
 **Response**
+
 ```json
 {
   "requests": [
@@ -174,9 +188,11 @@ List incoming representation requests for an agent.
 List outgoing representation requests from an actor.
 
 **Query Parameters**
+
 - `actorId` (string, required) — Actor ID
 
 **Response**
+
 ```json
 {
   "requests": [
@@ -196,9 +212,11 @@ List outgoing representation requests from an actor.
 Get representation request by ID.
 
 **Query Parameters**
+
 - `id` (string, required) — Request ID
 
 **Response**
+
 ```json
 {
   "request": {
@@ -218,6 +236,7 @@ Update representation request status (approve/reject/withdraw).
 **Authentication:** Required (JWT)
 
 **Body**
+
 ```json
 {
   "requestId": "uuid",
@@ -227,6 +246,7 @@ Update representation request status (approve/reject/withdraw).
 ```
 
 **Response**
+
 ```json
 {
   "request": {
@@ -243,9 +263,11 @@ Update representation request status (approve/reject/withdraw).
 Check if an actor has an active representation relationship.
 
 **Query Parameters**
+
 - `actorId` (string, required) — Actor ID
 
 **Response**
+
 ```json
 {
   "active": true | false
@@ -259,6 +281,7 @@ Create a new actor-agent relationship after a request is approved.
 **Authentication:** Required (JWT)
 
 **Body**
+
 ```json
 {
   "actorId": "uuid",
@@ -268,6 +291,7 @@ Create a new actor-agent relationship after a request is approved.
 ```
 
 **Response**
+
 ```json
 {
   "success": true
@@ -279,9 +303,11 @@ Create a new actor-agent relationship after a request is approved.
 Get actor-agent relationship by ID.
 
 **Query Parameters**
+
 - `id` (string, required) — Relationship ID
 
 **Response**
+
 ```json
 {
   "relationship": {
@@ -302,6 +328,7 @@ End an actor-agent relationship.
 **Authentication:** Required (JWT)
 
 **Body**
+
 ```json
 {
   "relationshipId": "uuid",
@@ -311,6 +338,7 @@ End an actor-agent relationship.
 ```
 
 **Response**
+
 ```json
 {
   "relationship": {
@@ -331,6 +359,7 @@ End an actor-agent relationship.
 ### Database
 
 Requires the following tables (present in shared HDICR database):
+
 - `actors` — HDICR actor registry
 - `agents` — Agent profiles (TI-owned, mapped by auth0_user_id)
 - `actor_agent_relationships` — Representation relationship ledger
@@ -352,6 +381,7 @@ npm test
 ```
 
 Includes:
+
 - Auth ingress tests (SEP-030)
 - Request validation tests
 - Response shape contract tests

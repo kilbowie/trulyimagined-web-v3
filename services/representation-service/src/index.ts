@@ -111,7 +111,7 @@ const EndRelationshipSchema = z.object({
  * GET /v1/representation/actor
  * Retrieve actor by auth0UserId
  */
-async function handleGetActorByAuth0(event: APIGatewayProxyEvent) {
+async function handleGetActorByAuth0(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const auth0UserId = event.queryStringParameters?.auth0UserId;
     if (!auth0UserId) {
@@ -124,8 +124,8 @@ async function handleGetActorByAuth0(event: APIGatewayProxyEvent) {
 
     const params = ActorByAuth0Schema.parse({ auth0UserId });
     const result = await db.query(
-      'SELECT id, auth0_user_id, email, name, created_at FROM actors WHERE auth0_user_id = $1',
-      [params.auth0UserId]
+      'SELECT id, auth0_user_id, email, name, created_at FROM actors WHERE auth0_user_id = $1 AND tenant_id = $2',
+      [params.auth0UserId, tenantId]
     );
 
     return {
@@ -147,7 +147,7 @@ async function handleGetActorByAuth0(event: APIGatewayProxyEvent) {
  * GET /v1/representation/agent
  * Retrieve agent by auth0UserId
  */
-async function handleGetAgentByAuth0(event: APIGatewayProxyEvent) {
+async function handleGetAgentByAuth0(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const auth0UserId = event.queryStringParameters?.auth0UserId;
     if (!auth0UserId) {
@@ -160,8 +160,8 @@ async function handleGetAgentByAuth0(event: APIGatewayProxyEvent) {
 
     const params = AgentByAuth0Schema.parse({ auth0UserId });
     const result = await db.query(
-      'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE auth0_user_id = $1 AND deleted_at IS NULL',
-      [params.auth0UserId]
+      'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE auth0_user_id = $1 AND deleted_at IS NULL AND tenant_id = $2',
+      [params.auth0UserId, tenantId]
     );
 
     return {
@@ -183,7 +183,7 @@ async function handleGetAgentByAuth0(event: APIGatewayProxyEvent) {
  * GET /v1/representation/active
  * Get active representation relationship for an actor
  */
-async function handleGetActiveRepresentation(event: APIGatewayProxyEvent) {
+async function handleGetActiveRepresentation(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const actorId = event.queryStringParameters?.actorId;
     if (!actorId) {
@@ -200,9 +200,9 @@ async function handleGetActiveRepresentation(event: APIGatewayProxyEvent) {
               ag.registry_id, ag.agency_name, ag.verification_status, ag.profile_image_url, ag.location, ag.website_url
        FROM actor_agent_relationships r
        INNER JOIN agents ag ON ag.id = r.agent_id
-       WHERE r.actor_id = $1 AND r.ended_at IS NULL AND ag.deleted_at IS NULL
+       WHERE r.actor_id = $1 AND r.ended_at IS NULL AND ag.deleted_at IS NULL AND r.tenant_id = $2
        LIMIT 1`,
-      [params.actorId]
+      [params.actorId, tenantId]
     );
 
     return {
@@ -224,7 +224,7 @@ async function handleGetActiveRepresentation(event: APIGatewayProxyEvent) {
  * GET /v1/representation/agent-by-registry
  * Get agent by registry ID
  */
-async function handleGetAgentByRegistry(event: APIGatewayProxyEvent) {
+async function handleGetAgentByRegistry(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const registryId = event.queryStringParameters?.registryId;
     if (!registryId) {
@@ -237,8 +237,8 @@ async function handleGetAgentByRegistry(event: APIGatewayProxyEvent) {
 
     const params = AgentByRegistrySchema.parse({ registryId });
     const result = await db.query(
-      'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE registry_id = $1 AND deleted_at IS NULL',
-      [params.registryId]
+      'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE registry_id = $1 AND deleted_at IS NULL AND tenant_id = $2',
+      [params.registryId, tenantId]
     );
 
     return {
@@ -260,7 +260,7 @@ async function handleGetAgentByRegistry(event: APIGatewayProxyEvent) {
  * GET /v1/representation/request/pending
  * Check if there is a pending representation request
  */
-async function handleCheckPendingRequest(event: APIGatewayProxyEvent) {
+async function handleCheckPendingRequest(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const actorId = event.queryStringParameters?.actorId;
     const agentId = event.queryStringParameters?.agentId;
@@ -275,8 +275,8 @@ async function handleCheckPendingRequest(event: APIGatewayProxyEvent) {
 
     const params = PendingRequestSchema.parse({ actorId, agentId });
     const result = await db.query(
-      'SELECT 1 FROM representation_requests WHERE actor_id = $1 AND agent_id = $2 AND status = $3 LIMIT 1',
-      [params.actorId, params.agentId, 'pending']
+      'SELECT 1 FROM representation_requests WHERE actor_id = $1 AND agent_id = $2 AND status = $3 AND tenant_id = $4 LIMIT 1',
+      [params.actorId, params.agentId, 'pending', tenantId]
     );
 
     return {
@@ -298,11 +298,8 @@ async function handleCheckPendingRequest(event: APIGatewayProxyEvent) {
  * POST /v1/representation/request
  * Create a new representation request
  */
-async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent) {
+async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent, tenantId: string) {
   try {
-    // Validate auth token
-    await validateAuth0Token(event);
-
     const body = JSON.parse(event.body || '{}');
     const params = CreateRepresentationRequestSchema.parse(body);
 
@@ -311,12 +308,15 @@ async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent) {
 
     await db.query(
       `INSERT INTO representation_requests 
-       (id, actor_id, agent_id, message, status, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [requestId, params.actorId, params.agentId, params.message || null, 'pending', now, now]
+       (id, actor_id, agent_id, message, status, tenant_id, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [requestId, params.actorId, params.agentId, params.message || null, 'pending', tenantId, now, now]
     );
 
-    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1', [requestId]);
+    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2', [
+      requestId,
+      tenantId,
+    ]);
 
     return {
       statusCode: 201,
@@ -337,7 +337,7 @@ async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent) {
  * GET /v1/representation/requests/incoming
  * List incoming representation requests for an agent
  */
-async function handleListIncomingRequests(event: APIGatewayProxyEvent) {
+async function handleListIncomingRequests(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const agentId = event.queryStringParameters?.agentId;
     if (!agentId) {
@@ -351,9 +351,9 @@ async function handleListIncomingRequests(event: APIGatewayProxyEvent) {
     const params = IncomingRequestsSchema.parse({ agentId });
     const result = await db.query(
       `SELECT * FROM representation_requests 
-       WHERE agent_id = $1 
+       WHERE agent_id = $1 AND tenant_id = $2
        ORDER BY created_at DESC`,
-      [params.agentId]
+      [params.agentId, tenantId]
     );
 
     return {
@@ -375,7 +375,7 @@ async function handleListIncomingRequests(event: APIGatewayProxyEvent) {
  * GET /v1/representation/requests/outgoing
  * List outgoing representation requests from an actor
  */
-async function handleListOutgoingRequests(event: APIGatewayProxyEvent) {
+async function handleListOutgoingRequests(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const actorId = event.queryStringParameters?.actorId;
     if (!actorId) {
@@ -389,9 +389,9 @@ async function handleListOutgoingRequests(event: APIGatewayProxyEvent) {
     const params = OutgoingRequestsSchema.parse({ actorId });
     const result = await db.query(
       `SELECT * FROM representation_requests 
-       WHERE actor_id = $1 
+       WHERE actor_id = $1 AND tenant_id = $2
        ORDER BY created_at DESC`,
-      [params.actorId]
+      [params.actorId, tenantId]
     );
 
     return {
@@ -413,7 +413,7 @@ async function handleListOutgoingRequests(event: APIGatewayProxyEvent) {
  * GET /v1/representation/request
  * Get representation request by ID
  */
-async function handleGetRepresentationRequest(event: APIGatewayProxyEvent) {
+async function handleGetRepresentationRequest(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const requestId = event.queryStringParameters?.id;
     if (!requestId) {
@@ -425,7 +425,10 @@ async function handleGetRepresentationRequest(event: APIGatewayProxyEvent) {
     }
 
     const params = RequestByIdSchema.parse({ id: requestId });
-    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1', [params.id]);
+    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2', [
+      params.id,
+      tenantId,
+    ]);
 
     return {
       statusCode: 200,
@@ -446,10 +449,8 @@ async function handleGetRepresentationRequest(event: APIGatewayProxyEvent) {
  * POST /v1/representation/request/update
  * Update representation request (approve/reject/withdraw)
  */
-async function handleUpdateRepresentationRequest(event: APIGatewayProxyEvent) {
+async function handleUpdateRepresentationRequest(event: APIGatewayProxyEvent, tenantId: string) {
   try {
-    await validateAuth0Token(event);
-
     const body = JSON.parse(event.body || '{}');
     const params = UpdateRepresentationRequestSchema.parse(body);
 
@@ -458,11 +459,14 @@ async function handleUpdateRepresentationRequest(event: APIGatewayProxyEvent) {
     await db.query(
       `UPDATE representation_requests 
        SET status = $1, response_note = $2, updated_at = $3 
-       WHERE id = $4`,
-      [params.action, params.responseNote || null, now, params.requestId]
+       WHERE id = $4 AND tenant_id = $5`,
+      [params.action, params.responseNote || null, now, params.requestId, tenantId]
     );
 
-    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1', [params.requestId]);
+    const result = await db.query('SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2', [
+      params.requestId,
+      tenantId,
+    ]);
 
     return {
       statusCode: 200,
@@ -483,7 +487,7 @@ async function handleUpdateRepresentationRequest(event: APIGatewayProxyEvent) {
  * GET /v1/representation/relationship/active
  * Check if actor has an active representation relationship
  */
-async function handleCheckActiveRelationship(event: APIGatewayProxyEvent) {
+async function handleCheckActiveRelationship(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const actorId = event.queryStringParameters?.actorId;
     if (!actorId) {
@@ -496,8 +500,8 @@ async function handleCheckActiveRelationship(event: APIGatewayProxyEvent) {
 
     const params = ActiveRelationshipSchema.parse({ actorId });
     const result = await db.query(
-      'SELECT 1 FROM actor_agent_relationships WHERE actor_id = $1 AND ended_at IS NULL LIMIT 1',
-      [params.actorId]
+      'SELECT 1 FROM actor_agent_relationships WHERE actor_id = $1 AND ended_at IS NULL AND tenant_id = $2 LIMIT 1',
+      [params.actorId, tenantId]
     );
 
     return {
@@ -519,10 +523,8 @@ async function handleCheckActiveRelationship(event: APIGatewayProxyEvent) {
  * POST /v1/representation/relationship
  * Create a new actor-agent relationship
  */
-async function handleCreateRelationship(event: APIGatewayProxyEvent) {
+async function handleCreateRelationship(event: APIGatewayProxyEvent, tenantId: string) {
   try {
-    await validateAuth0Token(event);
-
     const body = JSON.parse(event.body || '{}');
     const params = CreateRelationshipSchema.parse(body);
 
@@ -531,9 +533,18 @@ async function handleCreateRelationship(event: APIGatewayProxyEvent) {
 
     await db.query(
       `INSERT INTO actor_agent_relationships 
-       (id, actor_id, agent_id, representation_request_id, started_at, created_at, updated_at) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [relationshipId, params.actorId, params.agentId, params.representationRequestId, now, now, now]
+       (id, actor_id, agent_id, representation_request_id, tenant_id, started_at, created_at, updated_at) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [
+        relationshipId,
+        params.actorId,
+        params.agentId,
+        params.representationRequestId,
+        tenantId,
+        now,
+        now,
+        now,
+      ]
     );
 
     return {
@@ -555,7 +566,7 @@ async function handleCreateRelationship(event: APIGatewayProxyEvent) {
  * GET /v1/representation/relationship
  * Get actor-agent relationship by ID
  */
-async function handleGetRelationship(event: APIGatewayProxyEvent) {
+async function handleGetRelationship(event: APIGatewayProxyEvent, tenantId: string) {
   try {
     const relationshipId = event.queryStringParameters?.id;
     if (!relationshipId) {
@@ -567,7 +578,10 @@ async function handleGetRelationship(event: APIGatewayProxyEvent) {
     }
 
     const params = RelationshipByIdSchema.parse({ id: relationshipId });
-    const result = await db.query('SELECT * FROM actor_agent_relationships WHERE id = $1', [params.id]);
+    const result = await db.query('SELECT * FROM actor_agent_relationships WHERE id = $1 AND tenant_id = $2', [
+      params.id,
+      tenantId,
+    ]);
 
     return {
       statusCode: 200,
@@ -588,10 +602,8 @@ async function handleGetRelationship(event: APIGatewayProxyEvent) {
  * POST /v1/representation/relationship/end
  * End an actor-agent relationship
  */
-async function handleEndRelationship(event: APIGatewayProxyEvent) {
+async function handleEndRelationship(event: APIGatewayProxyEvent, tenantId: string) {
   try {
-    await validateAuth0Token(event);
-
     const body = JSON.parse(event.body || '{}');
     const params = EndRelationshipSchema.parse(body);
 
@@ -600,8 +612,8 @@ async function handleEndRelationship(event: APIGatewayProxyEvent) {
     await db.query(
       `UPDATE actor_agent_relationships 
        SET ended_at = $1, ended_by = $2, ended_by_auth0_user_id = $3, updated_at = $4 
-       WHERE id = $5`,
-      [now, params.endedBy, params.endedByAuth0UserId, now, params.relationshipId]
+       WHERE id = $5 AND tenant_id = $6`,
+      [now, params.endedBy, params.endedByAuth0UserId, now, params.relationshipId, tenantId]
     );
 
     const result = await db.query('SELECT * FROM actor_agent_relationships WHERE id = $1', [
@@ -636,67 +648,95 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     };
   }
 
+  // Validate authorization token - all endpoints require a valid caller
+  const user = await validateAuth0Token(event);
+  if (!user) {
+    return {
+      statusCode: 401,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Unauthorized' }),
+    };
+  }
+
+  // Extract tenant_id from authenticated user
+  const tenantId = user.tenantId ?? process.env.HDICR_DEFAULT_TENANT_ID ?? 'trulyimagined';
+
   // Route based on path
   const path = event.path || '';
   const method = event.httpMethod || '';
 
   if (path.includes('/actor') && method === 'GET' && path.includes('auth0UserId')) {
-    return handleGetActorByAuth0(event);
+    return handleGetActorByAuth0(event, tenantId);
   }
 
-  if (path.includes('/agent') && method === 'GET' && path.includes('auth0UserId') && !path.includes('registry')) {
-    return handleGetAgentByAuth0(event);
+  if (
+    path.includes('/agent') &&
+    method === 'GET' &&
+    path.includes('auth0UserId') &&
+    !path.includes('registry')
+  ) {
+    return handleGetAgentByAuth0(event, tenantId);
   }
 
   if (path.includes('/agent-by-registry') && method === 'GET') {
-    return handleGetAgentByRegistry(event);
+    return handleGetAgentByRegistry(event, tenantId);
   }
 
   if (path.includes('/active') && method === 'GET') {
     if (path.includes('/request/')) {
-      return handleCheckPendingRequest(event);
+      return handleCheckPendingRequest(event, tenantId);
     }
     if (path.includes('/relationship/')) {
-      return handleCheckActiveRelationship(event);
+      return handleCheckActiveRelationship(event, tenantId);
     }
     // Default: assume it's for representation
-    return handleGetActiveRepresentation(event);
+    return handleGetActiveRepresentation(event, tenantId);
   }
 
-  if (path.includes('/request') && method === 'POST' && !path.includes('/requests') && !path.includes('update')) {
-    return handleCreateRepresentationRequest(event);
+  if (
+    path.includes('/request') &&
+    method === 'POST' &&
+    !path.includes('/requests') &&
+    !path.includes('update')
+  ) {
+    return handleCreateRepresentationRequest(event, tenantId);
   }
 
   if (path.includes('/requests/incoming') && method === 'GET') {
-    return handleListIncomingRequests(event);
+    return handleListIncomingRequests(event, tenantId);
   }
 
   if (path.includes('/requests/outgoing') && method === 'GET') {
-    return handleListOutgoingRequests(event);
+    return handleListOutgoingRequests(event, tenantId);
   }
 
-  if (path.includes('/request') && method === 'GET' && !path.includes('requests') && !path.includes('update')) {
-    return handleGetRepresentationRequest(event);
+  if (
+    path.includes('/request') &&
+    method === 'GET' &&
+    !path.includes('requests') &&
+    !path.includes('update')
+  ) {
+    return handleGetRepresentationRequest(event, tenantId);
   }
 
   if (path.includes('/request/update') && method === 'POST') {
-    return handleUpdateRepresentationRequest(event);
+    return handleUpdateRepresentationRequest(event, tenantId);
   }
 
   if (path.includes('/relationship') && method === 'POST' && !path.includes('/end')) {
-    return handleCreateRelationship(event);
+    return handleCreateRelationship(event, tenantId);
   }
 
   if (path.includes('/relationship') && method === 'GET' && !path.includes('/end')) {
-    return handleGetRelationship(event);
+    return handleGetRelationship(event, tenantId);
   }
 
   if (path.includes('/relationship/end') && method === 'POST') {
-    return handleEndRelationship(event);
+    return handleEndRelationship(event, tenantId);
   }
 
   if (path.includes('/relationship/active') && method === 'GET') {
-    return handleCheckActiveRelationship(event);
+    return handleCheckActiveRelationship(event, tenantId);
   }
 
   return {

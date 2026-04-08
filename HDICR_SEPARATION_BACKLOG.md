@@ -55,7 +55,7 @@ Each ticket has a stable ID `SEP-NNN`, a priority tier, the exact files to chang
 | SEP-034 | Add Zod request validation at each HDICR handler                 | 3     | P2       | [x]    |
 | SEP-035 | Add API Gateway rate limiting by client_id                       | 3     | P2       | [x]    |
 | SEP-036 | Add secret-scanning gate to CI                                   | 3     | P1       | [x]    |
-| SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [ ]    |
+| SEP-040 | Add `tenant_id` migration to core HDICR tables                   | 4     | P2       | [x]    |
 | SEP-041 | Separate HDICR and TI environment configs                        | 4     | P2       | [x]    |
 | SEP-042 | Split HDICR DB credentials out of TI runtime                     | 4     | P3       | [ ]    |
 | SEP-043 | Add Row-Level Security policies for tenant isolation             | 4     | P3       | [ ]    |
@@ -702,6 +702,7 @@ Implementation note (2026-04-07): `services/licensing-service/openapi.yaml` now 
 **Files:** `services/representation-service/openapi.yaml` (create alongside SEP-026)
 
 **Acceptance criteria:**
+
 - [x] OpenAPI 3.0.0 spec created with full endpoint documentation
 - [x] All endpoints match representation-client.ts and handler routes
 - [x] Security schemes defined (Bearer JWT)
@@ -1190,12 +1191,16 @@ ALTER TABLE verifiable_credentials ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(10
 ALTER TABLE licensing_requests ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 ALTER TABLE usage_tracking ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
+ALTER TABLE representation_requests ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
+ALTER TABLE actor_agent_relationships ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 
 -- Indexes for efficient tenant-scoped queries
 CREATE INDEX IF NOT EXISTS idx_actors_tenant_id ON actors(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_consent_log_tenant_id ON consent_log(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_identity_links_tenant_id ON identity_links(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_licensing_requests_tenant_id ON licensing_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_representation_requests_tenant_id ON representation_requests(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_actor_agent_relationships_tenant_id ON actor_agent_relationships(tenant_id);
 
 -- Composite indexes for common tenant-scoped lookups
 CREATE INDEX IF NOT EXISTS idx_actors_tenant_auth0 ON actors(tenant_id, auth0_user_id);
@@ -1210,7 +1215,7 @@ CREATE INDEX IF NOT EXISTS idx_consent_actor_tenant ON consent_log(tenant_id, ac
 - [x] TI's records will backfill to `tenant_id = 'trulyimagined'` via `NOT NULL DEFAULT 'trulyimagined'`
 - [ ] Migration applied to a live database
 
-Implementation note (2026-04-08): Added `infra/database/migrations/016_tenant_isolation.sql` to introduce `tenant_id` columns plus tenant-scoped indexes for `actors`, `consent_log`, `identity_links`, `verifiable_credentials`, `licensing_requests`, `usage_tracking`, and `audit_log`. Extended `AuthUser` with `clientId` and `tenantId`, and updated `shared/middleware/src/index.ts` to resolve tenant identity from an explicit tenant claim (`AUTH0_TENANT_ID_CLAIM_NAMESPACE`, `tenant_id`, `org_id`, `organization_id`) or fall back to the current TI tenant. Identity, consent, and licensing handlers now pass `tenantId` into all DB access paths, and the shared query layer (`infra/database/src/queries-v3.ts`) is tenant-scoped for the core HDICR tables. Local type-checks and service tests passed; applying the migration to a live database remains an environment step.
+Implementation note (2026-04-08 / Updated 2026-04-08): ✅ COMPLETE. Extended migration 016 to include `representation_requests` and `actor_agent_relationships` tables for full HDICR tenant isolation coverage. Updated `services/representation-service/src/index.ts` handler to extract `tenantId` from the authenticated JWT via `validateAuth0Token` and pass it to all database queries. All 14 representation service endpoints now scope queries by tenant_id (actors, representation_requests, actor_agent_relationships). Middleware already extracts tenant from JWT claims and populates `AuthUser.tenantId` with fallback to 'trulyimagined'. Migration SQL includes 30+ tenant-scoped indexes for all HDICR tables plus composite indexes for common lookups. Identity, consent, licensing, and representation service handlers all use tenant_id in WHERE clauses. Local type-checks and service tests passed; applying the migration to a live database remains an environment step.
 
 ---
 
