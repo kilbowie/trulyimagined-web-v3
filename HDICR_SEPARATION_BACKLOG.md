@@ -1275,7 +1275,7 @@ Implementation note (2026-04-08): Reworked `apps/web/.env.example` into explicit
 - [ ] All user-facing flows tested end-to-end through HDICR APIs only
 - [ ] No SQL errors in TI server logs
 
-Implementation note (2026-04-08): Began draining remaining web-tier HDICR reads by switching actor resolution in dashboard, profile, notifications, media routes, dashboard register-identity, and `/api/identity/status` from direct `actors` SQL to existing HDICR representation/identity clients. TI-owned queries still remain local, but `apps/web/src/lib/db.ts` cannot be retired yet because legacy consent, licensing, registry, identity-resolution, and credential-status paths still query HDICR-owned tables directly.
+Implementation note (2026-04-08): Began draining remaining web-tier HDICR reads by switching actor resolution in dashboard, profile, notifications, media routes, dashboard register-identity, and `/api/identity/status` from direct `actors` SQL to existing HDICR representation/identity clients. Removed unused actor registry-ID assignment helpers from `apps/web/src/lib/registry-id.ts` so this module is now agent-only. TI-owned queries still remain local, but `apps/web/src/lib/db.ts` cannot be retired yet because legacy consent, licensing, identity-resolution, and credential-status paths still query HDICR-owned tables directly.
 
 ---
 
