@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
+import { listActiveAgentRosterRelationships } from '@/lib/agent-roster';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles, getAgentTeamMembership } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { getCurrentConsentLedger } from '@/lib/hdicr/consent-client';
 import { getActorById } from '@/lib/hdicr/identity-client';
 import { getAgentByAuth0Id } from '@/lib/representation';
@@ -45,21 +45,11 @@ export async function GET() {
       return NextResponse.json({ roster: [], total: 0 });
     }
 
-    const relationships = await query(
-      `SELECT
-        id AS relationship_id,
-        actor_id,
-        started_at
-       FROM actor_agent_relationships
-       WHERE agent_id = $1
-         AND ended_at IS NULL
-       ORDER BY started_at DESC`,
-      [agentId]
-    );
+    const relationships = await listActiveAgentRosterRelationships(agentId);
 
     const roster = (
       await Promise.all(
-        relationships.rows.map(async (relationship) => {
+        relationships.map(async (relationship) => {
           const [actor, consent] = await Promise.all([
             getActorById(relationship.actor_id as string),
             getCurrentConsentLedger(relationship.actor_id as string, false),

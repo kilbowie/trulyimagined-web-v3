@@ -6,7 +6,6 @@ API_ROOT="apps/web/src/app/api"
 # TODO(SEP-003): Add any legacy exemptions here while they are being migrated.
 # Keep this list empty whenever possible.
 EXEMPT_FILES=(
-  "apps/web/src/app/api/agent/roster/route.ts"
 )
 
 is_exempt() {

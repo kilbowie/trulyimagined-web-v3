@@ -12,8 +12,8 @@ vi.mock('@/lib/auth', () => ({
   getAgentTeamMembership: vi.fn(),
 }));
 
-vi.mock('@/lib/db', () => ({
-  query: vi.fn(),
+vi.mock('@/lib/agent-roster', () => ({
+  listActiveAgentRosterRelationships: vi.fn(),
 }));
 
 vi.mock('@/lib/hdicr/identity-client', () => ({
@@ -29,8 +29,8 @@ vi.mock('@/lib/representation', () => ({
 }));
 
 import { auth0 } from '@/lib/auth0';
+import { listActiveAgentRosterRelationships } from '@/lib/agent-roster';
 import { getAgentTeamMembership, getUserRoles } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { getCurrentConsentLedger } from '@/lib/hdicr/consent-client';
 import { getActorById } from '@/lib/hdicr/identity-client';
 import { getAgentByAuth0Id } from '@/lib/representation';
@@ -62,15 +62,13 @@ describe('GET /api/agent/roster - Contract Test', () => {
     vi.mocked(auth0.getSession).mockResolvedValueOnce({ user: { sub: 'agent-user-123' } } as any);
     vi.mocked(getUserRoles).mockResolvedValueOnce(['Agent']);
     vi.mocked(getAgentByAuth0Id).mockResolvedValueOnce({ id: 'agent-123' } as any);
-    vi.mocked(query).mockResolvedValueOnce({
-      rows: [
-        {
-          relationship_id: 'rel-123',
-          actor_id: 'actor-123',
-          started_at: '2026-04-01T10:00:00.000Z',
-        },
-      ],
-    } as any);
+    vi.mocked(listActiveAgentRosterRelationships).mockResolvedValueOnce([
+      {
+        relationship_id: 'rel-123',
+        actor_id: 'actor-123',
+        started_at: '2026-04-01T10:00:00.000Z',
+      },
+    ] as any);
     vi.mocked(getActorById).mockResolvedValueOnce({
       id: 'actor-123',
       registry_id: 'ACT-001',
@@ -96,9 +94,7 @@ describe('GET /api/agent/roster - Contract Test', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(query).toHaveBeenCalledWith(expect.stringContaining('FROM actor_agent_relationships'), [
-      'agent-123',
-    ]);
+    expect(listActiveAgentRosterRelationships).toHaveBeenCalledWith('agent-123');
     expect(getActorById).toHaveBeenCalledWith('actor-123');
     expect(getCurrentConsentLedger).toHaveBeenCalledWith('actor-123', false);
     expect(data).toEqual({
