@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import {
+  clearPrimaryActorHeadshot,
+  getActorMediaById,
+  setActorMediaPrimary,
+} from '@/lib/actor-media';
 import { getCurrentUser } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
-import { queries } from '@database/queries-v3';
 
 // DB-OWNER: TI
 
@@ -28,13 +31,11 @@ export async function PUT(_request: NextRequest, { params }: { params: Promise<{
     }
 
     // Get media record to verify ownership
-    const mediaResult = await query(queries.actorMedia.getById, [mediaId]);
+    const media = await getActorMediaById(mediaId);
 
-    if (!mediaResult.rows || mediaResult.rows.length === 0) {
+    if (!media) {
       return NextResponse.json({ error: 'Media not found' }, { status: 404 });
     }
-
-    const media = mediaResult.rows[0];
 
     // Verify ownership
     if (media.actor_id !== actorId) {
@@ -47,14 +48,14 @@ export async function PUT(_request: NextRequest, { params }: { params: Promise<{
     }
 
     // Clear previous primary for this media type
-    await query(queries.actorMedia.clearPrimary, [actorId, 'headshot']);
+    await clearPrimaryActorHeadshot(actorId);
 
     // Set this as primary
-    const updateResult = await query(queries.actorMedia.setPrimary, [mediaId]);
+    const updatedMedia = await setActorMediaPrimary(mediaId);
 
     return NextResponse.json({
       success: true,
-      media: updateResult.rows[0],
+      media: updatedMedia,
     });
   } catch (error) {
     console.error('Set primary media error:', error);

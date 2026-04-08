@@ -8,10 +8,6 @@ API_ROOT="apps/web/src/app/api"
 EXEMPT_FILES=(
   "apps/web/src/app/api/agent/roster/route.ts"
   "apps/web/src/app/api/identity/status/route.ts"
-  "apps/web/src/app/api/media/route.ts"
-  "apps/web/src/app/api/media/upload/route.ts"
-  "apps/web/src/app/api/media/[id]/route.ts"
-  "apps/web/src/app/api/media/[id]/set-primary/route.ts"
 )
 
 is_exempt() {

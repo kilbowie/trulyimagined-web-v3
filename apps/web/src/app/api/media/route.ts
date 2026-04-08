@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { listActorMedia } from '@/lib/actor-media';
 import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
-import { queries } from '@database/queries-v3';
 
 // DB-OWNER: TI
 
@@ -30,17 +29,14 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const mediaType = searchParams.get('type');
 
-    let mediaResult;
-
-    if (mediaType && ['headshot', 'audio_reel', 'video_reel'].includes(mediaType)) {
-      mediaResult = await query(queries.actorMedia.getByActorAndType, [actorId, mediaType]);
-    } else {
-      mediaResult = await query(queries.actorMedia.getByActor, [actorId]);
-    }
+    const media =
+      mediaType && ['headshot', 'audio_reel', 'video_reel'].includes(mediaType)
+        ? await listActorMedia(actorId, mediaType)
+        : await listActorMedia(actorId);
 
     return NextResponse.json({
       success: true,
-      media: mediaResult.rows || [],
+      media,
     });
   } catch (error) {
     console.error('Get media error:', error);

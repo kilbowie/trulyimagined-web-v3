@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createActorMediaRecord, listActorMedia } from '@/lib/actor-media';
 import { getCurrentUser } from '@/lib/auth';
-import { query } from '@/lib/db';
 import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
-import { queries } from '@database/queries-v3';
 import { uploadToS3, generateS3Key, validateFileType, validateFileSize } from '@/lib/s3';
 
 // DB-OWNER: TI
@@ -92,39 +91,36 @@ export async function POST(request: NextRequest) {
     let displayOrder = 0;
 
     if (mediaType === 'headshot') {
-      const existingHeadshotsResult = await query(queries.actorMedia.getByActorAndType, [
-        actorId,
-        'headshot',
-      ]);
+      const existingHeadshots = await listActorMedia(actorId, 'headshot');
 
-      if (!existingHeadshotsResult.rows || existingHeadshotsResult.rows.length === 0) {
+      if (existingHeadshots.length === 0) {
         isPrimary = true;
         displayOrder = 0;
       } else {
         // Set display order to next available
-        displayOrder = existingHeadshotsResult.rows.length;
+        displayOrder = existingHeadshots.length;
       }
     }
 
     // Create database record
-    const mediaRecord = await query(queries.actorMedia.create, [
-      actorId, // actor_id
-      mediaType, // media_type
-      file.name, // file_name
-      s3Key, // s3_key
-      uploadResult.url, // s3_url
-      file.size, // file_size_bytes
-      file.type, // mime_type
-      title, // title
-      photoCredit, // photo_credit
-      description, // description
-      isPrimary, // is_primary
-      displayOrder, // display_order
-    ]);
+    const mediaRecord = await createActorMediaRecord({
+      actorId,
+      mediaType,
+      fileName: file.name,
+      s3Key,
+      s3Url: uploadResult.url,
+      fileSizeBytes: file.size,
+      mimeType: file.type,
+      title,
+      photoCredit,
+      description,
+      isPrimary,
+      displayOrder,
+    });
 
     return NextResponse.json({
       success: true,
-      media: mediaRecord.rows[0],
+      media: mediaRecord,
     });
   } catch (error) {
     console.error('Media upload error:', error);
