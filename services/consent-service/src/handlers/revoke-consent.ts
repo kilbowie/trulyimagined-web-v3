@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { Pool } from 'pg';
+import { DatabaseClient } from '@trulyimagined/database';
 import { z } from 'zod';
 
 /**
@@ -9,10 +9,7 @@ import { z } from 'zod';
  * Does NOT delete previous grants - maintains full audit trail
  */
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-});
+const db = DatabaseClient.getInstance();
 
 const NonEmptyString = z.string().trim().min(1);
 
@@ -66,7 +63,8 @@ export async function revokeConsent(event: APIGatewayProxyEvent, tenantId: strin
     // Scenario 1: Revoke specific consent by ID
     if (consentId) {
       // Fetch the original consent to copy its details
-      const original = await pool.query(
+      const original = await db.queryWithTenant(
+        tenantId,
         `SELECT * FROM consent_log WHERE id = $1 AND actor_id = $2 AND tenant_id = $3 ORDER BY created_at DESC LIMIT 1`,
         [consentId, actorId, tenantId]
       );
@@ -81,7 +79,8 @@ export async function revokeConsent(event: APIGatewayProxyEvent, tenantId: strin
       const originalConsent = original.rows[0];
 
       // Insert revocation record
-      result = await pool.query(
+      result = await db.queryWithTenant(
+        tenantId,
         `INSERT INTO consent_log (
           tenant_id, actor_id, action, consent_type, consent_scope,
           project_name, project_description,
@@ -108,7 +107,8 @@ export async function revokeConsent(event: APIGatewayProxyEvent, tenantId: strin
     }
     // Scenario 2: Revoke all consents of specific type
     else if (consentType) {
-      result = await pool.query(
+      result = await db.queryWithTenant(
+        tenantId,
         `INSERT INTO consent_log (
           tenant_id, actor_id, action, consent_type, consent_scope,
           ip_address, user_agent, metadata

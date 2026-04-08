@@ -115,27 +115,27 @@ function validationErrorResponse(error: z.ZodError | string) {
   return {
     statusCode: 400,
     headers: corsHeaders,
-    body: JSON.stringify({
+      return await getIdentityLinkByProviderAndProviderUser(event, tenantId);
       error: 'Validation failed',
       details,
     }),
-  };
+      return await listIdentityLinks(event, tenantId);
 }
 
 function parseJsonBody<T>(event: APIGatewayProxyEvent, schema: z.ZodType<T>) {
-  let rawBody: unknown = {};
+      return await createIdentityLink(event, tenantId);
 
   try {
     rawBody = JSON.parse(event.body ?? '{}');
-  } catch {
+      return await reactivateIdentityLink(event, tenantId);
     return { success: false as const, response: validationErrorResponse('Invalid JSON body') };
   }
 
-  const parsed = schema.safeParse(rawBody);
+      return await unlinkIdentityById(event, tenantId);
   if (!parsed.success) {
     return { success: false as const, response: validationErrorResponse(parsed.error) };
   }
-
+      return await unlinkIdentityByProvider(event, tenantId);
   return { success: true as const, data: parsed.data };
 }
 
@@ -276,10 +276,12 @@ async function registerActor(event: APIGatewayProxyEvent, tenantId: string) {
         success: true,
         actor: {
           id: actor.id,
+          identitySubjectId: actor.id,
           email: actor.email,
           firstName: actor.first_name,
           lastName: actor.last_name,
           stageName: actor.stage_name,
+          displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
           verificationStatus: actor.verification_status,
           createdAt: actor.created_at,
         },
@@ -333,10 +335,12 @@ async function getActorById(event: APIGatewayProxyEvent, tenantId: string) {
     body: JSON.stringify({
       actor: {
         id: actor.id,
+        identitySubjectId: actor.id,
         email: actor.email,
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
+        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         bio: actor.bio,
         location: actor.location,
         profileImageUrl: actor.profile_image_url,
@@ -368,10 +372,12 @@ async function listActors(event: APIGatewayProxyEvent, tenantId: string) {
     body: JSON.stringify({
       actors: result.rows.map((actor) => ({
         id: actor.id,
+        identitySubjectId: actor.id,
         email: actor.email,
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
+        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         verificationStatus: actor.verification_status,
         isFoundingMember: actor.is_founding_member,
         registryId: actor.registry_id,
@@ -445,10 +451,12 @@ async function updateActor(event: APIGatewayProxyEvent, tenantId: string) {
       success: true,
       actor: {
         id: actor.id,
+        identitySubjectId: actor.id,
         email: actor.email,
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
+        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         bio: actor.bio,
         location: actor.location,
         profileImageUrl: actor.profile_image_url,
@@ -458,7 +466,10 @@ async function updateActor(event: APIGatewayProxyEvent, tenantId: string) {
   };
 }
 
-async function getIdentityLinkByProviderAndProviderUser(event: APIGatewayProxyEvent) {
+async function getIdentityLinkByProviderAndProviderUser(
+  event: APIGatewayProxyEvent,
+  tenantId: string
+) {
   const parsedQuery = IdentityLinkLookupQuerySchema.safeParse(event.queryStringParameters ?? {});
   if (!parsedQuery.success) {
     return validationErrorResponse(parsedQuery.error);
@@ -486,7 +497,7 @@ async function getIdentityLinkByProviderAndProviderUser(event: APIGatewayProxyEv
   };
 }
 
-async function listIdentityLinks(event: APIGatewayProxyEvent) {
+async function listIdentityLinks(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedQuery = IdentityLinksListQuerySchema.safeParse(event.queryStringParameters ?? {});
   if (!parsedQuery.success) {
     return validationErrorResponse(parsedQuery.error);
@@ -512,7 +523,7 @@ async function listIdentityLinks(event: APIGatewayProxyEvent) {
   };
 }
 
-async function createIdentityLink(event: APIGatewayProxyEvent) {
+async function createIdentityLink(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedBody = parseJsonBody(event, CreateIdentityLinkSchema);
   if (!parsedBody.success) {
     return parsedBody.response;
@@ -568,7 +579,7 @@ async function createIdentityLink(event: APIGatewayProxyEvent) {
   };
 }
 
-async function reactivateIdentityLink(event: APIGatewayProxyEvent) {
+async function reactivateIdentityLink(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedBody = parseJsonBody(event, ReactivateIdentityLinkSchema);
   if (!parsedBody.success) {
     return parsedBody.response;
@@ -618,7 +629,7 @@ async function reactivateIdentityLink(event: APIGatewayProxyEvent) {
   };
 }
 
-async function unlinkIdentityById(event: APIGatewayProxyEvent) {
+async function unlinkIdentityById(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedBody = parseJsonBody(event, UnlinkIdentityByIdSchema);
   if (!parsedBody.success) {
     return parsedBody.response;
@@ -642,7 +653,7 @@ async function unlinkIdentityById(event: APIGatewayProxyEvent) {
   };
 }
 
-async function unlinkIdentityByProvider(event: APIGatewayProxyEvent) {
+async function unlinkIdentityByProvider(event: APIGatewayProxyEvent, tenantId: string) {
   const parsedBody = parseJsonBody(event, UnlinkIdentityByProviderSchema);
   if (!parsedBody.success) {
     return parsedBody.response;

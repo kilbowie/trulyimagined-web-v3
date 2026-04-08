@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
-import { DatabaseClient, queries } from '@trulyimagined/database';
-import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { DatabaseClient } from '@trulyimagined/database';
+import { validateAuth0Token } from '@trulyimagined/middleware';
 import { z } from 'zod';
 
 /**

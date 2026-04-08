@@ -471,6 +471,11 @@ components:
         id:
           type: string
           format: uuid
+          description: Canonical subject identifier.
+        identitySubjectId:
+          type: string
+          format: uuid
+          description: Neutral alias for id to support non-TI tenant terminology.
         email:
           type: string
           format: email
@@ -480,6 +485,11 @@ components:
           type: string
         stageName:
           type: [string, 'null']
+          description: Tenant-facing display label (Truly Imagined naming).
+          x-tenant-specific: trulyimagined
+        displayName:
+          type: [string, 'null']
+          description: Neutral alias for stageName.
         bio:
           type: [string, 'null']
         location:
@@ -491,8 +501,10 @@ components:
           type: [string, 'null']
         isFoundingMember:
           type: [boolean, 'null']
+          x-tenant-specific: trulyimagined
         registryId:
           type: [string, 'null']
+          x-tenant-specific: trulyimagined
         createdAt:
           type: [string, 'null']
           format: date-time

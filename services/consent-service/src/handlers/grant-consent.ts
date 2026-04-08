@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { Pool } from 'pg';
+import { DatabaseClient } from '@trulyimagined/database';
 import { z } from 'zod';
 
 /**
@@ -9,10 +9,7 @@ import { z } from 'zod';
  * This is the primary mechanism for actors to grant permission for their digital identity usage
  */
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-});
+const db = DatabaseClient.getInstance();
 
 const NonEmptyString = z.string().trim().min(1);
 
@@ -74,7 +71,8 @@ export async function grantConsent(event: APIGatewayProxyEvent, tenantId: string
     const userAgent = event.headers?.['User-Agent'] || null;
 
     // Insert into consent_log (append-only)
-    const result = await pool.query(
+    const result = await db.queryWithTenant(
+      tenantId,
       `INSERT INTO consent_log (
         tenant_id, actor_id, action, consent_type, consent_scope,
         project_name, project_description,

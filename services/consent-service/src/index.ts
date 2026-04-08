@@ -82,7 +82,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (path === '/v1/consent/enforcement/check' && httpMethod === 'POST') {
-      const response = await checkConsentEnforcement(event);
+      const response = await checkConsentEnforcement(event, tenantId);
       return { ...response, headers: corsHeaders };
     }
 

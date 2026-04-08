@@ -1,11 +1,8 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { Pool } from 'pg';
+import { DatabaseClient } from '@trulyimagined/database';
 import { z } from 'zod';
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-});
+const db = DatabaseClient.getInstance();
 
 const ConsentEnforcementSchema = z.object({
   actorId: z.string().uuid(),
@@ -116,6 +113,7 @@ function evaluateRequestedUsage(
 }
 
 async function logUsage(params: {
+  tenantId: string;
   licenseId: string;
   apiClientId: string;
   actorId: string;
@@ -126,7 +124,8 @@ async function logUsage(params: {
   userAgent?: string;
   metadata?: Record<string, unknown>;
 }) {
-  await pool.query(
+  await db.queryWithTenant(
+    params.tenantId,
     `INSERT INTO license_usage_log (
       license_id,
       api_client_id,
@@ -156,7 +155,7 @@ async function logUsage(params: {
   );
 }
 
-export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
+export async function checkConsentEnforcement(event: APIGatewayProxyEvent, tenantId: string) {
   const startedAt = Date.now();
 
   try {
@@ -186,7 +185,8 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
     const { actorId, requestedUsage, apiClientId, metadata, ipAddress, userAgent } =
       parsedBody.data;
 
-    const apiClientResult = await pool.query(
+    const apiClientResult = await db.queryWithTenant(
+      tenantId,
       `SELECT id
        FROM api_clients
        WHERE id = $1
@@ -204,7 +204,8 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
       });
     }
 
-    const licenseResult = await pool.query(
+    const licenseResult = await db.queryWithTenant(
+      tenantId,
       `SELECT id, expires_at
        FROM licenses
        WHERE actor_id = $1
@@ -231,6 +232,7 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
 
     if (isExpired) {
       await logUsage({
+        tenantId,
         licenseId: license.id,
         apiClientId,
         actorId,
@@ -250,7 +252,8 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
       });
     }
 
-    const consentResult = await pool.query(
+    const consentResult = await db.queryWithTenant(
+      tenantId,
       `SELECT id, version, policy
        FROM consent_ledger
        WHERE actor_id = $1
@@ -262,6 +265,7 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
 
     if (consentResult.rows.length === 0) {
       await logUsage({
+        tenantId,
         licenseId: license.id,
         apiClientId,
         actorId,
@@ -290,6 +294,7 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
     const evaluation = evaluateRequestedUsage(consentEntry.policy || {}, requestedUsage);
     if (!evaluation.allowed) {
       await logUsage({
+        tenantId,
         licenseId: license.id,
         apiClientId,
         actorId,
@@ -327,7 +332,8 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
 
     const decision: Decision = paymentRequired ? 'conditional' : 'allow';
 
-    await pool.query(
+    await db.queryWithTenant(
+      tenantId,
       `UPDATE licenses
        SET usage_count = usage_count + 1,
            last_used_at = NOW(),
@@ -338,6 +344,7 @@ export async function checkConsentEnforcement(event: APIGatewayProxyEvent) {
     );
 
     await logUsage({
+      tenantId,
       licenseId: license.id,
       apiClientId,
       actorId,

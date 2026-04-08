@@ -1,5 +1,5 @@
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import { Pool } from 'pg';
+import { DatabaseClient } from '@trulyimagined/database';
 import { z } from 'zod';
 
 /**
@@ -9,10 +9,7 @@ import { z } from 'zod';
  * Useful for actors to view their consent trail and manage permissions
  */
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
-});
+const db = DatabaseClient.getInstance();
 
 const NonEmptyString = z.string().trim().min(1);
 
@@ -98,7 +95,7 @@ export async function listConsents(event: APIGatewayProxyEvent, tenantId: string
     queryParams.push(limit, offset);
 
     // Execute query
-    const result = await pool.query(query, queryParams);
+    const result = await db.queryWithTenant(tenantId, query, queryParams);
 
     // Get total count (for pagination)
     let countQuery = `SELECT COUNT(*) FROM consent_log WHERE tenant_id = $1 AND actor_id = $2`;
@@ -109,7 +106,7 @@ export async function listConsents(event: APIGatewayProxyEvent, tenantId: string
       countParams.push(action);
     }
 
-    const countResult = await pool.query(countQuery, countParams);
+    const countResult = await db.queryWithTenant(tenantId, countQuery, countParams);
     const totalCount = parseInt(countResult.rows[0].count);
 
     // Group consents by current status (active/revoked/expired)
