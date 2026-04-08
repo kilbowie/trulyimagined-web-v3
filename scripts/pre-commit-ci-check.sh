@@ -13,25 +13,32 @@ echo ""
 trap 'echo ""; echo "❌ Failed at step: $BASH_COMMAND"; echo "Please fix and try again. See CI_GATES.md for details."; exit 1' ERR
 
 # Step 1: Type Check (Hard Gate)
-echo "📋 [1/4] Running TypeScript type-check..."
+echo "📋 [1/5] Running TypeScript type-check..."
 pnpm type-check
 echo "✅ Type-check passed"
 echo ""
 
 # Step 2: Lint (Hard Gate)
-echo "🎨 [2/4] Running linter..."
+echo "🎨 [2/5] Running linter..."
 pnpm lint
 echo "✅ Lint passed"
 echo ""
 
-# Step 3: Unit Tests
-echo "🧪 [3/4] Running unit tests..."
+# Step 3: Guardrails
+echo "🧱 [3/5] Running HDICR boundary guardrails..."
+pnpm check:hdicr-db-coimport
+pnpm check:hdicr-owned-table-access
+echo "✅ Guardrails passed"
+echo ""
+
+# Step 4: Unit Tests
+echo "🧪 [4/5] Running unit tests..."
 pnpm test
 echo "✅ Unit tests passed"
 echo ""
 
-# Step 4: Integration Tests (web only)
-echo "🔗 [4/4] Running web integration contract tests..."
+# Step 5: Integration Tests (web only)
+echo "🔗 [5/5] Running web integration contract tests..."
 pnpm --filter @trulyimagined/web test:integration
 echo "✅ Integration tests passed"
 echo ""

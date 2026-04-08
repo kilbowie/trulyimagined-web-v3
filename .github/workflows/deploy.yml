@@ -81,6 +81,11 @@ jobs:
         run: |
           bash scripts/check-hdicr-db-coimport.sh
 
+      - name: Enforce HDICR-owned table SQL guardrail
+        shell: bash
+        run: |
+          bash scripts/check-hdicr-owned-table-access.sh
+
   # Job 2: Security Scan
   security:
     name: Security Scan

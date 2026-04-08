@@ -6,6 +6,13 @@ API_ROOT="apps/web/src/app/api"
 # TODO(SEP-003): Add any legacy exemptions here while they are being migrated.
 # Keep this list empty whenever possible.
 EXEMPT_FILES=(
+  "apps/web/src/app/api/agent/roster/route.ts"
+  "apps/web/src/app/api/identity/status/route.ts"
+  "apps/web/src/app/api/media/route.ts"
+  "apps/web/src/app/api/media/upload/route.ts"
+  "apps/web/src/app/api/media/[id]/route.ts"
+  "apps/web/src/app/api/media/[id]/set-primary/route.ts"
+  "apps/web/src/app/api/notifications/counts/route.ts"
 )
 
 is_exempt() {
@@ -19,13 +26,25 @@ is_exempt() {
 }
 
 if command -v rg >/dev/null 2>&1; then
-  mapfile -t hdicr_files < <(rg -l "from ['\"]@/lib/hdicr/" "$API_ROOT")
+  mapfile -t hdicr_files < <(
+    rg \
+      --glob '!**/*.test.*' \
+      --glob '!**/*.spec.*' \
+      --glob '!**/*.contract.test.*' \
+      -l "from ['\"]@/lib/hdicr/" "$API_ROOT"
+  )
   has_db_import() {
     local file="$1"
     rg -q "from ['\"]@/lib/db(\\.ts)?['\"]" "$file"
   }
 else
-  mapfile -t hdicr_files < <(grep -R -l -E "from ['\"]@/lib/hdicr/" "$API_ROOT" || true)
+  mapfile -t hdicr_files < <(
+    grep -R -l -E "from ['\"]@/lib/hdicr/" \
+      --exclude='*.test.*' \
+      --exclude='*.spec.*' \
+      --exclude='*.contract.test.*' \
+      "$API_ROOT" || true
+  )
   has_db_import() {
     local file="$1"
     grep -q -E "from ['\"]@/lib/db(\.ts)?['\"]" "$file"

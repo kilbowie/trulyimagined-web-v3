@@ -10,6 +10,7 @@ This document defines the mandatory stage gates that must pass before code merge
 │ ✓ pnpm type-check (HARD GATE)                                  │
 │ ✓ pnpm lint (HARD GATE)                                        │
 │ ✓ HDICR DB import guardrail                                    │
+│ ✓ HDICR-owned table SQL guardrail                              │
 └────────────┬────────────────────────────────────────────────────┘
              │ (must pass to proceed)
              ├─────────────────┬────────────────────┐
@@ -73,7 +74,25 @@ pnpm type-check
 pnpm lint
 ```
 
-### 3. Build Check (`pnpm build`)
+### 3. HDICR Boundary Guardrails (`pnpm check:hdicr-db-coimport` + `pnpm check:hdicr-owned-table-access`)
+
+**Purpose:** Prevent TI web runtime code from reintroducing direct HDICR data-plane access.
+
+**Failure behavior:** Blocks all downstream jobs.
+
+**Local validation:**
+
+```bash
+pnpm check:hdicr-db-coimport
+pnpm check:hdicr-owned-table-access
+```
+
+**Key rules:**
+
+- API routes cannot co-import `@/lib/hdicr/*` and `@/lib/db`
+- `apps/web/src` runtime code cannot execute SQL against HDICR-owned tables such as `identity_links`, `consent_ledger`, `licenses`, `license_usage_log`, `bitstring_status_lists`, `credential_status_entries`, or `verifiable_credentials`
+
+### 4. Build Check (`pnpm build`)
 
 **Purpose:** Verify the production build succeeds with minimal env
 
@@ -132,6 +151,8 @@ pnpm install --frozen-lockfile
 pnpm --filter @trulyimagined/types build
 pnpm type-check
 pnpm lint
+pnpm check:hdicr-db-coimport
+pnpm check:hdicr-owned-table-access
 pnpm test
 pnpm --filter @trulyimagined/web test:integration
 pnpm build
@@ -203,6 +224,7 @@ gh api repos/{owner}/{repo}/branches/main/protection
 | ------------------------ | ------------------------------ | ------------------------------------------------------------- |
 | `pnpm type-check` errors | Uncommitted type violations    | `pnpm type-check` locally, review error, add type annotations |
 | `pnpm lint` fails        | Style violations               | `pnpm lint --fix` and recommit                                |
+| HDICR guardrail fails    | New TI runtime boundary leak   | Route through HDICR client/service instead of direct SQL      |
 | Build fails              | Missing imports after refactor | Check all adapter clients for completeness                    |
 | Integration tests fail   | Adapter mode mismatch          | Ensure env vars match test suite expectations                 |
 
