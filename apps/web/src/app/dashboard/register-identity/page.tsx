@@ -8,60 +8,74 @@ import { AlertCircle, Shield } from 'lucide-react';
 import { RegistrationForm } from '@/components/RegistrationForm';
 import { RegistrationStatus } from '@/components/RegistrationStatus';
 import { query } from '@/lib/db';
-import { ensureActorRegistryId } from '@/lib/registry-id';
+import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
+
+type RegistrationStatusActor = {
+  id: string;
+  registryId?: string | null;
+  email: string;
+  firstName: string;
+  lastName: string;
+  stageName?: string;
+  bio?: string;
+  location?: string;
+  verificationStatus: 'pending' | 'verified' | 'rejected';
+  isVerified: boolean;
+  isPro: boolean;
+  isFoundingMember: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
 
 /**
- * Fetch actor registration status directly from database
+ * Fetch actor registration status via HDICR identity APIs.
+ * Only TI-owned user profile flags are read from the TI database.
  */
 async function getActorStatus(auth0UserId: string) {
   try {
-    const result = await query(
-      `SELECT 
-        a.id,
-        a.registry_id,
-        a.first_name,
-        a.last_name,
-        a.stage_name,
-        a.location,
-        a.bio,
-        a.verification_status,
-        a.is_founding_member,
-        a.created_at,
-        a.updated_at,
-        a.email,
-        COALESCE(up.is_verified, FALSE) AS is_verified,
-        COALESCE(up.is_pro, FALSE) AS is_pro
-      FROM actors a
-      LEFT JOIN user_profiles up ON up.auth0_user_id = a.auth0_user_id
-      WHERE a.auth0_user_id = $1`,
-      [auth0UserId]
-    );
+    const actorRecord = await resolveActorRecordByAuth0UserId(auth0UserId);
 
-    if (result.rows.length === 0) {
+    if (!actorRecord) {
       return { registered: false, actor: null };
     }
 
-    const actor = result.rows[0];
-    const registryId = await ensureActorRegistryId(actor.id, actor.registry_id);
+    const profileResult = await query(
+      `SELECT
+        COALESCE(is_verified, FALSE) AS is_verified,
+        COALESCE(is_pro, FALSE) AS is_pro
+       FROM user_profiles
+       WHERE auth0_user_id = $1
+       LIMIT 1`,
+      [auth0UserId]
+    );
+
+    const profile = profileResult.rows[0] || { is_verified: false, is_pro: false };
+
+    const verificationStatus =
+      actorRecord.verification_status === 'verified' || actorRecord.verification_status === 'rejected'
+        ? actorRecord.verification_status
+        : 'pending';
+
+    const actor: RegistrationStatusActor = {
+      id: actorRecord.id,
+      registryId: actorRecord.registry_id ?? null,
+      firstName: actorRecord.first_name ?? '',
+      lastName: actorRecord.last_name ?? '',
+      stageName: actorRecord.stage_name ?? undefined,
+      location: actorRecord.location ?? undefined,
+      bio: actorRecord.bio ?? undefined,
+      verificationStatus,
+      isVerified: Boolean(profile.is_verified) || verificationStatus === 'verified',
+      isPro: Boolean(profile.is_pro),
+      isFoundingMember: Boolean(actorRecord.is_founding_member),
+      createdAt: actorRecord.created_at ?? new Date().toISOString(),
+      updatedAt: actorRecord.created_at ?? undefined,
+      email: actorRecord.email ?? '',
+    };
 
     return {
       registered: true,
-      actor: {
-        id: actor.id,
-        registryId,
-        firstName: actor.first_name,
-        lastName: actor.last_name,
-        stageName: actor.stage_name,
-        location: actor.location,
-        bio: actor.bio,
-        verificationStatus: actor.verification_status,
-        isVerified: !!actor.is_verified || actor.verification_status === 'verified',
-        isPro: !!actor.is_pro,
-        isFoundingMember: actor.is_founding_member,
-        createdAt: actor.created_at,
-        updatedAt: actor.updated_at,
-        email: actor.email,
-      },
+      actor,
     };
   } catch (error) {
     console.error('[IDENTITY] Status fetch error:', error);

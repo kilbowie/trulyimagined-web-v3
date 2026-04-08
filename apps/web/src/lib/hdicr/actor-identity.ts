@@ -37,8 +37,7 @@ function normalizeActorRecord(actor: RemoteActorRecord, fallbackId: string): Act
     stage_name: readString(actor.stage_name) ?? readString(actor.stageName),
     bio: readString(actor.bio),
     location: readString(actor.location),
-    profile_image_url:
-      readString(actor.profile_image_url) ?? readString(actor.profileImageUrl),
+    profile_image_url: readString(actor.profile_image_url) ?? readString(actor.profileImageUrl),
     verification_status:
       readString(actor.verification_status) ?? readString(actor.verificationStatus),
     is_founding_member:

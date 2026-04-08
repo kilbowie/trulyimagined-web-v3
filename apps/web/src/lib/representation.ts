@@ -2,9 +2,10 @@ import { query } from '@/lib/db';
 import { resolveActorIdByAuth0UserId } from '@/lib/hdicr/actor-identity';
 
 export async function getUserProfileByAuth0Id(auth0UserId: string) {
-  const result = await query('SELECT id, auth0_user_id, role FROM user_profiles WHERE auth0_user_id = $1', [
-    auth0UserId,
-  ]);
+  const result = await query(
+    'SELECT id, auth0_user_id, role FROM user_profiles WHERE auth0_user_id = $1',
+    [auth0UserId]
+  );
   return result.rows[0] || null;
 }
 
