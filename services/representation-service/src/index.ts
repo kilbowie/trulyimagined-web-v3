@@ -123,7 +123,8 @@ async function handleGetActorByAuth0(event: APIGatewayProxyEvent, tenantId: stri
     }
 
     const params = ActorByAuth0Schema.parse({ auth0UserId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT id, auth0_user_id, email, name, created_at FROM actors WHERE auth0_user_id = $1 AND tenant_id = $2',
       [params.auth0UserId, tenantId]
     );
@@ -159,7 +160,8 @@ async function handleGetAgentByAuth0(event: APIGatewayProxyEvent, tenantId: stri
     }
 
     const params = AgentByAuth0Schema.parse({ auth0UserId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE auth0_user_id = $1 AND deleted_at IS NULL AND tenant_id = $2',
       [params.auth0UserId, tenantId]
     );
@@ -195,7 +197,8 @@ async function handleGetActiveRepresentation(event: APIGatewayProxyEvent, tenant
     }
 
     const params = ActiveRepresentationSchema.parse({ actorId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       `SELECT r.id, r.actor_id, r.agent_id, r.started_at,
               ag.registry_id, ag.agency_name, ag.verification_status, ag.profile_image_url, ag.location, ag.website_url
        FROM actor_agent_relationships r
@@ -236,7 +239,8 @@ async function handleGetAgentByRegistry(event: APIGatewayProxyEvent, tenantId: s
     }
 
     const params = AgentByRegistrySchema.parse({ registryId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT id, auth0_user_id, registry_id, agency_name, verification_status, profile_completed FROM agents WHERE registry_id = $1 AND deleted_at IS NULL AND tenant_id = $2',
       [params.registryId, tenantId]
     );
@@ -274,7 +278,8 @@ async function handleCheckPendingRequest(event: APIGatewayProxyEvent, tenantId: 
     }
 
     const params = PendingRequestSchema.parse({ actorId, agentId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT 1 FROM representation_requests WHERE actor_id = $1 AND agent_id = $2 AND status = $3 AND tenant_id = $4 LIMIT 1',
       [params.actorId, params.agentId, 'pending', tenantId]
     );
@@ -306,7 +311,8 @@ async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent, te
     const requestId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await db.queryWithTenant(tenantId, 
+    await db.queryWithTenant(
+      tenantId,
       `INSERT INTO representation_requests 
        (id, actor_id, agent_id, message, status, tenant_id, created_at, updated_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -322,7 +328,8 @@ async function handleCreateRepresentationRequest(event: APIGatewayProxyEvent, te
       ]
     );
 
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2',
       [requestId, tenantId]
     );
@@ -358,7 +365,8 @@ async function handleListIncomingRequests(event: APIGatewayProxyEvent, tenantId:
     }
 
     const params = IncomingRequestsSchema.parse({ agentId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       `SELECT * FROM representation_requests 
        WHERE agent_id = $1 AND tenant_id = $2
        ORDER BY created_at DESC`,
@@ -396,7 +404,8 @@ async function handleListOutgoingRequests(event: APIGatewayProxyEvent, tenantId:
     }
 
     const params = OutgoingRequestsSchema.parse({ actorId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       `SELECT * FROM representation_requests 
        WHERE actor_id = $1 AND tenant_id = $2
        ORDER BY created_at DESC`,
@@ -434,7 +443,8 @@ async function handleGetRepresentationRequest(event: APIGatewayProxyEvent, tenan
     }
 
     const params = RequestByIdSchema.parse({ id: requestId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2',
       [params.id, tenantId]
     );
@@ -465,14 +475,16 @@ async function handleUpdateRepresentationRequest(event: APIGatewayProxyEvent, te
 
     const now = new Date().toISOString();
 
-    await db.queryWithTenant(tenantId, 
+    await db.queryWithTenant(
+      tenantId,
       `UPDATE representation_requests 
        SET status = $1, response_note = $2, updated_at = $3 
        WHERE id = $4 AND tenant_id = $5`,
       [params.action, params.responseNote || null, now, params.requestId, tenantId]
     );
 
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT * FROM representation_requests WHERE id = $1 AND tenant_id = $2',
       [params.requestId, tenantId]
     );
@@ -508,7 +520,8 @@ async function handleCheckActiveRelationship(event: APIGatewayProxyEvent, tenant
     }
 
     const params = ActiveRelationshipSchema.parse({ actorId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT 1 FROM actor_agent_relationships WHERE actor_id = $1 AND ended_at IS NULL AND tenant_id = $2 LIMIT 1',
       [params.actorId, tenantId]
     );
@@ -540,7 +553,8 @@ async function handleCreateRelationship(event: APIGatewayProxyEvent, tenantId: s
     const relationshipId = crypto.randomUUID();
     const now = new Date().toISOString();
 
-    await db.queryWithTenant(tenantId, 
+    await db.queryWithTenant(
+      tenantId,
       `INSERT INTO actor_agent_relationships 
        (id, actor_id, agent_id, representation_request_id, tenant_id, started_at, created_at, updated_at) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
@@ -587,7 +601,8 @@ async function handleGetRelationship(event: APIGatewayProxyEvent, tenantId: stri
     }
 
     const params = RelationshipByIdSchema.parse({ id: relationshipId });
-    const result = await db.queryWithTenant(tenantId, 
+    const result = await db.queryWithTenant(
+      tenantId,
       'SELECT * FROM actor_agent_relationships WHERE id = $1 AND tenant_id = $2',
       [params.id, tenantId]
     );
@@ -618,7 +633,8 @@ async function handleEndRelationship(event: APIGatewayProxyEvent, tenantId: stri
 
     const now = new Date().toISOString();
 
-    await db.queryWithTenant(tenantId, 
+    await db.queryWithTenant(
+      tenantId,
       `UPDATE actor_agent_relationships 
        SET ended_at = $1, ended_by = $2, ended_by_auth0_user_id = $3, updated_at = $4 
        WHERE id = $5 AND tenant_id = $6`,
@@ -756,4 +772,3 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     body: JSON.stringify({ error: 'Not found' }),
   };
 };
-

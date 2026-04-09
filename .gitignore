@@ -52,3 +52,4 @@ samconfig.toml
 
 # OS
 Thumbs.db
+.vercel

@@ -44,11 +44,7 @@ function walk(dir, out = []) {
     }
 
     const lower = entry.name.toLowerCase();
-    if (
-      lower.includes('.test.') ||
-      lower.includes('.spec.') ||
-      lower.includes('.contract.test.')
-    ) {
+    if (lower.includes('.test.') || lower.includes('.spec.') || lower.includes('.contract.test.')) {
       continue;
     }
 
