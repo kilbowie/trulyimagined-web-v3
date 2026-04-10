@@ -395,6 +395,12 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
       show: hasAdminRole,
       items: [
         {
+          title: 'Manual Verification',
+          href: '/dashboard/admin/verification',
+          icon: ShieldCheck,
+          show: hasAdminRole,
+        },
+        {
           title: 'User Feedback',
           href: '/dashboard/admin/feedback',
           icon: MessageCircle,
