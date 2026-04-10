@@ -209,11 +209,20 @@ export async function listPendingTerminations(params: { actorId?: string; agentI
 
 export async function applyDueRepresentationTerminations(limit = 100) {
   const startedAt = Date.now();
+  const warningFailureRateThreshold = Number(
+    process.env.REPRESENTATION_TERMINATION_SWEEP_WARN_FAILURE_RATE || '0.2'
+  );
+  const warningFailureCountThreshold = Number(
+    process.env.REPRESENTATION_TERMINATION_SWEEP_WARN_FAILURE_COUNT || '3'
+  );
+
   const due = await query(
-    `SELECT id, relationship_id, initiated_by
+    `SELECT id, relationship_id, initiated_by, status
      FROM representation_terminations
-     WHERE status = 'pending_termination'
-       AND effective_date <= NOW()
+     WHERE (
+       (status = 'pending_termination' AND effective_date <= NOW())
+       OR (status = 'failed' AND effective_date <= NOW())
+     )
      ORDER BY effective_date ASC
      LIMIT $1`,
     [limit]
@@ -221,9 +230,16 @@ export async function applyDueRepresentationTerminations(limit = 100) {
 
   let completed = 0;
   let failed = 0;
+  let retriesAttempted = 0;
+  let retriesRecovered = 0;
   const failures: Array<{ terminationId: string; relationshipId: string; error: string }> = [];
 
   for (const row of due.rows) {
+    const isRetryAttempt = row.status === 'failed';
+    if (isRetryAttempt) {
+      retriesAttempted += 1;
+    }
+
     try {
       const context = await getTerminationNotificationContext(row.relationship_id);
 
@@ -262,6 +278,9 @@ export async function applyDueRepresentationTerminations(limit = 100) {
       }
 
       completed += 1;
+      if (isRetryAttempt) {
+        retriesRecovered += 1;
+      }
     } catch (error) {
       failed += 1;
       const errorMessage =
@@ -285,12 +304,36 @@ export async function applyDueRepresentationTerminations(limit = 100) {
   }
 
   const durationMs = Date.now() - startedAt;
+  const failureRate = due.rows.length > 0 ? failed / due.rows.length : 0;
+  const warningTriggered =
+    failed >= warningFailureCountThreshold && failureRate >= warningFailureRateThreshold;
+
+  if (warningTriggered) {
+    console.warn('[REPRESENTATION_TERMINATION_SWEEP] Warning threshold exceeded', {
+      scanned: due.rows.length,
+      failed,
+      completed,
+      failureRate,
+      warningFailureRateThreshold,
+      warningFailureCountThreshold,
+      retriesAttempted,
+      retriesRecovered,
+    });
+  }
 
   return {
     scanned: due.rows.length,
     completed,
     failed,
+    retriesAttempted,
+    retriesRecovered,
+    failureRate,
     durationMs,
     failures,
+    warning: {
+      triggered: warningTriggered,
+      failureRateThreshold: warningFailureRateThreshold,
+      failureCountThreshold: warningFailureCountThreshold,
+    },
   };
 }
