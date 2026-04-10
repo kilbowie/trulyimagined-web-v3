@@ -6,7 +6,7 @@
 -- Add user_profile_id column to actors table
 ALTER TABLE actors ADD COLUMN IF NOT EXISTS user_profile_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE;
 
--- Create index for the foreign key
+-- CREATE INDEX IF NOT EXISTS for the foreign key
 CREATE INDEX IF NOT EXISTS idx_actors_user_profile_id ON actors(user_profile_id);
 
 -- Add constraint: only one actor profile per user_profile

@@ -37,16 +37,16 @@ CREATE TABLE IF NOT EXISTS actor_media (
 );
 
 -- Partial unique index for primary media (only one primary per type per actor when not deleted)
-CREATE UNIQUE INDEX idx_actor_media_unique_primary 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_actor_media_unique_primary 
 ON actor_media(actor_id, media_type, is_primary) 
 WHERE is_primary = TRUE AND deleted_at IS NULL;
 
 -- Indexes for performance
-CREATE INDEX idx_actor_media_actor_id ON actor_media(actor_id);
-CREATE INDEX idx_actor_media_type ON actor_media(media_type);
-CREATE INDEX idx_actor_media_primary ON actor_media(actor_id, is_primary) WHERE is_primary = TRUE;
-CREATE INDEX idx_actor_media_display_order ON actor_media(actor_id, display_order);
-CREATE INDEX idx_actor_media_uploaded_at ON actor_media(uploaded_at DESC);
+CREATE INDEX IF NOT EXISTS idx_actor_media_actor_id ON actor_media(actor_id);
+CREATE INDEX IF NOT EXISTS idx_actor_media_type ON actor_media(media_type);
+CREATE INDEX IF NOT EXISTS idx_actor_media_primary ON actor_media(actor_id, is_primary) WHERE is_primary = TRUE;
+CREATE INDEX IF NOT EXISTS idx_actor_media_display_order ON actor_media(actor_id, display_order);
+CREATE INDEX IF NOT EXISTS idx_actor_media_uploaded_at ON actor_media(uploaded_at DESC);
 
 -- Auto-update timestamp trigger
 CREATE TRIGGER update_actor_media_updated_at 

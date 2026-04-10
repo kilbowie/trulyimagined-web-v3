@@ -46,14 +46,14 @@ CREATE TABLE IF NOT EXISTS identity_links (
 );
 
 -- Indexes for Performance
-CREATE INDEX idx_identity_links_user_profile_id ON identity_links(user_profile_id);
-CREATE INDEX idx_identity_links_provider ON identity_links(provider);
-CREATE INDEX idx_identity_links_is_active ON identity_links(is_active);
-CREATE INDEX idx_identity_links_verification_level ON identity_links(verification_level);
-CREATE INDEX idx_identity_links_assurance_level ON identity_links(assurance_level);
+CREATE INDEX IF NOT EXISTS idx_identity_links_user_profile_id ON identity_links(user_profile_id);
+CREATE INDEX IF NOT EXISTS idx_identity_links_provider ON identity_links(provider);
+CREATE INDEX IF NOT EXISTS idx_identity_links_is_active ON identity_links(is_active);
+CREATE INDEX IF NOT EXISTS idx_identity_links_verification_level ON identity_links(verification_level);
+CREATE INDEX IF NOT EXISTS idx_identity_links_assurance_level ON identity_links(assurance_level);
 
 -- Composite index for common query pattern
-CREATE INDEX idx_identity_links_user_active ON identity_links(user_profile_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_identity_links_user_active ON identity_links(user_profile_id, is_active);
 
 -- ===========================================
 -- UPDATED_AT TRIGGER

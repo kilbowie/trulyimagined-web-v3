@@ -57,13 +57,13 @@ CREATE TABLE IF NOT EXISTS verifiable_credentials (
 -- ===========================================
 -- INDEXES FOR PERFORMANCE
 -- ===========================================
-CREATE INDEX idx_verifiable_credentials_user_profile_id ON verifiable_credentials(user_profile_id);
-CREATE INDEX idx_verifiable_credentials_credential_type ON verifiable_credentials(credential_type);
-CREATE INDEX idx_verifiable_credentials_issuer_did ON verifiable_credentials(issuer_did);
-CREATE INDEX idx_verifiable_credentials_holder_did ON verifiable_credentials(holder_did);
-CREATE INDEX idx_verifiable_credentials_is_revoked ON verifiable_credentials(is_revoked);
-CREATE INDEX idx_verifiable_credentials_issued_at ON verifiable_credentials(issued_at DESC);
-CREATE INDEX idx_verifiable_credentials_expires_at ON verifiable_credentials(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_user_profile_id ON verifiable_credentials(user_profile_id);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_credential_type ON verifiable_credentials(credential_type);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_issuer_did ON verifiable_credentials(issuer_did);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_holder_did ON verifiable_credentials(holder_did);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_is_revoked ON verifiable_credentials(is_revoked);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_issued_at ON verifiable_credentials(issued_at DESC);
+CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_expires_at ON verifiable_credentials(expires_at) WHERE expires_at IS NOT NULL;
 
 -- ===========================================
 -- UPDATE TIMESTAMP TRIGGER

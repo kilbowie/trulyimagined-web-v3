@@ -17,11 +17,11 @@ CREATE TABLE IF NOT EXISTS user_feedback (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_user_feedback_user_id ON user_feedback(user_id);
-CREATE INDEX idx_user_feedback_topic ON user_feedback(topic);
-CREATE INDEX idx_user_feedback_sentiment ON user_feedback(sentiment);
-CREATE INDEX idx_user_feedback_created_at ON user_feedback(created_at DESC);
-CREATE INDEX idx_user_feedback_is_read ON user_feedback(is_read) WHERE is_read = FALSE;
+CREATE INDEX IF NOT EXISTS idx_user_feedback_user_id ON user_feedback(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_topic ON user_feedback(topic);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_sentiment ON user_feedback(sentiment);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_created_at ON user_feedback(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_feedback_is_read ON user_feedback(is_read) WHERE is_read = FALSE;
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_user_feedback_timestamp()

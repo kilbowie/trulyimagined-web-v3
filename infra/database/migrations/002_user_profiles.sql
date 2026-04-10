@@ -32,10 +32,10 @@ CREATE TABLE IF NOT EXISTS user_profiles (
 );
 
 -- Indexes
-CREATE INDEX idx_user_profiles_auth0_user_id ON user_profiles(auth0_user_id);
-CREATE INDEX idx_user_profiles_email ON user_profiles(email);
-CREATE INDEX idx_user_profiles_username ON user_profiles(username);
-CREATE INDEX idx_user_profiles_role ON user_profiles(role);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_auth0_user_id ON user_profiles(auth0_user_id);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_email ON user_profiles(email);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_username ON user_profiles(username);
+CREATE INDEX IF NOT EXISTS idx_user_profiles_role ON user_profiles(role);
 
 -- Update timestamp trigger
 CREATE OR REPLACE FUNCTION update_user_profiles_updated_at()

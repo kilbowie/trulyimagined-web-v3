@@ -30,14 +30,14 @@ CREATE TABLE IF NOT EXISTS support_ticket_messages (
 );
 
 -- Create indexes for performance
-CREATE INDEX idx_support_tickets_user_id ON support_tickets(user_id);
-CREATE INDEX idx_support_tickets_status ON support_tickets(status) WHERE status NOT IN ('resolved', 'closed');
-CREATE INDEX idx_support_tickets_assigned_to ON support_tickets(assigned_to) WHERE assigned_to IS NOT NULL;
-CREATE INDEX idx_support_tickets_created_at ON support_tickets(created_at DESC);
-CREATE INDEX idx_support_tickets_number ON support_tickets(ticket_number);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_user_id ON support_tickets(user_id);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON support_tickets(status) WHERE status NOT IN ('resolved', 'closed');
+CREATE INDEX IF NOT EXISTS idx_support_tickets_assigned_to ON support_tickets(assigned_to) WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_support_tickets_created_at ON support_tickets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_number ON support_tickets(ticket_number);
 
-CREATE INDEX idx_ticket_messages_ticket_id ON support_ticket_messages(ticket_id, created_at ASC);
-CREATE INDEX idx_ticket_messages_user_id ON support_ticket_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON support_ticket_messages(ticket_id, created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_user_id ON support_ticket_messages(user_id);
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_support_ticket_timestamp()

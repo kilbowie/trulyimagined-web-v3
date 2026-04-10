@@ -48,9 +48,9 @@ CREATE TABLE IF NOT EXISTS api_clients (
   deleted_at TIMESTAMP WITH TIME ZONE
 );
 
-CREATE INDEX idx_api_clients_status ON api_clients(credential_status) WHERE deleted_at IS NULL;
-CREATE INDEX idx_api_clients_created_at ON api_clients(created_at DESC);
-CREATE INDEX idx_api_clients_api_key_hash ON api_clients(api_key_hash);
+CREATE INDEX IF NOT EXISTS idx_api_clients_status ON api_clients(credential_status) WHERE deleted_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_api_clients_created_at ON api_clients(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_api_clients_api_key_hash ON api_clients(api_key_hash);
 
 -- ===========================================
 -- CONSENT LEDGER TABLE
@@ -111,10 +111,10 @@ CREATE TABLE IF NOT EXISTS consent_ledger (
   CONSTRAINT version_positive CHECK (version > 0)
 );
 
-CREATE INDEX idx_consent_ledger_actor_id ON consent_ledger(actor_id);
-CREATE INDEX idx_consent_ledger_actor_status ON consent_ledger(actor_id, status) WHERE status = 'active';
-CREATE INDEX idx_consent_ledger_version ON consent_ledger(actor_id, version DESC);
-CREATE INDEX idx_consent_ledger_created_at ON consent_ledger(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_consent_ledger_actor_id ON consent_ledger(actor_id);
+CREATE INDEX IF NOT EXISTS idx_consent_ledger_actor_status ON consent_ledger(actor_id, status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_consent_ledger_version ON consent_ledger(actor_id, version DESC);
+CREATE INDEX IF NOT EXISTS idx_consent_ledger_created_at ON consent_ledger(created_at DESC);
 
 -- ===========================================
 -- LICENSES TABLE
@@ -159,11 +159,11 @@ CREATE TABLE IF NOT EXISTS licenses (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-CREATE INDEX idx_licenses_actor_id ON licenses(actor_id);
-CREATE INDEX idx_licenses_api_client_id ON licenses(api_client_id);
-CREATE INDEX idx_licenses_status ON licenses(status) WHERE status = 'active';
-CREATE INDEX idx_licenses_expires_at ON licenses(expires_at) WHERE expires_at IS NOT NULL AND status = 'active';
-CREATE INDEX idx_licenses_consent_ledger_id ON licenses(consent_ledger_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_actor_id ON licenses(actor_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_api_client_id ON licenses(api_client_id);
+CREATE INDEX IF NOT EXISTS idx_licenses_status ON licenses(status) WHERE status = 'active';
+CREATE INDEX IF NOT EXISTS idx_licenses_expires_at ON licenses(expires_at) WHERE expires_at IS NOT NULL AND status = 'active';
+CREATE INDEX IF NOT EXISTS idx_licenses_consent_ledger_id ON licenses(consent_ledger_id);
 
 -- ===========================================
 -- LICENSE USAGE LOG TABLE (Optional - for analytics)
@@ -193,10 +193,10 @@ CREATE TABLE IF NOT EXISTS license_usage_log (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() CHECK (created_at <= NOW())
 );
 
-CREATE INDEX idx_license_usage_log_license_id ON license_usage_log(license_id);
-CREATE INDEX idx_license_usage_log_actor_id ON license_usage_log(actor_id);
-CREATE INDEX idx_license_usage_log_created_at ON license_usage_log(created_at DESC);
-CREATE INDEX idx_license_usage_log_decision ON license_usage_log(decision);
+CREATE INDEX IF NOT EXISTS idx_license_usage_log_license_id ON license_usage_log(license_id);
+CREATE INDEX IF NOT EXISTS idx_license_usage_log_actor_id ON license_usage_log(actor_id);
+CREATE INDEX IF NOT EXISTS idx_license_usage_log_created_at ON license_usage_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_license_usage_log_decision ON license_usage_log(decision);
 
 -- ===========================================
 -- FUNCTIONS: Consent Ledger Operations

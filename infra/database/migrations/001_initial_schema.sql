@@ -45,11 +45,11 @@ CREATE TABLE IF NOT EXISTS actors (
   CONSTRAINT valid_email CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$')
 );
 
-CREATE INDEX idx_actors_auth0_user_id ON actors(auth0_user_id);
-CREATE INDEX idx_actors_email ON actors(email);
-CREATE INDEX idx_actors_registry_id ON actors(registry_id);
-CREATE INDEX idx_actors_verification_status ON actors(verification_status);
-CREATE INDEX idx_actors_created_at ON actors(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_actors_auth0_user_id ON actors(auth0_user_id);
+CREATE INDEX IF NOT EXISTS idx_actors_email ON actors(email);
+CREATE INDEX IF NOT EXISTS idx_actors_registry_id ON actors(registry_id);
+CREATE INDEX IF NOT EXISTS idx_actors_verification_status ON actors(verification_status);
+CREATE INDEX IF NOT EXISTS idx_actors_created_at ON actors(created_at DESC);
 
 -- ===========================================
 -- CONSENT LOG (Consent Ledger - CRITICAL)
@@ -85,11 +85,11 @@ CREATE TABLE IF NOT EXISTS consent_log (
   CONSTRAINT no_future_dates CHECK (created_at <= NOW())
 );
 
-CREATE INDEX idx_consent_log_actor_id ON consent_log(actor_id);
-CREATE INDEX idx_consent_log_action ON consent_log(action);
-CREATE INDEX idx_consent_log_consent_type ON consent_log(consent_type);
-CREATE INDEX idx_consent_log_created_at ON consent_log(created_at DESC);
-CREATE INDEX idx_consent_log_requester_id ON consent_log(requester_id);
+CREATE INDEX IF NOT EXISTS idx_consent_log_actor_id ON consent_log(actor_id);
+CREATE INDEX IF NOT EXISTS idx_consent_log_action ON consent_log(action);
+CREATE INDEX IF NOT EXISTS idx_consent_log_consent_type ON consent_log(consent_type);
+CREATE INDEX IF NOT EXISTS idx_consent_log_created_at ON consent_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_consent_log_requester_id ON consent_log(requester_id);
 
 -- ===========================================
 -- LICENSING REQUESTS (MVP)
@@ -133,9 +133,9 @@ CREATE TABLE IF NOT EXISTS licensing_requests (
   CONSTRAINT valid_compensation CHECK (compensation_offered IS NULL OR compensation_offered >= 0)
 );
 
-CREATE INDEX idx_licensing_requests_actor_id ON licensing_requests(actor_id);
-CREATE INDEX idx_licensing_requests_status ON licensing_requests(status);
-CREATE INDEX idx_licensing_requests_created_at ON licensing_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_actor_id ON licensing_requests(actor_id);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_status ON licensing_requests(status);
+CREATE INDEX IF NOT EXISTS idx_licensing_requests_created_at ON licensing_requests(created_at DESC);
 
 -- ===========================================
 -- USAGE TRACKING (Minutes Generated)
@@ -167,10 +167,10 @@ CREATE TABLE IF NOT EXISTS usage_tracking (
   CONSTRAINT valid_quantity CHECK (quantity > 0)
 );
 
-CREATE INDEX idx_usage_tracking_actor_id ON usage_tracking(actor_id);
-CREATE INDEX idx_usage_tracking_licensing_request_id ON usage_tracking(licensing_request_id);
-CREATE INDEX idx_usage_tracking_created_at ON usage_tracking(created_at DESC);
-CREATE INDEX idx_usage_tracking_usage_type ON usage_tracking(usage_type);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_actor_id ON usage_tracking(actor_id);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_licensing_request_id ON usage_tracking(licensing_request_id);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_created_at ON usage_tracking(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_usage_type ON usage_tracking(usage_type);
 
 -- ===========================================
 -- AUDIT LOG (System-wide audit trail)
@@ -198,10 +198,10 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL
 );
 
-CREATE INDEX idx_audit_log_user_id ON audit_log(user_id);
-CREATE INDEX idx_audit_log_resource_type ON audit_log(resource_type);
-CREATE INDEX idx_audit_log_resource_id ON audit_log(resource_id);
-CREATE INDEX idx_audit_log_created_at ON audit_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_log_user_id ON audit_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_resource_type ON audit_log(resource_type);
+CREATE INDEX IF NOT EXISTS idx_audit_log_resource_id ON audit_log(resource_id);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created_at ON audit_log(created_at DESC);
 
 -- ===========================================
 -- FUNCTIONS: Auto-update timestamps

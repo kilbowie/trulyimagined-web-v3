@@ -86,18 +86,18 @@ CREATE TABLE IF NOT EXISTS credential_status_entries (
 -- ===========================================
 
 -- Bitstring Status Lists
-CREATE INDEX idx_bitstring_status_lists_list_id ON bitstring_status_lists(list_id);
-CREATE INDEX idx_bitstring_status_lists_status_purpose ON bitstring_status_lists(status_purpose);
-CREATE INDEX idx_bitstring_status_lists_is_full ON bitstring_status_lists(is_full) WHERE is_full = FALSE;
-CREATE INDEX idx_bitstring_status_lists_valid_from ON bitstring_status_lists(valid_from DESC);
-CREATE INDEX idx_bitstring_status_lists_updated_at ON bitstring_status_lists(updated_at DESC);
+CREATE INDEX IF NOT EXISTS idx_bitstring_status_lists_list_id ON bitstring_status_lists(list_id);
+CREATE INDEX IF NOT EXISTS idx_bitstring_status_lists_status_purpose ON bitstring_status_lists(status_purpose);
+CREATE INDEX IF NOT EXISTS idx_bitstring_status_lists_is_full ON bitstring_status_lists(is_full) WHERE is_full = FALSE;
+CREATE INDEX IF NOT EXISTS idx_bitstring_status_lists_valid_from ON bitstring_status_lists(valid_from DESC);
+CREATE INDEX IF NOT EXISTS idx_bitstring_status_lists_updated_at ON bitstring_status_lists(updated_at DESC);
 
 -- Credential Status Entries
-CREATE INDEX idx_credential_status_entries_credential_id ON credential_status_entries(credential_id);
-CREATE INDEX idx_credential_status_entries_status_list_id ON credential_status_entries(status_list_id);
-CREATE INDEX idx_credential_status_entries_status_list_index ON credential_status_entries(status_list_id, status_list_index);
-CREATE INDEX idx_credential_status_entries_status_value ON credential_status_entries(status_value);
-CREATE INDEX idx_credential_status_entries_entry_url ON credential_status_entries(entry_url);
+CREATE INDEX IF NOT EXISTS idx_credential_status_entries_credential_id ON credential_status_entries(credential_id);
+CREATE INDEX IF NOT EXISTS idx_credential_status_entries_status_list_id ON credential_status_entries(status_list_id);
+CREATE INDEX IF NOT EXISTS idx_credential_status_entries_status_list_index ON credential_status_entries(status_list_id, status_list_index);
+CREATE INDEX IF NOT EXISTS idx_credential_status_entries_status_value ON credential_status_entries(status_value);
+CREATE INDEX IF NOT EXISTS idx_credential_status_entries_entry_url ON credential_status_entries(entry_url);
 
 -- ===========================================
 -- UPDATE TIMESTAMP TRIGGERS
@@ -144,8 +144,8 @@ BEGIN
     ALTER TABLE verifiable_credentials 
     ADD COLUMN credential_id VARCHAR(500) UNIQUE;
     
-    -- Create index for fast lookup
-    CREATE INDEX idx_verifiable_credentials_credential_id 
+    -- CREATE INDEX IF NOT EXISTS for fast lookup
+    CREATE INDEX IF NOT EXISTS idx_verifiable_credentials_credential_id 
     ON verifiable_credentials(credential_id);
   END IF;
 END $$;
