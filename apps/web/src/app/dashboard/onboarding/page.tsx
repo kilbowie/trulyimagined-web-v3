@@ -214,6 +214,12 @@ export default function OnboardingPage() {
     }
   }, [activeStep, router, searchParams, status]);
 
+  useEffect(() => {
+    // Prevent stale error/success banners from carrying into unrelated steps.
+    setError(null);
+    setSuccessMessage(null);
+  }, [activeStep]);
+
   async function loadStatus() {
     try {
       setLoading(true);
@@ -311,7 +317,7 @@ export default function OnboardingPage() {
         return;
       }
 
-      setActiveStep('consent');
+      goToStep('consent');
     } catch (submitError) {
       setError(
         `${submitError instanceof Error ? submitError.message : 'Unable to start Stripe verification.'} You can retry Stripe or use the founder-led video call option below.`
@@ -668,8 +674,8 @@ export default function OnboardingPage() {
               </div>
 
               <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-                You can continue to consent now. Your profile will only go live once verification is
-                fully completed.
+                Verification can stay pending while you continue onboarding. Your profile will go
+                live automatically once verification is fully completed.
               </div>
 
               <button
