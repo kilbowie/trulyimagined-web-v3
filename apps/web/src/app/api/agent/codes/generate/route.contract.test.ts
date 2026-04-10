@@ -20,10 +20,15 @@ vi.mock('@/lib/db', () => ({
   query: vi.fn(),
 }));
 
+vi.mock('@/lib/manual-verification', () => ({
+  writeAuditLog: vi.fn(),
+}));
+
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import { getAgentByAuth0Id } from '@/lib/representation';
 import { query } from '@/lib/db';
+import { writeAuditLog } from '@/lib/manual-verification';
 
 describe('POST /api/agent/codes/generate - Contract Test', () => {
   beforeEach(() => {
@@ -83,5 +88,11 @@ describe('POST /api/agent/codes/generate - Contract Test', () => {
     expect(data).toHaveProperty('success', true);
     expect(data.data).toHaveProperty('generated', 2);
     expect(Array.isArray(data.data.codes)).toBe(true);
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'agent.invitation_codes.generated',
+        userType: 'agent',
+      })
+    );
   });
 });

@@ -9,6 +9,8 @@ import {
   hasPendingRequest,
 } from '@/lib/hdicr/representation-client';
 import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
+import { sendRepresentationRequestCreatedEmail } from '@/lib/email';
+import { writeAuditLog } from '@/lib/manual-verification';
 
 interface RequestPayload {
   agentRegistryId?: string;
@@ -139,6 +141,36 @@ export async function POST(request: NextRequest) {
           },
           { status: 409 }
         );
+      }
+    }
+
+    try {
+      await sendRepresentationRequestCreatedEmail({
+        agentEmail: agent.contact_email || null,
+        agencyName: agent.agency_name || 'Agent',
+        actorName: actor.professional_name || actor.legal_name || user.name || 'Actor',
+      });
+    } catch (emailError) {
+      console.error('[REPRESENTATION_REQUEST] Notification email send failed:', emailError);
+    }
+
+    if (createdRequest?.id && actor?.id) {
+      try {
+        await writeAuditLog({
+          userProfileId: actor.id,
+          userType: 'actor',
+          action: 'representation.request.created',
+          resourceType: 'representation_request',
+          resourceId: createdRequest.id,
+          changes: {
+            actorId: actor.id,
+            agentId: agent.id,
+            invitationCodeUsed: Boolean(invitationCodeRecord),
+            messageIncluded: Boolean(payload.message?.trim()),
+          },
+        });
+      } catch (auditError) {
+        console.error('[REPRESENTATION_REQUEST] Audit log write failed:', auditError);
       }
     }
 

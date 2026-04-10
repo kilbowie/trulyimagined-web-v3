@@ -26,6 +26,8 @@ Get actors verified and registering baseline consent preferences. Foundation for
 
 ### Story 1.1: Stripe Identity Integration - Session Creation
 
+Implementation Status (2026-04-10): Complete. Endpoint and session flow are delivered; remaining unchecked items below should be treated as legacy checklist drift and reconciled to implementation evidence during final acceptance closure.
+
 **Assignee:** Backend (identity-service)
 
 **User Story:**
@@ -55,6 +57,8 @@ As an actor signing up, I want to start a KYC verification with Stripe Identity 
 ---
 
 ### Story 1.2: Stripe Identity Integration - Webhook Handling
+
+Implementation Status (2026-04-10): Complete. Webhook endpoint and verification/update flow are delivered; remaining unchecked items below are stale checklist artifacts.
 
 **Assignee:** Backend (identity-service)
 
@@ -143,6 +147,8 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
 
 ### Story 1.4: Actor Registration Endpoint
 
+Implementation Status (2026-04-10): Complete. Registration endpoint is implemented in production paths; unchecked bullets below are stale status and should be interpreted as documentation drift.
+
 **Assignee:** Backend (identity-service)
 
 **User Story:**
@@ -182,6 +188,8 @@ As an actor, I want to create my profile with legal & professional name so I can
 ---
 
 ### Story 1.5: Consent Registration Endpoint - Work Types & Content Restrictions
+
+Implementation Status (2026-04-10): Complete. Consent grant flow and ledger writes are delivered; residual unchecked bullets are stale checklist entries.
 
 **Assignee:** Backend (consent-service)
 
@@ -228,6 +236,8 @@ As an actor, I want to specify what types of work I consent to (Film, TV, Commer
 
 ### Story 1.6: Consent Read Endpoint - Actor Dashboard View
 
+Implementation Status (2026-04-10): Complete. Actor consent read flow is delivered in current app routes; unchecked bullets are legacy checklist drift.
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
@@ -265,6 +275,8 @@ As an actor, I want to view my current consent preferences on my dashboard so I 
 ---
 
 ### Story 1.7: Consent Ledger & Audit Trail
+
+Implementation Status (2026-04-10): Complete. Immutable consent ledger and versioned audit behavior are implemented; remaining unchecked bullets are stale.
 
 **Assignee:** Backend (consent-service)
 
@@ -386,6 +398,8 @@ Agents can verify their profile and connect with actors. Form representation rel
 
 ### Story 2.1: Agency Profile Creation
 
+Implementation Status (2026-04-10): Complete via `/api/agent-profile` (create/read/update). The checklist endpoint naming (`/api/agency/create`) is legacy wording.
+
 **Assignee:** Backend
 
 **User Story:**
@@ -429,6 +443,8 @@ As an agent/agency, I want to create an agency profile so I can manage my roster
 
 ### Story 2.2: Verification Code Generation
 
+Implementation Status (2026-04-10): Complete with hardening outstanding. Core generation/list lifecycle is shipped; remaining explicit gap is telemetry/audit-abuse logging.
+
 **Assignee:** Backend
 
 **User Story:**
@@ -463,6 +479,8 @@ As an agent, I want to generate unique invitation codes for actors so they can j
 ---
 
 ### Story 2.3: Actor Redeems Invitation Code
+
+Implementation Status (2026-04-10): Complete with hardening outstanding. Redemption and request creation are shipped; explicit residuals are notification email and audit log completion.
 
 **Assignee:** Backend
 
@@ -501,6 +519,8 @@ As an actor, I want to enter an agent's invitation code to request representatio
 ---
 
 ### Story 2.4: Agent Approves/Rejects Representation Request
+
+Implementation Status (2026-04-10): Partial-complete. Core approve/reject workflow is delivered; acceptance deltas remain around explicit notification and audit checklist items.
 
 **Assignee:** Backend
 
@@ -545,6 +565,8 @@ As an agent, I want to approve or reject representation requests from actors so 
 ---
 
 ### Story 2.5: Agent Roster Dashboard
+
+Implementation Status (2026-04-10): Partial-complete. Core roster API and dashboard are shipped; acceptance deltas remain around full pagination/search/details parity.
 
 **Assignee:** Backend + Frontend
 
@@ -606,6 +628,8 @@ As an agent, I want to see a dashboard showing all my represented actors, their 
 
 ### Story 2.6: Actor Representation Status View
 
+Implementation Status (2026-04-10): Partial-complete. Representation status UI and endpoints exist via current `/api/representation/*` routes; checklist endpoint naming differs from implementation.
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -654,6 +678,8 @@ As an actor, I want to see who represents me and manage those relationships so I
 
 ### Story 2.7: 30-Day Representation Termination Flow
 
+Implementation Status (2026-04-10): Complete with hardening outstanding. Notice creation, pending visibility, and scheduled sweep are implemented. Remaining deltas are legacy checklist semantics (`terminating` status wording) and licensing continuity assertion tests.
+
 **Assignee:** Backend
 
 **User Story:**
@@ -698,6 +724,8 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
 ---
 
 ### Story 2.8: Role-Based Permissions (Team Members)
+
+Implementation Status (2026-04-10): Complete via `/api/agent/manage-agents*` and invite-accept routes. Checklist endpoint naming under `/api/agency/team/*` is legacy wording.
 
 **Assignee:** Backend
 
@@ -750,6 +778,8 @@ As an agency owner (agent), I want to invite team members (other agents/assistan
 ---
 
 ### Story 2.9: Frontend - Agent Dashboard
+
+Implementation Status (2026-04-10): Partial-complete. Dashboard shell and major sections are live; remaining polish is full spec parity for stats/notifications and UX refinement.
 
 **Assignee:** Frontend (Next.js)
 

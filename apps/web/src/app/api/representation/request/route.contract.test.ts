@@ -25,6 +25,14 @@ vi.mock('@/lib/agent-invitation-codes', () => ({
   redeemInvitationCode: vi.fn(),
 }));
 
+vi.mock('@/lib/email', () => ({
+  sendRepresentationRequestCreatedEmail: vi.fn(),
+}));
+
+vi.mock('@/lib/manual-verification', () => ({
+  writeAuditLog: vi.fn(),
+}));
+
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
@@ -35,6 +43,8 @@ import {
   hasPendingRequest,
 } from '@/lib/hdicr/representation-client';
 import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
+import { sendRepresentationRequestCreatedEmail } from '@/lib/email';
+import { writeAuditLog } from '@/lib/manual-verification';
 
 describe('POST /api/representation/request - Contract Test', () => {
   beforeEach(() => {
@@ -89,6 +99,7 @@ describe('POST /api/representation/request - Contract Test', () => {
       id: 'agent-123',
       agency_name: 'Test Agency',
       profile_completed: true,
+      contact_email: 'agent@test.example',
     } as any);
     vi.mocked(hasPendingRequest).mockResolvedValueOnce(false);
     vi.mocked(createRepresentationRequest).mockResolvedValueOnce({
@@ -115,6 +126,14 @@ describe('POST /api/representation/request - Contract Test', () => {
       expect.objectContaining({
         actorId: 'actor-123',
         agentId: 'agent-123',
+      })
+    );
+    expect(sendRepresentationRequestCreatedEmail).toHaveBeenCalled();
+    expect(writeAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: 'representation.request.created',
+        resourceType: 'representation_request',
+        resourceId: 'req-123',
       })
     );
   });

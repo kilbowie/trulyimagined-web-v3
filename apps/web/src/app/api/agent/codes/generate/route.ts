@@ -3,6 +3,7 @@ import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
+import { writeAuditLog } from '@/lib/manual-verification';
 
 interface GenerateCodesPayload {
   batchSize?: number;
@@ -101,6 +102,22 @@ export async function POST(request: NextRequest) {
         },
         { status: 503 }
       );
+    }
+
+    try {
+      await writeAuditLog({
+        userProfileId: auth.agent.id,
+        userType: 'agent',
+        action: 'agent.invitation_codes.generated',
+        resourceType: 'agent_invitation_codes',
+        resourceId: insertedCodes[0]?.id || auth.agent.id,
+        changes: {
+          batchSize,
+          generated: insertedCodes.length,
+        },
+      });
+    } catch (auditError) {
+      console.error('[AGENT_CODES_GENERATE] Audit log write failed:', auditError);
     }
 
     return NextResponse.json({

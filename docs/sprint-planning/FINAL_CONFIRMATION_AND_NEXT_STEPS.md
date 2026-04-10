@@ -93,15 +93,16 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 
 ### Sprint 2: Agents & Representation — **70% COMPLETE**
 
-| Component                     | Status             | Location                               |
-| ----------------------------- | ------------------ | -------------------------------------- |
-| Agency profiles               | ✅ Built           | `agents` table + endpoints             |
-| Team member delegation        | ✅ Built           | `agency_team_members` with permissions |
-| Representation requests       | ✅ Built           | `representation_requests` table        |
-| **Gap:** Invitation codes     | ❌ Needs Story 2.2 | Code generation + redemption           |
-| **Gap:** Termination workflow | ❌ Needs Story 2.7 | 30-day notice + off-boarding           |
+| Component                   | Status       | Location                               |
+| --------------------------- | ------------ | -------------------------------------- |
+| Agency profiles             | ✅ Built     | `agents` table + endpoints             |
+| Team member delegation      | ✅ Built     | `agency_team_members` with permissions |
+| Representation requests     | ✅ Built     | `representation_requests` table        |
+| Invitation codes            | ✅ Built     | Generation + list + redemption shipped |
+| Termination workflow        | ✅ Built     | 30-day notice + sweep shipped          |
+| **Residual gap:** hardening | 🟡 Remaining | telemetry, notifications, parity tests |
 
-**Effort to complete:** 2–3 days (Stories 2.2, 2.7)
+**Effort to complete:** 2–3 days (Sprint 2 hardening residuals)
 
 ### Sprint 4: HDICR Query & Licenses — **50% COMPLETE**
 
@@ -172,10 +173,10 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 
 ```
 WEEKS 1–2: Complete Sprints 1–2 (Fill Gaps)
-├─ Story 1.3: Manual video verification admin UI [1 day]
-├─ Story 1.8: Onboarding UI [2 days]
-├─ Story 2.2: Invitation codes [1 day]
-└─ Story 2.7: Termination workflow [1 day]
+├─ Story 2.3 hardening: notification + audit [1 day]
+├─ Story 2.2 hardening: telemetry + abuse controls [1 day]
+├─ Story 2.7 hardening: lifecycle consistency + sweep observability [1 day]
+└─ Story 1.8/2.9 parity polish [1-2 days]
    Status at end: Ready for agent + actor testing
 
 WEEKS 3–4: Sprint 3 (Deal Negotiation) ⚠️ CRITICAL
@@ -265,12 +266,12 @@ OUTPUT:
 | **Multi-tenancy** | Tenant-aware queries          | ✅ Implemented | Correct                        |
 | **Identity**      | Stripe + manual               | ✅ Stripe done | 90%                            |
 | **Consent**       | Versioned ledger              | ✅ Built       | 100%                           |
-| **Agents**        | Representation + team         | ✅ Built       | 80% (gaps: codes, termination) |
+| **Agents**        | Representation + team         | ✅ Built       | 90% (hardening residuals only) |
 | **Deals**         | Negotiation workflow          | ❌ Not started | 0%                             |
 | **Payments**      | Stripe payout splits          | ❌ Not started | 5% (SDK only)                  |
 | **Arbitration**   | Consent revocation → disputes | ❌ Partial     | 10%                            |
 
-**Overall:** 65% of MVP features are built or in progress. 35% needs to be built (mostly Sprints 3, 5, 6).
+**Overall:** Sprint 1–2 are largely delivered and now in hardening/parity mode; net-new build risk remains concentrated in Sprints 3, 5, and 6.
 
 ### Features Aligned with Codebase
 

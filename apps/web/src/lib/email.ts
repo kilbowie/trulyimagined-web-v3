@@ -889,6 +889,41 @@ export async function sendAgencyTeamInviteEmail(options: {
   });
 }
 
+export async function sendRepresentationRequestCreatedEmail(options: {
+  agentEmail: string | null;
+  agencyName: string;
+  actorName: string;
+}) {
+  if (!options.agentEmail) {
+    return null;
+  }
+
+  const subject = `New representation request from ${options.actorName}`;
+  const bodyContent = `
+    <p>A new actor has requested representation.</p>
+    <ul style="line-height: 1.8; color: #4a4a4a;">
+      <li><strong>Agency:</strong> ${options.agencyName}</li>
+      <li><strong>Actor:</strong> ${options.actorName}</li>
+    </ul>
+    <p>Review this request in your representation dashboard.</p>
+  `;
+
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Review Representation Requests',
+    `${APP_URL}/dashboard/agent/roster`
+  );
+
+  return await sendEmail({
+    to: options.agentEmail,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('representation-request-created'),
+  });
+}
+
 export async function sendRepresentationTerminationNoticeEmail(options: {
   actorEmail: string | null;
   actorName: string;
