@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ConfidenceScoreBadge } from '@/components/ConfidenceScore';
 import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 import Link from 'next/link';
 import { TrendingUp, FileText, ShieldCheck, Activity, ArrowUpRight } from 'lucide-react';
 
@@ -53,6 +54,8 @@ export default async function DashboardPage() {
           Here's an overview of your identity and consent management
         </p>
       </div>
+
+      {hasActorRole && <OnboardingChecklist />}
 
       {/* Stats Grid */}
       {hasActorRole && (
