@@ -19,7 +19,10 @@ describe('POST /api/onboarding/step/consent - Contract Test', () => {
   });
 
   it('blocks consent before profile completion', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'profile', steps: [] } as any);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'profile',
+      steps: [],
+    } as any);
     vi.mocked(isStepCompleted).mockReturnValueOnce(false);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/consent', {
@@ -32,10 +35,11 @@ describe('POST /api/onboarding/step/consent - Contract Test', () => {
   });
 
   it('requires at least one territory', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'consent', steps: [] } as any);
-    vi.mocked(isStepCompleted)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'consent',
+      steps: [],
+    } as any);
+    vi.mocked(isStepCompleted).mockReturnValueOnce(true).mockReturnValueOnce(false);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/consent', {
       method: 'POST',
@@ -53,9 +57,7 @@ describe('POST /api/onboarding/step/consent - Contract Test', () => {
     vi.mocked(readOnboardingStatus)
       .mockResolvedValueOnce({ currentStep: 'consent', steps: [] } as any)
       .mockResolvedValueOnce({ currentStep: 'complete', steps: [] } as any);
-    vi.mocked(isStepCompleted)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+    vi.mocked(isStepCompleted).mockReturnValueOnce(true).mockReturnValueOnce(false);
     vi.mocked(forwardJson).mockResolvedValueOnce({
       ok: true,
       status: 200,

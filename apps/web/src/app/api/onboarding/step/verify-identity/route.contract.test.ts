@@ -19,7 +19,10 @@ describe('POST /api/onboarding/step/verify-identity - Contract Test', () => {
   });
 
   it('blocks verification before profile completion', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'profile', steps: [] } as any);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'profile',
+      steps: [],
+    } as any);
     vi.mocked(isStepCompleted).mockReturnValueOnce(false);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/verify-identity', {
@@ -35,7 +38,10 @@ describe('POST /api/onboarding/step/verify-identity - Contract Test', () => {
   });
 
   it('returns stripe options on stripe start failure', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'verify-identity', steps: [] } as any);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'verify-identity',
+      steps: [],
+    } as any);
     vi.mocked(isStepCompleted)
       .mockReturnValueOnce(true) // profile complete
       .mockReturnValueOnce(false); // verify step incomplete
@@ -58,10 +64,11 @@ describe('POST /api/onboarding/step/verify-identity - Contract Test', () => {
   });
 
   it('requires manual fields for manual verification', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'verify-identity', steps: [] } as any);
-    vi.mocked(isStepCompleted)
-      .mockReturnValueOnce(true)
-      .mockReturnValueOnce(false);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'verify-identity',
+      steps: [],
+    } as any);
+    vi.mocked(isStepCompleted).mockReturnValueOnce(true).mockReturnValueOnce(false);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/verify-identity', {
       method: 'POST',

@@ -23,7 +23,9 @@ describe('resolveStepRouting', () => {
 
     expect(result.nextStep).toBe('consent');
     expect(result.shouldCanonicalizeUrl).toBe(true);
-    expect(result.lockMessage).toBe('Complete your current onboarding step before opening later steps.');
+    expect(result.lockMessage).toBe(
+      'Complete your current onboarding step before opening later steps.'
+    );
   });
 
   it('keeps selected step when already accessible', () => {

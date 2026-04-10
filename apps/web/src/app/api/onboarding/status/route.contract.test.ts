@@ -36,8 +36,12 @@ describe('GET /api/onboarding/status - Contract Test', () => {
 
     const mockQuery = vi.mocked(queryHdicr);
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 'profile-1', role: 'Actor', profile_completed: true }] } as any)
-      .mockResolvedValueOnce({ rows: [{ id: 'actor-1', registry_id: 'reg-1', verification_status: 'pending' }] } as any)
+      .mockResolvedValueOnce({
+        rows: [{ id: 'profile-1', role: 'Actor', profile_completed: true }],
+      } as any)
+      .mockResolvedValueOnce({
+        rows: [{ id: 'actor-1', registry_id: 'reg-1', verification_status: 'pending' }],
+      } as any)
       .mockResolvedValueOnce({ rows: [{ has_active_consent: false }] } as any)
       .mockResolvedValueOnce({ rows: [{ has_manual_verification_request: true }] } as any);
 

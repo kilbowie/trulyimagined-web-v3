@@ -11,12 +11,7 @@ vi.mock('../shared', () => ({
 }));
 
 import { POST } from './route';
-import {
-  buildStepResponse,
-  forwardJson,
-  isStepCompleted,
-  readOnboardingStatus,
-} from '../shared';
+import { buildStepResponse, forwardJson, isStepCompleted, readOnboardingStatus } from '../shared';
 
 describe('POST /api/onboarding/step/profile - Contract Test', () => {
   beforeEach(() => {
@@ -24,7 +19,10 @@ describe('POST /api/onboarding/step/profile - Contract Test', () => {
   });
 
   it('returns already-complete when profile step is done', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'verify-identity', steps: [] } as any);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'verify-identity',
+      steps: [],
+    } as any);
     vi.mocked(isStepCompleted).mockReturnValueOnce(true);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/profile', {
@@ -41,7 +39,10 @@ describe('POST /api/onboarding/step/profile - Contract Test', () => {
   });
 
   it('validates first and last names', async () => {
-    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({ currentStep: 'profile', steps: [] } as any);
+    vi.mocked(readOnboardingStatus).mockResolvedValueOnce({
+      currentStep: 'profile',
+      steps: [],
+    } as any);
     vi.mocked(isStepCompleted).mockReturnValueOnce(false);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/profile', {
@@ -61,7 +62,11 @@ describe('POST /api/onboarding/step/profile - Contract Test', () => {
       .mockResolvedValueOnce({ currentStep: 'profile', steps: [] } as any)
       .mockResolvedValueOnce({ currentStep: 'verify-identity', steps: [] } as any);
     vi.mocked(isStepCompleted).mockReturnValueOnce(false);
-    vi.mocked(forwardJson).mockResolvedValueOnce({ ok: true, status: 201, payload: { success: true } } as any);
+    vi.mocked(forwardJson).mockResolvedValueOnce({
+      ok: true,
+      status: 201,
+      payload: { success: true },
+    } as any);
 
     const request = new NextRequest('http://localhost:3000/api/onboarding/step/profile', {
       method: 'POST',

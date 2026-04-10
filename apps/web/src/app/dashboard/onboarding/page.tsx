@@ -190,9 +190,8 @@ export default function OnboardingPage() {
       return;
     }
 
-    const validSelectedStep: StepId | null = selectedStep && STEP_ORDER.includes(selectedStep)
-      ? selectedStep
-      : null;
+    const validSelectedStep: StepId | null =
+      selectedStep && STEP_ORDER.includes(selectedStep) ? selectedStep : null;
 
     const routingDecision = resolveStepRouting({
       selectedStep: validSelectedStep,
