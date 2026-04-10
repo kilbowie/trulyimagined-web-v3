@@ -14,6 +14,14 @@ interface ActiveRepresentation {
   profile_image_url: string | null;
   location: string | null;
   website_url: string | null;
+  pendingTermination?: {
+    id: string;
+    notice_date: string;
+    effective_date: string;
+    initiated_by: 'actor' | 'agent';
+    status: 'pending_termination' | 'completed' | 'cancelled' | 'failed';
+    reason: string | null;
+  } | null;
 }
 
 interface ActorRequest {
@@ -33,11 +41,17 @@ export default function RepresentationPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [activeRepresentation, setActiveRepresentation] = useState<ActiveRepresentation | null>(null);
+  const [activeRepresentation, setActiveRepresentation] = useState<ActiveRepresentation | null>(
+    null
+  );
   const [requests, setRequests] = useState<ActorRequest[]>([]);
   const [registryIdInput, setRegistryIdInput] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
-  const [matchedAgent, setMatchedAgent] = useState<{ agency_name: string; registry_id: string; verification_status: string } | null>(null);
+  const [matchedAgent, setMatchedAgent] = useState<{
+    agency_name: string;
+    registry_id: string;
+    verification_status: string;
+  } | null>(null);
 
   const pendingRequest = useMemo(
     () => requests.find((item) => item.status === 'pending') || null,
@@ -68,7 +82,9 @@ export default function RepresentationPage() {
       setActiveRepresentation(representationData.representation || null);
       setRequests(requestsData.requests || []);
     } catch (fetchError) {
-      setError(fetchError instanceof Error ? fetchError.message : 'Failed to load representation data');
+      setError(
+        fetchError instanceof Error ? fetchError.message : 'Failed to load representation data'
+      );
     } finally {
       setLoading(false);
     }
@@ -167,7 +183,9 @@ export default function RepresentationPage() {
       }
       await loadData();
     } catch (withdrawError) {
-      setError(withdrawError instanceof Error ? withdrawError.message : 'Failed to withdraw request');
+      setError(
+        withdrawError instanceof Error ? withdrawError.message : 'Failed to withdraw request'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -175,24 +193,41 @@ export default function RepresentationPage() {
 
   const endRepresentation = async () => {
     if (!activeRepresentation?.id) return;
-    const confirmed = window.confirm('Are you sure you want to remove your representation?');
+    const confirmed = window.confirm(
+      'Create a 30-day termination notice for this representation relationship?'
+    );
     if (!confirmed) return;
+
+    const reasonInput = window.prompt('Optional reason for termination notice:', '') || '';
 
     try {
       setSubmitting(true);
       setError(null);
-      const response = await fetch(`/api/representation/${activeRepresentation.id}`, {
-        method: 'DELETE',
+      const response = await fetch('/api/representation/terminate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          relationshipId: activeRepresentation.id,
+          reason: reasonInput.trim() || undefined,
+        }),
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to end representation');
+        throw new Error(data.error || 'Failed to create termination notice');
       }
 
-      setSuccess('Representation removed successfully.');
+      setSuccess(
+        data.alreadyPending
+          ? 'A 30-day termination notice is already active for this relationship.'
+          : '30-day termination notice created. Relationship remains active until the effective date.'
+      );
       await loadData();
     } catch (unlinkError) {
-      setError(unlinkError instanceof Error ? unlinkError.message : 'Failed to end representation');
+      setError(
+        unlinkError instanceof Error ? unlinkError.message : 'Failed to create termination notice'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -211,8 +246,16 @@ export default function RepresentationPage() {
         </p>
       </div>
 
-      {error && <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">{error}</div>}
-      {success && <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">{success}</div>}
+      {error && (
+        <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {success}
+        </div>
+      )}
 
       {activeRepresentation ? (
         <Card>
@@ -240,10 +283,35 @@ export default function RepresentationPage() {
               </a>
             )}
             <div>
-              <Button variant="outline" disabled={submitting} onClick={endRepresentation}>
-                {submitting ? 'Processing...' : 'Remove Representation'}
+              <Button
+                variant="outline"
+                disabled={submitting || Boolean(activeRepresentation.pendingTermination)}
+                onClick={endRepresentation}
+              >
+                {submitting
+                  ? 'Processing...'
+                  : activeRepresentation.pendingTermination
+                    ? 'Termination Notice Active'
+                    : 'Start 30-Day Termination Notice'}
               </Button>
             </div>
+            {activeRepresentation.pendingTermination && (
+              <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+                <p className="font-medium">Termination notice in effect</p>
+                <p>
+                  Effective date:{' '}
+                  {new Date(
+                    activeRepresentation.pendingTermination.effective_date
+                  ).toLocaleDateString()}
+                </p>
+                <p className="capitalize">
+                  Initiated by: {activeRepresentation.pendingTermination.initiated_by}
+                </p>
+                {activeRepresentation.pendingTermination.reason && (
+                  <p>Reason: {activeRepresentation.pendingTermination.reason}</p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       ) : (
@@ -270,7 +338,9 @@ export default function RepresentationPage() {
               {matchedAgent && (
                 <div className="rounded-md border bg-muted/40 p-4">
                   <p className="font-medium">{matchedAgent.agency_name}</p>
-                  <p className="text-sm text-muted-foreground">Registry: {matchedAgent.registry_id}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Registry: {matchedAgent.registry_id}
+                  </p>
                   <p className="text-sm text-muted-foreground capitalize">
                     Verification: {matchedAgent.verification_status}
                   </p>
@@ -331,13 +401,18 @@ export default function RepresentationPage() {
                 <div key={item.id} className="rounded-md border p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="font-medium">{item.agency_name}</p>
-                    <Badge variant={item.status === 'approved' ? 'default' : 'secondary'} className="capitalize">
+                    <Badge
+                      variant={item.status === 'approved' ? 'default' : 'secondary'}
+                      className="capitalize"
+                    >
                       {item.status}
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Requested {new Date(item.requested_at).toLocaleDateString()}
-                    {item.responded_at ? ` • Responded ${new Date(item.responded_at).toLocaleDateString()}` : ''}
+                    {item.responded_at
+                      ? ` • Responded ${new Date(item.responded_at).toLocaleDateString()}`
+                      : ''}
                   </p>
                   {item.response_note && (
                     <p className="text-sm text-muted-foreground mt-2">{item.response_note}</p>

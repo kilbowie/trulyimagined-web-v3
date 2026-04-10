@@ -12,20 +12,33 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 vi.mock('@/lib/hdicr/representation-client', () => ({
-  endRelationship: vi.fn(),
   getActorByAuth0UserId: vi.fn(),
   getAgentByAuth0UserId: vi.fn(),
   getRelationshipById: vi.fn(),
 }));
 
+vi.mock('@/lib/representation-termination', () => ({
+  scheduleRepresentationTermination: vi.fn(),
+  TerminationHttpError: class extends Error {
+    status: number;
+    payload: Record<string, unknown>;
+
+    constructor(status: number, payload: Record<string, unknown>) {
+      super(String(payload.error || 'Termination failed'));
+      this.status = status;
+      this.payload = payload;
+    }
+  },
+}));
+
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
-  endRelationship,
   getActorByAuth0UserId,
   getAgentByAuth0UserId,
   getRelationshipById,
 } from '@/lib/hdicr/representation-client';
+import { scheduleRepresentationTermination } from '@/lib/representation-termination';
 
 describe('DELETE /api/representation/[id] - Contract Test', () => {
   beforeEach(() => {
@@ -100,7 +113,7 @@ describe('DELETE /api/representation/[id] - Contract Test', () => {
     expect(response.status).toBe(403);
   });
 
-  it('actor can end their own relationship and returns success shape', async () => {
+  it('actor can create a termination notice and returns success shape', async () => {
     vi.mocked(auth0.getSession).mockResolvedValueOnce({ user: { sub: 'actor-user-123' } } as any);
     vi.mocked(getUserRoles).mockResolvedValueOnce(['Actor']);
     vi.mocked(getActorByAuth0UserId).mockResolvedValueOnce({ id: 'actor-123' } as any);
@@ -111,9 +124,12 @@ describe('DELETE /api/representation/[id] - Contract Test', () => {
       agent_id: 'agent-123',
       ended_at: null,
     } as any);
-    vi.mocked(endRelationship).mockResolvedValueOnce({
-      id: 'rel-123',
-      ended_at: new Date().toISOString(),
+    vi.mocked(scheduleRepresentationTermination).mockResolvedValueOnce({
+      alreadyPending: false,
+      termination: {
+        id: 'term-123',
+        relationship_id: 'rel-123',
+      },
     } as any);
 
     const response = await DELETE(new Request('http://localhost'), {
@@ -123,9 +139,9 @@ describe('DELETE /api/representation/[id] - Contract Test', () => {
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('success', true);
-    expect(data).toHaveProperty('relationship');
-    expect(endRelationship).toHaveBeenCalledWith(
-      expect.objectContaining({ relationshipId: 'rel-123', endedBy: 'actor' })
+    expect(data).toHaveProperty('termination');
+    expect(scheduleRepresentationTermination).toHaveBeenCalledWith(
+      expect.objectContaining({ relationshipId: 'rel-123' })
     );
   });
 });

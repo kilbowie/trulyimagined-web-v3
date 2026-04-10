@@ -2,11 +2,14 @@ import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
-  endRelationship,
   getActorByAuth0UserId,
   getAgentByAuth0UserId,
   getRelationshipById,
 } from '@/lib/hdicr/representation-client';
+import {
+  scheduleRepresentationTermination,
+  TerminationHttpError,
+} from '@/lib/representation-termination';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -14,7 +17,8 @@ interface RouteParams {
 
 /**
  * DELETE /api/representation/:id
- * Ends an active representation relationship. Either actor or agent may end it.
+ * Legacy endpoint kept for backward compatibility.
+ * Converts removal intent into a 30-day legal notice termination.
  */
 export async function DELETE(_req: Request, { params }: RouteParams): Promise<NextResponse> {
   try {
@@ -58,20 +62,26 @@ export async function DELETE(_req: Request, { params }: RouteParams): Promise<Ne
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    const endedBy = actorCanEnd ? 'actor' : 'agent';
-
-    const updatedRelationship = await endRelationship({
+    const result = await scheduleRepresentationTermination({
       relationshipId: id,
-      endedByAuth0UserId: user.sub,
-      endedBy,
+      initiatedByAuth0UserId: user.sub,
+      roles,
+      reason: 'Termination requested from legacy remove action',
     });
 
     return NextResponse.json({
       success: true,
-      relationship: updatedRelationship,
-      message: 'Representation relationship ended successfully.',
+      alreadyPending: result.alreadyPending,
+      termination: result.termination,
+      message: result.alreadyPending
+        ? 'A 30-day termination notice is already active for this relationship.'
+        : '30-day termination notice created successfully.',
     });
   } catch (error) {
+    if (error instanceof TerminationHttpError) {
+      return NextResponse.json(error.payload, { status: error.status });
+    }
+
     console.error('[REPRESENTATION_ID] DELETE error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
