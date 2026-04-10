@@ -53,3 +53,6 @@ samconfig.toml
 # OS
 Thumbs.db
 .vercel
+
+# Docs
+docs/sprint-planning
