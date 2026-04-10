@@ -128,16 +128,24 @@ export async function invokeHdicrRemote<T>(params: {
 
   const token = await getHdicrToken();
 
-  const response = await fetch(url.toString(), {
-    method: params.method,
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...(params.body ? { 'Content-Type': 'application/json' } : {}),
-    },
-    body: params.body ? JSON.stringify(params.body) : undefined,
-    cache: 'no-store',
-  });
+  let response: Response;
+  try {
+    response = await fetch(url.toString(), {
+      method: params.method,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+        ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body: params.body ? JSON.stringify(params.body) : undefined,
+      cache: 'no-store',
+    });
+  } catch {
+    throw new HdicrHttpError(
+      503,
+      `[HDICR] Remote ${params.domain} ${params.operation} failed due to network error (fail-closed).`
+    );
+  }
 
   if (!response.ok) {
     throw new HdicrHttpError(

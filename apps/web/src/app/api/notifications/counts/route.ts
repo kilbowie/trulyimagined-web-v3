@@ -65,23 +65,37 @@ export async function GET(_request: NextRequest) {
     }
 
     if (profile.role === 'Agent') {
-      const agent = await getAgentByAuth0Id(user.sub);
-      if (agent) {
-        counts.pendingRepresentationRequests = await countPendingRepresentationRequestsForAgent(
-          agent.id
+      try {
+        const agent = await getAgentByAuth0Id(user.sub);
+        if (agent) {
+          counts.pendingRepresentationRequests = await countPendingRepresentationRequestsForAgent(
+            agent.id
+          );
+        }
+      } catch (error) {
+        console.warn(
+          '[NOTIFICATIONS_COUNT_WARN] Skipping agent representation count due to upstream error',
+          error
         );
       }
     }
 
     if (profile.role === 'Actor') {
-      const actor = await getActorByAuth0Id(user.sub);
-      if (actor) {
-        counts.pendingRepresentationRequests = await countPendingRepresentationRequestsForActor(
-          actor.id
-        );
+      try {
+        const actor = await getActorByAuth0Id(user.sub);
+        if (actor) {
+          counts.pendingRepresentationRequests = await countPendingRepresentationRequestsForActor(
+            actor.id
+          );
 
-        const licensingResult = await listActorLicensingRequests(actor.id, 'pending');
-        counts.pendingLicensingRequests = licensingResult.pendingCount;
+          const licensingResult = await listActorLicensingRequests(actor.id, 'pending');
+          counts.pendingLicensingRequests = licensingResult.pendingCount;
+        }
+      } catch (error) {
+        console.warn(
+          '[NOTIFICATIONS_COUNT_WARN] Skipping actor remote counts due to upstream error',
+          error
+        );
       }
     }
 

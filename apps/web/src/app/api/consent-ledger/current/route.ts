@@ -18,7 +18,18 @@ export async function GET(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    const actorId = await resolveActorIdByAuth0UserId(auth0UserId);
+    let actorId: string | null = null;
+    try {
+      actorId = await resolveActorIdByAuth0UserId(auth0UserId);
+    } catch (error) {
+      console.warn('[CONSENT LEDGER] HDICR actor-id resolution unavailable', error);
+      return NextResponse.json({
+        current: null,
+        history: [],
+        serviceUnavailable: true,
+        message: 'Consent service temporarily unavailable',
+      });
+    }
 
     if (!actorId) {
       return NextResponse.json({
@@ -32,10 +43,25 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const includeHistory = searchParams.get('includeHistory') === 'true';
 
-    const { current, history, licensesOnCurrentVersion } = await getCurrentConsentLedger(
-      actorId,
-      includeHistory
-    );
+    let current: unknown = null;
+    let history: unknown[] = [];
+    let licensesOnCurrentVersion: unknown[] = [];
+    try {
+      const result = await getCurrentConsentLedger(actorId, includeHistory);
+      current = result.current;
+      history = result.history;
+      licensesOnCurrentVersion = result.licensesOnCurrentVersion;
+    } catch (error) {
+      console.warn('[CONSENT LEDGER] HDICR getCurrentConsentLedger unavailable', error);
+      return NextResponse.json({
+        current: null,
+        history: [],
+        actorId,
+        licensesOnCurrentVersion: [],
+        serviceUnavailable: true,
+        message: 'Consent service temporarily unavailable',
+      });
+    }
 
     return NextResponse.json({
       current,

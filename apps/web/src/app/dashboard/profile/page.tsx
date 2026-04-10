@@ -36,7 +36,12 @@ export default async function ProfilePage() {
     [user.sub]
   );
 
-  const actorRecord = await resolveActorRecordByAuth0UserId(user.sub);
+  let actorRecord = null;
+  try {
+    actorRecord = await resolveActorRecordByAuth0UserId(user.sub);
+  } catch (error) {
+    console.warn('[PROFILE] HDICR actor record unavailable, continuing with local data only', error);
+  }
   let headshots = [];
   let accountStatus = { is_verified: false, is_pro: false };
 

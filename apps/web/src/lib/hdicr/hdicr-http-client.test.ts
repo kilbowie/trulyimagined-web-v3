@@ -103,4 +103,38 @@ describe('hdicr-http-client', () => {
         isHdicrHttpError(error) && error.statusCode === 503 && /token/i.test(error.message)
     );
   });
+
+  it('returns 503-class error when remote fetch fails at transport layer', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    process.env.AUTH0_DOMAIN = 'tenant.example.com';
+    process.env.AUTH0_AUDIENCE = 'https://api.trulyimagined.com';
+    process.env.HDICR_CLIENT_ID = 'client-id';
+    process.env.HDICR_CLIENT_SECRET = 'client-secret';
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => ({ access_token: 'token-abc', expires_in: 300 }),
+      })
+      .mockRejectedValueOnce(new TypeError('fetch failed'));
+
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const { invokeHdicrRemote, isHdicrHttpError } = await import('@/lib/hdicr/hdicr-http-client');
+
+    await expect(
+      invokeHdicrRemote({
+        domain: 'identity',
+        baseUrl: 'https://hdicr.example.com',
+        path: '/v1/identity',
+        method: 'GET',
+        operation: 'identity-list',
+      })
+    ).rejects.toSatisfy(
+      (error: unknown) =>
+        isHdicrHttpError(error) && error.statusCode === 503 && /network error/i.test(error.message)
+    );
+  });
 });

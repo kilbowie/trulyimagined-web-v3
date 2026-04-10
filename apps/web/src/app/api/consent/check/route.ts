@@ -36,11 +36,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const latestConsent = await checkConsent({
-      actorId,
-      consentType,
-      projectId: projectId || undefined,
-    });
+    let latestConsent: Awaited<ReturnType<typeof checkConsent>>;
+    try {
+      latestConsent = await checkConsent({
+        actorId,
+        consentType,
+        projectId: projectId || undefined,
+      });
+    } catch (error) {
+      console.warn('[CONSENT] HDICR consent service unavailable for check', error);
+      return NextResponse.json({
+        isGranted: false,
+        serviceUnavailable: true,
+        message: 'Consent service temporarily unavailable',
+        actorId,
+        consentType,
+        projectId: projectId || null,
+      });
+    }
 
     if (!latestConsent) {
       return NextResponse.json({

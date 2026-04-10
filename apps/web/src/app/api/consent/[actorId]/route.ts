@@ -72,12 +72,29 @@ export async function GET(
     const offset = parseInt(searchParams.get('offset') || '0');
     const action = searchParams.get('action');
 
-    const { rows, totalCount } = await listConsentRecords({
-      actorId,
-      limit,
-      offset,
-      action: action || undefined,
-    });
+    let rows: ConsentRecord[] = [];
+    let totalCount = 0;
+    try {
+      const result = await listConsentRecords({
+        actorId,
+        limit,
+        offset,
+        action: action || undefined,
+      });
+      rows = result.rows as ConsentRecord[];
+      totalCount = result.totalCount;
+    } catch (error) {
+      console.warn('[API] HDICR consent service unavailable, returning empty ledger', error);
+      return NextResponse.json({
+        actorId,
+        serviceUnavailable: true,
+        summary: { active: 0, revoked: 0, expired: 0, totalRecords: 0 },
+        consents: { active: [], revoked: [], expired: [] },
+        fullHistory: [],
+        pagination: { limit, offset, total: 0, hasMore: false },
+        message: 'Consent service temporarily unavailable',
+      });
+    }
 
     // Group consents by current status (active/revoked/expired)
     const activeConsents: ConsentResponse[] = [];
