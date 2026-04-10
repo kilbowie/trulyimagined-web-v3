@@ -88,6 +88,14 @@ export default function OnboardingPage() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [requestingManual, setRequestingManual] = useState(false);
   const [territoryQuery, setTerritoryQuery] = useState('');
+  const [resumeMessage, setResumeMessage] = useState<string | null>(null);
+
+  function goToStep(step: StepId) {
+    setActiveStep(step);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('step', step);
+    router.replace(`/dashboard/onboarding?${params.toString()}`);
+  }
 
   useEffect(() => {
     void loadStatus();
@@ -101,14 +109,25 @@ export default function OnboardingPage() {
     }
 
     try {
+      let restoredDraftCount = 0;
       const profileRaw = localStorage.getItem(PROFILE_DRAFT_KEY);
       if (profileRaw) {
         setProfileDraft({ ...DEFAULT_PROFILE_DRAFT, ...JSON.parse(profileRaw) });
+        restoredDraftCount += 1;
       }
 
       const consentRaw = localStorage.getItem(CONSENT_DRAFT_KEY);
       if (consentRaw) {
         setConsentDraft({ ...DEFAULT_CONSENT_DRAFT, ...JSON.parse(consentRaw) });
+        restoredDraftCount += 1;
+      }
+
+      if (restoredDraftCount > 0) {
+        setResumeMessage(
+          restoredDraftCount === 1
+            ? 'Your onboarding draft was restored. You can continue where you left off.'
+            : 'Your onboarding drafts were restored. You can continue where you left off.'
+        );
       }
 
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -169,7 +188,17 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     const selectedStep = searchParams.get('step') as StepId | null;
-    if (!selectedStep || !status) {
+    if (!status) {
+      return;
+    }
+
+    if (!selectedStep) {
+      if (activeStep !== status.currentStep) {
+        setActiveStep(status.currentStep);
+      }
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('step', status.currentStep);
+      router.replace(`/dashboard/onboarding?${params.toString()}`);
       return;
     }
 
@@ -177,8 +206,11 @@ export default function OnboardingPage() {
     if (selectedIndex > accessibleStepIndex) {
       setActiveStep(status.currentStep);
       setError('Complete your current onboarding step before opening later steps.');
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('step', status.currentStep);
+      router.replace(`/dashboard/onboarding?${params.toString()}`);
     }
-  }, [accessibleStepIndex, searchParams, status]);
+  }, [accessibleStepIndex, activeStep, router, searchParams, status]);
 
   async function loadStatus() {
     try {
@@ -240,7 +272,7 @@ export default function OnboardingPage() {
 
       localStorage.removeItem(PROFILE_DRAFT_KEY);
       await loadStatus();
-      setActiveStep('verify-identity');
+      goToStep('verify-identity');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to save profile');
     } finally {
@@ -330,7 +362,8 @@ export default function OnboardingPage() {
   }
 
   function setContinentTerritories(continent: string, action: 'add' | 'clear') {
-    const countries = COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT] || [];
+    const countries =
+      COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT] || [];
     const continentCodes = countries.map((country) => country.code);
 
     setConsentDraft((prev) => ({
@@ -379,7 +412,7 @@ export default function OnboardingPage() {
       localStorage.removeItem(CONSENT_DRAFT_KEY);
       setSuccessMessage('Consent preferences saved successfully.');
       await loadStatus();
-      setActiveStep('complete');
+      goToStep('complete');
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Failed to save consent');
     } finally {
@@ -405,6 +438,7 @@ export default function OnboardingPage() {
     }
 
     clearOnboardingDrafts();
+    setResumeMessage(null);
     router.push('/dashboard');
   }
 
@@ -428,6 +462,11 @@ export default function OnboardingPage() {
           {successMessage}
         </div>
       ) : null}
+      {resumeMessage ? (
+        <div className="rounded-lg border border-blue-300 bg-blue-50 p-3 text-sm text-blue-800">
+          {resumeMessage}
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <aside className="rounded-lg border border-border bg-card p-4">
@@ -444,7 +483,7 @@ export default function OnboardingPage() {
                     type="button"
                     onClick={() => {
                       if (!isLocked) {
-                        setActiveStep(step.id);
+                        goToStep(step.id);
                         setError(null);
                       }
                     }}
@@ -497,7 +536,7 @@ export default function OnboardingPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setActiveStep('profile')}
+                onClick={() => goToStep('profile')}
                 className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
               >
                 Continue to Profile
@@ -633,7 +672,7 @@ export default function OnboardingPage() {
 
               <button
                 type="button"
-                onClick={() => setActiveStep('consent')}
+                onClick={() => goToStep('consent')}
                 className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
               >
                 Continue to Consent
@@ -707,7 +746,10 @@ export default function OnboardingPage() {
                     ).length;
 
                     return (
-                      <div key={continent} className="rounded-md border border-border bg-muted/30 p-3">
+                      <div
+                        key={continent}
+                        className="rounded-md border border-border bg-muted/30 p-3"
+                      >
                         <div className="flex items-center justify-between gap-2">
                           <div>
                             <p className="text-sm font-medium">{continent}</p>
@@ -744,7 +786,8 @@ export default function OnboardingPage() {
                           Allowed territories selected: {consentDraft.allowedTerritories.length}
                         </p>
                         <p className="text-xs text-green-800">
-                          Your selection is explicit allow-only. No territories are allowed unless selected here.
+                          Your selection is explicit allow-only. No territories are allowed unless
+                          selected here.
                         </p>
                       </div>
                       <button
@@ -844,17 +887,28 @@ export default function OnboardingPage() {
               </button>
             </form>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <h3 className="text-xl font-semibold">Step 5: Complete</h3>
-              <p className="text-sm text-muted-foreground">
-                Onboarding is complete. If verification is still pending, your profile will remain
-                non-live until verification is finalized.
-              </p>
+              <div className="rounded-md border border-green-300 bg-green-50 p-4">
+                <p className="text-base font-semibold text-green-900">Onboarding complete</p>
+                <p className="mt-1 text-sm text-green-800">
+                  Your profile setup and consent registration are saved. If verification is still
+                  pending, your profile will remain non-live until verification is finalized.
+                </p>
+              </div>
               <div className="rounded-md border border-border bg-muted/40 p-3 text-sm">
                 Profile live status:{' '}
                 <span className="font-semibold">
                   {status?.canProfileGoLive ? 'Live' : 'Pending verification'}
                 </span>
+              </div>
+              <div className="rounded-md border border-border p-3 text-sm">
+                <p className="font-medium text-foreground">What happens next</p>
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
+                  <li>Track verification progress from Verify Identity.</li>
+                  <li>Adjust consent at any time from Consent Preferences.</li>
+                  <li>Profile goes live automatically once verification completes.</li>
+                </ul>
               </div>
               <div className="flex flex-wrap gap-3">
                 <button
