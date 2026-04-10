@@ -1,6 +1,8 @@
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-const licensingRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('licensing', 'client-initialization');
+function getLicensingRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('licensing', 'client-initialization');
+}
 
 async function invokeLicensingRemote<T>(params: {
   path: string;
@@ -10,7 +12,7 @@ async function invokeLicensingRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'licensing',
-    baseUrl: licensingRemoteBaseUrl,
+    baseUrl: getLicensingRemoteBaseUrl(),
     ...params,
   });
 }

@@ -39,8 +39,15 @@ describe('consent-client - HDICR flag-awareness', () => {
     expect(result).toHaveProperty('id', 'consent-123');
   });
 
-  it('fails closed at import time when remote base URL is missing', async () => {
-    await expect(import('@/lib/hdicr/consent-client')).rejects.toThrow('fail-closed');
+  it('fails closed at call time when remote base URL is missing', async () => {
+    const { checkConsent } = await import('@/lib/hdicr/consent-client');
+
+    await expect(
+      checkConsent({
+        actorId: 'actor-123',
+        consentType: 'voice_synthesis',
+      })
+    ).rejects.toThrow('fail-closed');
   });
 
   it('revokeConsent calls remote endpoint', async () => {

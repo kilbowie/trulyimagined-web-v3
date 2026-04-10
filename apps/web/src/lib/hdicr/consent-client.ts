@@ -58,7 +58,9 @@ export interface CreateConsentEntryParams {
   userAgent?: string;
 }
 
-const consentRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('consent', 'client-initialization');
+function getConsentRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('consent', 'client-initialization');
+}
 
 async function invokeConsentRemote<T>(params: {
   path: string;
@@ -68,7 +70,7 @@ async function invokeConsentRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'consent',
-    baseUrl: consentRemoteBaseUrl,
+    baseUrl: getConsentRemoteBaseUrl(),
     ...params,
   });
 }

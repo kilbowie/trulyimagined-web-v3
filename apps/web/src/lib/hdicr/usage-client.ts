@@ -1,6 +1,8 @@
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-const usageRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('usage', 'client-initialization');
+function getUsageRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('usage', 'client-initialization');
+}
 
 async function invokeUsageRemote<T>(params: {
   path: string;
@@ -10,7 +12,7 @@ async function invokeUsageRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'usage',
-    baseUrl: usageRemoteBaseUrl,
+    baseUrl: getUsageRemoteBaseUrl(),
     ...params,
   });
 }

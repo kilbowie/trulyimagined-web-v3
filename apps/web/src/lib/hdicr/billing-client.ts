@@ -1,13 +1,15 @@
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-const billingRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('billing', 'client-initialization');
+function getBillingRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('billing', 'client-initialization');
+}
 
 export async function getBillingProfileByAuth0UserId(auth0UserId: string) {
   const payload = await invokeHdicrRemote<{
     profile?: Record<string, any> | null;
   }>({
     domain: 'billing',
-    baseUrl: billingRemoteBaseUrl,
+    baseUrl: getBillingRemoteBaseUrl(),
     path: `/v1/billing/profile?auth0UserId=${encodeURIComponent(auth0UserId)}`,
     method: 'GET',
     operation: 'profile-by-auth0',

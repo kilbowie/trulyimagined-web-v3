@@ -2,10 +2,9 @@ import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdi
 
 type RepresentationRequestAction = 'approve' | 'reject' | 'withdraw';
 
-const representationRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow(
-  'representation',
-  'client-initialization'
-);
+function getRepresentationRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('representation', 'client-initialization');
+}
 
 async function invokeRepresentationRemote<T>(params: {
   path: string;
@@ -15,7 +14,7 @@ async function invokeRepresentationRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'representation',
-    baseUrl: representationRemoteBaseUrl,
+    baseUrl: getRepresentationRemoteBaseUrl(),
     ...params,
   });
 }

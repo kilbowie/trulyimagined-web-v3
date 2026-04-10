@@ -31,8 +31,10 @@ describe('usage-client - remote authoritative behavior', () => {
     expect(result).toBe(true);
   });
 
-  it('fails closed at import when remote base URL is missing', async () => {
-    await expect(import('@/lib/hdicr/usage-client')).rejects.toThrow('fail-closed');
+  it('fails closed at call time when remote base URL is missing', async () => {
+    const { actorExistsById } = await import('@/lib/hdicr/usage-client');
+
+    await expect(actorExistsById('actor-123')).rejects.toThrow('fail-closed');
   });
 
   it('getGlobalUsageStats remains remote-only even with local mode env', async () => {

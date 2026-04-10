@@ -1,6 +1,8 @@
 import { getHdicrRemoteBaseUrlOrThrow, invokeHdicrRemote } from '@/lib/hdicr/hdicr-http-client';
 
-const identityRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow('identity', 'client-initialization');
+function getIdentityRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('identity', 'client-initialization');
+}
 
 async function invokeIdentityRemote<T>(params: {
   path: string;
@@ -10,7 +12,7 @@ async function invokeIdentityRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'identity',
-    baseUrl: identityRemoteBaseUrl,
+    baseUrl: getIdentityRemoteBaseUrl(),
     ...params,
   });
 }

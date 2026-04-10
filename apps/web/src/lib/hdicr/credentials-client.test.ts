@@ -12,8 +12,16 @@ describe('credentials-client - remote authoritative behavior', () => {
     vi.restoreAllMocks();
   });
 
-  it('fails closed at import time without remote base URL', async () => {
-    await expect(import('@/lib/hdicr/credentials-client')).rejects.toThrow(/fail-closed/i);
+  it('fails closed at call time without remote base URL', async () => {
+    const { listCredentialsByProfileId } = await import('@/lib/hdicr/credentials-client');
+
+    await expect(
+      listCredentialsByProfileId({
+        userProfileId: 'profile-123',
+        includeRevoked: false,
+        includeExpired: false,
+      })
+    ).rejects.toThrow(/fail-closed/i);
   });
 
   it('listCredentialsByProfileId calls remote endpoint', async () => {

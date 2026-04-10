@@ -15,10 +15,9 @@ type CredentialListRow = {
   proof_type: string | null;
 };
 
-const credentialsRemoteBaseUrl = getHdicrRemoteBaseUrlOrThrow(
-  'credentials',
-  'client-initialization'
-);
+function getCredentialsRemoteBaseUrl() {
+  return getHdicrRemoteBaseUrlOrThrow('credentials', 'client-initialization');
+}
 
 async function invokeCredentialsRemote<T>(params: {
   path: string;
@@ -28,7 +27,7 @@ async function invokeCredentialsRemote<T>(params: {
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'credentials',
-    baseUrl: credentialsRemoteBaseUrl,
+    baseUrl: getCredentialsRemoteBaseUrl(),
     ...params,
   });
 }

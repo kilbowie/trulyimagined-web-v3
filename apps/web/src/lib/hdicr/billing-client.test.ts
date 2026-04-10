@@ -31,8 +31,10 @@ describe('billing-client - remote authoritative behavior', () => {
     expect(result).toHaveProperty('id', 'profile-123');
   });
 
-  it('fails closed at import when remote base URL is missing', async () => {
-    await expect(import('@/lib/hdicr/billing-client')).rejects.toThrow('fail-closed');
+  it('fails closed at call time when remote base URL is missing', async () => {
+    const { getBillingProfileByAuth0UserId } = await import('@/lib/hdicr/billing-client');
+
+    await expect(getBillingProfileByAuth0UserId('auth0|123')).rejects.toThrow('fail-closed');
   });
 
   it('ignores local mode env and still calls remote endpoint', async () => {
