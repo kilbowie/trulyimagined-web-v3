@@ -29,7 +29,10 @@ async function run() {
   ];
 
   for (const file of files) {
-    const sql = fs.readFileSync(path.join(process.cwd(), 'infra', 'database', 'migrations', file), 'utf8');
+    const sql = fs.readFileSync(
+      path.join(process.cwd(), 'infra', 'database', 'migrations', file),
+      'utf8'
+    );
     console.log(`[TARGETED MIGRATION] Applying ${file}`);
     await client.query(sql);
     console.log(`[TARGETED MIGRATION] Applied ${file}`);

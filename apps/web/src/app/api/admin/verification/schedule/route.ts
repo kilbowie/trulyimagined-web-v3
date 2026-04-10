@@ -170,7 +170,9 @@ export async function POST(request: NextRequest) {
         await sendManualVerificationScheduledEmail({
           actorEmail: actor.email,
           actorName:
-            actor.stage_name || [actor.first_name, actor.last_name].filter(Boolean).join(' ') || 'there',
+            actor.stage_name ||
+            [actor.first_name, actor.last_name].filter(Boolean).join(' ') ||
+            'there',
           meetingLink,
           meetingPlatform: payload.meetingPlatform || 'external',
           scheduledAt: scheduledDate.toISOString(),

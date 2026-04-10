@@ -131,7 +131,9 @@ async function runMigrations() {
       } catch (error: any) {
         console.error(`[MIGRATION] ✗ ${file} failed:`);
         console.error(error.message);
-        console.error('\nStopping migrations due to error. Already-completed migrations were recorded.');
+        console.error(
+          '\nStopping migrations due to error. Already-completed migrations were recorded.'
+        );
         await db.close();
         process.exit(1);
       }

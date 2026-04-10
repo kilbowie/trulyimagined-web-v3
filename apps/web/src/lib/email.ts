@@ -56,7 +56,18 @@ interface SendEmailOptions {
  * Core email sending function
  */
 async function sendEmail(options: SendEmailOptions) {
-  const { to, subject, html, text, replyTo, cc, bcc, type, tags: customTags, attachments } = options;
+  const {
+    to,
+    subject,
+    html,
+    text,
+    replyTo,
+    cc,
+    bcc,
+    type,
+    tags: customTags,
+    attachments,
+  } = options;
 
   // Select FROM address based on email type
   let fromEmail = NOREPLY_EMAIL;
@@ -88,7 +99,9 @@ async function sendEmail(options: SendEmailOptions) {
     console.log(`Segment: ${type} (ID: ${segmentId})`);
     if (customTags?.length) console.log(`Tags: ${allTags.join(', ')}`);
     if (attachments?.length) {
-      console.log(`Attachments: ${attachments.map((attachment) => attachment.filename).join(', ')}`);
+      console.log(
+        `Attachments: ${attachments.map((attachment) => attachment.filename).join(', ')}`
+      );
     }
     console.log('===================================\n');
     return { id: `mock-${Date.now()}` };
@@ -130,17 +143,26 @@ function getTags(...args: string[]): string[] {
 }
 
 function getAdminRecipients(): string[] {
-  return process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()).filter(Boolean) || [
-    'admin@trulyimagined.com',
-  ];
+  return (
+    process.env.ADMIN_EMAILS?.split(',')
+      .map((email) => email.trim())
+      .filter(Boolean) || ['admin@trulyimagined.com']
+  );
 }
 
 function escapeIcsText(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/,/g, '\\,')
+    .replace(/;/g, '\\;');
 }
 
 function formatIcsDate(value: Date): string {
-  return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return value
+    .toISOString()
+    .replace(/[-:]/g, '')
+    .replace(/\.\d{3}Z$/, 'Z');
 }
 
 function createCalendarInvite(options: {
@@ -534,7 +556,12 @@ export async function sendManualVerificationScheduledEmail(options: {
     <p>If you need to reschedule, reply to the support team or contact us through your dashboard before the meeting.</p>
   `;
 
-  const html = createNoReplyTemplate(subject, bodyContent, 'Open Meeting Link', options.meetingLink);
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Open Meeting Link',
+    options.meetingLink
+  );
   const calendarInvite = createCalendarInvite({
     title: 'Truly Imagined Manual Verification Call',
     description:
