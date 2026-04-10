@@ -49,12 +49,16 @@ const legacyConnectionString = process.env.DATABASE_URL;
 
 const hdicrConnectionString = process.env.HDICR_DATABASE_URL || legacyConnectionString;
 if (!process.env.HDICR_DATABASE_URL && legacyConnectionString) {
-  console.warn('[DB] Using legacy DATABASE_URL for HDICR pool. Set HDICR_DATABASE_URL for split credentials.');
+  console.warn(
+    '[DB] Using legacy DATABASE_URL for HDICR pool. Set HDICR_DATABASE_URL for split credentials.'
+  );
 }
 
 const tiConnectionString = process.env.TI_DATABASE_URL || legacyConnectionString;
 if (!process.env.TI_DATABASE_URL && legacyConnectionString) {
-  console.warn('[DB] Using legacy DATABASE_URL for TI pool. Set TI_DATABASE_URL for split credentials.');
+  console.warn(
+    '[DB] Using legacy DATABASE_URL for TI pool. Set TI_DATABASE_URL for split credentials.'
+  );
 }
 
 const hdicrPool = createPool(hdicrConnectionString);

@@ -5,9 +5,11 @@
 ## SPRINT 1: Core Identity & Consent Registration (Weeks 1–2)
 
 ### Theme
+
 Get actors verified and registering baseline consent preferences. Foundation for everything else.
 
 ### Implementation Progress Update (2026-04-10)
+
 - [x] Story 1.3 partial delivery completed:
   - Admin verification APIs delivered for pending queue, schedule, and complete.
   - Admin verification dashboard delivered and linked in dashboard sidebar.
@@ -19,12 +21,14 @@ Get actors verified and registering baseline consent preferences. Foundation for
   - App-layer split DB pool support and explicit HDICR query routing delivered for new Sprint 1 paths.
 
 ### Story 1.1: Stripe Identity Integration - Session Creation
+
 **Assignee:** Backend (identity-service)
 
 **User Story:**
 As an actor signing up, I want to start a KYC verification with Stripe Identity so my identity is verified before I can create deals.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/verification/start` accepts `provider: 'stripe'` parameter
 - [ ] Stripe VerificationSession created with `requirements: ['id_number', 'face']`
 - [ ] Session ID stored in `identity_links` table with status `pending`
@@ -39,6 +43,7 @@ As an actor signing up, I want to start a KYC verification with Stripe Identity 
 **Dependencies:** Auth0 integration (existing)
 
 **Notes:**
+
 - Use Stripe test API key in staging
 - Verify with real Stripe account in production
 - Session expires in 24 hours (Stripe default)
@@ -46,12 +51,14 @@ As an actor signing up, I want to start a KYC verification with Stripe Identity 
 ---
 
 ### Story 1.2: Stripe Identity Integration - Webhook Handling
+
 **Assignee:** Backend (identity-service)
 
 **User Story:**
 As the system, I want to receive Stripe webhooks when an actor completes identity verification so I can update their verification status automatically.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/webhooks/stripe` endpoint created and deployed
 - [ ] Webhook signature verified using `Stripe.Signature.verifyHeader()`
 - [ ] `identity.verification_session.verified` event handler created
@@ -72,12 +79,14 @@ As the system, I want to receive Stripe webhooks when an actor completes identit
 **Dependencies:** Story 1.1
 
 **Testing:**
+
 - Use Stripe webhook tester in dashboard
 - Test with `stripe trigger identity.verification_session.verified`
 
 ---
 
 ### Story 1.3: Manual Verification Flow - Admin Booking & Verification
+
 **Assignee:** Backend (identity-service) + Frontend (admin dashboard)
 
 **User Story:**
@@ -86,6 +95,7 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/verification/manual-request` creates a manual verification request
   - [ ] Input: actor_id, preferred_timezone, phone_number
   - [ ] Creates record in `verification_requests` table (status: pending_scheduling)
@@ -107,6 +117,7 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
   - [x] Creates audit log: who verified, when, notes (non-sensitive)
 
 **Frontend (Admin Dashboard):**
+
 - [x] Pending verifications list: show actor name, email, phone, timezone, status
 - [x] "Schedule" action to set datetime + meeting link
 - [x] Completion action for verification outcome
@@ -120,18 +131,21 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
 **Dependencies:** Story 1.1, Auth0, Email service
 
 **Manual Testing:**
+
 - Create test actor → request manual verification → schedule meeting → mark verified
 - Verify email invites received & contain correct timezone
 
 ---
 
 ### Story 1.4: Actor Registration Endpoint
+
 **Assignee:** Backend (identity-service)
 
 **User Story:**
 As an actor, I want to create my profile with legal & professional name so I can register on the platform.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/identity/register` accepts:
   - `legalName` (string, required)
   - `professionalName` (string, required)
@@ -156,6 +170,7 @@ As an actor, I want to create my profile with legal & professional name so I can
 **Dependencies:** Auth0, identity-service, actors table
 
 **Testing:**
+
 - Register two actors with same name → both succeed (names don't need to be unique)
 - Register with special characters (é, ñ) → succeeds
 - Register with 1-char name → fails validation
@@ -163,12 +178,14 @@ As an actor, I want to create my profile with legal & professional name so I can
 ---
 
 ### Story 1.5: Consent Registration Endpoint - Work Types & Content Restrictions
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
 As an actor, I want to specify what types of work I consent to (Film, TV, Commercial, VoiceOver, Gaming) and what content restrictions I have (Political, Religious, Explicit, Drugs, Alcohol, Gambling) so Studios know what they can license.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/consent/grant` accepts:
   ```json
   {
@@ -197,6 +214,7 @@ As an actor, I want to specify what types of work I consent to (Film, TV, Commer
 **Dependencies:** consent-service, consent_ledger table, actors table
 
 **Testing:**
+
 - Register consent with all fields → succeeds
 - Omit territories → defaults to {"allowed": ["*"]} (world-wide)
 - data_for_training = true → succeeds (separate from consent restrictions)
@@ -205,12 +223,14 @@ As an actor, I want to specify what types of work I consent to (Film, TV, Commer
 ---
 
 ### Story 1.6: Consent Read Endpoint - Actor Dashboard View
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
 As an actor, I want to view my current consent preferences on my dashboard so I can confirm what I've registered.
 
 **Acceptance Criteria:**
+
 - [ ] GET `/api/consent/me` (authenticated, actor-only)
 - [ ] Returns latest consent_ledger entry for actor:
   ```json
@@ -234,18 +254,21 @@ As an actor, I want to view my current consent preferences on my dashboard so I 
 **Dependencies:** Story 1.5
 
 **Testing:**
+
 - Register consent → fetch via GET /api/consent/me → data matches
 - Fetch as different actor → returns 401/forbidden
 
 ---
 
 ### Story 1.7: Consent Ledger & Audit Trail
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
 As the system, I want to maintain a complete audit trail of all consent changes so compliance & disputes can reference historical versions.
 
 **Acceptance Criteria:**
+
 - [ ] Every consent change (grant, revoke) creates new `consent_ledger` entry:
   - `actor_id`
   - `version` (auto-increment per actor)
@@ -266,6 +289,7 @@ As the system, I want to maintain a complete audit trail of all consent changes 
 **Dependencies:** consent_ledger table
 
 **Testing:**
+
 - Create consent v1 → update consent → verify v2 created, v1 unchanged
 - Fetch ledger → see all versions in order
 - Verify timestamps are UTC
@@ -273,12 +297,14 @@ As the system, I want to maintain a complete audit trail of all consent changes 
 ---
 
 ### Story 1.8: Frontend - Actor Onboarding Flow UI
+
 **Assignee:** Frontend (Next.js)
 
 **User Story:**
 As an actor, I want a smooth onboarding flow that guides me from sign-up → identity verification → consent registration, so I know what's required at each step.
 
 **Acceptance Criteria:**
+
 - [x] Dashboard onboarding checklist shows step-by-step progress:
   1. Sign in (Auth0 login)
   2. Register profile (legal/professional name)
@@ -305,6 +331,7 @@ As an actor, I want a smooth onboarding flow that guides me from sign-up → ide
 **Dependencies:** Stories 1.1–1.7, Auth0, Stripe verification embed
 
 **Testing:**
+
 - Complete full onboarding flow end-to-end
 - Refresh page midway → resume from same step
 - Fill consent form → leave page → return → data still there (localStorage)
@@ -314,17 +341,20 @@ As an actor, I want a smooth onboarding flow that guides me from sign-up → ide
 ## SPRINT 1 Summary
 
 **Deliverables:**
+
 - Identity verification (Stripe + manual)
 - Actor registration
 - Consent registration & audit trail
 - Actor dashboard UI
 
 **Deployment:**
+
 - Stripe Identity test mode enabled
 - Manual verification flow live (founder can start booking)
 - Actors can register, verify, and submit consent
 
 **Metric to Track:**
+
 - Time from sign-up to consent-registered (target: < 30 min)
 - Verification success rate (target: > 90%)
 
@@ -333,15 +363,18 @@ As an actor, I want a smooth onboarding flow that guides me from sign-up → ide
 ## SPRINT 2: Agent Onboarding & Representation (Weeks 3–4)
 
 ### Theme
+
 Agents can verify their profile and connect with actors. Form representation relationships.
 
 ### Story 2.1: Agency Profile Creation
+
 **Assignee:** Backend
 
 **User Story:**
 As an agent/agency, I want to create an agency profile so I can manage my roster and connect with actors.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/agency/create` (authenticated, agent role)
 - [ ] Input:
   ```json
@@ -377,12 +410,14 @@ As an agent/agency, I want to create an agency profile so I can manage my roster
 ---
 
 ### Story 2.2: Verification Code Generation
+
 **Assignee:** Backend
 
 **User Story:**
 As an agent, I want to generate unique invitation codes for actors so they can join my agency and represent me.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/agent/codes/generate` (authenticated, agent)
 - [ ] Input: `batch_size` (optional, default 5, max 100)
 - [ ] Generates N random 8-char alphanumeric codes: `A7K9M2BX`
@@ -402,6 +437,7 @@ As an agent, I want to generate unique invitation codes for actors so they can j
 **Dependencies:** agent_invitation_codes table
 
 **Testing:**
+
 - Generate 5 codes → all unique
 - Generate 1000 codes → rate limit or batch successfully
 - Code expires after 30 days → status shows "expired"
@@ -409,12 +445,14 @@ As an agent, I want to generate unique invitation codes for actors so they can j
 ---
 
 ### Story 2.3: Actor Redeems Invitation Code
+
 **Assignee:** Backend
 
 **User Story:**
 As an actor, I want to enter an agent's invitation code to request representation from them.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/representation/request` (authenticated, actor)
 - [ ] Input: `code` (string)
 - [ ] Validation:
@@ -437,6 +475,7 @@ As an actor, I want to enter an agent's invitation code to request representatio
 **Dependencies:** Story 2.2, representation_requests table
 
 **Testing:**
+
 - Redeem valid code → request created, status = pending
 - Redeem expired code → fails with "Code expired"
 - Redeem same code twice → second fails with "Already redeemed"
@@ -444,12 +483,14 @@ As an actor, I want to enter an agent's invitation code to request representatio
 ---
 
 ### Story 2.4: Agent Approves/Rejects Representation Request
+
 **Assignee:** Backend
 
 **User Story:**
 As an agent, I want to approve or reject representation requests from actors so I can manage my roster.
 
 **Acceptance Criteria:**
+
 - [ ] PATCH `/api/representation/requests/:request_id` (authenticated, agent)
 - [ ] Input:
   ```json
@@ -478,6 +519,7 @@ As an agent, I want to approve or reject representation requests from actors so 
 **Dependencies:** representation_requests, actor_agent_relationships tables
 
 **Testing:**
+
 - Agent approves → actor_agent_relationships created
 - Agent rejects → actor_agent_relationships not created
 - Non-agent tries to approve → 403 forbidden
@@ -485,6 +527,7 @@ As an agent, I want to approve or reject representation requests from actors so 
 ---
 
 ### Story 2.5: Agent Roster Dashboard
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -493,6 +536,7 @@ As an agent, I want to see a dashboard showing all my represented actors, their 
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/agent/roster` (authenticated, agent)
 - [ ] Returns:
   ```json
@@ -522,6 +566,7 @@ As an agent, I want to see a dashboard showing all my represented actors, their 
 - [ ] Only return actors in active representation_requests
 
 **Frontend:**
+
 - [ ] Display as table or cards
 - [ ] Columns: Actor Name, Consent Summary (work types), Verification Status, Active Deals, Actions
 - [ ] Actions: "View details", "Send deal offer", "Manage relationship"
@@ -534,6 +579,7 @@ As an agent, I want to see a dashboard showing all my represented actors, their 
 **Dependencies:** Stories 2.1–2.4
 
 **Testing:**
+
 - Agent with 20 actors → pagination shows 10 per page
 - Search by name → filters correctly
 - Search by registry_id → filters correctly
@@ -541,6 +587,7 @@ As an agent, I want to see a dashboard showing all my represented actors, their 
 ---
 
 ### Story 2.6: Actor Representation Status View
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -549,6 +596,7 @@ As an actor, I want to see who represents me and manage those relationships so I
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/actor/representation` (authenticated, actor)
 - [ ] Returns:
   ```json
@@ -574,6 +622,7 @@ As an actor, I want to see who represents me and manage those relationships so I
   ```
 
 **Frontend:**
+
 - [ ] Show two sections: Pending Requests & Active Agents
 - [ ] Pending: "Approve" / "Decline" buttons
 - [ ] Active: Agent card with name, contact, deals count, "Remove representation" button
@@ -586,12 +635,14 @@ As an actor, I want to see who represents me and manage those relationships so I
 ---
 
 ### Story 2.7: 30-Day Representation Termination Flow
+
 **Assignee:** Backend
 
 **User Story:**
 As an actor or agent, I want to terminate representation with 30 days' notice so I can end the relationship professionally.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/representation/terminate` (authenticated, actor OR agent)
 - [ ] Input:
   ```json
@@ -620,6 +671,7 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
 **Dependencies:** Stories 2.1–2.4, representation_terminations table
 
 **Testing:**
+
 - Initiate termination → status = 'terminating'
 - Check effective date = today + 30 days
 - Simulate date jump to effective date → status = 'inactive'
@@ -628,12 +680,14 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
 ---
 
 ### Story 2.8: Role-Based Permissions (Team Members)
+
 **Assignee:** Backend
 
 **User Story:**
 As an agency owner (agent), I want to invite team members (other agents/assistants) to manage my roster with specific permissions so I can delegate without giving full access.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/agency/team/invite` (authenticated, agent/owner)
 - [ ] Input:
   ```json
@@ -660,6 +714,7 @@ As an agency owner (agent), I want to invite team members (other agents/assistan
 - [ ] DELETE `/api/agency/team/:member_id` removes team member
 
 **Authorization Checks:**
+
 - [ ] GET /api/agent/roster checks: `user is agent OR (user is team member AND canManageRoster = true)`
 - [ ] GET /api/consent checks: `user is agent OR (user is team member AND canViewConsent = true)`
 - [ ] PATCH /api/representation/requests checks: `user is agent OR (user is team member AND canManageRequests = true)`
@@ -669,6 +724,7 @@ As an agency owner (agent), I want to invite team members (other agents/assistan
 **Dependencies:** Stories 2.1–2.4, agency_team_members table
 
 **Testing:**
+
 - Invite teammate with canManageRoster=true → can access roster
 - Invite teammate with canManageRoster=false → cannot access roster (403)
 - Remove teammate → loses access
@@ -676,12 +732,14 @@ As an agency owner (agent), I want to invite team members (other agents/assistan
 ---
 
 ### Story 2.9: Frontend - Agent Dashboard
+
 **Assignee:** Frontend (Next.js)
 
 **User Story:**
 As an agent, I want a unified dashboard showing my roster, pending requests, and team so I can manage my business.
 
 **Acceptance Criteria:**
+
 - [ ] Dashboard layout:
   1. **Quick stats:** Active actors, pending deals, monthly earnings
   2. **Pending requests:** List of actors requesting representation, approve/decline buttons
@@ -701,6 +759,7 @@ As an agent, I want a unified dashboard showing my roster, pending requests, and
 ## SPRINT 2 Summary
 
 **Deliverables:**
+
 - Agency profile creation
 - Invitation code system
 - Representation request workflow (approve/reject)
@@ -710,6 +769,7 @@ As an agent, I want a unified dashboard showing my roster, pending requests, and
 - Team member delegation
 
 **Metric to Track:**
+
 - Time from agent sign-up to first actor representation (target: < 1 day)
 - Representation acceptance rate (target: > 80%)
 
@@ -718,15 +778,18 @@ As an agent, I want a unified dashboard showing my roster, pending requests, and
 ## SPRINT 3: Deal Templates & Negotiation UI (Weeks 5–6)
 
 ### Theme
+
 Build the marketplace: deal proposals, negotiation, and signing using Equity-based templates.
 
 ### Story 3.1: Equity Deal Template Data Model
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to embed Equity suggested terms as predefined deal templates so Studios and agents can quickly create compliant agreements.
 
 **Acceptance Criteria:**
+
 - [ ] Create `deal_templates` table:
   ```sql
   CREATE TABLE deal_templates (
@@ -761,18 +824,21 @@ As the system, I want to embed Equity suggested terms as predefined deal templat
 **Dependencies:** database schema
 
 **Testing:**
+
 - Fetch all templates → returns 3+
 - Fetch single template → includes all required fields
 
 ---
 
 ### Story 3.2: Deal Creation Endpoint (Studio proposes)
+
 **Assignee:** Backend
 
 **User Story:**
 As a studio, I want to propose a deal to an actor (via their agent) using a template so I can offer them a job.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/deals/create` (authenticated, studio role)
 - [ ] Input:
   ```json
@@ -828,6 +894,7 @@ As a studio, I want to propose a deal to an actor (via their agent) using a temp
 **Dependencies:** Story 3.1, deals table, studio verification
 
 **Testing:**
+
 - Create deal with all fields → succeeds, status = draft
 - Create deal with invalid actor_id → fails 404
 - Create deal with remuneration = 0 → fails validation
@@ -835,6 +902,7 @@ As a studio, I want to propose a deal to an actor (via their agent) using a temp
 ---
 
 ### Story 3.3: Deal Review & Editing (Agent/Actor review)
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -843,6 +911,7 @@ As an agent or actor, I want to review a deal proposal and suggest edits before 
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/deals/:deal_id` (authenticated, actor/agent/studio involved)
 - [ ] Returns full deal including:
   - All commercial terms
@@ -873,6 +942,7 @@ As an agent or actor, I want to review a deal proposal and suggest edits before 
   - Include changes summary
 
 **Frontend:**
+
 - [ ] Deal detail page shows current terms in read-only cards
 - [ ] "Edit terms" button opens form with pre-filled values
 - [ ] Fields editable: recording_fee, agent_percentage, territory, duration, custom_terms
@@ -884,6 +954,7 @@ As an agent or actor, I want to review a deal proposal and suggest edits before 
 **Dependencies:** Stories 3.1–3.2, deal_edits table
 
 **Testing:**
+
 - Agent reviews deal → can edit any term
 - Studio reviews agent's edit → sees changes summary
 - Non-involved user tries to view deal → 403 forbidden
@@ -891,6 +962,7 @@ As an agent or actor, I want to review a deal proposal and suggest edits before 
 ---
 
 ### Story 3.4: Deal Approval & Signing
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -899,6 +971,7 @@ As all parties, I want to approve final deal terms and sign so the deal becomes 
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] PATCH `/api/deals/:deal_id` with `action: 'approve'` (authenticated, actor/agent/studio)
 - [ ] Creates `deal_approvals` record:
   - `deal_id`
@@ -918,6 +991,7 @@ As all parties, I want to approve final deal terms and sign so the deal becomes 
 - [ ] Audit log: who approved, when
 
 **Frontend:**
+
 - [ ] Deal page shows approval status (actor ✓, agent ✓, studio ✓)
 - [ ] If logged-in user is actor/agent:
   - [ ] "Approve" button (makes user approve)
@@ -931,6 +1005,7 @@ As all parties, I want to approve final deal terms and sign so the deal becomes 
 **Dependencies:** Stories 3.1–3.3, deal_approvals table
 
 **Testing:**
+
 - Actor approves, agent approves, studio approves → deal.status = signed
 - Actor approves, agent declines → deal.status = declined, studio notified
 - Try to approve twice → idempotent (second approval is no-op)
@@ -938,6 +1013,7 @@ As all parties, I want to approve final deal terms and sign so the deal becomes 
 ---
 
 ### Story 3.5: Studio Profile Creation & Staging
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -946,6 +1022,7 @@ As a studio, I want to create a profile so I can propose deals to actors.
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/studio/profile/create` (authenticated, studio role)
 - [ ] Input:
   ```json
@@ -972,6 +1049,7 @@ As a studio, I want to create a profile so I can propose deals to actors.
 - [ ] GET `/api/studio/profile` returns studio profile
 
 **Frontend:**
+
 - [ ] Sign-up flow for studios (similar to actor/agent)
 - [ ] Form: company_name, contact_email, phone, address, website
 - [ ] Submit → creates profile
@@ -983,18 +1061,21 @@ As a studio, I want to create a profile so I can propose deals to actors.
 **Dependencies:** studios table, user_profiles
 
 **Testing:**
+
 - Create studio → profile.verification_status = 'staging'
 - All deals created by staging studios are marked as "practice"
 
 ---
 
 ### Story 3.6: Deal Status Tracking & History
+
 **Assignee:** Backend
 
 **User Story:**
 As all parties, I want to see the full history of a deal (created, edited, approved, signed) so there's transparency.
 
 **Acceptance Criteria:**
+
 - [ ] GET `/api/deals/:deal_id/history` returns timeline:
   ```json
   {
@@ -1028,6 +1109,7 @@ As all parties, I want to see the full history of a deal (created, edited, appro
 ---
 
 ### Story 3.7: Frontend - Deal Proposal & Negotiation UI
+
 **Assignee:** Frontend (Next.js)
 
 **User Story:**
@@ -1036,6 +1118,7 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 **Acceptance Criteria:**
 
 **Studio-facing (Deal Creation):**
+
 - [ ] Form with steps:
   1. Select template
   2. Search & select actor
@@ -1051,6 +1134,7 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 - [ ] Submit → POST /api/deals/create → confirmation page with deal_id & share link
 
 **Agent/Actor-facing (Deal Review):**
+
 - [ ] Deal card showing:
   - Project name, work type, territory, duration
   - Remuneration breakdown (recording + usage)
@@ -1064,6 +1148,7 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 - [ ] Activity log: shows who did what, when
 
 **Mobile-responsive:**
+
 - [ ] Forms stack vertically
 - [ ] Deal cards collapse on mobile
 
@@ -1076,6 +1161,7 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 ## SPRINT 3 Summary
 
 **Deliverables:**
+
 - Equity-based deal templates
 - Deal creation (studio-initiated)
 - Deal editing/counter-proposal
@@ -1085,6 +1171,7 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 - UI for all of the above
 
 **Metric to Track:**
+
 - Time from deal creation to signing (target: < 5 days)
 - Deal counter-proposal rate (typical: 20–30%)
 
@@ -1093,15 +1180,18 @@ As a studio, agent, or actor, I want an intuitive deal creation/review interface
 ## SPRINT 4: HDICR Studio Query & License Issuance (Weeks 7–8)
 
 ### Theme
+
 Studios query consent for real; deals create licenses; usage begins to be tracked.
 
 ### Story 4.1: Consent Query Endpoint (Studio → HDICR)
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
 As a studio, I want to query an actor's consent before proposing a deal so I know if they can be licensed for my project.
 
 **Acceptance Criteria:**
+
 - [ ] Endpoint: POST `/api/v1/consent/check` (external, API-key auth OR OAuth)
 - [ ] Input:
   ```json
@@ -1132,6 +1222,7 @@ As a studio, I want to query an actor's consent before proposing a deal so I kno
     "actor_registry_id": "uuid"
   }
   ```
+
   - [ ] If deny: reason = "Usage not permitted by consent policy"
 - [ ] Audit log: query received, actor_id, result, studio_id
 - [ ] No PII in response (except actor_registry_id)
@@ -1141,6 +1232,7 @@ As a studio, I want to query an actor's consent before proposing a deal so I kno
 **Dependencies:** consent_ledger table, actor table
 
 **Testing:**
+
 - Actor has Film consent, query for Film → "allow"
 - Actor lacks TV consent, query for TV → "deny"
 - Actor has Political restriction, query for Political content → "deny"
@@ -1149,12 +1241,14 @@ As a studio, I want to query an actor's consent before proposing a deal so I kno
 ---
 
 ### Story 4.2: License Creation on Deal Signing
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to create a license record when a deal is signed so usage can be tracked and enforced.
 
 **Acceptance Criteria:**
+
 - [ ] On deal signing (deal.status = 'signed'):
   - [ ] Backend triggers POST `/internal/licenses/create` (internal endpoint)
   - [ ] Input: deal_id
@@ -1163,9 +1257,9 @@ As the system, I want to create a license record when a deal is signed so usage 
   - [ ] Creates `licenses` record:
     ```sql
     INSERT INTO licenses (
-      actor_id, studio_user_id, deal_id, 
+      actor_id, studio_user_id, deal_id,
       work_type, usage_types, territory, duration_days, first_usage_date,
-      commercial_terms, 
+      commercial_terms,
       consent_version_at_signing,
       status, created_at, signed_at
     ) VALUES (...)
@@ -1182,12 +1276,14 @@ As the system, I want to create a license record when a deal is signed so usage 
 ---
 
 ### Story 4.3: Usage Logging Infrastructure
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to log every usage of a licensed actor so we have a complete audit trail.
 
 **Acceptance Criteria:**
+
 - [ ] Create `license_usage_log` table:
   ```sql
   CREATE TABLE license_usage_log (
@@ -1217,12 +1313,14 @@ As the system, I want to log every usage of a licensed actor so we have a comple
 ---
 
 ### Story 4.4: Usage Validation Against Consent
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to validate that each usage aligns with the actor's pinned consent version at license signing.
 
 **Acceptance Criteria:**
+
 - [ ] When logging usage (Story 4.3), validate:
   - [ ] license.status = 'active' (not suspended/frozen)
   - [ ] usage_date >= license.first_usage_date AND usage_date <= license.end_date (if capped)
@@ -1243,6 +1341,7 @@ As the system, I want to validate that each usage aligns with the actor's pinned
 **Dependencies:** Stories 4.2–4.3, consent_ledger
 
 **Testing:**
+
 - Log usage within consent → allows
 - Log usage outside consent → denies with reason
 - Log usage after license.end_date → denies
@@ -1250,16 +1349,18 @@ As the system, I want to validate that each usage aligns with the actor's pinned
 ---
 
 ### Story 4.5: License Expiration Logic
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to automatically expire licenses when their term ends so usage is prevented.
 
 **Acceptance Criteria:**
+
 - [ ] Add column to licenses: `end_date` TIMESTAMP
 - [ ] Calculate from: first_usage_date + duration_days
 - [ ] Cron job (runs nightly or on schedule):
-  - [ ] Query: SELECT * FROM licenses WHERE end_date < NOW() AND status = 'active'
+  - [ ] Query: SELECT \* FROM licenses WHERE end_date < NOW() AND status = 'active'
   - [ ] For each: UPDATE licenses SET status = 'expired', expired_at = NOW()
   - [ ] Email actor + agent: "License [project] has expired"
   - [ ] Email studio: "License [project] has expired. No further usage permitted."
@@ -1273,6 +1374,7 @@ As the system, I want to automatically expire licenses when their term ends so u
 ---
 
 ### Story 4.6: License Dashboard (Actor/Agent view earnings)
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1281,6 +1383,7 @@ As an actor or agent, I want to see all my active licenses, usage stats, and ear
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/licenses/me` (authenticated, actor or agent)
 - [ ] Returns active + recent licenses:
   ```json
@@ -1312,6 +1415,7 @@ As an actor or agent, I want to see all my active licenses, usage stats, and ear
 - [ ] GET `/api/licenses/:license_id/earnings` returns detailed breakdown
 
 **Frontend:**
+
 - [ ] Table view: Project, Status, Signed Date, Earnings
 - [ ] Click row → detail page:
   - [ ] Full commercial terms
@@ -1327,6 +1431,7 @@ As an actor or agent, I want to see all my active licenses, usage stats, and ear
 ---
 
 ### Story 4.7: Admin License Management Dashboard
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1335,11 +1440,13 @@ As an admin, I want a dashboard showing all licenses, usage, and payment status 
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/admin/licenses` (admin-only)
 - [ ] Returns all licenses with filters: status, studio, actor, date range
 - [ ] Summary stats: total licenses, active, expired, disputes
 
 **Frontend:**
+
 - [ ] Table: Project, Actor, Studio, Status, Signed Date, Revenue
 - [ ] Filters: status (active, expired, suspended), date range, studio, actor search
 - [ ] Click license → detail page with usage log + payments
@@ -1353,6 +1460,7 @@ As an admin, I want a dashboard showing all licenses, usage, and payment status 
 ## SPRINT 4 Summary
 
 **Deliverables:**
+
 - Consent query endpoint (functional for MVP: TI-only)
 - License creation on deal signing
 - Usage logging & audit trail
@@ -1361,6 +1469,7 @@ As an admin, I want a dashboard showing all licenses, usage, and payment status 
 - License dashboards (actor/agent/admin)
 
 **Metric to Track:**
+
 - License creation latency (should be < 1 second)
 - Usage validation success rate (target: > 99%)
 
@@ -1369,15 +1478,18 @@ As an admin, I want a dashboard showing all licenses, usage, and payment status 
 ## SPRINT 5: Consent Revocation & Arbitration (Weeks 9–10)
 
 ### Theme
+
 Handle consent revocation on active deals. Arbitration workflow with 30-day negotiation window.
 
 ### Story 5.1: Consent Revocation Endpoint
+
 **Assignee:** Backend (consent-service)
 
 **User Story:**
 As an actor, I want to revoke a work type or territory from my consent so my preferences are updated.
 
 **Acceptance Criteria:**
+
 - [ ] PATCH `/api/consent/revoke` (authenticated, actor)
 - [ ] Input:
   ```json
@@ -1414,6 +1526,7 @@ As an actor, I want to revoke a work type or territory from my consent so my pre
 **Dependencies:** consent-service, consent_ledger
 
 **Testing:**
+
 - Remove one work type → new version created
 - Revoke work type with no active licenses → completes silently
 - Revoke work type with 3 active licenses → triggers arbitration for all 3
@@ -1421,12 +1534,14 @@ As an actor, I want to revoke a work type or territory from my consent so my pre
 ---
 
 ### Story 5.2: Arbitration Request Creation
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to create an arbitration request when a consent revocation affects active licenses so both parties can negotiate new terms.
 
 **Acceptance Criteria:**
+
 - [ ] When revocation triggers arbitration (Story 5.1):
   - [ ] For each affected license:
     - [ ] Create `arbitration_requests` record:
@@ -1454,12 +1569,14 @@ As the system, I want to create an arbitration request when a consent revocation
 ---
 
 ### Story 5.3: Automatic Dispute Check (Day 0–5)
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to automatically check if a revocation dispute can be auto-resolved within 5 days so uncontested revocations complete quickly.
 
 **Acceptance Criteria:**
+
 - [ ] On arbitration creation (Story 5.2), schedule async task:
   - [ ] Wait 5 days
   - [ ] Call `/internal/arbitration/auto-check` (internal endpoint)
@@ -1486,6 +1603,7 @@ As the system, I want to automatically check if a revocation dispute can be auto
 ---
 
 ### Story 5.4: Arbitration Negotiation Phase (Day 0–30)
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1494,6 +1612,7 @@ As actor/agent/studio, I want to propose new commercial terms during arbitration
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/arbitration/:arbitration_id/propose` (authenticated, actor/agent/studio)
 - [ ] Input:
   ```json
@@ -1514,6 +1633,7 @@ As actor/agent/studio, I want to propose new commercial terms during arbitration
 - [ ] GET `/api/arbitration/:arbitration_id/proposals` returns all proposals in order
 
 **Frontend:**
+
 - [ ] Arbitration detail page shows:
   - Countdown to resolution deadline
   - Current commercial terms
@@ -1530,12 +1650,14 @@ As actor/agent/studio, I want to propose new commercial terms during arbitration
 ---
 
 ### Story 5.5: Arbitration Agreement & License Update
+
 **Assignee:** Backend
 
 **User Story:**
 As all parties, I want to agree on new terms during arbitration so the license can be updated and usage resumed.
 
 **Acceptance Criteria:**
+
 - [ ] All parties (actor/agent/studio) must approve same proposal:
   - [ ] PATCH `/api/arbitration/:arbitration_id/approve` (authenticated)
   - [ ] Input: proposal_id
@@ -1560,12 +1682,14 @@ As all parties, I want to agree on new terms during arbitration so the license c
 ---
 
 ### Story 5.6: Usage Pause During Arbitration
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to prevent usage logging during arbitration so consent/license disputes don't create liability.
 
 **Acceptance Criteria:**
+
 - [ ] When arbitration created (Story 5.2):
   - [ ] license.status = 'arbitration_pending'
 - [ ] POST `/api/usage/log` (Story 4.3) checks:
@@ -1587,6 +1711,7 @@ As the system, I want to prevent usage logging during arbitration so consent/lic
 **Dependencies:** Stories 5.2, 5.5
 
 **Testing:**
+
 - Log usage on active license → succeeds
 - License enters arbitration → usage attempt rejected
 - Arbitration resolves → usage succeeds again
@@ -1594,6 +1719,7 @@ As the system, I want to prevent usage logging during arbitration so consent/lic
 ---
 
 ### Story 5.7: Admin Arbitration Dashboard
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1602,11 +1728,13 @@ As an admin, I want to see all active arbitrations and their status so I can tra
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] GET `/api/admin/arbitrations` (admin-only)
 - [ ] Returns all arbitrations with filters: status, actor, studio, date range
 - [ ] Summary: total pending, resolved, unresolved, average resolution time
 
 **Frontend:**
+
 - [ ] Table: License ID, Project, Actor, Studio, Status, Days Left
 - [ ] Filters: status (pending, requires_negotiation, auto_resolved, unresolved)
 - [ ] Click row → detail page:
@@ -1625,6 +1753,7 @@ As an admin, I want to see all active arbitrations and their status so I can tra
 ## SPRINT 5 Summary
 
 **Deliverables:**
+
 - Consent revocation endpoint
 - Arbitration request creation
 - Automatic dispute checking (Day 0–5)
@@ -1634,6 +1763,7 @@ As an admin, I want to see all active arbitrations and their status so I can tra
 - Admin dashboard for arbitrations
 
 **Metric to Track:**
+
 - Arbitration resolution time (target: < 20 days average)
 - Auto-resolution rate (target: > 60%, meaning most revocations don't conflict)
 
@@ -1642,15 +1772,18 @@ As an admin, I want to see all active arbitrations and their status so I can tra
 ## SPRINT 6: Audit, Compliance & Polish (Weeks 11–12)
 
 ### Theme
+
 GDPR-ready, audit trails, payment processing, and launch polish.
 
 ### Story 6.1: Payment Processing Integration - Stripe Setup
+
 **Assignee:** Backend + DevOps
 
 **User Story:**
 As the system, I want Stripe to handle all payments so we stay PCI-DSS compliant and can split payouts.
 
 **Acceptance Criteria:**
+
 - [ ] Create Stripe account (production) or use test keys (staging)
 - [ ] Configure Stripe API keys in environment
 - [ ] Set up webhook endpoint: POST `/api/webhooks/stripe`
@@ -1670,6 +1803,7 @@ As the system, I want Stripe to handle all payments so we stay PCI-DSS compliant
 ---
 
 ### Story 6.2: Payment Invoice Creation (Studio)
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1678,6 +1812,7 @@ As a studio, I want to receive a Stripe-hosted invoice so I can pay securely wit
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/payment/invoice/create` (authenticated, studio)
 - [ ] Input: license_id
 - [ ] Fetch license + commercial_terms
@@ -1696,6 +1831,7 @@ As a studio, I want to receive a Stripe-hosted invoice so I can pay securely wit
 - [ ] Email studio with Stripe payment link
 
 **Frontend:**
+
 - [ ] Deal signed → automatic invoice creation & email
 - [ ] License detail page: "Invoice" button → opens Stripe-hosted invoice (read-only)
 
@@ -1706,12 +1842,14 @@ As a studio, I want to receive a Stripe-hosted invoice so I can pay securely wit
 ---
 
 ### Story 6.3: Payment Webhook Processing
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to process Stripe webhooks so payments are captured and payouts are split automatically.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/webhooks/stripe` (Stripe signature verification)
 - [ ] Handler for `payment_intent.succeeded`:
   - [ ] Fetch license_id from metadata
@@ -1738,17 +1876,19 @@ As the system, I want to process Stripe webhooks so payments are captured and pa
 ---
 
 ### Story 6.4: Payout Calculations & Distribution
+
 **Assignee:** Backend
 
 **User Story:**
 As the system, I want to calculate and distribute payouts to actors, agents, and TI so everyone gets paid correctly.
 
 **Acceptance Criteria:**
+
 - [ ] Service: `PayoutService.processPayout(license_id, payment_intent_id)`
 - [ ] Logic (from architecture doc):
   1. Calculate actor_gross_fee - (agent_percentage of gross) = actor_net
-  2. Calculate agent_fee = actor_gross_fee * agent_percentage
-  3. Calculate ti_fee = studio_payable * ti_percentage
+  2. Calculate agent_fee = actor_gross_fee \* agent_percentage
+  3. Calculate ti_fee = studio_payable \* ti_percentage
   4. Create Stripe transfers:
      - Actor → actor's bank account
      - Agent → agent's bank account
@@ -1771,6 +1911,7 @@ As the system, I want to calculate and distribute payouts to actors, agents, and
 **Dependencies:** Story 6.1–6.3, payouts table
 
 **Testing:**
+
 - Mock Stripe transfer API
 - Run payout for deal with agent → all three get paid
 - Run payout for deal without agent → actor + TI get paid
@@ -1778,6 +1919,7 @@ As the system, I want to calculate and distribute payouts to actors, agents, and
 ---
 
 ### Story 6.5: Bank Account Management (Actor/Agent)
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1786,6 +1928,7 @@ As an actor or agent, I want to add my bank account so I can receive payouts wit
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/payout/bank-account/add` (authenticated, actor/agent)
 - [ ] Input: sort_code, account_number (or Stripe token if pre-tokenized)
 - [ ] Validate sort code (6 digits, UK format)
@@ -1801,14 +1944,15 @@ As an actor or agent, I want to add my bank account so I can receive payouts wit
   - is_primary = true (if first account)
 - [ ] Delete input from memory immediately (don't log)
 - [ ] Return confirmation: "Bank account added"
-- [ ] Email confirmation with masked account (****1234)
+- [ ] Email confirmation with masked account (\*\*\*\*1234)
 - [ ] GET `/api/payout/bank-accounts` returns masked accounts (no full details)
 
 **Frontend:**
+
 - [ ] Account settings page
 - [ ] Form: Sort Code, Account Number (two separate fields)
 - [ ] Submit → POST /api/payout/bank-account/add
-- [ ] List of linked accounts (display as "Bank Account ****1234")
+- [ ] List of linked accounts (display as "Bank Account \*\*\*\*1234")
 - [ ] "Remove" option for secondary accounts
 - [ ] Mobile number for payment method verification (optional, for security)
 
@@ -1817,6 +1961,7 @@ As an actor or agent, I want to add my bank account so I can receive payouts wit
 **Dependencies:** Story 6.1, payment_methods table
 
 **Security Notes:**
+
 - Never log sort code or account number
 - Use Stripe tokens exclusively
 - HTTPS only for bank account forms
@@ -1825,6 +1970,7 @@ As an actor or agent, I want to add my bank account so I can receive payouts wit
 ---
 
 ### Story 6.6: Refund & Dispute Handling
+
 **Assignee:** Backend + Frontend
 
 **User Story:**
@@ -1833,6 +1979,7 @@ As an admin, I want to process refunds if a deal is disputed or cancelled so pay
 **Acceptance Criteria:**
 
 **Backend:**
+
 - [ ] POST `/api/payment/refund` (admin-only)
 - [ ] Input: license_id, reason (optional)
 - [ ] Fetch license + payment_intent_id
@@ -1854,6 +2001,7 @@ As an admin, I want to process refunds if a deal is disputed or cancelled so pay
 - [ ] Handle errors: if reverse transfer fails, alert admin
 
 **Frontend:**
+
 - [ ] Admin dashboard: license detail page
 - [ ] Button: "Process refund" (requires confirmation modal)
 - [ ] Form: reason dropdown (Requested, Fraudulent, Duplicate), optional notes
@@ -1866,12 +2014,14 @@ As an admin, I want to process refunds if a deal is disputed or cancelled so pay
 ---
 
 ### Story 6.7: Payment Audit Trail
+
 **Assignee:** Backend
 
 **User Story:**
 As an admin or auditor, I want a complete log of all payment events so disputes can be resolved.
 
 **Acceptance Criteria:**
+
 - [ ] Every payment event writes to `payment_audit_log`:
   - payment_intent.created
   - payment_intent.succeeded
@@ -1898,12 +2048,14 @@ As an admin or auditor, I want a complete log of all payment events so disputes 
 ---
 
 ### Story 6.8: GDPR Data Deletion & Right to Erasure
+
 **Assignee:** Backend
 
 **User Story:**
 As an actor, I want to delete my consent history while keeping payment/license records for compliance so my data is truly erased.
 
 **Acceptance Criteria:**
+
 - [ ] POST `/api/gdpr/delete-consent-history` (authenticated, actor)
 - [ ] Input: confirmation = true, reason (optional)
 - [ ] Before deletion, create archive record in `gdpr_deletions`:
@@ -1926,6 +2078,7 @@ As an actor, I want to delete my consent history while keeping payment/license r
 **Dependencies:** GDPR infrastructure, anonymization functions
 
 **Legal Notes:**
+
 - Consult UK Data Protection Office for GDPR compliance
 - Payment records: keep for 6+ years (tax requirements)
 - License records: keep for dispute period (e.g., 3 years)
@@ -1933,19 +2086,21 @@ As an actor, I want to delete my consent history while keeping payment/license r
 ---
 
 ### Story 6.9: RDS Encryption Remediation
+
 **Assignee:** DevOps
 
 **User Story:**
 As the system, I want RDS to be encrypted at rest so sensitive data (bank accounts, payments) is protected.
 
 **Acceptance Criteria:**
+
 - [ ] Current state: trimg-db-v3 has storage_encrypted = false (identified in earlier audit)
 - [ ] Process:
   1. Create RDS snapshot of trimg-db-v3 (unencrypted)
   2. Copy snapshot with encryption enabled
   3. Restore from encrypted snapshot → new DB instance
   4. Update DNS/connection string to point to new instance
-  5. Verify data integrity (run SELECT COUNT(*) on all tables)
+  5. Verify data integrity (run SELECT COUNT(\*) on all tables)
   6. Delete old unencrypted instance
 - [ ] Test in staging first (use snapshot of production, encrypt, verify)
 - [ ] Zero-downtime migration (blue-green):
@@ -1965,12 +2120,14 @@ As the system, I want RDS to be encrypted at rest so sensitive data (bank accoun
 ---
 
 ### Story 6.10: Monitoring & Alerting
+
 **Assignee:** DevOps + Backend
 
 **User Story:**
 As ops, I want alerts for payment failures, transfer failures, and system health so I can respond to issues.
 
 **Acceptance Criteria:**
+
 - [ ] Set up monitoring for:
   - [ ] Payment success rate (target: > 99%)
   - [ ] Transfer failure rate (alert if > 1%)
@@ -1996,12 +2153,14 @@ As ops, I want alerts for payment failures, transfer failures, and system health
 ---
 
 ### Story 6.11: Testing - Full Payment Flow
+
 **Assignee:** QA + Backend
 
 **User Story:**
 As QA, I want end-to-end payment tests so we can verify all flows work before launch.
 
 **Acceptance Criteria:**
+
 - [ ] Test scenario 1: Deal signing → Invoice → Payment → Payout split
   1. Create deal (studio)
   2. Actor/agent approve
@@ -2036,12 +2195,14 @@ As QA, I want end-to-end payment tests so we can verify all flows work before la
 ---
 
 ### Story 6.12: Documentation & Go-Live
+
 **Assignee:** Product/Founder
 
 **User Story:**
 As a studio/actor/agent, I want clear documentation on how to use payment features so I can operate independently.
 
 **Acceptance Criteria:**
+
 - [ ] Documentation:
   - [ ] "How to add bank account" (actor/agent)
   - [ ] "How to propose a deal" (studio)
@@ -2076,6 +2237,7 @@ As a studio/actor/agent, I want clear documentation on how to use payment featur
 ## SPRINT 6 Summary
 
 **Deliverables:**
+
 - Stripe integration (full payment pipeline)
 - Invoice creation & payment
 - Payout splits & distribution
@@ -2089,6 +2251,7 @@ As a studio/actor/agent, I want clear documentation on how to use payment featur
 - Documentation & launch readiness
 
 **Metric to Track:**
+
 - Payment success rate (target: > 99%)
 - Time from deal signing to payout (target: T+5 business days)
 - Support tickets related to payment (target: < 1% of deals)
@@ -2112,6 +2275,7 @@ LAUNCH
 ```
 
 **Critical items (if any slip, launch delays):**
+
 - Sprint 1: Identity verification
 - Sprint 2: Agent representation (GTM dependency)
 - Sprint 3: Deal UI (user-facing critical)
@@ -2123,6 +2287,7 @@ LAUNCH
 ## Definition of "Done" (Each Story)
 
 For a story to be marked done:
+
 - [ ] Code written & peer-reviewed
 - [ ] Unit tests written & passing
 - [ ] Integration tests passing (or scheduled for QA)
@@ -2133,6 +2298,7 @@ For a story to be marked done:
 - [ ] Deployed to staging & founder can manually test
 
 For Payment stories specifically:
+
 - [ ] No PCI-DSS violations introduced
 - [ ] Sensitive data never logged or stored
 - [ ] Stripe API calls verified with test mode
@@ -2142,22 +2308,24 @@ For Payment stories specifically:
 
 ## Effort Summary
 
-| Sprint | Theme | Story Points | Est. Weeks |
-|--------|-------|--------------|-----------|
-| 1 | Identity & Consent | 42 | 2 |
-| 2 | Agents & Representation | 50 | 2 |
-| 3 | Deal Templates & Negotiation | 60 | 2 |
-| 4 | Licenses & Usage | 35 | 2 |
-| 5 | Arbitration | 48 | 2 |
-| 6 | Payments & Compliance | 89 | 2 |
-| **Total** | | **324** | **12** |
+| Sprint    | Theme                        | Story Points | Est. Weeks |
+| --------- | ---------------------------- | ------------ | ---------- |
+| 1         | Identity & Consent           | 42           | 2          |
+| 2         | Agents & Representation      | 50           | 2          |
+| 3         | Deal Templates & Negotiation | 60           | 2          |
+| 4         | Licenses & Usage             | 35           | 2          |
+| 5         | Arbitration                  | 48           | 2          |
+| 6         | Payments & Compliance        | 89           | 2          |
+| **Total** |                              | **324**      | **12**     |
 
 **Team composition (solo founder MVP):**
+
 - Backend (identity, consent, deals, payments, arbitration): ~40 story points/week
 - Frontend (dashboards, forms, UX): ~30 story points/week
 - DevOps (Stripe, RDS, monitoring): ~10 story points/week
 
 **Realistic solo founder pace:**
+
 - 20–25 story points/week (part-time coding, part-time ops/founder duties)
 - **Total duration: 13–16 weeks** (MVP ready in 4 months)
 

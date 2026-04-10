@@ -2,7 +2,7 @@
 
 **Date:** April 10, 2026  
 **Status:** Sprint planning complete, implementation actively in progress (Sprint 1 + guardrails tranche A)  
-**Ready for:** Continued implementation and staging validation  
+**Ready for:** Continued implementation and staging validation
 
 ---
 
@@ -17,20 +17,20 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 ### Completed Since Planning
 
 - ✅ Story 1.3 (partial): Manual verification admin flow delivered
-   - Added admin endpoints for pending queue, scheduling, and completion
-   - Added admin verification dashboard in app navigation
-   - Added `manual_verification_sessions` migration
-   - Commit: `cd2afef`
+  - Added admin endpoints for pending queue, scheduling, and completion
+  - Added admin verification dashboard in app navigation
+  - Added `manual_verification_sessions` migration
+  - Commit: `cd2afef`
 
 - ✅ Story 1.8 (partial): Actor onboarding checklist delivered
-   - Added actor onboarding status API
-   - Added dashboard checklist component and integration
-   - Commit: `d0923d3`
+  - Added actor onboarding status API
+  - Added dashboard checklist component and integration
+  - Commit: `d0923d3`
 
 - ✅ Guardrails pre-Sprint-3 tranche delivered
-   - Added adapted migrations 020/021/022 (foundation, immutability, data-flow contracts)
-   - Added split DB pools and explicit HDICR query usage for new Sprint 1 paths
-   - Commits: `c8d3be5`, `f5c9d78`
+  - Added adapted migrations 020/021/022 (foundation, immutability, data-flow contracts)
+  - Added split DB pools and explicit HDICR query usage for new Sprint 1 paths
+  - Commits: `c8d3be5`, `f5c9d78`
 
 ### Staging Validation Status
 
@@ -79,36 +79,36 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 
 ### Sprint 1: Identity & Consent — **90% COMPLETE**
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| Stripe Identity integration | ✅ Built | `/api/verification/start`, webhooks |
-| Actor registration | ✅ Built | `/api/identity/register` |
-| Consent registration | ✅ Built | `/api/consent/grant` |
-| Consent ledger (versioning) | ✅ Built | `consent_ledger` table |
-| Audit trail | ✅ Built | All tables have created_at, created_by |
+| Component                           | Status                 | Location                                                                         |
+| ----------------------------------- | ---------------------- | -------------------------------------------------------------------------------- |
+| Stripe Identity integration         | ✅ Built               | `/api/verification/start`, webhooks                                              |
+| Actor registration                  | ✅ Built               | `/api/identity/register`                                                         |
+| Consent registration                | ✅ Built               | `/api/consent/grant`                                                             |
+| Consent ledger (versioning)         | ✅ Built               | `consent_ledger` table                                                           |
+| Audit trail                         | ✅ Built               | All tables have created_at, created_by                                           |
 | Manual video verification UI + APIs | 🟡 Partially delivered | Admin scheduling/completion live; manual-request + calendar invite still pending |
 
 **Effort to complete:** 1–2 days (finish remaining Story 1.3 and full Story 1.8 flow)
 
 ### Sprint 2: Agents & Representation — **70% COMPLETE**
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| Agency profiles | ✅ Built | `agents` table + endpoints |
-| Team member delegation | ✅ Built | `agency_team_members` with permissions |
-| Representation requests | ✅ Built | `representation_requests` table |
-| **Gap:** Invitation codes | ❌ Needs Story 2.2 | Code generation + redemption |
-| **Gap:** Termination workflow | ❌ Needs Story 2.7 | 30-day notice + off-boarding |
+| Component                     | Status             | Location                               |
+| ----------------------------- | ------------------ | -------------------------------------- |
+| Agency profiles               | ✅ Built           | `agents` table + endpoints             |
+| Team member delegation        | ✅ Built           | `agency_team_members` with permissions |
+| Representation requests       | ✅ Built           | `representation_requests` table        |
+| **Gap:** Invitation codes     | ❌ Needs Story 2.2 | Code generation + redemption           |
+| **Gap:** Termination workflow | ❌ Needs Story 2.7 | 30-day notice + off-boarding           |
 
 **Effort to complete:** 2–3 days (Stories 2.2, 2.7)
 
 ### Sprint 4: HDICR Query & Licenses — **50% COMPLETE**
 
-| Component | Status | Location |
-|-----------|--------|----------|
-| Consent check endpoint | ✅ Built | `/api/v1/consent/check` (353 lines) |
-| License + consent validation | ✅ Built | Enforcement logic complete |
-| Usage logging | ✅ Built | `license_usage_log` table |
+| Component                                 | Status                  | Location                               |
+| ----------------------------------------- | ----------------------- | -------------------------------------- |
+| Consent check endpoint                    | ✅ Built                | `/api/v1/consent/check` (353 lines)    |
+| License + consent validation              | ✅ Built                | Enforcement logic complete             |
+| Usage logging                             | ✅ Built                | `license_usage_log` table              |
 | **Gap:** Deal creation → license creation | ❌ Needs Sprint 3 first | Licenses table exists, but deals don't |
 
 **Effort:** Depends on Sprint 3 (deals). Once deals are built, licensing is 1 day.
@@ -122,6 +122,7 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 **Why it matters:** Without deals, there's no commercial layer. Actors + agents have no reason to use the platform.
 
 **What's needed:**
+
 - Deal template table + seeders (Equity-based)
 - Deal creation endpoint
 - Deal approval workflow
@@ -136,6 +137,7 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 **Why it matters:** Revenue model. Without payments, no revenue.
 
 **What's needed:**
+
 - Stripe payment intents
 - Invoice generation
 - Webhook handlers
@@ -153,6 +155,7 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 **Why it matters:** Without arbitration, consent revocation breaks active deals. Legal risk.
 
 **What's needed:**
+
 - Arbitration request creation
 - Auto-dispute check (Day 0–5)
 - Negotiation phase (Day 0–30)
@@ -254,17 +257,17 @@ OUTPUT:
 
 ### Codebase vs. Planning
 
-| Aspect | Planned | Built | Status |
-|--------|---------|-------|--------|
-| **Architecture** | Dual-plane (HDICR + TI) | ✅ Implemented | Correct |
-| **Auth** | Auth0 session-based | ✅ Implemented | Correct |
-| **Multi-tenancy** | Tenant-aware queries | ✅ Implemented | Correct |
-| **Identity** | Stripe + manual | ✅ Stripe done | 90% |
-| **Consent** | Versioned ledger | ✅ Built | 100% |
-| **Agents** | Representation + team | ✅ Built | 80% (gaps: codes, termination) |
-| **Deals** | Negotiation workflow | ❌ Not started | 0% |
-| **Payments** | Stripe payout splits | ❌ Not started | 5% (SDK only) |
-| **Arbitration** | Consent revocation → disputes | ❌ Partial | 10% |
+| Aspect            | Planned                       | Built          | Status                         |
+| ----------------- | ----------------------------- | -------------- | ------------------------------ |
+| **Architecture**  | Dual-plane (HDICR + TI)       | ✅ Implemented | Correct                        |
+| **Auth**          | Auth0 session-based           | ✅ Implemented | Correct                        |
+| **Multi-tenancy** | Tenant-aware queries          | ✅ Implemented | Correct                        |
+| **Identity**      | Stripe + manual               | ✅ Stripe done | 90%                            |
+| **Consent**       | Versioned ledger              | ✅ Built       | 100%                           |
+| **Agents**        | Representation + team         | ✅ Built       | 80% (gaps: codes, termination) |
+| **Deals**         | Negotiation workflow          | ❌ Not started | 0%                             |
+| **Payments**      | Stripe payout splits          | ❌ Not started | 5% (SDK only)                  |
+| **Arbitration**   | Consent revocation → disputes | ❌ Partial     | 10%                            |
 
 **Overall:** 65% of MVP features are built or in progress. 35% needs to be built (mostly Sprints 3, 5, 6).
 
@@ -275,7 +278,7 @@ OUTPUT:
 ✅ Identity verification (Stripe + mock providers)  
 ✅ Consent ledger (versioned, immutable, audited)  
 ✅ Multi-tenant enforcement (RLS policies, tenant isolation)  
-✅ HDICR query (consent check endpoint fully functional)  
+✅ HDICR query (consent check endpoint fully functional)
 
 ### Features NOT in Codebase (Need to Build)
 
@@ -285,7 +288,7 @@ OUTPUT:
 ❌ Payout split logic (actor net, agent cut, TI fee)  
 ❌ Arbitration request → negotiation → resolution  
 ❌ GDPR deletion workflows  
-❌ RDS encryption  
+❌ RDS encryption
 
 ---
 
@@ -427,6 +430,7 @@ When you're ready to build:
 3. **Have RDS encryption (Story 6.9) unblocked** before week 5
 
 If you hit blockers during implementation:
+
 - Check COPILOT_IMPLEMENTATION_GUIDE.md (Section 5: Common Pitfalls)
 - Review code patterns (Section 2)
 - Reference the story prompt template (Section 3)
@@ -442,7 +446,7 @@ You now have:
 ✅ **Codebase alignment** (what's built, what's missing, priorities)  
 ✅ **Payment architecture** (PCI-DSS compliant, fully designed)  
 ✅ **Implementation guide** (code patterns, Copilot prompts, checklists)  
-✅ **Clear critical path** (9–10 weeks to MVP)  
+✅ **Clear critical path** (9–10 weeks to MVP)
 
 **Your codebase is solid.** The gaps are well-defined and buildable. You're ready to execute.
 

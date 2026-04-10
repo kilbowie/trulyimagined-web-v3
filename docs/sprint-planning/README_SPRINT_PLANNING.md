@@ -7,53 +7,57 @@ This directory contains the complete sprint planning, architecture, and implemen
 ## 📋 Document Index
 
 ### 1. **CODEBASE_ALIGNMENT_AND_GAPS.md** ← **START HERE**
-   - **What:** Alignment between planned sprints and your current codebase
-   - **Why:** Confirms what's built, identifies gaps, sets execution priorities
-   - **For whom:** Founder, team leads, contractors
-   - **Read time:** 15 min
-   - **Key sections:**
-     - ✅ What's ready (Sprints 1–2 are 70–90% complete)
-     - ❌ What's missing (Sprints 3–6 not started, critical path identified)
-     - 📊 Recommended execution order
-     - 🎯 Database schema additions needed
+
+- **What:** Alignment between planned sprints and your current codebase
+- **Why:** Confirms what's built, identifies gaps, sets execution priorities
+- **For whom:** Founder, team leads, contractors
+- **Read time:** 15 min
+- **Key sections:**
+  - ✅ What's ready (Sprints 1–2 are 70–90% complete)
+  - ❌ What's missing (Sprints 3–6 not started, critical path identified)
+  - 📊 Recommended execution order
+  - 🎯 Database schema additions needed
 
 ### 2. **sprint-breakdown-stories-acceptance.md**
-   - **What:** Granular user stories with acceptance criteria for all 6 sprints
-   - **Why:** Detailed specs for implementing each feature; acceptance criteria for QA
-   - **For whom:** Developers, QA testers, product managers
-   - **Read time:** 45 min (skim) or 2 hours (detailed)
-   - **Key sections:**
-     - Sprint 1–6 story breakdowns (42 stories total)
-     - Acceptance criteria (checkbox format)
-     - Story point estimates
-     - Dependencies & prioritization
-     - Definition of "Done"
+
+- **What:** Granular user stories with acceptance criteria for all 6 sprints
+- **Why:** Detailed specs for implementing each feature; acceptance criteria for QA
+- **For whom:** Developers, QA testers, product managers
+- **Read time:** 45 min (skim) or 2 hours (detailed)
+- **Key sections:**
+  - Sprint 1–6 story breakdowns (42 stories total)
+  - Acceptance criteria (checkbox format)
+  - Story point estimates
+  - Dependencies & prioritization
+  - Definition of "Done"
 
 ### 3. **stripe-payment-architecture.md**
-   - **What:** Complete Stripe payment architecture (payment processing + payout splits)
-   - **Why:** Payment processing is revenue-critical and PCI-DSS sensitive
-   - **For whom:** Backend developers, DevOps, security reviewers
-   - **Read time:** 30 min (overview) or 60 min (detailed)
-   - **Key sections:**
-     - Three-way payment split logic (actor → agent → TI)
-     - PCI-DSS compliance strategy (zero payment data on TI servers)
-     - Webhook handlers & retry logic
-     - Database schema for payouts & audit trail
-     - Refund & dispute handling
-     - Go-live checklist
+
+- **What:** Complete Stripe payment architecture (payment processing + payout splits)
+- **Why:** Payment processing is revenue-critical and PCI-DSS sensitive
+- **For whom:** Backend developers, DevOps, security reviewers
+- **Read time:** 30 min (overview) or 60 min (detailed)
+- **Key sections:**
+  - Three-way payment split logic (actor → agent → TI)
+  - PCI-DSS compliance strategy (zero payment data on TI servers)
+  - Webhook handlers & retry logic
+  - Database schema for payouts & audit trail
+  - Refund & dispute handling
+  - Go-live checklist
 
 ### 4. **COPILOT_IMPLEMENTATION_GUIDE.md**
-   - **What:** Code patterns and Copilot prompts for implementing stories
-   - **Why:** Ensures consistency as features are built (solo founder or contractor)
-   - **For whom:** Developers using VS Code Copilot
-   - **Read time:** 30 min
-   - **Key sections:**
-     - Story prompt template (copy & customize)
-     - Code patterns (auth, database, API, audit, error handling)
-     - Story-specific prompts (e.g., Story 3.1, 6.4)
-     - Common pitfalls & how to avoid them
-     - Testing & deployment checklists
-     - Security checklist (payment-specific)
+
+- **What:** Code patterns and Copilot prompts for implementing stories
+- **Why:** Ensures consistency as features are built (solo founder or contractor)
+- **For whom:** Developers using VS Code Copilot
+- **Read time:** 30 min
+- **Key sections:**
+  - Story prompt template (copy & customize)
+  - Code patterns (auth, database, API, audit, error handling)
+  - Story-specific prompts (e.g., Story 3.1, 6.4)
+  - Common pitfalls & how to avoid them
+  - Testing & deployment checklists
+  - Security checklist (payment-specific)
 
 ---
 
@@ -95,14 +99,14 @@ This directory contains the complete sprint planning, architecture, and implemen
 
 ## 📊 Status at a Glance
 
-| Sprint | Theme | Status | When to Start |
-|--------|-------|--------|---------------|
-| 1 | Identity & Consent | 🟢 90% done (key gaps now partially delivered) | Continue Sprint 1 completion |
-| 2 | Agents & Representation | 🟢 70% done | Fill gaps this week |
-| 3 | Deal Negotiation | 🔴 0% — NOT STARTED | Week 3 (CRITICAL PATH) |
-| 4 | Licenses & Usage | 🟡 50% (HDICR query done) | Week 5 (depends on Sprint 3) |
-| 5 | Arbitration | 🔴 10% (consent revoke done) | Week 7 (parallel with 6) |
-| 6 | Payments & Compliance | 🔴 5% (Stripe SDK only) | Week 5 (CRITICAL PATH) |
+| Sprint | Theme                   | Status                                         | When to Start                |
+| ------ | ----------------------- | ---------------------------------------------- | ---------------------------- |
+| 1      | Identity & Consent      | 🟢 90% done (key gaps now partially delivered) | Continue Sprint 1 completion |
+| 2      | Agents & Representation | 🟢 70% done                                    | Fill gaps this week          |
+| 3      | Deal Negotiation        | 🔴 0% — NOT STARTED                            | Week 3 (CRITICAL PATH)       |
+| 4      | Licenses & Usage        | 🟡 50% (HDICR query done)                      | Week 5 (depends on Sprint 3) |
+| 5      | Arbitration             | 🔴 10% (consent revoke done)                   | Week 7 (parallel with 6)     |
+| 6      | Payments & Compliance   | 🔴 5% (Stripe SDK only)                        | Week 5 (CRITICAL PATH)       |
 
 **Critical Path:** Sprints 3 + 6 are blocking launch. Start them ASAP.
 
@@ -111,11 +115,13 @@ This directory contains the complete sprint planning, architecture, and implemen
 ## 🎯 Next Steps (This Week)
 
 ### Immediate (Days 1–2)
+
 - [ ] Read CODEBASE_ALIGNMENT_AND_GAPS.md (sections 1–3)
 - [ ] Confirm Sprint 1–2 gaps are acceptable
 - [ ] Decide: solo builder or hire contractor?
 
 ### Short-term (Days 3–7)
+
 - [ ] Complete Sprint 1–2 gaps:
   - [x] Story 1.3 (partial): Manual verification admin APIs/dashboard delivered
   - [x] Story 1.8 (partial): Actor onboarding checklist API/UI delivered
@@ -127,11 +133,13 @@ This directory contains the complete sprint planning, architecture, and implemen
   - Story 3.1: Deal template table + seeders
 
 ### Guardrails Track (Pre-Sprint 3)
+
 - [x] Delivered adapted guardrails migrations 020/021/022.
 - [x] Delivered split DB pools and explicit HDICR query wiring for new Sprint 1 paths.
 - [ ] Run staging migration apply + smoke checks (blocked locally until DATABASE_URL is configured for migration runner).
 
 ### Medium-term (Weeks 2–4)
+
 - [ ] Finish Sprint 3 (deal negotiation UI)
 - [ ] Start Sprint 6 early (payment processing):
   - Story 6.9: RDS encryption (MUST DO FIRST)
@@ -221,7 +229,8 @@ Story: [paste story number and criteria]
 A: No. Follow the critical path in CODEBASE_ALIGNMENT_AND_GAPS.md (Section 6). Deal negotiation (Sprint 3) and payment processing (Sprint 6) are blocking.
 
 **Q: What if my codebase doesn't match the patterns in COPILOT_IMPLEMENTATION_GUIDE.md?**  
-A: That's fine! Use the patterns as *examples*, not gospel. The key is consistency within your own codebase. Just ensure:
+A: That's fine! Use the patterns as _examples_, not gospel. The key is consistency within your own codebase. Just ensure:
+
 - Auth checks on every endpoint
 - Audit logging on sensitive actions
 - Multi-tenant awareness in all queries
@@ -229,12 +238,14 @@ A: That's fine! Use the patterns as *examples*, not gospel. The key is consisten
 
 **Q: Can I implement Sprints out of order?**  
 A: Yes, but be aware of dependencies:
+
 - Sprint 3 (deals) must finish before Sprint 4 (licenses)
 - Sprint 6 (payments) is independent but critical for revenue
 - Sprint 5 (arbitration) is lower priority but needed for full compliance
 
 **Q: What if I hire a contractor?**  
 A: Send them:
+
 1. CODEBASE_ALIGNMENT_AND_GAPS.md (for context + priorities)
 2. sprint-breakdown-stories-acceptance.md (for detailed specs)
 3. COPILOT_IMPLEMENTATION_GUIDE.md (for code patterns)
@@ -247,6 +258,7 @@ A: Check the alignment checklist in CODEBASE_ALIGNMENT_AND_GAPS.md (Section 9). 
 
 **Q: What's the timeline for MVP?**  
 A: If you work solo + 20–25 story points/week:
+
 - Weeks 1–2: Sprint 1–2 (clean up gaps)
 - Weeks 3–4: Sprint 3 (deal negotiation — CRITICAL)
 - Weeks 5–6: Sprint 6 (payments — CRITICAL) + Sprint 4
@@ -278,6 +290,7 @@ A: If you work solo + 20–25 story points/week:
 ## 🔄 Document Updates
 
 These documents will evolve as:
+
 - Sprints are completed (mark story ✅ in sprint-breakdown-stories-acceptance.md)
 - New gaps are discovered (add to CODEBASE_ALIGNMENT_AND_GAPS.md)
 - New patterns emerge (add to COPILOT_IMPLEMENTATION_GUIDE.md)
@@ -292,6 +305,7 @@ These documents will evolve as:
 ## 🎉 You're Ready!
 
 You now have:
+
 - ✅ Complete sprint breakdown (42 stories with acceptance criteria)
 - ✅ Codebase alignment (what's built, what's missing, priorities)
 - ✅ Payment architecture (PCI-DSS compliant, fully detailed)
