@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { queryHdicr } from '@/lib/db';
 import { DEFAULT_TENANT_ID } from '@/lib/manual-verification';
 
 // DB-OWNER: HDICR
@@ -21,7 +21,7 @@ export async function GET() {
 
     const tenantId = DEFAULT_TENANT_ID;
 
-    const result = await query(
+    const result = await queryHdicr(
       `SELECT
          a.id AS actor_id,
          a.registry_id,

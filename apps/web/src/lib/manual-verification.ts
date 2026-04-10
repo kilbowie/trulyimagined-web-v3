@@ -1,4 +1,4 @@
-import { query } from '@/lib/db';
+import { queryHdicr } from '@/lib/db';
 
 export const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'trulyimagined';
 
@@ -8,7 +8,7 @@ export interface AdminContext {
 }
 
 export async function getAdminContext(auth0UserId: string): Promise<AdminContext | null> {
-  const result = await query(
+  const result = await queryHdicr(
     `SELECT id, role
      FROM user_profiles
      WHERE auth0_user_id = $1
@@ -33,7 +33,7 @@ export async function writeAuditLog(options: {
   changes: Record<string, unknown>;
   tenantId?: string;
 }): Promise<void> {
-  await query(
+  await queryHdicr(
     `INSERT INTO audit_log (user_id, user_type, action, resource_type, resource_id, changes, tenant_id)
      VALUES ($1::uuid, 'admin', $2, $3, $4::uuid, $5::jsonb, $6)`,
     [

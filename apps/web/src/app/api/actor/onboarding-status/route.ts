@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { query } from '@/lib/db';
+import { queryHdicr } from '@/lib/db';
 
 // DB-OWNER: HDICR
 
@@ -22,7 +22,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const roleResult = await query(
+    const roleResult = await queryHdicr(
       `SELECT role, profile_completed
        FROM user_profiles
        WHERE auth0_user_id = $1
@@ -41,7 +41,7 @@ export async function GET() {
 
     const profileCompleted = Boolean(roleResult.rows[0].profile_completed);
 
-    const actorResult = await query(
+    const actorResult = await queryHdicr(
       `SELECT id, registry_id, verification_status, created_at
        FROM actors
        WHERE auth0_user_id = $1
@@ -58,7 +58,7 @@ export async function GET() {
     let hasActiveConsent = false;
 
     if (hasRegistration) {
-      const consentResult = await query(
+      const consentResult = await queryHdicr(
         `SELECT EXISTS (
            SELECT 1
            FROM consent_ledger

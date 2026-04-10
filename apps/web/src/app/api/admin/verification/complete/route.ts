@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { queryHdicr } from '@/lib/db';
 import { sendVerificationCompleteEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     const tenantId = DEFAULT_TENANT_ID;
 
     const sessionResult = verificationRequestId
-      ? await query(
+      ? await queryHdicr(
           `SELECT mvs.id, mvs.actor_id, a.auth0_user_id, a.email, a.stage_name, a.first_name, a.last_name
            FROM manual_verification_sessions mvs
            JOIN actors a ON a.id = mvs.actor_id
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
            LIMIT 1`,
           [verificationRequestId, tenantId]
         )
-      : await query(
+      : await queryHdicr(
           `SELECT mvs.id, mvs.actor_id, a.auth0_user_id, a.email, a.stage_name, a.first_name, a.last_name
            FROM manual_verification_sessions mvs
            JOIN actors a ON a.id = mvs.actor_id
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
     const resolvedActorId: string = verificationSession.actor_id;
     const resolvedSessionId: string = verificationSession.id;
 
-    await query(
+    await queryHdicr(
       `UPDATE manual_verification_sessions
        SET status = $2,
            verified = $3,
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
       ]
     );
 
-    await query(
+    await queryHdicr(
       `UPDATE actors
        SET verification_status = $2,
            verified_at = CASE WHEN $3 THEN NOW() ELSE NULL END,
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (payload.verified) {
-      const profileResult = await query(
+      const profileResult = await queryHdicr(
         `SELECT id
          FROM user_profiles
          WHERE auth0_user_id = $1
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
           completedAt: new Date().toISOString(),
         });
 
-        await query(
+        await queryHdicr(
           `INSERT INTO identity_links (
              user_profile_id,
              provider,

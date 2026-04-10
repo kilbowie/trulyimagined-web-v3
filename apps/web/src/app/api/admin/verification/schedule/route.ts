@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { query } from '@/lib/db';
+import { queryHdicr } from '@/lib/db';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     const tenantId = DEFAULT_TENANT_ID;
 
-    const actorResult = await query(
+    const actorResult = await queryHdicr(
       `SELECT id, verification_status
        FROM actors
        WHERE id = $1::uuid
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const encryptedMeetingLink = encryptJSON({ meetingLink });
 
-    const openSessionResult = await query(
+    const openSessionResult = await queryHdicr(
       `SELECT id
        FROM manual_verification_sessions
        WHERE actor_id = $1::uuid
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
 
     if (openSessionResult.rows.length > 0) {
       verificationRequestId = openSessionResult.rows[0].id;
-      await query(
+      await queryHdicr(
         `UPDATE manual_verification_sessions
          SET status = 'scheduled',
              scheduled_at = $2::timestamptz,
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
         ]
       );
     } else {
-      const insertResult = await query(
+      const insertResult = await queryHdicr(
         `INSERT INTO manual_verification_sessions (
            actor_id,
            status,

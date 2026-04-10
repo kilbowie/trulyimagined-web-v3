@@ -1,67 +1,84 @@
 import { Pool, QueryResult } from 'pg';
 
-// Prefer TI_DATABASE_URL to decouple TI runtime from legacy HDICR DATABASE_URL usage.
-let connectionString = process.env.TI_DATABASE_URL || process.env.DATABASE_URL;
+function normalizeConnectionString(connectionString?: string): string | undefined {
+  if (!connectionString) {
+    return undefined;
+  }
 
-if (!process.env.TI_DATABASE_URL && process.env.DATABASE_URL) {
-  console.warn('[DB] Using legacy DATABASE_URL. Set TI_DATABASE_URL for TI runtime separation.');
+  if (connectionString.includes('?sslmode=')) {
+    return connectionString.replace(/\?sslmode=\w+/, '');
+  }
+
+  return connectionString;
 }
 
-if (connectionString && connectionString.includes('?sslmode=')) {
-  connectionString = connectionString.replace(/\?sslmode=\w+/, '');
+function createPool(connectionString?: string): Pool {
+  const normalized = normalizeConnectionString(connectionString);
+  const dbUrl = normalized ? new URL(normalized.replace('postgresql://', 'postgres://')) : null;
+
+  return new Pool(
+    dbUrl
+      ? {
+          host: dbUrl.hostname,
+          port: parseInt(dbUrl.port) || 5432,
+          database: dbUrl.pathname.split('/')[1],
+          user: dbUrl.username,
+          password: decodeURIComponent(dbUrl.password),
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
+          statement_timeout: 10000,
+        }
+      : {
+          connectionString: normalized,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          max: 20,
+          idleTimeoutMillis: 30000,
+          connectionTimeoutMillis: 10000,
+          statement_timeout: 10000,
+        }
+  );
 }
 
-// Parse connection URL
-const dbUrl = connectionString
-  ? new URL(connectionString.replace('postgresql://', 'postgres://'))
-  : null;
+const legacyConnectionString = process.env.DATABASE_URL;
 
-// Initialize PostgreSQL connection pool
-const pool = new Pool(
-  dbUrl
-    ? {
-        host: dbUrl.hostname,
-        port: parseInt(dbUrl.port) || 5432,
-        database: dbUrl.pathname.split('/')[1],
-        user: dbUrl.username,
-        password: decodeURIComponent(dbUrl.password),
-        ssl: {
-          rejectUnauthorized: false, // Required for AWS RDS self-signed certificates
-        },
-        max: 20, // Maximum number of clients in the pool
-        idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
-        connectionTimeoutMillis: 10000, // Return an error after 10 seconds if connection could not be established
-        statement_timeout: 10000, // Cancel queries that take longer than 10 seconds
-      }
-    : {
-        connectionString,
-        ssl: {
-          rejectUnauthorized: false,
-        },
-        max: 20,
-        idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000,
-        statement_timeout: 10000,
-      }
-);
+const hdicrConnectionString = process.env.HDICR_DATABASE_URL || legacyConnectionString;
+if (!process.env.HDICR_DATABASE_URL && legacyConnectionString) {
+  console.warn('[DB] Using legacy DATABASE_URL for HDICR pool. Set HDICR_DATABASE_URL for split credentials.');
+}
 
-/**
- * Execute a SQL query
- *
- * @param text SQL query text
- * @param params Query parameters
- * @returns Query result
- */
-export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
+const tiConnectionString = process.env.TI_DATABASE_URL || legacyConnectionString;
+if (!process.env.TI_DATABASE_URL && legacyConnectionString) {
+  console.warn('[DB] Using legacy DATABASE_URL for TI pool. Set TI_DATABASE_URL for split credentials.');
+}
+
+const hdicrPool = createPool(hdicrConnectionString);
+const tiPool = createPool(tiConnectionString);
+
+// Backward compatible default pool. New code should use queryHdicr/queryTi.
+const pool = tiPool;
+
+async function executeQuery(
+  targetPool: Pool,
+  source: 'HDICR' | 'TI' | 'DEFAULT',
+  text: string,
+  params?: unknown[]
+): Promise<QueryResult> {
   const start = Date.now();
   let client;
 
   try {
-    client = await pool.connect();
+    client = await targetPool.connect();
     const result = await client.query(text, params);
     const duration = Date.now() - start;
 
     console.log('[DB] Query executed', {
+      source,
       text: text.substring(0, 100) + (text.length > 100 ? '...' : ''),
       duration: `${duration}ms`,
       rows: result.rowCount,
@@ -71,6 +88,7 @@ export async function query(text: string, params?: unknown[]): Promise<QueryResu
   } catch (error) {
     const duration = Date.now() - start;
     console.error('[DB] Query error', {
+      source,
       text: text.substring(0, 100),
       duration: `${duration}ms`,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -82,6 +100,25 @@ export async function query(text: string, params?: unknown[]): Promise<QueryResu
       client.release();
     }
   }
+}
+
+/**
+ * Execute a SQL query
+ *
+ * @param text SQL query text
+ * @param params Query parameters
+ * @returns Query result
+ */
+export async function query(text: string, params?: unknown[]): Promise<QueryResult> {
+  return executeQuery(pool, 'DEFAULT', text, params);
+}
+
+export async function queryHdicr(text: string, params?: unknown[]): Promise<QueryResult> {
+  return executeQuery(hdicrPool, 'HDICR', text, params);
+}
+
+export async function queryTi(text: string, params?: unknown[]): Promise<QueryResult> {
+  return executeQuery(tiPool, 'TI', text, params);
 }
 
 /**
@@ -98,7 +135,19 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
-// Export pool for advanced use cases
-export { pool };
+export async function testSplitConnections(): Promise<{ hdicr: boolean; ti: boolean }> {
+  const hdicr = await queryHdicr('SELECT NOW()')
+    .then(() => true)
+    .catch(() => false);
 
-export default { query, testConnection, pool };
+  const ti = await queryTi('SELECT NOW()')
+    .then(() => true)
+    .catch(() => false);
+
+  return { hdicr, ti };
+}
+
+// Export pools for advanced use cases.
+export { pool, hdicrPool, tiPool };
+
+export default { query, queryHdicr, queryTi, testConnection, testSplitConnections, pool };
