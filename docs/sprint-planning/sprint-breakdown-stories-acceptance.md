@@ -97,14 +97,14 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
 
 **Backend:**
 
-- [ ] POST `/api/verification/manual-request` creates a manual verification request
-  - [ ] Input: actor_id, preferred_timezone, phone_number
-  - [ ] Creates record in `verification_requests` table (status: pending_scheduling)
-  - [ ] Sends email to founder with actor details + link to admin dashboard
+- [x] POST `/api/verification/manual-request` creates a manual verification request
+  - [x] Input: actor_id, preferred_timezone, phone_number
+  - [x] Creates record in `manual_verification_sessions` table (status: pending_scheduling)
+  - [x] Sends email to founder with actor details + link to admin dashboard
 - [x] POST `/api/admin/verification/schedule` (admin-only endpoint)
   - [x] Input support: actor_id, scheduled_at (datetime), meeting link
   - [x] Upserts open manual verification session to status = 'scheduled'
-  - [ ] Sends calendar invite to actor (email + iCal)
+  - [x] Sends calendar invite to actor (email + iCal attachment, RFC 5545 format)
   - [x] Stores meeting link in encrypted field
 - [x] POST `/api/admin/verification/complete` (admin-only)
   - [x] Input support: verification_request_id or actor_id, verified: boolean, notes: string
@@ -114,7 +114,7 @@ As the founder, I want to manually verify actors via video call for MVP hype/exc
     - [x] Sends "You're verified!" email to actor
   - [x] If verified = false:
     - [x] Updates actor verification status to rejected and session status to failed
-    - [ ] Sends "Verification failed, please retry" email + new Stripe session link
+    - [x] Sends "Verification failed, please retry" email + retry link to verify-identity page
   - [x] Creates audit log: who verified, when, notes (non-sensitive)
 
 **Frontend (Admin Dashboard):**
@@ -314,9 +314,9 @@ As an actor, I want a smooth onboarding flow that guides me from sign-up → ide
   5. "Complete" page
 - [x] Each checklist step shows status: pending/completed
 - [ ] Step 2: Form with legal_name + professional_name, submit → creates actor
-- [ ] Step 3: Two buttons:
+- [x] Step 3: Two options for identity verification:
   - "Verify with Stripe" → opens Stripe verification flow
-  - "Request video call" → shows form (timezone, phone), submits to backend, shows "Founder will schedule" message
+  - [x] "Request video call" → shows form (timezone, phone), submits to backend, shows "Founder will schedule" message
 - [ ] Step 4: Multi-select checkboxes for work_types, content_restrictions
   - [ ] Toggle for territories (toggle between "World-wide" and "Custom")
   - [ ] Custom territories: search bar + country select (autocomplete)
@@ -331,11 +331,25 @@ As an actor, I want a smooth onboarding flow that guides me from sign-up → ide
 
 **Dependencies:** Stories 1.1–1.7, Auth0, Stripe verification embed
 
+**Design Notes (Story 1.8 Implementation Strategy):**
+
+- **Onboarding-Step Integration Model**: Story 1.8 implementation will use explicit `onboarding_step` enumeration (signup, profile, verify-identity, consent, complete) to drive page routing and state management. Each step will:
+  - Call `GET /api/onboarding/status` to fetch current actor progress and step position
+  - Attempt to advance step via `POST /api/onboarding/step/<step>` (idempotent, returns current step if already completed)
+  - Render conditional UI: if actor not at that step, redirect to appropriate step page with contextual message
+  - Use localStorage for client-side draft data (as per spec), but validate against server state on mount to prevent forward-skipping
+- **Manual Verification as Step 3 Alternative**: The manual verification request form (timezone + phone) is integrated into Step 3 (verify-identity page) as one of two options alongside Stripe. Actor can request video call anytime; founder will schedule independently; actor receives calendar invite and can resume onboarding Step 4 (consent) while verification is pending in the background.
+- **Territory Selection Rule**: Territory default is **none selected**. Actors must make explicit allow selections before consent can be submitted.
+- **Profile Go-Live Gate**: Actors can proceed to consent while verification is pending, but profile stays non-live until verification reaches completed/verified state.
+- **Error States**: Each step should surface step-specific errors (e.g., profile name validation, consent submission failures) and allow retry without losing other step progress. Verification errors should explicitly offer both options: retry Stripe or request manual video call.
+- **Checklist Status Sync**: The existing checklist component will call `GET /api/onboarding/status` on mount to sync all step completion flags, ensuring localStorage and server state agree.
+
 **Testing:**
 
 - Complete full onboarding flow end-to-end
-- Refresh page midway → resume from same step
+- Refresh page midway → resume from same step (localStorage + server state match)
 - Fill consent form → leave page → return → data still there (localStorage)
+- Request manual verification during step 3 → snapshot onboarding state → verify admin can schedule call independently while actor can continue to step 4
 
 ---
 
@@ -1214,6 +1228,7 @@ As a studio, I want to query an actor's consent before proposing a deal so I kno
   - [ ] Check: is territory in actor's consent.territories.allowed?
   - [ ] Check: does requested_usage conflict with content_restrictions?
 - [ ] Response:
+
   ```json
   {
     "decision": "allow" | "deny",
@@ -1225,6 +1240,7 @@ As a studio, I want to query an actor's consent before proposing a deal so I kno
   ```
 
   - [ ] If deny: reason = "Usage not permitted by consent policy"
+
 - [ ] Audit log: query received, actor_id, result, studio_id
 - [ ] No PII in response (except actor_registry_id)
 

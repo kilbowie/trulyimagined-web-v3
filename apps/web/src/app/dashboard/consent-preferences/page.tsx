@@ -766,6 +766,10 @@ export default function ConsentPreferencesPage() {
     if (!hasPolicyChanges) {
       return;
     }
+    if (policy.territories.allowed.length === 0) {
+      setError('Select at least one allowed territory before saving consent preferences.');
+      return;
+    }
     const saved = await persistConsent(policy);
     if (saved) {
       setIsEditMode(false);

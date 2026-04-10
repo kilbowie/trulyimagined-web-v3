@@ -351,6 +351,12 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
       show: hasActorRole,
       items: [
         {
+          title: 'Onboarding Flow',
+          href: '/dashboard/onboarding',
+          icon: ShieldCheck,
+          show: hasActorRole,
+        },
+        {
           title: 'Register Identity',
           href: '/dashboard/register-identity',
           icon: ShieldCheck,

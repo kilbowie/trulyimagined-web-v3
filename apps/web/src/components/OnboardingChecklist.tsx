@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle2, Circle, Loader2, ArrowRight } from 'lucide-react';
 
 type OnboardingStep = {
-  id: 'registration' | 'verification' | 'consent' | 'profile_live';
+  id: 'signup' | 'profile' | 'verify-identity' | 'consent' | 'complete';
   label: string;
   completed: boolean;
   href: string;
@@ -21,8 +21,9 @@ type OnboardingResponse = {
     registryId: string | null;
     verificationStatus: string;
     profileCompleted: boolean;
+    canProfileGoLive: boolean;
+    currentStep: OnboardingStep['id'];
     steps: OnboardingStep[];
-    nextStep: OnboardingStep | null;
     progress: {
       completed: number;
       total: number;
@@ -41,7 +42,7 @@ export function OnboardingChecklist() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch('/api/actor/onboarding-status');
+        const response = await fetch('/api/onboarding/status');
         const payload = (await response.json()) as OnboardingResponse | { error?: string };
 
         if (!response.ok || !('success' in payload) || !payload.success) {
@@ -124,14 +125,14 @@ export function OnboardingChecklist() {
               ))}
             </div>
 
-            {data.nextStep ? (
+            {data.currentStep !== 'complete' ? (
               <div className="flex items-center justify-between rounded-lg border p-3 bg-muted/30">
                 <div>
                   <p className="text-sm font-medium">Next recommended action</p>
-                  <p className="text-sm text-muted-foreground">{data.nextStep.label}</p>
+                  <p className="text-sm text-muted-foreground">Continue onboarding flow</p>
                 </div>
                 <Button asChild>
-                  <Link href={data.nextStep.href}>
+                  <Link href={`/dashboard/onboarding?step=${data.currentStep}`}>
                     Continue <ArrowRight className="h-4 w-4 ml-2" />
                   </Link>
                 </Button>

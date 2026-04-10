@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 interface IdentityLink {
@@ -119,7 +120,13 @@ export default function VerifyIdentityPage() {
     } catch (err) {
       console.error('[VERIFY-IDENTITY] Verification error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      setError(errorMessage);
+      if (provider === 'stripe') {
+        setError(
+          `${errorMessage}. You can retry Stripe verification or request a founder-led video call below.`
+        );
+      } else {
+        setError(errorMessage);
+      }
       setVerifying(false);
     }
   }
@@ -365,7 +372,9 @@ export default function VerifyIdentityPage() {
             <div className="border border-border rounded-lg p-4 bg-background">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">Request a founder-led video call</h3>
+                  <h3 className="font-semibold text-foreground">
+                    Request a founder-led video call
+                  </h3>
                   <p className="text-sm text-muted-foreground mt-1">
                     Prefer a manual review instead of self-service Stripe verification? Send your
                     timezone and contact number and the founder team will schedule a call.
@@ -402,6 +411,19 @@ export default function VerifyIdentityPage() {
                 >
                   {requestingManual ? 'Submitting...' : 'Request Video Call'}
                 </button>
+              </div>
+            </div>
+
+            <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              You can continue to consent preferences while verification is pending, but your
+              profile will only go live once verification is complete.
+              <div className="mt-2">
+                <Link
+                  href="/dashboard/consent-preferences"
+                  className="font-semibold underline underline-offset-2"
+                >
+                  Continue to consent preferences
+                </Link>
               </div>
             </div>
 
