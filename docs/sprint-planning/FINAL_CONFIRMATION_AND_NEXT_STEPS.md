@@ -34,8 +34,9 @@ Your codebase is **well-architected and production-ready for Sprints 1–2**. Al
 
 ### Staging Validation Status
 
-- ⚠️ Guardrails staging migration run is currently blocked in this environment because `DATABASE_URL` is not set for the migration runner.
-- ✅ Repo is ready to run staging validation once staging DB credentials are provided.
+- ✅ Guardrails targeted apply completed against RDS for migrations 020/021/022.
+- ✅ Smoke checks passed: schemas created (`hdicr`, `hdicr_auth`, `ti`), 7 contract/audit views present, and consent immutability trigger blocks UPDATE as expected.
+- ⚠️ Follow-up: full migration runner path still needs hardening (non-idempotent early index creation and CA trust handling).
 
 ---
 

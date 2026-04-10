@@ -51,54 +51,152 @@ GRANT USAGE ON SCHEMA ti TO ti_app, hdicr_app, db_admin;
 -- 3) TI-READABLE CONTRACT VIEWS OVER HDICR DATA
 -- ===========================================
 -- Actor identity contract (minimal fields for TI workflows).
-CREATE OR REPLACE VIEW hdicr.v_actors_for_ti AS
-SELECT
-  a.id,
-  a.registry_id,
-  a.stage_name,
-  a.verification_status,
-  a.created_at,
-  a.tenant_id
-FROM public.actors a
-WHERE a.deleted_at IS NULL;
+DO $$
+DECLARE
+  has_actor_tenant BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'actors'
+      AND column_name = 'tenant_id'
+  ) INTO has_actor_tenant;
+
+  IF has_actor_tenant THEN
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_actors_for_ti AS
+      SELECT
+        a.id,
+        a.registry_id,
+        a.stage_name,
+        a.verification_status,
+        a.created_at,
+        a.tenant_id
+      FROM public.actors a
+      WHERE a.deleted_at IS NULL
+    $sql$;
+  ELSE
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_actors_for_ti AS
+      SELECT
+        a.id,
+        a.registry_id,
+        a.stage_name,
+        a.verification_status,
+        a.created_at,
+        'trulyimagined'::VARCHAR(100) AS tenant_id
+      FROM public.actors a
+      WHERE a.deleted_at IS NULL
+    $sql$;
+  END IF;
+END $$;
 
 COMMENT ON VIEW hdicr.v_actors_for_ti IS
   'Contract view for TI to read actor identity status without owning actor records.';
 
 -- Active consent contract for TI consent validation.
-CREATE OR REPLACE VIEW hdicr.v_active_consent_for_ti AS
-SELECT
-  cl.id,
-  cl.actor_id,
-  cl.version,
-  cl.policy,
-  cl.status,
-  cl.created_at,
-  a.tenant_id
-FROM public.consent_ledger cl
-JOIN public.actors a ON a.id = cl.actor_id
-WHERE cl.status = 'active'
-  AND a.deleted_at IS NULL;
+DO $$
+DECLARE
+  has_actor_tenant BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'actors'
+      AND column_name = 'tenant_id'
+  ) INTO has_actor_tenant;
+
+  IF has_actor_tenant THEN
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_active_consent_for_ti AS
+      SELECT
+        cl.id,
+        cl.actor_id,
+        cl.version,
+        cl.policy,
+        cl.status,
+        cl.created_at,
+        a.tenant_id
+      FROM public.consent_ledger cl
+      JOIN public.actors a ON a.id = cl.actor_id
+      WHERE cl.status = 'active'
+        AND a.deleted_at IS NULL
+    $sql$;
+  ELSE
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_active_consent_for_ti AS
+      SELECT
+        cl.id,
+        cl.actor_id,
+        cl.version,
+        cl.policy,
+        cl.status,
+        cl.created_at,
+        'trulyimagined'::VARCHAR(100) AS tenant_id
+      FROM public.consent_ledger cl
+      JOIN public.actors a ON a.id = cl.actor_id
+      WHERE cl.status = 'active'
+        AND a.deleted_at IS NULL
+    $sql$;
+  END IF;
+END $$;
 
 COMMENT ON VIEW hdicr.v_active_consent_for_ti IS
   'Contract view for TI consent checks against active policy entries.';
 
 -- Verification contract derived from identity links.
-CREATE OR REPLACE VIEW hdicr.v_actor_verification_for_ti AS
-SELECT
-  a.id AS actor_id,
-  il.provider,
-  il.provider_type,
-  il.verification_level,
-  il.assurance_level,
-  il.verified_at,
-  il.is_active,
-  il.tenant_id
-FROM public.identity_links il
-JOIN public.user_profiles up ON up.id = il.user_profile_id
-JOIN public.actors a ON a.auth0_user_id = up.auth0_user_id
-WHERE il.is_active = TRUE
-  AND a.deleted_at IS NULL;
+DO $$
+DECLARE
+  has_identity_tenant BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'identity_links'
+      AND column_name = 'tenant_id'
+  ) INTO has_identity_tenant;
+
+  IF has_identity_tenant THEN
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_actor_verification_for_ti AS
+      SELECT
+        a.id AS actor_id,
+        il.provider,
+        il.provider_type,
+        il.verification_level,
+        il.assurance_level,
+        il.verified_at,
+        il.is_active,
+        il.tenant_id
+      FROM public.identity_links il
+      JOIN public.user_profiles up ON up.id = il.user_profile_id
+      JOIN public.actors a ON a.auth0_user_id = up.auth0_user_id
+      WHERE il.is_active = TRUE
+        AND a.deleted_at IS NULL
+    $sql$;
+  ELSE
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW hdicr.v_actor_verification_for_ti AS
+      SELECT
+        a.id AS actor_id,
+        il.provider,
+        il.provider_type,
+        il.verification_level,
+        il.assurance_level,
+        il.verified_at,
+        il.is_active,
+        'trulyimagined'::VARCHAR(100) AS tenant_id
+      FROM public.identity_links il
+      JOIN public.user_profiles up ON up.id = il.user_profile_id
+      JOIN public.actors a ON a.auth0_user_id = up.auth0_user_id
+      WHERE il.is_active = TRUE
+        AND a.deleted_at IS NULL
+    $sql$;
+  END IF;
+END $$;
 
 COMMENT ON VIEW hdicr.v_actor_verification_for_ti IS
   'Contract view for TI to read actor verification/provider linkage status.';

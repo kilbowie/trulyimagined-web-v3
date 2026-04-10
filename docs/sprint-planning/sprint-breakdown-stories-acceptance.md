@@ -19,6 +19,7 @@ Get actors verified and registering baseline consent preferences. Foundation for
 - [x] Guardrails pre-Sprint-3 tranche delivered:
   - Adapted migrations 020/021/022 committed (foundation, immutability, audit/data-flow contracts).
   - App-layer split DB pool support and explicit HDICR query routing delivered for new Sprint 1 paths.
+  - Targeted RDS apply and smoke validation completed (schemas/views/immutability trigger verified).
 
 ### Story 1.1: Stripe Identity Integration - Session Creation
 

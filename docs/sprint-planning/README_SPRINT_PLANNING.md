@@ -136,7 +136,8 @@ This directory contains the complete sprint planning, architecture, and implemen
 
 - [x] Delivered adapted guardrails migrations 020/021/022.
 - [x] Delivered split DB pools and explicit HDICR query wiring for new Sprint 1 paths.
-- [ ] Run staging migration apply + smoke checks (blocked locally until DATABASE_URL is configured for migration runner).
+- [x] Ran targeted staging apply/smoke checks against RDS (schemas/views/immutability trigger verified).
+- [ ] Tighten migration tooling for trusted CA-based SSL and idempotent full-run behavior.
 
 ### Medium-term (Weeks 2–4)
 
@@ -166,9 +167,9 @@ This directory contains the complete sprint planning, architecture, and implemen
 
 ### Critical Blockers 🚨
 
-1. **RDS is not encrypted** → Must fix before payment processing
-2. **No deal templates or negotiation UI** → Blocks entire commercial layer
-3. **No payout split logic** → Blocks revenue
+1. **No deal templates or negotiation UI** → Blocks entire commercial layer
+2. **No payout split logic** → Blocks revenue
+3. **Migration runner hardening pending** → Full-run migration path still fails on pre-existing index objects and CA trust config
 
 ---
 

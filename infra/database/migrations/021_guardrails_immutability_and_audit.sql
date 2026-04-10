@@ -18,11 +18,21 @@ CREATE OR REPLACE FUNCTION public.fn_guardrails_actor_tenant(p_actor_id UUID)
 RETURNS VARCHAR AS $$
 DECLARE
   v_tenant VARCHAR(100);
+  has_actor_tenant BOOLEAN;
 BEGIN
-  SELECT tenant_id INTO v_tenant
-  FROM public.actors
-  WHERE id = p_actor_id
-  LIMIT 1;
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'actors'
+      AND column_name = 'tenant_id'
+  ) INTO has_actor_tenant;
+
+  IF has_actor_tenant THEN
+    EXECUTE 'SELECT tenant_id FROM public.actors WHERE id = $1 LIMIT 1'
+      INTO v_tenant
+      USING p_actor_id;
+  END IF;
 
   RETURN COALESCE(v_tenant, 'trulyimagined');
 END;
@@ -100,19 +110,52 @@ END $$;
 -- ===========================================
 -- 4) OPERATIONAL VIEW FOR BLOCKED ATTEMPTS
 -- ===========================================
-CREATE OR REPLACE VIEW public.v_guardrails_blocked_mutations AS
-SELECT
-  id,
-  user_type,
-  action,
-  resource_type,
-  resource_id,
-  changes,
-  created_at,
-  tenant_id
-FROM public.audit_log
-WHERE action = 'guardrails.consent_ledger.mutation_blocked'
-ORDER BY created_at DESC;
+DO $$
+DECLARE
+  has_audit_tenant BOOLEAN;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'public'
+      AND table_name = 'audit_log'
+      AND column_name = 'tenant_id'
+  ) INTO has_audit_tenant;
+
+  IF has_audit_tenant THEN
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW public.v_guardrails_blocked_mutations AS
+      SELECT
+        id,
+        user_type,
+        action,
+        resource_type,
+        resource_id,
+        changes,
+        created_at,
+        tenant_id
+      FROM public.audit_log
+      WHERE action = 'guardrails.consent_ledger.mutation_blocked'
+      ORDER BY created_at DESC
+    $sql$;
+  ELSE
+    EXECUTE $sql$
+      CREATE OR REPLACE VIEW public.v_guardrails_blocked_mutations AS
+      SELECT
+        id,
+        user_type,
+        action,
+        resource_type,
+        resource_id,
+        changes,
+        created_at,
+        'trulyimagined'::VARCHAR(100) AS tenant_id
+      FROM public.audit_log
+      WHERE action = 'guardrails.consent_ledger.mutation_blocked'
+      ORDER BY created_at DESC
+    $sql$;
+  END IF;
+END $$;
 
 COMMENT ON VIEW public.v_guardrails_blocked_mutations IS
   'Lists blocked consent_ledger UPDATE/DELETE attempts captured by guardrails.';
