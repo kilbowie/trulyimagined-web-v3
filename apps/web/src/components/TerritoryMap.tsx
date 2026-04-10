@@ -379,6 +379,10 @@ const COUNTRY_NAME_ALIASES: Record<string, string> = {
   'ivory coast': 'CI',
 };
 
+export const ALL_COUNTRIES = Object.values(COUNTRIES_BY_CONTINENT)
+  .flat()
+  .sort((left, right) => left.name.localeCompare(right.name));
+
 // Calculate total countries in our database
 export const getTotalCountries = () => {
   return Object.values(COUNTRIES_BY_CONTINENT).reduce(

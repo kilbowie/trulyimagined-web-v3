@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ALL_COUNTRIES } from '@/components/TerritoryMap';
 
 type StepId = 'signup' | 'profile' | 'verify-identity' | 'consent' | 'complete';
 
@@ -52,19 +53,6 @@ const CONTENT_RESTRICTIONS = [
   'Alcohol',
   'Gambling',
 ] as const;
-const TERRITORIES = [
-  { code: 'GB', label: 'United Kingdom' },
-  { code: 'US', label: 'United States' },
-  { code: 'IE', label: 'Ireland' },
-  { code: 'FR', label: 'France' },
-  { code: 'DE', label: 'Germany' },
-  { code: 'ES', label: 'Spain' },
-  { code: 'IT', label: 'Italy' },
-  { code: 'NL', label: 'Netherlands' },
-  { code: 'CA', label: 'Canada' },
-  { code: 'AU', label: 'Australia' },
-];
-
 const DEFAULT_PROFILE_DRAFT: ProfileDraft = {
   firstName: '',
   lastName: '',
@@ -97,6 +85,7 @@ export default function OnboardingPage() {
   const [preferredTimezone, setPreferredTimezone] = useState('Europe/London');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [requestingManual, setRequestingManual] = useState(false);
+  const [territoryQuery, setTerritoryQuery] = useState('');
 
   useEffect(() => {
     void loadStatus();
@@ -141,6 +130,18 @@ export default function OnboardingPage() {
     const order: StepId[] = ['signup', 'profile', 'verify-identity', 'consent', 'complete'];
     return Math.max(0, order.indexOf(activeStep));
   }, [activeStep]);
+
+  const filteredCountries = useMemo(() => {
+    const query = territoryQuery.trim().toLowerCase();
+    if (!query) {
+      return ALL_COUNTRIES.slice(0, 24);
+    }
+
+    return ALL_COUNTRIES.filter(
+      (country) =>
+        country.name.toLowerCase().includes(query) || country.code.toLowerCase().includes(query)
+    ).slice(0, 24);
+  }, [territoryQuery]);
 
   async function loadStatus() {
     try {
@@ -622,28 +623,67 @@ export default function OnboardingPage() {
 
               <div>
                 <p className="mb-2 text-sm font-medium">
-                  Territories (default is none; select each territory you allow)
+                  Territories (default is none; search and explicitly allow each territory)
                 </p>
+                <input
+                  className="mb-3 w-full rounded-md border border-input px-3 py-2 text-sm"
+                  value={territoryQuery}
+                  onChange={(event) => setTerritoryQuery(event.target.value)}
+                  placeholder="Search countries, e.g. United Kingdom or GB"
+                />
+                {consentDraft.allowedTerritories.length > 0 ? (
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    {consentDraft.allowedTerritories.map((code) => {
+                      const country = ALL_COUNTRIES.find((entry) => entry.code === code);
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() =>
+                            setConsentDraft((prev) => ({
+                              ...prev,
+                              allowedTerritories: prev.allowedTerritories.filter(
+                                (territoryCode) => territoryCode !== code
+                              ),
+                            }))
+                          }
+                          className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
+                        >
+                          {country?.name || code} ({code}) x
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
                 <div className="grid gap-2 md:grid-cols-2">
-                  {TERRITORIES.map((territory) => (
-                    <label key={territory.code} className="flex items-center gap-2 text-sm">
+                  {filteredCountries.map((country) => (
+                    <label
+                      key={country.code}
+                      className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
+                    >
                       <input
                         type="checkbox"
-                        checked={consentDraft.allowedTerritories.includes(territory.code)}
+                        checked={consentDraft.allowedTerritories.includes(country.code)}
                         onChange={() =>
                           setConsentDraft((prev) => ({
                             ...prev,
                             allowedTerritories: toggleArrayValue(
                               prev.allowedTerritories,
-                              territory.code
+                              country.code
                             ),
                           }))
                         }
                       />
-                      <span>{territory.label}</span>
+                      <span>
+                        {country.name} ({country.code})
+                      </span>
                     </label>
                   ))}
                 </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Showing up to 24 search matches from the full country list. Selected territories
+                  remain allowed until removed.
+                </p>
               </div>
 
               <label className="flex items-center gap-2 text-sm">
