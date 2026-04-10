@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
 import { queryHdicr } from '@/lib/db';
-import { sendVerificationCompleteEmail } from '@/lib/email';
+import { sendVerificationCompleteEmail, sendVerificationRetryEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
 
@@ -119,6 +119,11 @@ export async function POST(request: NextRequest) {
       ]
     );
 
+    const displayName =
+      verificationSession.stage_name ||
+      [verificationSession.first_name, verificationSession.last_name].filter(Boolean).join(' ') ||
+      'there';
+
     if (payload.verified) {
       const profileResult = await queryHdicr(
         `SELECT id
@@ -191,13 +196,6 @@ export async function POST(request: NextRequest) {
       }
 
       if (verificationSession.email) {
-        const displayName =
-          verificationSession.stage_name ||
-          [verificationSession.first_name, verificationSession.last_name]
-            .filter(Boolean)
-            .join(' ') ||
-          'there';
-
         try {
           await sendVerificationCompleteEmail(verificationSession.email, displayName, 'medium');
         } catch (emailError) {
@@ -206,6 +204,12 @@ export async function POST(request: NextRequest) {
             emailError
           );
         }
+      }
+    } else if (verificationSession.email) {
+      try {
+        await sendVerificationRetryEmail(verificationSession.email, displayName);
+      } catch (emailError) {
+        console.error('[ADMIN_VERIFICATION_COMPLETE] Failed to send retry email:', emailError);
       }
     }
 

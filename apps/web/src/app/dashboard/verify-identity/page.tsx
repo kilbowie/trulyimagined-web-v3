@@ -38,9 +38,21 @@ export default function VerifyIdentityPage() {
   const [identityLinks, setIdentityLinks] = useState<IdentityLink[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [requestingManual, setRequestingManual] = useState(false);
+  const [preferredTimezone, setPreferredTimezone] = useState('Europe/London');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   useEffect(() => {
     fetchData();
+
+    try {
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (detectedTimezone) {
+        setPreferredTimezone(detectedTimezone);
+      }
+    } catch {
+      // Fall back to Europe/London when timezone detection is unavailable.
+    }
   }, []);
 
   async function fetchData() {
@@ -135,6 +147,39 @@ export default function VerifyIdentityPage() {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       setError(errorMessage);
+    }
+  }
+
+  async function requestManualVerification() {
+    try {
+      setRequestingManual(true);
+      setError(null);
+      setSuccessMessage(null);
+
+      const response = await fetch('/api/verification/manual-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          preferredTimezone,
+          phoneNumber,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to request manual verification');
+      }
+
+      setSuccessMessage(
+        'Your manual verification request has been sent. The founder team will contact you to schedule the call.'
+      );
+      await fetchData();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      setError(errorMessage);
+    } finally {
+      setRequestingManual(false);
     }
   }
 
@@ -313,6 +358,49 @@ export default function VerifyIdentityPage() {
                   className="w-full md:w-auto md:ml-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-semibold shadow-sm"
                 >
                   {verifying ? 'Processing...' : 'Start Verification'}
+                </button>
+              </div>
+            </div>
+
+            <div className="border border-border rounded-lg p-4 bg-background">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-foreground">Request a founder-led video call</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Prefer a manual review instead of self-service Stripe verification? Send your
+                    timezone and contact number and the founder team will schedule a call.
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Preferred timezone
+                      </label>
+                      <input
+                        value={preferredTimezone}
+                        onChange={(event) => setPreferredTimezone(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        placeholder="Europe/London"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Phone number
+                      </label>
+                      <input
+                        value={phoneNumber}
+                        onChange={(event) => setPhoneNumber(event.target.value)}
+                        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                        placeholder="+44 7700 900123"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={requestManualVerification}
+                  disabled={requestingManual || !preferredTimezone.trim() || !phoneNumber.trim()}
+                  className="w-full lg:w-auto lg:ml-4 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-semibold"
+                >
+                  {requestingManual ? 'Submitting...' : 'Request Video Call'}
                 </button>
               </div>
             </div>

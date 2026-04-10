@@ -32,12 +32,14 @@ export async function writeAuditLog(options: {
   resourceId: string;
   changes: Record<string, unknown>;
   tenantId?: string;
+  userType?: 'admin' | 'actor' | 'agent' | 'system';
 }): Promise<void> {
   await queryHdicr(
     `INSERT INTO audit_log (user_id, user_type, action, resource_type, resource_id, changes, tenant_id)
-     VALUES ($1::uuid, 'admin', $2, $3, $4::uuid, $5::jsonb, $6)`,
+     VALUES ($1::uuid, $2, $3, $4, $5::uuid, $6::jsonb, $7)`,
     [
       options.userProfileId,
+      options.userType || 'admin',
       options.action,
       options.resourceType,
       options.resourceId,

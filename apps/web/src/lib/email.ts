@@ -33,6 +33,12 @@ const USE_MOCK = process.env.USE_MOCK_EMAILS === 'true';
 
 type EmailType = 'noreply' | 'support' | 'admin';
 
+type EmailAttachment = {
+  filename: string;
+  content: string;
+  contentType?: string;
+};
+
 interface SendEmailOptions {
   to: string | string[];
   subject: string;
@@ -43,13 +49,14 @@ interface SendEmailOptions {
   bcc?: string[];
   type: EmailType;
   tags?: string[]; // Additional custom tags for Resend
+  attachments?: EmailAttachment[];
 }
 
 /**
  * Core email sending function
  */
 async function sendEmail(options: SendEmailOptions) {
-  const { to, subject, html, text, replyTo, cc, bcc, type, tags: customTags } = options;
+  const { to, subject, html, text, replyTo, cc, bcc, type, tags: customTags, attachments } = options;
 
   // Select FROM address based on email type
   let fromEmail = NOREPLY_EMAIL;
@@ -80,6 +87,9 @@ async function sendEmail(options: SendEmailOptions) {
     console.log(`Reply-To: ${replyTo || 'N/A'}`);
     console.log(`Segment: ${type} (ID: ${segmentId})`);
     if (customTags?.length) console.log(`Tags: ${allTags.join(', ')}`);
+    if (attachments?.length) {
+      console.log(`Attachments: ${attachments.map((attachment) => attachment.filename).join(', ')}`);
+    }
     console.log('===================================\n');
     return { id: `mock-${Date.now()}` };
   }
@@ -98,6 +108,7 @@ async function sendEmail(options: SendEmailOptions) {
       replyTo,
       cc,
       bcc,
+      attachments,
     });
 
     console.log(
@@ -116,6 +127,51 @@ async function sendEmail(options: SendEmailOptions) {
  */
 function getTags(...args: string[]): string[] {
   return args.map((arg) => `type:${arg}`);
+}
+
+function getAdminRecipients(): string[] {
+  return process.env.ADMIN_EMAILS?.split(',').map((email) => email.trim()).filter(Boolean) || [
+    'admin@trulyimagined.com',
+  ];
+}
+
+function escapeIcsText(value: string): string {
+  return value.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;');
+}
+
+function formatIcsDate(value: Date): string {
+  return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+}
+
+function createCalendarInvite(options: {
+  title: string;
+  description: string;
+  startAt: Date;
+  endAt: Date;
+  location: string;
+  url?: string;
+}): string {
+  const uid = `${options.title.replace(/\s+/g, '-').toLowerCase()}-${options.startAt.getTime()}@trulyimagined.com`;
+  const lines = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Truly Imagined//Manual Verification//EN',
+    'CALSCALE:GREGORIAN',
+    'METHOD:REQUEST',
+    'BEGIN:VEVENT',
+    `UID:${uid}`,
+    `DTSTAMP:${formatIcsDate(new Date())}`,
+    `DTSTART:${formatIcsDate(options.startAt)}`,
+    `DTEND:${formatIcsDate(options.endAt)}`,
+    `SUMMARY:${escapeIcsText(options.title)}`,
+    `DESCRIPTION:${escapeIcsText(options.description)}`,
+    `LOCATION:${escapeIcsText(options.location)}`,
+    options.url ? `URL:${options.url}` : '',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].filter(Boolean);
+
+  return lines.join('\r\n');
 }
 
 /**
@@ -401,6 +457,133 @@ export async function sendVerificationCompleteEmail(
     html,
     type: 'noreply',
     tags: getTags('verification-complete'),
+  });
+}
+
+export async function sendManualVerificationRequestAdminEmail(options: {
+  actorEmail: string;
+  actorName: string;
+  actorId: string;
+  registryId?: string | null;
+  preferredTimezone: string;
+  phoneNumber: string;
+  requestId: string;
+}) {
+  const subject = '📆 Manual verification requested';
+  const dashboardUrl = `${APP_URL}/dashboard/admin/verification`;
+
+  const bodyContent = `
+    <p>An actor has requested a founder-led manual verification call.</p>
+    <p><strong>Actor:</strong> ${options.actorName}</p>
+    <p><strong>Email:</strong> ${options.actorEmail}</p>
+    <p><strong>Actor ID:</strong> ${options.actorId}</p>
+    <p><strong>Registry ID:</strong> ${options.registryId || 'Pending'}</p>
+    <p><strong>Preferred timezone:</strong> ${options.preferredTimezone}</p>
+    <p><strong>Phone number:</strong> ${options.phoneNumber}</p>
+    <p>Open the verification dashboard to schedule the call.</p>
+  `;
+
+  const html = createAdminTemplate(
+    'Manual verification requested',
+    `${options.actorName} is waiting for scheduling`,
+    bodyContent,
+    {
+      source: 'Actor Verification Flow',
+      eventType: 'manual_verification.requested',
+      eventId: options.requestId,
+      environment: process.env.NODE_ENV || 'production',
+    },
+    'Open Verification Queue',
+    dashboardUrl
+  );
+
+  return await sendEmail({
+    to: getAdminRecipients(),
+    subject,
+    html,
+    replyTo: options.actorEmail,
+    type: 'admin',
+    tags: getTags('manual-verification-requested'),
+  });
+}
+
+export async function sendManualVerificationScheduledEmail(options: {
+  actorEmail: string;
+  actorName: string;
+  meetingLink: string;
+  meetingPlatform: string;
+  scheduledAt: string;
+  preferredTimezone?: string | null;
+}) {
+  const subject = '📅 Your manual verification call is scheduled';
+  const scheduledDate = new Date(options.scheduledAt);
+  const endDate = new Date(scheduledDate.getTime() + 30 * 60 * 1000);
+  const timezoneLabel = options.preferredTimezone || 'your selected timezone';
+  const formattedDate = scheduledDate.toLocaleString('en-GB', {
+    dateStyle: 'full',
+    timeStyle: 'short',
+  });
+
+  const bodyContent = `
+    <p>Hi ${options.actorName},</p>
+    <p>Your founder-led manual verification call has now been scheduled.</p>
+    <p><strong>Date and time:</strong> ${formattedDate}</p>
+    <p><strong>Timezone:</strong> ${timezoneLabel}</p>
+    <p><strong>Platform:</strong> ${options.meetingPlatform}</p>
+    <p>Use the button below to join the call at the scheduled time. A calendar invite is attached for convenience.</p>
+    <p>If you need to reschedule, reply to the support team or contact us through your dashboard before the meeting.</p>
+  `;
+
+  const html = createNoReplyTemplate(subject, bodyContent, 'Open Meeting Link', options.meetingLink);
+  const calendarInvite = createCalendarInvite({
+    title: 'Truly Imagined Manual Verification Call',
+    description:
+      'Founder-led manual verification call for Truly Imagined onboarding. Use the provided meeting link to join.',
+    startAt: scheduledDate,
+    endAt: endDate,
+    location: `${options.meetingPlatform}: ${options.meetingLink}`,
+    url: options.meetingLink,
+  });
+
+  return await sendEmail({
+    to: options.actorEmail,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('manual-verification-scheduled'),
+    attachments: [
+      {
+        filename: 'manual-verification-invite.ics',
+        content: Buffer.from(calendarInvite).toString('base64'),
+        contentType: 'text/calendar; charset=utf-8; method=REQUEST',
+      },
+    ],
+  });
+}
+
+export async function sendVerificationRetryEmail(userEmail: string, userName: string) {
+  const subject = '↩️ Verification incomplete - please try again';
+
+  const bodyContent = `
+    <p>Hi ${userName},</p>
+    <p>Your recent manual verification attempt was not approved yet.</p>
+    <p>Please return to your verification dashboard and restart the identity verification flow. You can either begin a new Stripe verification or review the available next steps there.</p>
+    <p>If you believe this result is incorrect, contact support and we will review the case.</p>
+  `;
+
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Retry Verification',
+    `${APP_URL}/dashboard/verify-identity`
+  );
+
+  return await sendEmail({
+    to: userEmail,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('verification-retry'),
   });
 }
 
