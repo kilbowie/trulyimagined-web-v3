@@ -182,7 +182,7 @@ export default function OnboardingPage() {
       setError(null);
       setSuccessMessage(null);
 
-      const response = await fetch('/api/identity/register', {
+      const response = await fetch('/api/onboarding/step/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(profileDraft),
@@ -190,12 +190,12 @@ export default function OnboardingPage() {
 
       const payload = await response.json();
 
-      if (!response.ok && response.status !== 409) {
+      if (!response.ok) {
         throw new Error(payload.error || payload.message || 'Failed to save profile');
       }
 
       setSuccessMessage(
-        response.status === 409
+        payload.action === 'already-complete'
           ? 'Profile already exists. Moving you to identity verification.'
           : 'Profile registered successfully. Continue to identity verification.'
       );
@@ -216,13 +216,11 @@ export default function OnboardingPage() {
       setError(null);
       setSuccessMessage(null);
 
-      const response = await fetch('/api/verification/start', {
+      const response = await fetch('/api/onboarding/step/verify-identity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          provider: 'stripe',
-          verificationType: 'identity',
-          documents: ['passport'],
+          verificationMethod: 'stripe',
         }),
       });
       const payload = await response.json();
@@ -236,8 +234,8 @@ export default function OnboardingPage() {
         'Stripe verification started. If you prefer, you can request a manual video call instead.'
       );
 
-      if (payload.url) {
-        window.location.href = payload.url as string;
+      if (payload.details?.stripeUrl) {
+        window.location.href = payload.details.stripeUrl as string;
         return;
       }
 
@@ -257,10 +255,14 @@ export default function OnboardingPage() {
       setError(null);
       setSuccessMessage(null);
 
-      const response = await fetch('/api/verification/manual-request', {
+      const response = await fetch('/api/onboarding/step/verify-identity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ preferredTimezone, phoneNumber }),
+        body: JSON.stringify({
+          verificationMethod: 'manual',
+          preferredTimezone,
+          phoneNumber,
+        }),
       });
       const payload = await response.json();
 
@@ -307,59 +309,14 @@ export default function OnboardingPage() {
       setError(null);
       setSuccessMessage(null);
 
-      const mediaUsage = {
-        film: consentDraft.workTypes.includes('Film') ? 'allow' : 'require_approval',
-        television: consentDraft.workTypes.includes('TV') ? 'allow' : 'require_approval',
-        streaming: 'require_approval',
-        gaming: consentDraft.workTypes.includes('Gaming') ? 'allow' : 'require_approval',
-        voiceReplication: consentDraft.workTypes.includes('VoiceOver') ? 'allow' : 'deny',
-        virtualReality: 'require_approval',
-        socialMedia: 'require_approval',
-        advertising: consentDraft.workTypes.includes('Commercial') ? 'allow' : 'require_approval',
-        merchandise: 'require_approval',
-        livePerformance: 'require_approval',
-      } as const;
-
-      const contentTypes = {
-        explicit: consentDraft.contentRestrictions.includes('Explicit') ? 'deny' : 'allow',
-        political: consentDraft.contentRestrictions.includes('Political') ? 'deny' : 'allow',
-        religious: consentDraft.contentRestrictions.includes('Religious') ? 'deny' : 'allow',
-        violence: 'require_approval',
-        alcohol: consentDraft.contentRestrictions.includes('Alcohol') ? 'deny' : 'allow',
-        tobacco: 'require_approval',
-        gambling: consentDraft.contentRestrictions.includes('Gambling') ? 'deny' : 'allow',
-        pharmaceutical: consentDraft.contentRestrictions.includes('Drugs')
-          ? 'deny'
-          : 'require_approval',
-        firearms: 'require_approval',
-        adultContent: consentDraft.contentRestrictions.includes('Explicit')
-          ? 'deny'
-          : 'require_approval',
-      } as const;
-
-      const response = await fetch('/api/consent-ledger/create', {
+      const response = await fetch('/api/onboarding/step/consent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          reason: 'Onboarding consent registration',
-          policy: {
-            mediaUsage,
-            contentTypes,
-            territories: {
-              allowed: consentDraft.allowedTerritories,
-              denied: [],
-            },
-            aiControls: {
-              trainingAllowed: consentDraft.dataForTraining,
-              syntheticGenerationAllowed: consentDraft.dataForTraining,
-              biometricAnalysisAllowed: false,
-            },
-            commercial: {
-              paymentRequired: true,
-            },
-            attributionRequired: true,
-            usageBlocked: false,
-          },
+          workTypes: consentDraft.workTypes,
+          contentRestrictions: consentDraft.contentRestrictions,
+          allowedTerritories: consentDraft.allowedTerritories,
+          dataForTraining: consentDraft.dataForTraining,
         }),
       });
 
@@ -383,6 +340,21 @@ export default function OnboardingPage() {
     localStorage.removeItem(PROFILE_DRAFT_KEY);
     localStorage.removeItem(CONSENT_DRAFT_KEY);
     localStorage.removeItem(VERIFICATION_PROGRESS_KEY);
+  }
+
+  async function finalizeOnboardingAndExit() {
+    try {
+      await fetch('/api/onboarding/step/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+    } catch {
+      // Keep navigation resilient even if finalization call fails.
+    }
+
+    clearOnboardingDrafts();
+    router.push('/dashboard');
   }
 
   return (
@@ -712,10 +684,7 @@ export default function OnboardingPage() {
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    clearOnboardingDrafts();
-                    router.push('/dashboard');
-                  }}
+                  onClick={finalizeOnboardingAndExit}
                   className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background"
                 >
                   Go to Dashboard
