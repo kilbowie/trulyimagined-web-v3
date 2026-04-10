@@ -11,7 +11,9 @@ export type InvitationCodeRecord = {
   agent_profile_completed: boolean;
 };
 
-export async function getInvitationCodeForRedeem(code: string): Promise<InvitationCodeRecord | null> {
+export async function getInvitationCodeForRedeem(
+  code: string
+): Promise<InvitationCodeRecord | null> {
   const result = await query(
     `SELECT
        aic.id,
@@ -33,10 +35,7 @@ export async function getInvitationCodeForRedeem(code: string): Promise<Invitati
   return (result.rows[0] as InvitationCodeRecord | undefined) || null;
 }
 
-export async function redeemInvitationCode(params: {
-  invitationCodeId: string;
-  actorId: string;
-}) {
+export async function redeemInvitationCode(params: { invitationCodeId: string; actorId: string }) {
   const result = await query(
     `UPDATE agent_invitation_codes
      SET used_by_actor_id = $2,
