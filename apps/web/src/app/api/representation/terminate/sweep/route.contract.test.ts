@@ -32,6 +32,8 @@ describe('GET /api/representation/terminate/sweep - Contract Test', () => {
       scanned: 0,
       completed: 0,
       failed: 0,
+      durationMs: 12,
+      failures: [],
     } as any);
 
     const request = new NextRequest('http://localhost:3000/api/representation/terminate/sweep', {
@@ -45,6 +47,8 @@ describe('GET /api/representation/terminate/sweep - Contract Test', () => {
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('success', true);
+    expect(data).toHaveProperty('authMode', 'vercel-cron-header');
+    expect(data).toHaveProperty('durationMs', 12);
   });
 
   it('accepts secret query auth', async () => {
@@ -52,6 +56,8 @@ describe('GET /api/representation/terminate/sweep - Contract Test', () => {
       scanned: 1,
       completed: 1,
       failed: 0,
+      durationMs: 5,
+      failures: [],
     } as any);
 
     const request = new NextRequest(
@@ -63,5 +69,6 @@ describe('GET /api/representation/terminate/sweep - Contract Test', () => {
 
     expect(response.status).toBe(200);
     expect(data).toHaveProperty('completed', 1);
+    expect(data).toHaveProperty('authMode', 'shared-secret');
   });
 });

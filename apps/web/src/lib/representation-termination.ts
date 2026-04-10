@@ -208,6 +208,7 @@ export async function listPendingTerminations(params: { actorId?: string; agentI
 }
 
 export async function applyDueRepresentationTerminations(limit = 100) {
+  const startedAt = Date.now();
   const due = await query(
     `SELECT id, relationship_id, initiated_by
      FROM representation_terminations
@@ -220,6 +221,7 @@ export async function applyDueRepresentationTerminations(limit = 100) {
 
   let completed = 0;
   let failed = 0;
+  const failures: Array<{ terminationId: string; relationshipId: string; error: string }> = [];
 
   for (const row of due.rows) {
     try {
@@ -262,20 +264,33 @@ export async function applyDueRepresentationTerminations(limit = 100) {
       completed += 1;
     } catch (error) {
       failed += 1;
+      const errorMessage =
+        error instanceof Error ? error.message.slice(0, 500) : 'Unknown sweep failure';
+
+      failures.push({
+        terminationId: row.id,
+        relationshipId: row.relationship_id,
+        error: errorMessage,
+      });
+
       await query(
         `UPDATE representation_terminations
          SET status = 'failed',
              last_error = $2,
              updated_at = NOW()
          WHERE id = $1`,
-        [row.id, error instanceof Error ? error.message.slice(0, 500) : 'Unknown sweep failure']
+        [row.id, errorMessage]
       );
     }
   }
+
+  const durationMs = Date.now() - startedAt;
 
   return {
     scanned: due.rows.length,
     completed,
     failed,
+    durationMs,
+    failures,
   };
 }

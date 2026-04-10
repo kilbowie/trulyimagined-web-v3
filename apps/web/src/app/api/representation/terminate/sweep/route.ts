@@ -19,9 +19,12 @@ export async function GET(request: NextRequest) {
     }
 
     const result = await applyDueRepresentationTerminations();
+    const authMode = isAuthorizedByVercelCron ? 'vercel-cron-header' : 'shared-secret';
 
     return NextResponse.json({
       success: true,
+      triggeredAt: new Date().toISOString(),
+      authMode,
       ...result,
     });
   } catch (error) {

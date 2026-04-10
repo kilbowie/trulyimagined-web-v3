@@ -67,6 +67,10 @@ describe('GET /api/agent/roster - Contract Test', () => {
         relationship_id: 'rel-123',
         actor_id: 'actor-123',
         started_at: '2026-04-01T10:00:00.000Z',
+        pending_termination_id: 'term-123',
+        pending_termination_notice_date: '2026-04-10T10:00:00.000Z',
+        pending_termination_effective_date: '2026-05-10T10:00:00.000Z',
+        pending_termination_reason: 'Actor request',
       },
     ] as any);
     vi.mocked(getActorById).mockResolvedValueOnce({
@@ -102,6 +106,12 @@ describe('GET /api/agent/roster - Contract Test', () => {
         {
           relationship_id: 'rel-123',
           started_at: '2026-04-01T10:00:00.000Z',
+          pending_termination: {
+            id: 'term-123',
+            notice_date: '2026-04-10T10:00:00.000Z',
+            effective_date: '2026-05-10T10:00:00.000Z',
+            reason: 'Actor request',
+          },
           id: 'actor-123',
           registry_id: 'ACT-001',
           stage_name: 'Ada Stage',

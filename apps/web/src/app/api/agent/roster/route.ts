@@ -68,6 +68,14 @@ export async function GET() {
           return {
             relationship_id: relationship.relationship_id,
             started_at: relationship.started_at,
+            pending_termination: relationship.pending_termination_id
+              ? {
+                  id: relationship.pending_termination_id,
+                  notice_date: relationship.pending_termination_notice_date,
+                  effective_date: relationship.pending_termination_effective_date,
+                  reason: relationship.pending_termination_reason || null,
+                }
+              : null,
             id: actor.id,
             registry_id: actor.registry_id ?? null,
             stage_name: actor.stage_name ?? null,
