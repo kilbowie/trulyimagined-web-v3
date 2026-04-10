@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ALL_COUNTRIES, COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
-
-type StepId = 'signup' | 'profile' | 'verify-identity' | 'consent' | 'complete';
+import { resolveStepRouting, STEP_ORDER, type StepId } from './step-routing';
 
 type OnboardingStep = {
   id: StepId;
@@ -53,7 +52,6 @@ const CONTENT_RESTRICTIONS = [
   'Alcohol',
   'Gambling',
 ] as const;
-const STEP_ORDER: StepId[] = ['signup', 'profile', 'verify-identity', 'consent', 'complete'];
 
 const DEFAULT_PROFILE_DRAFT: ProfileDraft = {
   firstName: '',
@@ -192,25 +190,29 @@ export default function OnboardingPage() {
       return;
     }
 
-    if (!selectedStep) {
-      if (activeStep !== status.currentStep) {
-        setActiveStep(status.currentStep);
-      }
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('step', status.currentStep);
-      router.replace(`/dashboard/onboarding?${params.toString()}`);
-      return;
+    const validSelectedStep: StepId | null = selectedStep && STEP_ORDER.includes(selectedStep)
+      ? selectedStep
+      : null;
+
+    const routingDecision = resolveStepRouting({
+      selectedStep: validSelectedStep,
+      currentStep: status.currentStep,
+    });
+
+    if (activeStep !== routingDecision.nextStep) {
+      setActiveStep(routingDecision.nextStep);
     }
 
-    const selectedIndex = STEP_ORDER.indexOf(selectedStep);
-    if (selectedIndex > accessibleStepIndex) {
-      setActiveStep(status.currentStep);
-      setError('Complete your current onboarding step before opening later steps.');
+    if (routingDecision.lockMessage) {
+      setError(routingDecision.lockMessage);
+    }
+
+    if (routingDecision.shouldCanonicalizeUrl) {
       const params = new URLSearchParams(searchParams.toString());
-      params.set('step', status.currentStep);
+      params.set('step', routingDecision.nextStep);
       router.replace(`/dashboard/onboarding?${params.toString()}`);
     }
-  }, [accessibleStepIndex, activeStep, router, searchParams, status]);
+  }, [activeStep, router, searchParams, status]);
 
   async function loadStatus() {
     try {

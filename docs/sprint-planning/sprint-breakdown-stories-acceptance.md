@@ -16,6 +16,8 @@ Get actors verified and registering baseline consent preferences. Foundation for
   - Manual verification persistence migration delivered (`manual_verification_sessions`).
 - [x] Story 1.8 partial delivery completed:
   - Actor onboarding checklist API and dashboard checklist component delivered.
+  - Guided onboarding flow delivered with canonical step routing and locked-step redirects.
+  - Onboarding status/step API contract smoke suite and dashboard step-routing unit tests delivered.
 - [x] Guardrails pre-Sprint-3 tranche delivered:
   - Adapted migrations 020/021/022 committed (foundation, immutability, audit/data-flow contracts).
   - App-layer split DB pool support and explicit HDICR query routing delivered for new Sprint 1 paths.
