@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ALL_COUNTRIES } from '@/components/TerritoryMap';
+import { ALL_COUNTRIES, COUNTRIES_BY_CONTINENT } from '@/components/TerritoryMap';
 
 type StepId = 'signup' | 'profile' | 'verify-identity' | 'consent' | 'complete';
 
@@ -53,6 +53,8 @@ const CONTENT_RESTRICTIONS = [
   'Alcohol',
   'Gambling',
 ] as const;
+const STEP_ORDER: StepId[] = ['signup', 'profile', 'verify-identity', 'consent', 'complete'];
+
 const DEFAULT_PROFILE_DRAFT: ProfileDraft = {
   firstName: '',
   lastName: '',
@@ -127,9 +129,16 @@ export default function OnboardingPage() {
   }, [consentDraft]);
 
   const stepIndex = useMemo(() => {
-    const order: StepId[] = ['signup', 'profile', 'verify-identity', 'consent', 'complete'];
-    return Math.max(0, order.indexOf(activeStep));
+    return Math.max(0, STEP_ORDER.indexOf(activeStep));
   }, [activeStep]);
+
+  const accessibleStepIndex = useMemo(() => {
+    if (!status) {
+      return 0;
+    }
+
+    return Math.max(0, STEP_ORDER.indexOf(status.currentStep));
+  }, [status]);
 
   const filteredCountries = useMemo(() => {
     const query = territoryQuery.trim().toLowerCase();
@@ -142,6 +151,34 @@ export default function OnboardingPage() {
         country.name.toLowerCase().includes(query) || country.code.toLowerCase().includes(query)
     ).slice(0, 24);
   }, [territoryQuery]);
+
+  const selectedTerritoriesByContinent = useMemo(() => {
+    return Object.entries(COUNTRIES_BY_CONTINENT)
+      .map(([continent, countries]) => {
+        const selected = countries.filter((country) =>
+          consentDraft.allowedTerritories.includes(country.code)
+        );
+
+        return {
+          continent,
+          selected,
+        };
+      })
+      .filter((entry) => entry.selected.length > 0);
+  }, [consentDraft.allowedTerritories]);
+
+  useEffect(() => {
+    const selectedStep = searchParams.get('step') as StepId | null;
+    if (!selectedStep || !status) {
+      return;
+    }
+
+    const selectedIndex = STEP_ORDER.indexOf(selectedStep);
+    if (selectedIndex > accessibleStepIndex) {
+      setActiveStep(status.currentStep);
+      setError('Complete your current onboarding step before opening later steps.');
+    }
+  }, [accessibleStepIndex, searchParams, status]);
 
   async function loadStatus() {
     try {
@@ -292,6 +329,19 @@ export default function OnboardingPage() {
     return [...values, value];
   }
 
+  function setContinentTerritories(continent: string, action: 'add' | 'clear') {
+    const countries = COUNTRIES_BY_CONTINENT[continent as keyof typeof COUNTRIES_BY_CONTINENT] || [];
+    const continentCodes = countries.map((country) => country.code);
+
+    setConsentDraft((prev) => ({
+      ...prev,
+      allowedTerritories:
+        action === 'add'
+          ? Array.from(new Set([...prev.allowedTerritories, ...continentCodes])).sort()
+          : prev.allowedTerritories.filter((code) => !continentCodes.includes(code)),
+    }));
+  }
+
   async function submitConsent(e: React.FormEvent) {
     e.preventDefault();
 
@@ -387,21 +437,40 @@ export default function OnboardingPage() {
           <ol className="mt-4 space-y-3">
             {(status?.steps || []).map((step, index) => {
               const isActive = step.id === activeStep;
+              const isLocked = STEP_ORDER.indexOf(step.id) > accessibleStepIndex && !step.completed;
               return (
                 <li key={step.id}>
                   <button
                     type="button"
-                    onClick={() => setActiveStep(step.id)}
-                    className={`w-full rounded-md border px-3 py-2 text-left text-sm ${isActive ? 'border-foreground bg-muted' : 'border-border bg-background hover:bg-muted/40'}`}
+                    onClick={() => {
+                      if (!isLocked) {
+                        setActiveStep(step.id);
+                        setError(null);
+                      }
+                    }}
+                    disabled={isLocked}
+                    className={`w-full rounded-md border px-3 py-2 text-left text-sm ${
+                      isActive
+                        ? 'border-foreground bg-muted'
+                        : isLocked
+                          ? 'cursor-not-allowed border-border bg-background opacity-50'
+                          : 'border-border bg-background hover:bg-muted/40'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <span className="font-medium">
                         {index + 1}. {step.label}
                       </span>
                       <span
-                        className={`text-xs ${step.completed ? 'text-green-700' : 'text-muted-foreground'}`}
+                        className={`text-xs ${
+                          step.completed
+                            ? 'text-green-700'
+                            : isLocked
+                              ? 'text-amber-700'
+                              : 'text-muted-foreground'
+                        }`}
                       >
-                        {step.completed ? 'Done' : 'Pending'}
+                        {step.completed ? 'Done' : isLocked ? 'Locked' : 'Pending'}
                       </span>
                     </div>
                   </button>
@@ -631,28 +700,94 @@ export default function OnboardingPage() {
                   onChange={(event) => setTerritoryQuery(event.target.value)}
                   placeholder="Search countries, e.g. United Kingdom or GB"
                 />
+                <div className="mb-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+                  {Object.entries(COUNTRIES_BY_CONTINENT).map(([continent, countries]) => {
+                    const selectedCount = countries.filter((country) =>
+                      consentDraft.allowedTerritories.includes(country.code)
+                    ).length;
+
+                    return (
+                      <div key={continent} className="rounded-md border border-border bg-muted/30 p-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">{continent}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedCount} of {countries.length} selected
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setContinentTerritories(continent, 'add')}
+                              className="rounded border border-green-300 bg-green-50 px-2 py-1 text-xs font-medium text-green-800"
+                            >
+                              Add all
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setContinentTerritories(continent, 'clear')}
+                              className="rounded border border-border bg-background px-2 py-1 text-xs font-medium text-foreground"
+                            >
+                              Clear
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
                 {consentDraft.allowedTerritories.length > 0 ? (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {consentDraft.allowedTerritories.map((code) => {
-                      const country = ALL_COUNTRIES.find((entry) => entry.code === code);
-                      return (
-                        <button
-                          key={code}
-                          type="button"
-                          onClick={() =>
-                            setConsentDraft((prev) => ({
-                              ...prev,
-                              allowedTerritories: prev.allowedTerritories.filter(
-                                (territoryCode) => territoryCode !== code
-                              ),
-                            }))
-                          }
-                          className="rounded-full border border-green-300 bg-green-50 px-3 py-1 text-xs font-medium text-green-800"
-                        >
-                          {country?.name || code} ({code}) x
-                        </button>
-                      );
-                    })}
+                  <div className="mb-3 rounded-md border border-green-300 bg-green-50 p-3">
+                    <div className="mb-2 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-medium text-green-900">
+                          Allowed territories selected: {consentDraft.allowedTerritories.length}
+                        </p>
+                        <p className="text-xs text-green-800">
+                          Your selection is explicit allow-only. No territories are allowed unless selected here.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setConsentDraft((prev) => ({
+                            ...prev,
+                            allowedTerritories: [],
+                          }))
+                        }
+                        className="rounded border border-green-400 bg-white px-2 py-1 text-xs font-medium text-green-900"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedTerritoriesByContinent.map(({ continent, selected }) => (
+                        <div key={continent}>
+                          <p className="text-xs font-semibold uppercase tracking-wide text-green-900">
+                            {continent}
+                          </p>
+                          <div className="mt-1 flex flex-wrap gap-2">
+                            {selected.map((country) => (
+                              <button
+                                key={country.code}
+                                type="button"
+                                onClick={() =>
+                                  setConsentDraft((prev) => ({
+                                    ...prev,
+                                    allowedTerritories: prev.allowedTerritories.filter(
+                                      (territoryCode) => territoryCode !== country.code
+                                    ),
+                                  }))
+                                }
+                                className="rounded-full border border-green-300 bg-white px-3 py-1 text-xs font-medium text-green-800"
+                              >
+                                {country.name} ({country.code}) x
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ) : null}
                 <div className="grid gap-2 md:grid-cols-2">
