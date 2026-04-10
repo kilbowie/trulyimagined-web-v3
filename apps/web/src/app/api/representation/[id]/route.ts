@@ -7,9 +7,11 @@ import {
   getRelationshipById,
 } from '@/lib/hdicr/representation-client';
 import {
+  getTerminationNotificationContext,
   scheduleRepresentationTermination,
   TerminationHttpError,
 } from '@/lib/representation-termination';
+import { sendRepresentationTerminationNoticeEmail } from '@/lib/email';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -68,6 +70,27 @@ export async function DELETE(_req: Request, { params }: RouteParams): Promise<Ne
       roles,
       reason: 'Termination requested from legacy remove action',
     });
+
+    if (!result.alreadyPending) {
+      try {
+        const context = await getTerminationNotificationContext(id);
+        if (context) {
+          await sendRepresentationTerminationNoticeEmail({
+            actorEmail: context.actorEmail,
+            actorName: context.actorName,
+            actorRegistryId: context.actorRegistryId,
+            agentEmail: context.agentEmail,
+            agencyName: context.agencyName,
+            agentRegistryId: context.agentRegistryId,
+            effectiveDate: String(result.termination.effective_date),
+            initiatedBy: result.termination.initiated_by,
+            reason: result.termination.reason || null,
+          });
+        }
+      } catch (emailError) {
+        console.error('[REPRESENTATION_ID] Notice email send failed:', emailError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

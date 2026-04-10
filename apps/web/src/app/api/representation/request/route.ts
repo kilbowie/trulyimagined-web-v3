@@ -8,9 +8,11 @@ import {
   getAgentByRegistryId,
   hasPendingRequest,
 } from '@/lib/hdicr/representation-client';
+import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
 
 interface RequestPayload {
   agentRegistryId?: string;
+  invitationCode?: string;
   message?: string;
 }
 
@@ -48,13 +50,51 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = (await request.json()) as RequestPayload;
+    const invitationCode = payload.invitationCode?.trim().toUpperCase();
     const agentRegistryId = payload.agentRegistryId?.trim();
 
-    if (!agentRegistryId) {
-      return NextResponse.json({ error: 'Agent registry ID is required' }, { status: 400 });
+    if (!invitationCode && !agentRegistryId) {
+      return NextResponse.json(
+        { error: 'Either invitationCode or agentRegistryId is required' },
+        { status: 400 }
+      );
     }
 
-    const agent = await getAgentByRegistryId(agentRegistryId);
+    let agent: Record<string, any> | null = null;
+    let invitationCodeRecord: { id: string } | null = null;
+
+    if (invitationCode) {
+      const codeRecord = await getInvitationCodeForRedeem(invitationCode);
+
+      if (!codeRecord) {
+        return NextResponse.json({ error: 'Invalid invitation code' }, { status: 404 });
+      }
+
+      if (codeRecord.redeemed_at) {
+        return NextResponse.json({ error: 'Invitation code already redeemed' }, { status: 409 });
+      }
+
+      if (new Date(codeRecord.expires_at).getTime() < Date.now()) {
+        return NextResponse.json({ error: 'Invitation code expired' }, { status: 409 });
+      }
+
+      if (!codeRecord.agent_profile_completed) {
+        return NextResponse.json(
+          { error: 'This agent is not available yet. Their profile is not complete.' },
+          { status: 409 }
+        );
+      }
+
+      agent = {
+        id: codeRecord.agent_id,
+        agency_name: codeRecord.agency_name,
+        profile_completed: codeRecord.agent_profile_completed,
+      };
+      invitationCodeRecord = { id: codeRecord.id };
+    } else {
+      const resolvedAgent = await getAgentByRegistryId(agentRegistryId as string);
+      agent = resolvedAgent;
+    }
 
     if (!agent) {
       return NextResponse.json(
@@ -84,6 +124,23 @@ export async function POST(request: NextRequest) {
       agentId: agent.id,
       message: payload.message,
     });
+
+    if (invitationCodeRecord) {
+      const redeemed = await redeemInvitationCode({
+        invitationCodeId: invitationCodeRecord.id,
+        actorId: actor.id,
+      });
+
+      if (!redeemed) {
+        return NextResponse.json(
+          {
+            error:
+              'Representation request created, but invitation code could not be redeemed. Please contact support.',
+          },
+          { status: 409 }
+        );
+      }
+    }
 
     return NextResponse.json({
       success: true,

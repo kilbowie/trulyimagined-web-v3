@@ -2,15 +2,19 @@ import { NextRequest, NextResponse } from 'next/server';
 import { applyDueRepresentationTerminations } from '@/lib/representation-termination';
 
 /**
- * POST /api/representation/terminate/sweep
+ * GET /api/representation/terminate/sweep
  * Cron endpoint that applies due termination notices.
  */
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const vercelCronHeader = request.headers.get('x-vercel-cron');
     const expectedSecret = process.env.REPRESENTATION_TERMINATION_CRON_SECRET;
-    const providedSecret = request.headers.get('x-cron-secret');
+    const providedSecret = request.nextUrl.searchParams.get('secret');
 
-    if (!expectedSecret || providedSecret !== expectedSecret) {
+    const isAuthorizedByVercelCron = vercelCronHeader === '1';
+    const isAuthorizedBySecret = Boolean(expectedSecret) && providedSecret === expectedSecret;
+
+    if (!isAuthorizedByVercelCron && !isAuthorizedBySecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

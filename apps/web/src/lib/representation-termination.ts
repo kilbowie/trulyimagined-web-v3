@@ -1,4 +1,5 @@
 import { query } from '@/lib/db';
+import { sendRepresentationTerminationCompletedEmail } from '@/lib/email';
 import {
   endRelationship,
   getActorByAuth0UserId,
@@ -15,6 +16,49 @@ export class TerminationHttpError extends Error {
     this.status = status;
     this.payload = payload;
   }
+}
+
+export type RepresentationTerminationNotificationContext = {
+  actorEmail: string | null;
+  actorName: string;
+  actorRegistryId: string | null;
+  agentEmail: string | null;
+  agencyName: string;
+  agentRegistryId: string | null;
+};
+
+export async function getTerminationNotificationContext(
+  relationshipId: string
+): Promise<RepresentationTerminationNotificationContext | null> {
+  const result = await query(
+    `SELECT
+       ac.email AS actor_email,
+       COALESCE(ac.stage_name, NULLIF(TRIM(COALESCE(ac.first_name, '') || ' ' || COALESCE(ac.last_name, '')), ''), 'Actor') AS actor_name,
+       ac.registry_id AS actor_registry_id,
+       ag.contact_email AS agent_email,
+       COALESCE(ag.agency_name, 'Agency') AS agency_name,
+       ag.registry_id AS agent_registry_id
+     FROM actor_agent_relationships aar
+     INNER JOIN actors ac ON ac.id = aar.actor_id
+     INNER JOIN agents ag ON ag.id = aar.agent_id
+     WHERE aar.id = $1
+     LIMIT 1`,
+    [relationshipId]
+  );
+
+  const row = result.rows[0];
+  if (!row) {
+    return null;
+  }
+
+  return {
+    actorEmail: row.actor_email || null,
+    actorName: row.actor_name || 'Actor',
+    actorRegistryId: row.actor_registry_id || null,
+    agentEmail: row.agent_email || null,
+    agencyName: row.agency_name || 'Agency',
+    agentRegistryId: row.agent_registry_id || null,
+  };
 }
 
 export async function scheduleRepresentationTermination(params: {
@@ -179,6 +223,8 @@ export async function applyDueRepresentationTerminations(limit = 100) {
 
   for (const row of due.rows) {
     try {
+      const context = await getTerminationNotificationContext(row.relationship_id);
+
       await endRelationship({
         relationshipId: row.relationship_id,
         endedByAuth0UserId: 'system:termination-sweep',
@@ -194,6 +240,24 @@ export async function applyDueRepresentationTerminations(limit = 100) {
          WHERE id = $1`,
         [row.id]
       );
+
+      if (context) {
+        try {
+          await sendRepresentationTerminationCompletedEmail({
+            actorEmail: context.actorEmail,
+            actorName: context.actorName,
+            actorRegistryId: context.actorRegistryId,
+            agentEmail: context.agentEmail,
+            agencyName: context.agencyName,
+            agentRegistryId: context.agentRegistryId,
+          });
+        } catch (emailError) {
+          console.error(
+            '[REPRESENTATION_TERMINATION_SWEEP] Completion email send failed:',
+            emailError
+          );
+        }
+      }
 
       completed += 1;
     } catch (error) {

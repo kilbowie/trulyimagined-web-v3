@@ -20,6 +20,11 @@ vi.mock('@/lib/hdicr/representation-client', () => ({
   hasPendingRequest: vi.fn(),
 }));
 
+vi.mock('@/lib/agent-invitation-codes', () => ({
+  getInvitationCodeForRedeem: vi.fn(),
+  redeemInvitationCode: vi.fn(),
+}));
+
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
@@ -29,6 +34,7 @@ import {
   getAgentByRegistryId,
   hasPendingRequest,
 } from '@/lib/hdicr/representation-client';
+import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
 
 describe('POST /api/representation/request - Contract Test', () => {
   beforeEach(() => {
@@ -110,6 +116,45 @@ describe('POST /api/representation/request - Contract Test', () => {
         actorId: 'actor-123',
         agentId: 'agent-123',
       })
+    );
+  });
+
+  it('creates request by invitation code and redeems it', async () => {
+    vi.mocked(auth0.getSession).mockResolvedValueOnce({ user: { sub: 'user-123' } } as any);
+    vi.mocked(getUserRoles).mockResolvedValueOnce(['Actor']);
+    vi.mocked(getActorByAuth0UserId).mockResolvedValueOnce({ id: 'actor-123' } as any);
+    vi.mocked(getActiveRepresentationForActor).mockResolvedValueOnce(null);
+    vi.mocked(getInvitationCodeForRedeem).mockResolvedValueOnce({
+      id: 'invite-1',
+      code: 'ABCD1234',
+      agent_id: 'agent-123',
+      expires_at: new Date(Date.now() + 3600000).toISOString(),
+      redeemed_at: null,
+      agency_name: 'Test Agency',
+      agent_profile_completed: true,
+    } as any);
+    vi.mocked(hasPendingRequest).mockResolvedValueOnce(false);
+    vi.mocked(createRepresentationRequest).mockResolvedValueOnce({
+      id: 'req-123',
+      actor_id: 'actor-123',
+      agent_id: 'agent-123',
+      status: 'pending',
+    } as any);
+    vi.mocked(redeemInvitationCode).mockResolvedValueOnce({ id: 'invite-1' } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/representation/request', {
+      method: 'POST',
+      body: JSON.stringify({ invitationCode: 'ABCD1234', message: 'Please represent me' }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toHaveProperty('success', true);
+    expect(getInvitationCodeForRedeem).toHaveBeenCalledWith('ABCD1234');
+    expect(redeemInvitationCode).toHaveBeenCalledWith(
+      expect.objectContaining({ invitationCodeId: 'invite-1', actorId: 'actor-123' })
     );
   });
 });

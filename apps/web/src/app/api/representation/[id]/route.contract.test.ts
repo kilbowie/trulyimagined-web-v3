@@ -18,6 +18,7 @@ vi.mock('@/lib/hdicr/representation-client', () => ({
 }));
 
 vi.mock('@/lib/representation-termination', () => ({
+  getTerminationNotificationContext: vi.fn(),
   scheduleRepresentationTermination: vi.fn(),
   TerminationHttpError: class extends Error {
     status: number;
@@ -29,6 +30,10 @@ vi.mock('@/lib/representation-termination', () => ({
       this.payload = payload;
     }
   },
+}));
+
+vi.mock('@/lib/email', () => ({
+  sendRepresentationTerminationNoticeEmail: vi.fn(),
 }));
 
 import { auth0 } from '@/lib/auth0';

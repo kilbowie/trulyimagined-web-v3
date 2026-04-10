@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
+  getTerminationNotificationContext,
   scheduleRepresentationTermination,
   TerminationHttpError,
 } from '@/lib/representation-termination';
+import { sendRepresentationTerminationNoticeEmail } from '@/lib/email';
 
 interface TerminatePayload {
   relationshipId?: string;
@@ -38,6 +40,27 @@ export async function POST(request: NextRequest) {
       roles,
       reason: body.reason?.trim() || null,
     });
+
+    if (!result.alreadyPending) {
+      try {
+        const context = await getTerminationNotificationContext(relationshipId);
+        if (context) {
+          await sendRepresentationTerminationNoticeEmail({
+            actorEmail: context.actorEmail,
+            actorName: context.actorName,
+            actorRegistryId: context.actorRegistryId,
+            agentEmail: context.agentEmail,
+            agencyName: context.agencyName,
+            agentRegistryId: context.agentRegistryId,
+            effectiveDate: String(result.termination.effective_date),
+            initiatedBy: result.termination.initiated_by,
+            reason: result.termination.reason || null,
+          });
+        }
+      } catch (emailError) {
+        console.error('[REPRESENTATION_TERMINATE] Notice email send failed:', emailError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

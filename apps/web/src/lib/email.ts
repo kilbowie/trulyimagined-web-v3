@@ -889,4 +889,99 @@ export async function sendAgencyTeamInviteEmail(options: {
   });
 }
 
+export async function sendRepresentationTerminationNoticeEmail(options: {
+  actorEmail: string | null;
+  actorName: string;
+  actorRegistryId: string | null;
+  agentEmail: string | null;
+  agencyName: string;
+  agentRegistryId: string | null;
+  effectiveDate: string;
+  initiatedBy: 'actor' | 'agent';
+  reason?: string | null;
+}) {
+  const recipients = [options.actorEmail, options.agentEmail].filter(Boolean) as string[];
+
+  if (recipients.length === 0) {
+    return null;
+  }
+
+  const subject = '30-day representation termination notice created';
+  const initiatedLabel = options.initiatedBy === 'actor' ? 'Actor' : 'Agent';
+  const effectiveDateLabel = new Date(options.effectiveDate).toLocaleDateString('en-GB', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const bodyContent = `
+    <p>A representation termination notice has been created and is now in effect.</p>
+    <ul style="line-height: 1.8; color: #4a4a4a;">
+      <li><strong>Agency:</strong> ${options.agencyName}${options.agentRegistryId ? ` (${options.agentRegistryId})` : ''}</li>
+      <li><strong>Actor:</strong> ${options.actorName}${options.actorRegistryId ? ` (${options.actorRegistryId})` : ''}</li>
+      <li><strong>Initiated by:</strong> ${initiatedLabel}</li>
+      <li><strong>Effective termination date:</strong> ${effectiveDateLabel}</li>
+      <li><strong>Status:</strong> Pending termination (relationship remains active until effective date)</li>
+      ${options.reason ? `<li><strong>Reason:</strong> ${options.reason}</li>` : ''}
+    </ul>
+    <p>Existing signed licenses remain honoured during and after the notice period.</p>
+  `;
+
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Review Representation Status',
+    `${APP_URL}/dashboard/representation`
+  );
+
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('representation-termination-notice', options.initiatedBy),
+  });
+}
+
+export async function sendRepresentationTerminationCompletedEmail(options: {
+  actorEmail: string | null;
+  actorName: string;
+  actorRegistryId: string | null;
+  agentEmail: string | null;
+  agencyName: string;
+  agentRegistryId: string | null;
+}) {
+  const recipients = [options.actorEmail, options.agentEmail].filter(Boolean) as string[];
+
+  if (recipients.length === 0) {
+    return null;
+  }
+
+  const subject = 'Representation relationship ended';
+  const bodyContent = `
+    <p>The 30-day notice period has completed and the representation relationship has now ended.</p>
+    <ul style="line-height: 1.8; color: #4a4a4a;">
+      <li><strong>Agency:</strong> ${options.agencyName}${options.agentRegistryId ? ` (${options.agentRegistryId})` : ''}</li>
+      <li><strong>Actor:</strong> ${options.actorName}${options.actorRegistryId ? ` (${options.actorRegistryId})` : ''}</li>
+      <li><strong>Status:</strong> Inactive</li>
+    </ul>
+    <p>Historical signed licenses continue according to their contractual terms.</p>
+  `;
+
+  const html = createNoReplyTemplate(
+    subject,
+    bodyContent,
+    'Open Dashboard',
+    `${APP_URL}/dashboard/representation`
+  );
+
+  return await sendEmail({
+    to: recipients,
+    subject,
+    html,
+    type: 'noreply',
+    tags: getTags('representation-termination-completed'),
+  });
+}
+
 export { sendEmail };

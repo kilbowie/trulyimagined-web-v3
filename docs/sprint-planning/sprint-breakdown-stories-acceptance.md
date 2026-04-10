@@ -436,19 +436,19 @@ As an agent, I want to generate unique invitation codes for actors so they can j
 
 **Acceptance Criteria:**
 
-- [ ] POST `/api/agent/codes/generate` (authenticated, agent)
-- [ ] Input: `batch_size` (optional, default 5, max 100)
-- [ ] Generates N random 8-char alphanumeric codes: `A7K9M2BX`
-- [ ] Creates records in `agent_invitation_codes` table:
+- [x] POST `/api/agent/codes/generate` (authenticated, agent)
+- [x] Input supported via `batchSize` (optional, default 5, max 100)
+- [x] Generates N random 8-char alphanumeric codes: `A7K9M2BX`
+- [x] Creates records in `agent_invitation_codes` table:
   - `code` (unique)
   - `agent_id`
   - `created_at`
   - `expires_at` (30 days from now)
   - `used_by_actor_id` (null until redeemed)
   - `redeemed_at` (null)
-- [ ] Returns list of codes
+- [x] Returns list of codes
 - [ ] Telemetry: log code generation (for auditing abuse)
-- [ ] GET `/api/agent/codes/list` returns all codes with status (pending, redeemed, expired)
+- [x] GET `/api/agent/codes/list` returns all codes with status (pending, redeemed, expired)
 
 **Story Points:** 4
 
@@ -471,21 +471,21 @@ As an actor, I want to enter an agent's invitation code to request representatio
 
 **Acceptance Criteria:**
 
-- [ ] POST `/api/representation/request` (authenticated, actor)
-- [ ] Input: `code` (string)
-- [ ] Validation:
-  - [ ] Code exists & not expired
-  - [ ] Code not already redeemed
-  - [ ] Actor not already represented by same agent
-- [ ] Creates `representation_requests` record:
+- [x] POST `/api/representation/request` (authenticated, actor)
+- [x] Input supports invitation code (via `invitationCode`) while preserving `agentRegistryId` compatibility
+- [x] Validation:
+  - [x] Code exists & not expired
+  - [x] Code not already redeemed
+  - [x] Actor not already represented by same agent
+- [x] Creates `representation_requests` record:
   - `actor_id`
   - `agent_id`
   - `status` = 'pending'
   - `created_at`
   - `requested_by` = 'actor'
-- [ ] Updates `agent_invitation_codes`: used_by_actor_id, redeemed_at
+- [x] Updates `agent_invitation_codes`: used_by_actor_id, redeemed_at
 - [ ] Sends email to agent: "New actor wants representation: [actor name]"
-- [ ] Returns confirmation message to actor
+- [x] Returns confirmation message to actor
 - [ ] Audit log
 
 **Story Points:** 4
@@ -661,7 +661,7 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
 
 **Acceptance Criteria:**
 
-- [ ] POST `/api/representation/terminate` (authenticated, actor OR agent)
+- [x] POST `/api/representation/terminate` (authenticated, actor OR agent)
 - [ ] Input:
   ```json
   {
@@ -669,7 +669,7 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
     "reason": "string (optional)"
   }
   ```
-- [ ] Creates `representation_terminations` record:
+- [x] Creates `representation_terminations` record:
   - `actor_agent_relationship_id`
   - `initiated_by` (actor or agent)
   - `reason` (optional)
@@ -677,11 +677,11 @@ As an actor or agent, I want to terminate representation with 30 days' notice so
   - `effective_date` = NOW() + 30 days
   - `status` = 'pending_termination'
 - [ ] Updates actor_agent_relationships: status = 'terminating'
-- [ ] Email both parties: "30-day termination notice in effect. Effective date: [date]"
-- [ ] GET `/api/representation/terminating` shows actors/agents in termination period
+- [x] Email both parties: "30-day termination notice in effect. Effective date: [date]"
+- [x] GET `/api/representation/terminating` shows actors/agents in termination period
 - [ ] On effective date (cron job or scheduled task):
-  - [ ] Update actor_agent_relationships: status = 'inactive'
-  - [ ] Email both: "Representation ended as of [date]"
+  - [x] Relationship is ended via sweep endpoint (legacy ended_at model)
+  - [x] Email both: "Representation ended as of [date]"
 - [ ] All existing licenses (deals signed before termination) continue to be honored (agent still gets cut)
 
 **Story Points:** 8
