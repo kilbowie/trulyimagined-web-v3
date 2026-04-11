@@ -301,7 +301,8 @@ async function registerActor(event: APIGatewayProxyEvent, tenantId: string) {
           firstName: actor.first_name,
           lastName: actor.last_name,
           stageName: actor.stage_name,
-          displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
+          displayName:
+            actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
           verificationStatus: actor.verification_status,
           createdAt: actor.created_at,
         },
@@ -360,7 +361,8 @@ async function getActorById(event: APIGatewayProxyEvent, tenantId: string) {
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
-        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
+        displayName:
+          actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         bio: actor.bio,
         location: actor.location,
         profileImageUrl: actor.profile_image_url,
@@ -397,7 +399,8 @@ async function listActors(event: APIGatewayProxyEvent, tenantId: string) {
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
-        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
+        displayName:
+          actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         verificationStatus: actor.verification_status,
         isFoundingMember: actor.is_founding_member,
         registryId: actor.registry_id,
@@ -413,7 +416,9 @@ async function listActors(event: APIGatewayProxyEvent, tenantId: string) {
 }
 
 async function listAdminUsers(tenantId: string) {
-  const result = await db.queryWithTenant(tenantId, queries.userProfiles.listAdminUsersWithActors, [tenantId]);
+  const result = await db.queryWithTenant(tenantId, queries.userProfiles.listAdminUsersWithActors, [
+    tenantId,
+  ]);
 
   return {
     statusCode: 200,
@@ -476,7 +481,8 @@ async function updateActor(event: APIGatewayProxyEvent, tenantId: string) {
         firstName: actor.first_name,
         lastName: actor.last_name,
         stageName: actor.stage_name,
-        displayName: actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
+        displayName:
+          actor.stage_name || `${actor.first_name || ''} ${actor.last_name || ''}`.trim(),
         bio: actor.bio,
         location: actor.location,
         profileImageUrl: actor.profile_image_url,
@@ -497,7 +503,8 @@ async function getIdentityLinkByProviderAndProviderUser(
 
   const { userProfileId, provider, providerUserId } = parsedQuery.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `SELECT *
      FROM identity_links
      WHERE user_profile_id = $1
@@ -525,7 +532,8 @@ async function listIdentityLinks(event: APIGatewayProxyEvent, tenantId: string) 
 
   const { userProfileId, activeOnly } = parsedQuery.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `SELECT *
      FROM identity_links
      WHERE user_profile_id = $1
@@ -561,7 +569,8 @@ async function createIdentityLink(event: APIGatewayProxyEvent, tenantId: string)
     expiresAt,
   } = parsedBody.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `INSERT INTO identity_links (
       user_profile_id,
       provider,
@@ -608,7 +617,8 @@ async function reactivateIdentityLink(event: APIGatewayProxyEvent, tenantId: str
   const { linkId, verificationLevel, assuranceLevel, credentialData, metadata, expiresAt } =
     parsedBody.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `UPDATE identity_links
      SET is_active = TRUE,
          verification_level = COALESCE($2, verification_level),
@@ -657,7 +667,8 @@ async function unlinkIdentityById(event: APIGatewayProxyEvent, tenantId: string)
 
   const { linkId, userProfileId } = parsedBody.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `UPDATE identity_links
      SET is_active = FALSE,
          updated_at = NOW()
@@ -681,7 +692,8 @@ async function unlinkIdentityByProvider(event: APIGatewayProxyEvent, tenantId: s
 
   const { provider, userProfileId } = parsedBody.data;
 
-  const result = await db.queryWithTenant(tenantId, 
+  const result = await db.queryWithTenant(
+    tenantId,
     `UPDATE identity_links
      SET is_active = FALSE,
          updated_at = NOW()
@@ -696,4 +708,3 @@ async function unlinkIdentityByProvider(event: APIGatewayProxyEvent, tenantId: s
     body: JSON.stringify({ rows: result.rows }),
   };
 }
-

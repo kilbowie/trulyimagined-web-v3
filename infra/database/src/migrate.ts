@@ -131,7 +131,11 @@ function getMigrationOrderByDomain(domain: string | null, files: string[]): stri
   return files;
 }
 
-function validateMigrationOrder(order: string[], existingFiles: string[], domain: string): string[] {
+function validateMigrationOrder(
+  order: string[],
+  existingFiles: string[],
+  domain: string
+): string[] {
   const missing = order.filter((file) => !existingFiles.includes(file));
   if (missing.length > 0) {
     throw new Error(
@@ -208,7 +212,9 @@ async function runMigrations() {
     const files = getMigrationOrderByDomain(domain, allSqlFiles);
 
     if (domain) {
-      console.log(`[MIGRATION] Domain mode: ${domain.toUpperCase()} (${files.length} migration(s) in locked order)\n`);
+      console.log(
+        `[MIGRATION] Domain mode: ${domain.toUpperCase()} (${files.length} migration(s) in locked order)\n`
+      );
     }
 
     // Bootstrap tracking table

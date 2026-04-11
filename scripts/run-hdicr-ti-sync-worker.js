@@ -260,7 +260,9 @@ async function applyEventToTi(tiClient, event) {
       return;
     default:
       // Unknown aggregate types are marked processed to avoid worker deadlock.
-      console.warn(`[sync-worker] skipping unsupported aggregate_type=${event.aggregate_type} event_id=${event.id}`);
+      console.warn(
+        `[sync-worker] skipping unsupported aggregate_type=${event.aggregate_type} event_id=${event.id}`
+      );
   }
 }
 
@@ -286,7 +288,9 @@ async function processBatch(hdicrClient, tiClient, batchSize) {
       const message = error && error.message ? error.message : String(error);
       await markFailed(hdicrClient, event.id, message);
       failed += 1;
-      console.error(`[sync-worker] failed event_id=${event.id} aggregate_type=${event.aggregate_type}: ${message}`);
+      console.error(
+        `[sync-worker] failed event_id=${event.id} aggregate_type=${event.aggregate_type}: ${message}`
+      );
     }
   }
 
@@ -309,7 +313,9 @@ async function runOnce(batchSize) {
 
   try {
     const result = await processBatch(hdicrClient, tiClient, batchSize);
-    console.log(`[sync-worker] batch complete: processed=${result.processed} failed=${result.failed}`);
+    console.log(
+      `[sync-worker] batch complete: processed=${result.processed} failed=${result.failed}`
+    );
     return result;
   } finally {
     await hdicrClient.end();

@@ -1,6 +1,7 @@
 # HDICR Services HTTP Endpoints Summary
 
 ## Quick Reference: Service Base URLs
+
 All services are AWS Lambda functions exposed via API Gateway and scoped to tenant.
 
 - **Identity Service**: `/v1/identity/*`
@@ -13,21 +14,25 @@ All services are AWS Lambda functions exposed via API Gateway and scoped to tena
 ## 1. Identity Service (`services/identity-service/src/index.ts`)
 
 ### Overview
+
 Handles actor identity registration, profiles, and identity links management. Requires Auth0 token.
 
 **Authorization Scopes:**
+
 - GET operations: `hdicr:identity:read`
 - POST/PUT operations: `hdicr:identity:write`
 
 ### Endpoints
 
 #### Register New Actor
+
 ```
 POST /v1/identity/register
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "auth0UserId": "string",
@@ -41,6 +46,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -63,14 +69,17 @@ Content-Type: application/json
 ---
 
 #### Get Actor by ID
+
 ```
 GET /v1/identity/{id}
 ```
 
 **Path Parameters:**
+
 - `id`: Actor ID (UUID)
 
 **Response (200):**
+
 ```json
 {
   "actor": {
@@ -98,15 +107,18 @@ GET /v1/identity/{id}
 ---
 
 #### List All Actors (Paginated)
+
 ```
 GET /v1/identity?limit=50&offset=0
 ```
 
 **Query Parameters:**
+
 - `limit`: Integer (0-500, default: 50)
 - `offset`: Integer (default: 0)
 
 **Response (200):**
+
 ```json
 {
   "actors": [
@@ -137,15 +149,18 @@ GET /v1/identity?limit=50&offset=0
 ---
 
 #### Update Actor Profile
+
 ```
 PUT /v1/identity/{id}
 Content-Type: application/json
 ```
 
 **Path Parameters:**
+
 - `id`: Actor ID (UUID)
 
 **Request Body:** (at least one field required)
+
 ```json
 {
   "firstName": "string (optional)",
@@ -158,6 +173,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -182,11 +198,13 @@ Content-Type: application/json
 ---
 
 #### List Admin Users with Actors
+
 ```
 GET /v1/identity/admin/users
 ```
 
 **Response (200):**
+
 ```json
 {
   "users": [
@@ -208,16 +226,19 @@ GET /v1/identity/admin/users
 ### Identity Links Operations
 
 #### Get Identity Link by Provider
+
 ```
 GET /v1/identity/link/by-provider?userProfileId=...&provider=...&providerUserId=...
 ```
 
 **Query Parameters:**
+
 - `userProfileId`: UUID (required)
 - `provider`: String (required) - e.g., "auth0", "google", "government_id"
 - `providerUserId`: String (required) - Provider's user ID
 
 **Response (200):**
+
 ```json
 {
   "link": {
@@ -243,15 +264,18 @@ GET /v1/identity/link/by-provider?userProfileId=...&provider=...&providerUserId=
 ---
 
 #### List Identity Links
+
 ```
 GET /v1/identity/links?userProfileId=...&activeOnly=true
 ```
 
 **Query Parameters:**
+
 - `userProfileId`: UUID (required)
 - `activeOnly`: Boolean string (default: "true") - Filter active links only
 
 **Response (200):**
+
 ```json
 {
   "links": [
@@ -278,12 +302,14 @@ GET /v1/identity/links?userProfileId=...&activeOnly=true
 ---
 
 #### Create Identity Link
+
 ```
 POST /v1/identity/link/create
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "userProfileId": "uuid",
@@ -299,9 +325,12 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
-  "link": { /* full link object */ },
+  "link": {
+    /* full link object */
+  },
   "id": "uuid"
 }
 ```
@@ -311,12 +340,14 @@ Content-Type: application/json
 ---
 
 #### Reactivate Identity Link
+
 ```
 POST /v1/identity/link/reactivate
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "linkId": "uuid",
@@ -329,9 +360,12 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
-  "link": { /* full link object with is_active = true */ }
+  "link": {
+    /* full link object with is_active = true */
+  }
 }
 ```
 
@@ -340,12 +374,14 @@ Content-Type: application/json
 ---
 
 #### Unlink Identity by ID
+
 ```
 POST /v1/identity/link/unlink-by-id
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "linkId": "uuid",
@@ -360,12 +396,14 @@ Content-Type: application/json
 ---
 
 #### Unlink Identity by Provider
+
 ```
 POST /v1/identity/link/unlink-by-provider
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "provider": "string",
@@ -384,25 +422,30 @@ Content-Type: application/json
 ## 2. Consent Service (`services/consent-service/src/index.ts`)
 
 ### Overview
+
 Append-only consent ledger. Tracks grant/revoke actions immutably. Requires Auth0 token.
 
 **Authorization Scopes:**
+
 - GET operations: `hdicr:consent:read`
 - POST operations: `hdicr:consent:write`
 
 ### Endpoints
 
 #### Check Consent Status
+
 ```
 GET /v1/consent/check?actorId=...&consentType=...&projectId=...
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required)
 - `consentType`: String (required) - e.g., "film_tv", "advertising", "ai_training"
 - `projectId`: String (optional)
 
 **Response (200):**
+
 ```json
 {
   "isGranted": "boolean",
@@ -423,18 +466,21 @@ GET /v1/consent/check?actorId=...&consentType=...&projectId=...
 ---
 
 #### List All Consents for Actor
+
 ```
 GET /v1/consent/list?actorId=...&limit=100&offset=0&action=granted
 GET /v1/consent/{actorId}?limit=100&offset=0&action=granted
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required, can be path or query)
 - `limit`: Integer (0-500, default: 100)
 - `offset`: Integer (default: 0)
 - `action`: String (optional) - "granted" or "revoked"
 
 **Response (200):**
+
 ```json
 {
   "activeConsents": [
@@ -450,8 +496,12 @@ GET /v1/consent/{actorId}?limit=100&offset=0&action=granted
       "metadata": "object"
     }
   ],
-  "revokedConsents": [ /* same structure */ ],
-  "expiredConsents": [ /* same structure */ ],
+  "revokedConsents": [
+    /* same structure */
+  ],
+  "expiredConsents": [
+    /* same structure */
+  ],
   "pagination": {
     "limit": 100,
     "offset": 0,
@@ -465,12 +515,14 @@ GET /v1/consent/{actorId}?limit=100&offset=0&action=granted
 ---
 
 #### Check Consent Enforcement
+
 ```
 POST /v1/consent/enforcement/check
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -483,6 +535,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "httpStatus": 200,
@@ -498,12 +551,14 @@ Content-Type: application/json
 ---
 
 #### Grant Consent
+
 ```
 POST /v1/consent/grant
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -517,6 +572,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -533,12 +589,14 @@ Content-Type: application/json
 ---
 
 #### Revoke Consent
+
 ```
 POST /v1/consent/revoke
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -550,6 +608,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -570,23 +629,28 @@ Content-Type: application/json
 ## 3. Representation Service (`services/representation-service/src/index.ts`)
 
 ### Overview
+
 Manages actor-agent representation relationships. Requires Auth0 token.
 
 **Authorization Scopes:**
+
 - GET operations: `hdicr:representation:read`
 - POST operations: `hdicr:representation:write`
 
 ### Endpoints
 
 #### Get Actor by Auth0 User ID
+
 ```
 GET /v1/representation/actor?auth0UserId=...
 ```
 
 **Query Parameters:**
+
 - `auth0UserId`: String (required) - Auth0 subject ID
 
 **Response (200):**
+
 ```json
 {
   "actor": {
@@ -605,14 +669,17 @@ GET /v1/representation/actor?auth0UserId=...
 ---
 
 #### Get Agent by Auth0 User ID
+
 ```
 GET /v1/representation/agent?auth0UserId=...
 ```
 
 **Query Parameters:**
+
 - `auth0UserId`: String (required)
 
 **Response (200):**
+
 ```json
 {
   "agent": {
@@ -631,14 +698,17 @@ GET /v1/representation/agent?auth0UserId=...
 ---
 
 #### Get Agent by Registry ID
+
 ```
 GET /v1/representation/agent-by-registry?registryId=...
 ```
 
 **Query Parameters:**
+
 - `registryId`: String (required)
 
 **Response (200):**
+
 ```json
 {
   "agent": {
@@ -657,14 +727,17 @@ GET /v1/representation/agent-by-registry?registryId=...
 ---
 
 #### Get Active Representation for Actor
+
 ```
 GET /v1/representation/active?actorId=...
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "relationship": {
@@ -688,15 +761,18 @@ GET /v1/representation/active?actorId=...
 ---
 
 #### Check Pending Representation Request
+
 ```
 GET /v1/representation/request/pending?actorId=...&agentId=...
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required)
 - `agentId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "pending": "boolean"
@@ -709,12 +785,14 @@ GET /v1/representation/request/pending?actorId=...&agentId=...
 ---
 
 #### Create Representation Request
+
 ```
 POST /v1/representation/request
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -724,6 +802,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "request": {
@@ -743,14 +822,17 @@ Content-Type: application/json
 ---
 
 #### List Incoming Requests (for Agent)
+
 ```
 GET /v1/representation/requests/incoming?agentId=...
 ```
 
 **Query Parameters:**
+
 - `agentId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "requests": [
@@ -773,17 +855,22 @@ GET /v1/representation/requests/incoming?agentId=...
 ---
 
 #### List Outgoing Requests (from Actor)
+
 ```
 GET /v1/representation/requests/outgoing?actorId=...
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
-  "requests": [ /* same structure as incoming */ ]
+  "requests": [
+    /* same structure as incoming */
+  ]
 }
 ```
 
@@ -792,14 +879,17 @@ GET /v1/representation/requests/outgoing?actorId=...
 ---
 
 #### Get Representation Request by ID
+
 ```
 GET /v1/representation/request?id=...
 ```
 
 **Query Parameters:**
+
 - `id`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "request": {
@@ -820,12 +910,14 @@ GET /v1/representation/request?id=...
 ---
 
 #### Update Representation Request
+
 ```
 POST /v1/representation/request/update
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "requestId": "uuid",
@@ -835,6 +927,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "request": {
@@ -851,14 +944,17 @@ Content-Type: application/json
 ---
 
 #### Check Active Relationship
+
 ```
 GET /v1/representation/relationship/active?actorId=...
 ```
 
 **Query Parameters:**
+
 - `actorId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "active": "boolean"
@@ -871,12 +967,14 @@ GET /v1/representation/relationship/active?actorId=...
 ---
 
 #### Create Relationship
+
 ```
 POST /v1/representation/relationship
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -886,6 +984,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true
@@ -897,14 +996,17 @@ Content-Type: application/json
 ---
 
 #### Get Relationship by ID
+
 ```
 GET /v1/representation/relationship?id=...
 ```
 
 **Query Parameters:**
+
 - `id`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "relationship": {
@@ -924,12 +1026,14 @@ GET /v1/representation/relationship?id=...
 ---
 
 #### End Relationship
+
 ```
 POST /v1/representation/relationship/end
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "relationshipId": "uuid",
@@ -939,6 +1043,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -958,21 +1063,25 @@ Content-Type: application/json
 ## 4. Licensing Service (`services/licensing-service/src/handler.ts`)
 
 ### Overview
+
 Manages licensing requests and approvals for actor content usage. Requires Auth0 token.
 
 **Authorization Scopes:**
+
 - GET operations: `hdicr:licensing:read`
 - POST operations: `hdicr:licensing:write`
 
 ### Endpoints
 
 #### Request License from Actor
+
 ```
 POST /v1/license/request
 Content-Type: application/json
 ```
 
 **Request Body:**
+
 ```json
 {
   "actorId": "uuid",
@@ -991,6 +1100,7 @@ Content-Type: application/json
 ```
 
 **Response (201):**
+
 ```json
 {
   "success": true,
@@ -1011,18 +1121,22 @@ Content-Type: application/json
 ---
 
 #### Get License Requests for Actor
+
 ```
 GET /v1/license/actor/{actorId}?limit=50&offset=0
 ```
 
 **Path Parameters:**
+
 - `actorId`: UUID (required)
 
 **Query Parameters:**
+
 - `limit`: Integer (0-500, default: 50)
 - `offset`: Integer (default: 0)
 
 **Response (200):**
+
 ```json
 {
   "actorId": "uuid",
@@ -1055,14 +1169,17 @@ GET /v1/license/actor/{actorId}?limit=50&offset=0
 ---
 
 #### Approve License Request
+
 ```
 POST /v1/license/{requestId}/approve
 ```
 
 **Path Parameters:**
+
 - `requestId`: UUID (required)
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1076,6 +1193,7 @@ POST /v1/license/{requestId}/approve
 ```
 
 **Response (404):**
+
 ```json
 {
   "error": "License request not found"
@@ -1087,15 +1205,18 @@ POST /v1/license/{requestId}/approve
 ---
 
 #### Reject License Request
+
 ```
 POST /v1/license/{requestId}/reject
 Content-Type: application/json
 ```
 
 **Path Parameters:**
+
 - `requestId`: UUID (required)
 
 **Request Body:**
+
 ```json
 {
   "reason": "string (optional)"
@@ -1103,6 +1224,7 @@ Content-Type: application/json
 ```
 
 **Response (200):**
+
 ```json
 {
   "success": true,
@@ -1125,7 +1247,9 @@ Content-Type: application/json
 ## Authentication & Error Handling
 
 ### Auth Headers
+
 All endpoints require:
+
 ```
 Authorization: Bearer {Auth0_JWT_Token}
 ```
@@ -1135,6 +1259,7 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ### Common Error Responses
 
 **401 Unauthorized:**
+
 ```json
 {
   "error": "Unauthorized"
@@ -1142,6 +1267,7 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ```
 
 **403 Forbidden:**
+
 ```json
 {
   "error": "Forbidden",
@@ -1150,6 +1276,7 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ```
 
 **400 Bad Request:**
+
 ```json
 {
   "error": "Validation failed",
@@ -1161,6 +1288,7 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ```
 
 **404 Not Found:**
+
 ```json
 {
   "error": "Not found"
@@ -1168,6 +1296,7 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ```
 
 **500 Internal Server Error:**
+
 ```json
 {
   "error": "Internal server error",
@@ -1176,7 +1305,9 @@ The Auth0 token must include appropriate scopes for the operation (read/write).
 ```
 
 ### Correlation Headers
+
 All responses include correlation ID for tracing:
+
 ```
 x-correlation-id: {UUID}
 ```
@@ -1186,6 +1317,7 @@ x-correlation-id: {UUID}
 ## Use Case Mapping: SQL → HTTP
 
 ### Example: User Profile Retrieval Path
+
 ```sql
 -- Old: Direct DB Query
 SELECT * FROM actors WHERE id = $1
@@ -1195,9 +1327,10 @@ GET /v1/identity/{id}
 ```
 
 ### Example: Consent Status Check
+
 ```sql
 -- Old: Direct DB Query
-SELECT * FROM consent_log 
+SELECT * FROM consent_log
 WHERE actor_id = $1 AND consent_type = $2
 ORDER BY created_at DESC LIMIT 1
 
@@ -1206,9 +1339,10 @@ GET /v1/consent/check?actorId={id}&consentType={type}
 ```
 
 ### Example: Representation Verification
+
 ```sql
 -- Old: Direct DB Query
-SELECT 1 FROM actor_agent_relationships 
+SELECT 1 FROM actor_agent_relationships
 WHERE actor_id = $1 AND ended_at IS NULL
 
 -- New: HTTP Endpoint
@@ -1216,10 +1350,11 @@ GET /v1/representation/relationship/active?actorId={id}
 ```
 
 ### Example: Admin User Listing
+
 ```sql
 -- Old: Direct DB Query
-SELECT * FROM user_profiles 
-JOIN actors ON ... 
+SELECT * FROM user_profiles
+JOIN actors ON ...
 WHERE role = 'admin'
 
 -- New: HTTP Endpoint
@@ -1230,20 +1365,20 @@ GET /v1/identity/admin/users
 
 ## Summary Table
 
-| Service | Type | Key Endpoints | Primary Lookup | Existence Check |
-|---------|------|---------------|-----------------|-----------------|
-| **Identity** | User/Actor profiles | `GET /v1/identity/{id}`, `POST /v1/identity/register` | By Actor ID | N/A |
-| **Consent** | Immutable ledger | `GET /v1/consent/check`, `POST /v1/consent/grant` | By Actor + Type | isGranted boolean |
-| **Representation** | Relationships | `GET /v1/representation/active`, `POST /v1/representation/request` | By Actor ID | active boolean |
-| **Licensing** | License requests | `GET /v1/license/actor/{id}`, `POST /v1/license/request` | By Actor ID | Status field |
+| Service            | Type                | Key Endpoints                                                      | Primary Lookup  | Existence Check   |
+| ------------------ | ------------------- | ------------------------------------------------------------------ | --------------- | ----------------- |
+| **Identity**       | User/Actor profiles | `GET /v1/identity/{id}`, `POST /v1/identity/register`              | By Actor ID     | N/A               |
+| **Consent**        | Immutable ledger    | `GET /v1/consent/check`, `POST /v1/consent/grant`                  | By Actor + Type | isGranted boolean |
+| **Representation** | Relationships       | `GET /v1/representation/active`, `POST /v1/representation/request` | By Actor ID     | active boolean    |
+| **Licensing**      | License requests    | `GET /v1/license/actor/{id}`, `POST /v1/license/request`           | By Actor ID     | Status field      |
 
 ---
 
 ## Tenant Scoping
 
 All services receive tenant context from:
-1. **Auth0 token claim**: `tenantId` 
+
+1. **Auth0 token claim**: `tenantId`
 2. **Environment fallback**: `HDICR_DEFAULT_TENANT_ID` (default: 'trulyimagined')
 
 Tenant ID automatically scopes all queries (WHERE tenant_id = $X is implicit).
-

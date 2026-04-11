@@ -247,8 +247,7 @@ export function getOrCreateCorrelationId(event: APIGatewayProxyEvent): string {
     return existing.trim();
   }
 
-  const uuidFactory = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto
-    ?.randomUUID;
+  const uuidFactory = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto?.randomUUID;
   if (typeof uuidFactory === 'function') {
     return uuidFactory();
   }

@@ -101,7 +101,9 @@ async function assertNoForbiddenFks(client) {
     );
 
     if (rows.length > 0) {
-      fail(`forbidden FK still present on public.${tableName}.${columnName} (${rows[0].constraint_name})`);
+      fail(
+        `forbidden FK still present on public.${tableName}.${columnName} (${rows[0].constraint_name})`
+      );
     }
   }
 }

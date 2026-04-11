@@ -3,6 +3,7 @@
 ## Phase 1 Completion Status
 
 ### ✅ Item 1.1: Remove direct HDICR DB access from TI runtime paths
+
 - **Status:** COMPLETE
 - **Key Achievement:** Onboarding/status route refactored to use HDICR HTTP APIs
 - **Implementation:**
@@ -13,6 +14,7 @@
 - **Impact:** TI runtime now decoupled from direct HDICR table access
 
 ### ✅ Item 1.2: Standardize M2M env naming contract
+
 - **Status:** COMPLETE (Already Implemented)
 - **Key Achievement:** Canonical naming with full backward compatibility
 - **Implementation:**
@@ -23,6 +25,7 @@
 - **Impact:** Deploy config can be standardized without breaking existing deployments
 
 ### ✅ Item 2.1: Correct 401 vs 403 semantics
+
 - **Status:** COMPLETE (Delivered in Hardening Batch)
 - **Key Achievement:** Consistent auth error semantics across all HDICR services
 - **Implementation:**
@@ -35,6 +38,7 @@
 ## Phase 2 Status (High/Blocking)
 
 ### ✅ Item 2.3: Representation service ownership decision
+
 - **Status:** COMPLETE (Already Documented)
 - **Decision:** Representation-service is HDICR-owned (executed)
 - **Evidence:**
@@ -45,6 +49,7 @@
 - **Impact:** Clear ownership enables proper deployment separation
 
 ### ⏳ Item 2.2: Split DB configuration at deploy layer
+
 - **Status:** PENDING (Ops Task)
 - **Scope:** Update deployment configuration for database separation
 - **Options:**
@@ -61,17 +66,18 @@
 
 **For Repo Separation & Vercel Split:**
 
-| Item | Status | Notes |
-|------|--------|-------|
-| TI runtime no longer directly queries HDICR tables | ✅ | Onboarding/status confirmed via HTTP APIs |
-| M2M env contract canonical and deployed consistently | ✅ | Fallback chain ensures compatibility |
-| 401 vs 403 semantics correct across HDICR services | ✅ | Middleware discriminates error types |
-| Deployment config clearly separates HDICR/TI DB URLs | ⏳ | Pending deployment config update (2.2) |
-| Representation ownership documented and enforced | ✅ | Service README + TECHNICAL_ARCHITECTURE clear |
-| End-to-end TI → HDICR M2M flow passes locally | ⏳ | Functional but needs validation in preview |
-| Separation verification checks remain green | ⏳ | Depends on deployment config update |
+| Item                                                 | Status | Notes                                         |
+| ---------------------------------------------------- | ------ | --------------------------------------------- |
+| TI runtime no longer directly queries HDICR tables   | ✅     | Onboarding/status confirmed via HTTP APIs     |
+| M2M env contract canonical and deployed consistently | ✅     | Fallback chain ensures compatibility          |
+| 401 vs 403 semantics correct across HDICR services   | ✅     | Middleware discriminates error types          |
+| Deployment config clearly separates HDICR/TI DB URLs | ⏳     | Pending deployment config update (2.2)        |
+| Representation ownership documented and enforced     | ✅     | Service README + TECHNICAL_ARCHITECTURE clear |
+| End-to-end TI → HDICR M2M flow passes locally        | ⏳     | Functional but needs validation in preview    |
+| Separation verification checks remain green          | ⏳     | Depends on deployment config update           |
 
 **To Reach Go Status:**
+
 1. Complete Item 2.2 (deployment configuration split)
 2. Run final validation on local + preview environments
 3. Execute smoke tests: 401/403 semantics, M2M token acquisition
@@ -81,12 +87,14 @@
 ## Ready for Next Phase
 
 ### Priority 3 (Medium - Hardening)
+
 - ✅ Item 3.1: Token refresh buffer (5 minutes) - COMPLETE
 - ✅ Item 3.2: Fetch timeouts (10s Auth0, 15s HDICR) - COMPLETE
 - ✅ Item 3.3: Correlation ID propagation - COMPLETE
 - All tested and passing (42 tests across service suites)
 
 ### Priority 4 (Low - Type Safety)
+
 - Item 4.1: Type safety improvements for auth/HDICR client payloads
   - Reduce Record<string, any> and Promise<any> in key paths
   - Add explicit TokenResponse and JwtClaims interfaces
@@ -96,7 +104,9 @@
 ## Unresolved Action Items
 
 ### Follow-up: Verification Routes (Future)
+
 **Routes still using direct queryHdicr:**
+
 - admin/verification/schedule
 - admin/verification/pending
 - admin/verification/complete
@@ -105,7 +115,9 @@
 **Decision:** These routes create/update HDICR-owned tables. They would benefit from corresponding HDICR service APIs or migration to HDICR services. Recommend deferring to dedicated verification service initiative.
 
 ### Follow-up: Deploy Configuration (Item 2.2)
+
 **Required:** Update SAM template or Vercel config to ensure:
+
 - HDICR services receive `HDICR_DATABASE_URL` (or `DATABASE_URL` scoped to HDICR)
 - TI runtime receives `TI_DATABASE_URL` (separate connection pool)
 - No shared `DATABASE_URL` used by both domains in production
@@ -135,6 +147,7 @@
 ## Test Results Summary
 
 **Last Test Run (Post-Implementation):**
+
 - Web app tests: 134/143 passing
 - Onboarding/status route: 2/2 ✓ (new implementation)
 - HDICR client tests: 4/4 ✓
@@ -142,6 +155,7 @@
 - HDICR service contract tests: 16/16 ✓ (representation 16)
 
 **Pre-Existing Failures (unrelated to changes):**
+
 - Remote URL config tests (9 failures) - Expected without HDICR_API_URL in test env
 - SSL connection test (1 failure) - Expected without live database
 

@@ -20,7 +20,11 @@ vi.mock('@trulyimagined/middleware', () => ({
       return { user: null, errorStatus: 403 };
     }
     return {
-      user: { sub: 'client@clients', tenantId: 'trulyimagined', scopes: ['hdicr:representation:read'] },
+      user: {
+        sub: 'client@clients',
+        tenantId: 'trulyimagined',
+        scopes: ['hdicr:representation:read'],
+      },
     };
   }),
   getOrCreateCorrelationId: vi.fn().mockReturnValue('test-correlation-id'),

@@ -67,10 +67,10 @@ The web tier currently shares one physical PostgreSQL instance with HDICR servic
 
 ### Canonical Table Ownership
 
-| Owner | Tables                                                                                                                                                                                                                     | Notes                                                                                             |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Owner | Tables                                                                                                                                                                                                                           | Notes                                                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
 | HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, `representation_requests`, `actor_agent_relationships`, HDICR-facing `audit_log` entries | Core identity, consent, credential, licensing, and representation records. Web access must go through HDICR APIs. |
-| TI    | `user_profiles`, `agents`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables                                                            | Product/workflow tables that remain in direct web control until the Phase 4 split.                |
+| TI    | `user_profiles`, `agents`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables                                                               | Product/workflow tables that remain in direct web control until the Phase 4 split.                                |
 
 ### Transitional Clarifications
 
