@@ -111,7 +111,6 @@ Resources:
       Description: Identity Registry - Actor registration and management
       Environment:
         Variables:
-          DATABASE_URL: !Ref HdicrDatabaseURL
           HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         RegisterActor:
@@ -168,7 +167,6 @@ Resources:
       Description: Consent Ledger - Immutable consent recording
       Environment:
         Variables:
-          DATABASE_URL: !Ref HdicrDatabaseURL
           HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         GrantConsent:
@@ -225,7 +223,6 @@ Resources:
       Description: Licensing - Request and approve licenses
       Environment:
         Variables:
-          DATABASE_URL: !Ref HdicrDatabaseURL
           HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         RequestLicense:
@@ -261,6 +258,134 @@ Resources:
             Auth:
               ApiKeyRequired: true
 
+  # ========================================
+  # Representation Service Lambda (HDICR-owned: SEP-026)
+  # ========================================
+
+  RepresentationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub trulyimagined-representation-${Environment}
+      CodeUri: ../../services/representation-service/dist
+      Handler: index.handler
+      Description: Representation - Actor-agent relationships and requests
+      Environment:
+        Variables:
+          HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
+      Events:
+        GetActorByAuth0:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/actor
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        GetAgentByAuth0:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/agent
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        GetActiveRepresentation:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/active
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        GetAgentByRegistry:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/agent-by-registry
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        CheckPendingRequest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/request/pending
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        CreateRepresentationRequest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/request
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+        ListIncomingRequests:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/requests/incoming
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        ListOutgoingRequests:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/requests/outgoing
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        GetRepresentationRequest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/request
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        UpdateRepresentationRequest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/request/update
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+        CheckActiveRelationship:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/relationship/active
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        CreateRelationship:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/relationship
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+        GetRelationship:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/relationship
+            Method: GET
+            Auth:
+              ApiKeyRequired: true
+        EndRelationship:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/representation/relationship/end
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+
 # ========================================
 # Outputs
 # ========================================
@@ -291,3 +416,7 @@ Outputs:
   LicensingFunctionArn:
     Description: ARN of Licensing Service Lambda
     Value: !GetAtt LicensingFunction.Arn
+
+  RepresentationFunctionArn:
+    Description: ARN of Representation Service Lambda (HDICR-owned)
+    Value: !GetAtt RepresentationFunction.Arn

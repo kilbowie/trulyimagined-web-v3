@@ -151,6 +151,8 @@ async function getHdicrToken(domain: HdicrDomain): Promise<string> {
   const tokenPayload = (await tokenResponse.json()) as {
     access_token?: string;
     expires_in?: number;
+    token_type?: string;
+    scope?: string;
   };
 
   if (!tokenPayload.access_token || typeof tokenPayload.expires_in !== 'number') {

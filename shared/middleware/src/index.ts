@@ -5,9 +5,45 @@
  */
 
 import { APIGatewayProxyEvent } from 'aws-lambda';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtHeader, SigningKeyCallback } from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import type { AuthUser } from '@trulyimagined/types';
+
+// ==================== TYPE INTERFACES ====================
+
+/**
+ * Decoded Auth0 JWT claims — includes standard OIDC fields plus Auth0 extensions.
+ * Using a typed interface eliminates bare `any` casts in claim extraction.
+ */
+interface JwtClaims {
+  sub: string;
+  iss?: string;
+  aud?: string | string[];
+  exp?: number;
+  iat?: number;
+  email?: string;
+  email_verified?: boolean;
+  name?: string;
+  picture?: string;
+  scope?: string;
+  permissions?: string[];
+  client_id?: string;
+  azp?: string;
+  tenant_id?: string;
+  org_id?: string;
+  organization_id?: string;
+  [key: string]: unknown; // allow custom namespace claims without losing type safety on known fields
+}
+
+/**
+ * Auth0 M2M token response from the /oauth/token endpoint.
+ */
+export interface TokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+  scope?: string;
+}
 
 // ==================== JWKS CLIENT ====================
 
@@ -19,8 +55,8 @@ const client = jwksClient({
   jwksRequestsPerMinute: 10,
 });
 
-function getKey(header: any, callback: any) {
-  client.getSigningKey(header.kid, (err, key) => {
+function getKey(header: JwtHeader, callback: SigningKeyCallback) {
+  client.getSigningKey(header.kid ?? '', (err, key) => {
     if (err) {
       callback(err);
       return;
@@ -64,7 +100,7 @@ export async function validateAuth0TokenWithStatus(
 
   try {
     // Verify JWT with Auth0's public key
-    const decoded = await new Promise<any>((resolve, reject) => {
+    const decoded = await new Promise<JwtClaims>((resolve, reject) => {
       jwt.verify(
         token,
         getKey,
@@ -73,53 +109,50 @@ export async function validateAuth0TokenWithStatus(
           issuer: `https://${process.env.AUTH0_DOMAIN}/`,
           algorithms: ['RS256'],
         },
-        (err, decoded) => {
-          if (err) {
-            reject(err);
+        (err, payload) => {
+          if (err || !payload) {
+            reject(err ?? new Error('Empty JWT payload'));
           } else {
-            resolve(decoded);
+            resolve(payload as JwtClaims);
           }
         }
       );
     });
 
-    if (!decoded || !decoded.sub) {
+    if (!decoded.sub) {
       console.error('[AUTH] Invalid token structure: missing sub');
       return { user: null, errorStatus: 403 };
     }
 
     // Extract OAuth scopes: M2M tokens use the 'scope' string claim;
     // user RBAC tokens from Auth0 may use a 'permissions' array instead.
-    const rawScope: unknown = decoded.scope;
-    const rawPermissions: unknown = decoded.permissions;
-    const scopes: string[] = Array.isArray(rawPermissions)
-      ? (rawPermissions as string[])
-      : typeof rawScope === 'string' && rawScope.length > 0
-        ? rawScope.split(' ')
+    const scopes: string[] = Array.isArray(decoded.permissions)
+      ? (decoded.permissions as string[])
+      : typeof decoded.scope === 'string' && decoded.scope.length > 0
+        ? decoded.scope.split(' ')
         : [];
 
     const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
-    const decodedClaims = decoded as Record<string, unknown>;
     const clientId =
-      getStringClaim(decodedClaims, 'client_id') ||
-      getStringClaim(decodedClaims, 'azp') ||
+      decoded.client_id ||
+      decoded.azp ||
       getSubjectClientId(decoded.sub);
     const tenantClaimNamespace = process.env.AUTH0_TENANT_ID_CLAIM_NAMESPACE?.trim();
     const defaultTenantId = process.env.HDICR_DEFAULT_TENANT_ID?.trim() || 'trulyimagined';
     const tenantId =
-      getStringClaim(decodedClaims, tenantClaimNamespace) ||
-      getStringClaim(decodedClaims, 'tenant_id') ||
-      getStringClaim(decodedClaims, 'org_id') ||
-      getStringClaim(decodedClaims, 'organization_id') ||
+      getStringClaim(decoded, tenantClaimNamespace) ||
+      decoded.tenant_id ||
+      decoded.org_id ||
+      decoded.organization_id ||
       defaultTenantId;
 
     const user: AuthUser = {
       sub: decoded.sub,
-      email: decoded.email as string | undefined,
-      emailVerified: (decoded.email_verified as boolean | undefined) || false,
-      name: decoded.name as string | undefined,
-      picture: decoded.picture as string | undefined,
-      roles: (rolesClaimNamespace ? decoded[rolesClaimNamespace] : undefined) ?? [],
+      email: decoded.email,
+      emailVerified: decoded.email_verified ?? false,
+      name: decoded.name,
+      picture: decoded.picture,
+      roles: (rolesClaimNamespace ? (decoded[rolesClaimNamespace] as string[]) : undefined) ?? [],
       clientId,
       tenantId,
       scopes,

@@ -135,19 +135,21 @@ Why: prevent wrong-db connection and keep service ownership clean.
 
 Track A (if SAM/infra template is active):
 
-- [ ] Update infra/api-gateway/template.yaml to avoid single shared DATABASE_URL for split services.
-- [ ] Introduce explicit per-service env wiring (HDICR_DATABASE_URL or TI_DATABASE_URL as appropriate).
+- [x] Update infra/api-gateway/template.yaml to avoid single shared DATABASE_URL for split services.
+- [x] Introduce explicit per-service env wiring (HDICR_DATABASE_URL or TI_DATABASE_URL as appropriate).
+- [x] Add RepresentationFunction Lambda with all 14 route events (was missing from template).
+- [x] Remove redundant DATABASE_URL env var from Identity, Consent, Licensing Lambda env blocks.
 
 Track B (if Vercel-first):
 
-- [ ] Ensure TI project has TI_DATABASE_URL only for TI runtime responsibilities.
-- [ ] Ensure HDICR services/projects have HDICR_DATABASE_URL.
-- [ ] Remove ambiguous shared DATABASE_URL usage from deployment config where possible.
+- [x] Ensure TI project has TI_DATABASE_URL only for TI runtime responsibilities.
+- [x] Ensure HDICR services/projects have HDICR_DATABASE_URL.
+- [x] Remove ambiguous shared DATABASE_URL usage from deployment config where possible.
 
 Acceptance criteria:
 
-- [ ] No production path depends on a single shared DATABASE_URL for both domains.
-- [ ] Service startup logs confirm expected DB target.
+- [x] No production path depends on a single shared DATABASE_URL for both domains.
+- [x] Service startup logs confirm expected DB target.
 
 ---
 
@@ -233,13 +235,13 @@ Acceptance criteria:
 Severity: Low
 Tasks:
 
-- [ ] Add explicit TokenResponse and JwtClaims interfaces.
-- [ ] Reduce Record<string, any> and Promise<any> in key paths.
-- [ ] Keep response contracts backward-compatible.
+- [x] Add explicit TokenResponse and JwtClaims interfaces.
+- [x] Reduce Record<string, any> and Promise<any> in key paths.
+- [x] Keep response contracts backward-compatible.
 
 Acceptance criteria:
 
-- [ ] No critical auth/client path relies on any for core security fields.
+- [x] No critical auth/client path relies on any for core security fields.
 
 ---
 
