@@ -264,3 +264,39 @@ export async function updateActorProfile(
 
   return payload.actor ?? null;
 }
+
+export async function upsertIdentityLink(params: {
+  userProfileId: string;
+  provider: string;
+  providerUserId: string;
+  providerType: string;
+  verificationLevel?: string;
+  assuranceLevel?: string;
+  credentialData?: unknown;
+  metadata?: Record<string, unknown>;
+  expiresAt?: string;
+}) {
+  return invokeIdentityRemote<{ link?: Record<string, unknown> | null; id?: string }>({
+    path: '/v1/identity/link/upsert',
+    method: 'POST',
+    operation: 'identity-link-upsert',
+    body: params,
+  });
+}
+
+export async function setActorVerificationStatus(
+  actorId: string,
+  params: { verified: boolean; verifiedByUserProfileId: string }
+) {
+  return invokeIdentityRemote<{
+    success: boolean;
+    actorId: string;
+    verificationStatus: string;
+    verifiedAt: string | null;
+  }>({
+    path: `/v1/identity/${encodeURIComponent(actorId)}/verify`,
+    method: 'POST',
+    operation: 'actor-verify',
+    body: params,
+  });
+}

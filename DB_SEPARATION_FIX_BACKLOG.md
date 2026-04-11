@@ -267,23 +267,35 @@ All must be true for Go:
 
 - [ ] TI runtime no longer directly queries HDICR-owned tables.
 - [ ] M2M env contract is canonical and deployed consistently.
-- [ ] 401 vs 403 behavior is correct across all HDICR services.
-- [ ] Deployment config clearly separates HDICR and TI DB URLs.
-- [ ] Representation service ownership is documented and enforced.
+- [x] 401 vs 403 behavior is correct across all HDICR services.
+- [x] Deployment config clearly separates HDICR and TI DB URLs.
+- [x] Representation service ownership is documented and enforced.
 - [ ] End-to-end TI -> HDICR M2M flow passes in local and preview.
-- [ ] Separation verification and sync checks remain green.
+- [x] Separation verification and sync checks remain green.
 
 Suggested command set:
 
-- [ ] pnpm --filter @trulyimagined/web test -- src/lib/hdicr/hdicr-http-client.test.ts
-- [ ] pnpm check:db-separation-state
-- [ ] pnpm db:sync:once
+- [x] pnpm --filter @trulyimagined/web test -- src/lib/hdicr/hdicr-http-client.test.ts
+- [x] pnpm check:db-separation-state
+- [x] pnpm db:sync:once
 
 Optional smoke checks:
 
-- [ ] Missing token -> 401
-- [ ] Invalid token -> 403
-- [ ] Valid token + scope mismatch -> 403 with scope detail
+- [x] Missing token -> 401
+- [x] Invalid token -> 403
+- [x] Valid token + scope mismatch -> 403 with scope detail
+
+Validation evidence (2026-04-11):
+
+- `pnpm --filter @trulyimagined/web test -- src/lib/hdicr/hdicr-http-client.test.ts` -> passed (4/4)
+- `pnpm check:db-separation-state` -> passed (`all checks passed`)
+- `pnpm db:sync:once` -> passed (`processed=0 failed=0`)
+- Auth ingress tests passed across all HDICR services:
+  - `@trulyimagined/identity-service` (6/6)
+  - `@trulyimagined/consent-service` (6/6)
+  - `@trulyimagined/licensing-service` (6/6)
+  - `@trulyimagined/representation-service` (4/4)
+- HDICR-owned table guardrail passed: `scripts/check-hdicr-owned-table-access.sh`
 
 ---
 

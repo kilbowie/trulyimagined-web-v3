@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { queryHdicr } from '@/lib/db';
+import { queryHdicr, queryTi } from '@/lib/db';
 import { sendVerificationCompleteEmail, sendVerificationRetryEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
+import { setActorVerificationStatus, upsertIdentityLink } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -101,23 +102,10 @@ export async function POST(request: NextRequest) {
       ]
     );
 
-    await queryHdicr(
-      `UPDATE actors
-       SET verification_status = $2,
-           verified_at = CASE WHEN $3 THEN NOW() ELSE NULL END,
-           verified_by = CASE WHEN $3 THEN $4::uuid ELSE NULL END,
-           updated_at = NOW()
-       WHERE id = $1::uuid
-         AND tenant_id = $5
-         AND deleted_at IS NULL`,
-      [
-        resolvedActorId,
-        payload.verified ? 'verified' : 'rejected',
-        payload.verified,
-        adminContext.userProfileId,
-        tenantId,
-      ]
-    );
+    await setActorVerificationStatus(resolvedActorId, {
+      verified: payload.verified,
+      verifiedByUserProfileId: adminContext.userProfileId,
+    });
 
     const displayName =
       verificationSession.stage_name ||
@@ -125,7 +113,7 @@ export async function POST(request: NextRequest) {
       'there';
 
     if (payload.verified) {
-      const profileResult = await queryHdicr(
+      const profileResult = await queryTi(
         `SELECT id
          FROM user_profiles
          WHERE auth0_user_id = $1
@@ -143,56 +131,21 @@ export async function POST(request: NextRequest) {
           completedAt: new Date().toISOString(),
         });
 
-        await queryHdicr(
-          `INSERT INTO identity_links (
-             user_profile_id,
-             provider,
-             provider_user_id,
-             provider_type,
-             verification_level,
-             assurance_level,
-             verified_at,
-             credential_data,
-             metadata,
-             is_active,
-             linked_at,
-             tenant_id
-           ) VALUES (
-             $1::uuid,
-             'manual-video',
-             $2,
-             'kyc',
-             'medium',
-             'substantial',
-             NOW(),
-             $3::jsonb,
-             $4::jsonb,
-             TRUE,
-             NOW(),
-             $5
-           )
-           ON CONFLICT (user_profile_id, provider, provider_user_id)
-           DO UPDATE SET
-             verification_level = EXCLUDED.verification_level,
-             assurance_level = EXCLUDED.assurance_level,
-             verified_at = EXCLUDED.verified_at,
-             credential_data = EXCLUDED.credential_data,
-             metadata = EXCLUDED.metadata,
-             is_active = TRUE,
-             updated_at = NOW(),
-             tenant_id = EXCLUDED.tenant_id`,
-          [
-            userProfileId,
-            resolvedSessionId,
-            JSON.stringify(credentialData),
-            JSON.stringify({
-              provider: 'manual-video',
-              verified_by: adminContext.userProfileId,
-              source: 'admin-dashboard',
-            }),
-            tenantId,
-          ]
-        );
+        await upsertIdentityLink({
+          userProfileId,
+          provider: 'manual-video',
+          providerUserId: resolvedSessionId,
+          providerType: 'kyc',
+          verificationLevel: 'medium',
+          assuranceLevel: 'substantial',
+          credentialData,
+          metadata: {
+            provider: 'manual-video',
+            verified_by: adminContext.userProfileId,
+            source: 'admin-dashboard',
+            tenant_id: tenantId,
+          },
+        });
       }
 
       if (verificationSession.email) {

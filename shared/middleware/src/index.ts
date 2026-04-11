@@ -133,10 +133,7 @@ export async function validateAuth0TokenWithStatus(
         : [];
 
     const rolesClaimNamespace = process.env.AUTH0_ROLES_CLAIM_NAMESPACE?.trim() ?? '';
-    const clientId =
-      decoded.client_id ||
-      decoded.azp ||
-      getSubjectClientId(decoded.sub);
+    const clientId = decoded.client_id || decoded.azp || getSubjectClientId(decoded.sub);
     const tenantClaimNamespace = process.env.AUTH0_TENANT_ID_CLAIM_NAMESPACE?.trim();
     const defaultTenantId = process.env.HDICR_DEFAULT_TENANT_ID?.trim() || 'trulyimagined';
     const tenantId =

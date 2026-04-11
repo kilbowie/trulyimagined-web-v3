@@ -153,6 +153,22 @@ Resources:
             Method: PUT
             Auth:
               ApiKeyRequired: true
+        VerifyActor:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/identity/{id}/verify
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
+        UpsertIdentityLink:
+          Type: Api
+          Properties:
+            RestApiId: !Ref TrulyImaginedApi
+            Path: /v1/identity/link/upsert
+            Method: POST
+            Auth:
+              ApiKeyRequired: true
 
   # ========================================
   # Consent Service Lambda (Step 6: Consent Ledger - CRITICAL)

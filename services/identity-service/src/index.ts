@@ -100,6 +100,11 @@ const RegisterActorSchema = z.object({
   location: NonEmptyString.optional(),
 });
 
+const SetActorVerificationStatusSchema = z.object({
+  verified: z.boolean(),
+  verifiedByUserProfileId: NonEmptyString,
+});
+
 const UpdateActorSchema = z
   .object({
     firstName: NonEmptyString.optional(),
@@ -229,6 +234,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (path === '/v1/identity/link/unlink-by-provider' && httpMethod === 'POST') {
       return withCorrelation(await unlinkIdentityByProvider(event));
+    }
+
+    if (path === '/v1/identity/link/upsert' && httpMethod === 'POST') {
+      return withCorrelation(await upsertIdentityLink(event, tenantId));
+    }
+
+    if (path.endsWith('/verify') && httpMethod === 'POST') {
+      return withCorrelation(await setActorVerificationStatus(event, tenantId));
     }
 
     if (path.startsWith('/v1/identity/') && httpMethod === 'GET') {
@@ -706,5 +719,136 @@ async function unlinkIdentityByProvider(event: APIGatewayProxyEvent, tenantId: s
     statusCode: 200,
     headers: corsHeaders,
     body: JSON.stringify({ rows: result.rows }),
+  };
+}
+
+/**
+ * Upsert an identity link (insert with ON CONFLICT UPDATE).
+ * Used by admin verification workflows where the same provider/user may be re-verified.
+ * Route: POST /v1/identity/link/upsert
+ */
+async function upsertIdentityLink(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsedBody = parseJsonBody(event, CreateIdentityLinkSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const {
+    userProfileId,
+    provider,
+    providerUserId,
+    providerType,
+    verificationLevel,
+    assuranceLevel,
+    credentialData,
+    metadata,
+    expiresAt,
+  } = parsedBody.data;
+
+  const result = await db.queryWithTenant(
+    tenantId,
+    `INSERT INTO identity_links (
+      user_profile_id,
+      provider,
+      provider_user_id,
+      provider_type,
+      verification_level,
+      assurance_level,
+      credential_data,
+      metadata,
+      expires_at,
+      is_active,
+      last_verified_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8::jsonb, NULLIF($9, '')::timestamptz, TRUE, NOW())
+    ON CONFLICT (user_profile_id, provider, provider_user_id)
+    DO UPDATE SET
+      verification_level = EXCLUDED.verification_level,
+      assurance_level = EXCLUDED.assurance_level,
+      credential_data = EXCLUDED.credential_data,
+      metadata = EXCLUDED.metadata,
+      expires_at = COALESCE(EXCLUDED.expires_at, identity_links.expires_at),
+      is_active = TRUE,
+      last_verified_at = NOW(),
+      updated_at = NOW()
+    RETURNING *`,
+    [
+      userProfileId,
+      provider,
+      providerUserId,
+      providerType,
+      verificationLevel || 'low',
+      assuranceLevel || 'low',
+      JSON.stringify(credentialData ?? {}),
+      JSON.stringify(metadata ?? {}),
+      expiresAt || null,
+    ]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      link: result.rows[0] || null,
+      id: result.rows[0]?.id,
+    }),
+  };
+}
+
+/**
+ * Set actor verification status (called by admin after manual verification review).
+ * Route: POST /v1/identity/{id}/verify
+ */
+async function setActorVerificationStatus(event: APIGatewayProxyEvent, tenantId: string) {
+  const rawPath = event.path;
+  // Extract actorId from /v1/identity/{id}/verify — segments: ['v1','identity','{id}','verify']
+  const segments = rawPath.split('/').filter(Boolean);
+  const actorId = segments[2];
+
+  if (!actorId || actorId === 'verify') {
+    return {
+      statusCode: 400,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'actorId is required in path' }),
+    };
+  }
+
+  const parsedBody = parseJsonBody(event, SetActorVerificationStatusSchema);
+  if (!parsedBody.success) {
+    return parsedBody.response;
+  }
+
+  const { verified, verifiedByUserProfileId } = parsedBody.data;
+
+  const result = await db.queryWithTenant(
+    tenantId,
+    `UPDATE actors
+     SET verification_status = $2,
+         verified_at = CASE WHEN $3 THEN NOW() ELSE NULL END,
+         verified_by = CASE WHEN $3 THEN $4::uuid ELSE NULL END,
+         updated_at = NOW()
+     WHERE id = $1::uuid
+       AND tenant_id = $5
+       AND deleted_at IS NULL
+     RETURNING id, verification_status, verified_at`,
+    [actorId, verified ? 'verified' : 'rejected', verified, verifiedByUserProfileId, tenantId]
+  );
+
+  if (result.rows.length === 0) {
+    return {
+      statusCode: 404,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Actor not found' }),
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: true,
+      actorId,
+      verificationStatus: result.rows[0].verification_status,
+      verifiedAt: result.rows[0].verified_at,
+    }),
   };
 }
