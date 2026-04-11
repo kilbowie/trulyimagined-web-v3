@@ -265,7 +265,7 @@ Phase 3 (Quality): 9. 4.1 Type safety
 
 All must be true for Go:
 
-- [ ] TI runtime no longer directly queries HDICR-owned tables.
+- [x] TI runtime no longer directly queries HDICR-owned tables.
 - [ ] M2M env contract is canonical and deployed consistently.
 - [x] 401 vs 403 behavior is correct across all HDICR services.
 - [x] Deployment config clearly separates HDICR and TI DB URLs.
@@ -296,6 +296,7 @@ Validation evidence (2026-04-11):
   - `@trulyimagined/licensing-service` (6/6)
   - `@trulyimagined/representation-service` (4/4)
 - HDICR-owned table guardrail passed: `scripts/check-hdicr-owned-table-access.sh`
+- Direct `actors` SQL scan in `apps/web/src` returned no matches (2026-04-11 follow-up migration batch)
 
 ---
 

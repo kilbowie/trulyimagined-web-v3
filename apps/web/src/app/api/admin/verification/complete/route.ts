@@ -5,7 +5,11 @@ import { queryHdicr, queryTi } from '@/lib/db';
 import { sendVerificationCompleteEmail, sendVerificationRetryEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
-import { setActorVerificationStatus, upsertIdentityLink } from '@/lib/hdicr/identity-client';
+import {
+  getActorById,
+  setActorVerificationStatus,
+  upsertIdentityLink,
+} from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -53,9 +57,8 @@ export async function POST(request: NextRequest) {
 
     const sessionResult = verificationRequestId
       ? await queryHdicr(
-          `SELECT mvs.id, mvs.actor_id, a.auth0_user_id, a.email, a.stage_name, a.first_name, a.last_name
+          `SELECT mvs.id, mvs.actor_id
            FROM manual_verification_sessions mvs
-           JOIN actors a ON a.id = mvs.actor_id
            WHERE mvs.id = $1::uuid
              AND mvs.tenant_id = $2
              AND mvs.deleted_at IS NULL
@@ -63,9 +66,8 @@ export async function POST(request: NextRequest) {
           [verificationRequestId, tenantId]
         )
       : await queryHdicr(
-          `SELECT mvs.id, mvs.actor_id, a.auth0_user_id, a.email, a.stage_name, a.first_name, a.last_name
+          `SELECT mvs.id, mvs.actor_id
            FROM manual_verification_sessions mvs
-           JOIN actors a ON a.id = mvs.actor_id
            WHERE mvs.actor_id = $1::uuid
              AND mvs.tenant_id = $2
              AND mvs.deleted_at IS NULL
@@ -81,6 +83,29 @@ export async function POST(request: NextRequest) {
     const verificationSession = sessionResult.rows[0];
     const resolvedActorId: string = verificationSession.actor_id;
     const resolvedSessionId: string = verificationSession.id;
+
+    const actor = (await getActorById(resolvedActorId)) as Record<string, unknown> | null;
+    if (!actor) {
+      return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
+    }
+
+    const actorAuth0UserId =
+      (typeof actor.auth0_user_id === 'string' ? actor.auth0_user_id : undefined) ||
+      (typeof actor.auth0UserId === 'string' ? actor.auth0UserId : undefined) ||
+      null;
+    const actorEmail = typeof actor.email === 'string' ? actor.email : null;
+    const actorStageName =
+      (typeof actor.stage_name === 'string' ? actor.stage_name : undefined) ||
+      (typeof actor.stageName === 'string' ? actor.stageName : undefined) ||
+      null;
+    const actorFirstName =
+      (typeof actor.first_name === 'string' ? actor.first_name : undefined) ||
+      (typeof actor.firstName === 'string' ? actor.firstName : undefined) ||
+      null;
+    const actorLastName =
+      (typeof actor.last_name === 'string' ? actor.last_name : undefined) ||
+      (typeof actor.lastName === 'string' ? actor.lastName : undefined) ||
+      null;
 
     await queryHdicr(
       `UPDATE manual_verification_sessions
@@ -108,17 +133,21 @@ export async function POST(request: NextRequest) {
     });
 
     const displayName =
-      verificationSession.stage_name ||
-      [verificationSession.first_name, verificationSession.last_name].filter(Boolean).join(' ') ||
+      actorStageName ||
+      [actorFirstName, actorLastName].filter(Boolean).join(' ') ||
       'there';
 
     if (payload.verified) {
+      if (!actorAuth0UserId) {
+        return NextResponse.json({ error: 'Actor is missing auth0_user_id' }, { status: 404 });
+      }
+
       const profileResult = await queryTi(
         `SELECT id
          FROM user_profiles
          WHERE auth0_user_id = $1
          LIMIT 1`,
-        [verificationSession.auth0_user_id]
+        [actorAuth0UserId]
       );
 
       const userProfileId = profileResult.rows[0]?.id as string | undefined;
@@ -148,9 +177,9 @@ export async function POST(request: NextRequest) {
         });
       }
 
-      if (verificationSession.email) {
+      if (actorEmail) {
         try {
-          await sendVerificationCompleteEmail(verificationSession.email, displayName, 'medium');
+          await sendVerificationCompleteEmail(actorEmail, displayName, 'medium');
         } catch (emailError) {
           console.error(
             '[ADMIN_VERIFICATION_COMPLETE] Failed to send completion email:',
@@ -158,9 +187,9 @@ export async function POST(request: NextRequest) {
           );
         }
       }
-    } else if (verificationSession.email) {
+    } else if (actorEmail) {
       try {
-        await sendVerificationRetryEmail(verificationSession.email, displayName);
+        await sendVerificationRetryEmail(actorEmail, displayName);
       } catch (emailError) {
         console.error('[ADMIN_VERIFICATION_COMPLETE] Failed to send retry email:', emailError);
       }

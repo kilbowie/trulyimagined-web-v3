@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isActor } from '@/lib/auth';
-import { queryHdicr } from '@/lib/db';
+import { queryHdicr, queryTi } from '@/lib/db';
 import { sendManualVerificationRequestAdminEmail } from '@/lib/email';
 import { DEFAULT_TENANT_ID, writeAuditLog } from '@/lib/manual-verification';
+import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
 
 // DB-OWNER: HDICR
 
@@ -48,41 +49,34 @@ export async function POST(request: NextRequest) {
 
     const tenantId = DEFAULT_TENANT_ID;
 
-    const actorResult = await queryHdicr(
-      `SELECT
-         a.id,
-         a.email,
-         a.registry_id,
-         a.first_name,
-         a.last_name,
-         a.stage_name,
-         a.verification_status,
-         up.id AS user_profile_id
-       FROM actors a
-       LEFT JOIN user_profiles up ON up.auth0_user_id = a.auth0_user_id
-       WHERE a.auth0_user_id = $1
-         AND a.tenant_id = $2
-         AND a.deleted_at IS NULL
-       LIMIT 1`,
-      [user.sub, tenantId]
-    );
+    const actorRecord = await resolveActorRecordByAuth0UserId(user.sub);
 
-    if (actorResult.rows.length === 0) {
+    if (!actorRecord?.id) {
       return NextResponse.json(
         { error: 'Complete actor registration before requesting manual verification' },
         { status: 404 }
       );
     }
 
-    const actor = actorResult.rows[0] as {
-      id: string;
-      email: string | null;
-      registry_id: string | null;
-      first_name: string | null;
-      last_name: string | null;
-      stage_name: string | null;
-      verification_status: string | null;
-      user_profile_id: string | null;
+    const profileResult = await queryTi(
+      `SELECT id
+       FROM user_profiles
+       WHERE auth0_user_id = $1
+       LIMIT 1`,
+      [user.sub]
+    );
+
+    const userProfileId = profileResult.rows[0]?.id as string | undefined;
+
+    const actor = {
+      id: actorRecord.id,
+      email: actorRecord.email ?? null,
+      registry_id: actorRecord.registry_id ?? null,
+      first_name: actorRecord.first_name ?? null,
+      last_name: actorRecord.last_name ?? null,
+      stage_name: actorRecord.stage_name ?? null,
+      verification_status: actorRecord.verification_status ?? null,
+      user_profile_id: userProfileId ?? null,
     };
 
     if (!actor.user_profile_id) {

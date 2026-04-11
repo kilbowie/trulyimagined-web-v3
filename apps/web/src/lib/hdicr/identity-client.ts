@@ -241,6 +241,25 @@ export async function getActorById(actorId: string) {
   return payload.actor ?? null;
 }
 
+export async function listActors(params?: { limit?: number; offset?: number }) {
+  const limit = params?.limit ?? 500;
+  const offset = params?.offset ?? 0;
+
+  const payload = await invokeIdentityRemote<{
+    actors?: Array<Record<string, unknown>>;
+    pagination?: { total?: number; limit?: number; offset?: number };
+  }>({
+    path: `/v1/identity?limit=${encodeURIComponent(String(limit))}&offset=${encodeURIComponent(String(offset))}`,
+    method: 'GET',
+    operation: 'actors-list',
+  });
+
+  return {
+    actors: payload.actors ?? [],
+    pagination: payload.pagination ?? { total: payload.actors?.length ?? 0, limit, offset },
+  };
+}
+
 export async function updateActorProfile(
   actorId: string,
   params: {

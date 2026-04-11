@@ -5,6 +5,7 @@ import { queryHdicr } from '@/lib/db';
 import { sendManualVerificationScheduledEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
+import { getActorById } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -54,21 +55,18 @@ export async function POST(request: NextRequest) {
 
     const tenantId = DEFAULT_TENANT_ID;
 
-    const actorResult = await queryHdicr(
-      `SELECT id, verification_status, email, first_name, last_name, stage_name
-       FROM actors
-       WHERE id = $1::uuid
-         AND tenant_id = $2
-         AND deleted_at IS NULL
-       LIMIT 1`,
-      [actorId, tenantId]
-    );
+    const actor = (await getActorById(actorId)) as Record<string, unknown> | null;
 
-    if (actorResult.rows.length === 0) {
+    if (!actor) {
       return NextResponse.json({ error: 'Actor not found' }, { status: 404 });
     }
 
-    if (actorResult.rows[0].verification_status !== 'pending') {
+    const actorVerificationStatus =
+      (typeof actor.verification_status === 'string' ? actor.verification_status : undefined) ||
+      (typeof actor.verificationStatus === 'string' ? actor.verificationStatus : undefined) ||
+      null;
+
+    if (actorVerificationStatus !== 'pending') {
       return NextResponse.json(
         { error: 'Actor is no longer pending verification' },
         { status: 409 }
@@ -158,21 +156,26 @@ export async function POST(request: NextRequest) {
     });
 
     let notificationSent = false;
-    const actor = actorResult.rows[0] as {
-      email?: string | null;
-      first_name?: string | null;
-      last_name?: string | null;
-      stage_name?: string | null;
-    };
+    const actorEmail =
+      (typeof actor.email === 'string' && actor.email.length > 0 ? actor.email : null) ?? null;
+    const actorStageName =
+      (typeof actor.stage_name === 'string' ? actor.stage_name : undefined) ||
+      (typeof actor.stageName === 'string' ? actor.stageName : undefined) ||
+      null;
+    const actorFirstName =
+      (typeof actor.first_name === 'string' ? actor.first_name : undefined) ||
+      (typeof actor.firstName === 'string' ? actor.firstName : undefined) ||
+      null;
+    const actorLastName =
+      (typeof actor.last_name === 'string' ? actor.last_name : undefined) ||
+      (typeof actor.lastName === 'string' ? actor.lastName : undefined) ||
+      null;
 
-    if (actor.email) {
+    if (actorEmail) {
       try {
         await sendManualVerificationScheduledEmail({
-          actorEmail: actor.email,
-          actorName:
-            actor.stage_name ||
-            [actor.first_name, actor.last_name].filter(Boolean).join(' ') ||
-            'there',
+          actorEmail,
+          actorName: actorStageName || [actorFirstName, actorLastName].filter(Boolean).join(' ') || 'there',
           meetingLink,
           meetingPlatform: payload.meetingPlatform || 'external',
           scheduledAt: scheduledDate.toISOString(),

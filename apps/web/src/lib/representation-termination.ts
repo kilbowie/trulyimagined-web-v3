@@ -6,6 +6,7 @@ import {
   getAgentByAuth0UserId,
   getRelationshipById,
 } from '@/lib/hdicr/representation-client';
+import { getActorById } from '@/lib/hdicr/identity-client';
 
 export class TerminationHttpError extends Error {
   status: number;
@@ -27,19 +28,27 @@ export type RepresentationTerminationNotificationContext = {
   agentRegistryId: string | null;
 };
 
+function getString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 ? value : null;
+}
+
+function getActorName(actor: Record<string, unknown> | null): string {
+  const stageName = getString(actor?.stage_name) || getString(actor?.stageName);
+  const firstName = getString(actor?.first_name) || getString(actor?.firstName);
+  const lastName = getString(actor?.last_name) || getString(actor?.lastName);
+  return stageName || [firstName, lastName].filter(Boolean).join(' ') || 'Actor';
+}
+
 export async function getTerminationNotificationContext(
   relationshipId: string
 ): Promise<RepresentationTerminationNotificationContext | null> {
   const result = await query(
     `SELECT
-       ac.email AS actor_email,
-       COALESCE(ac.stage_name, NULLIF(TRIM(COALESCE(ac.first_name, '') || ' ' || COALESCE(ac.last_name, '')), ''), 'Actor') AS actor_name,
-       ac.registry_id AS actor_registry_id,
+       aar.actor_id,
        ag.contact_email AS agent_email,
        COALESCE(ag.agency_name, 'Agency') AS agency_name,
        ag.registry_id AS agent_registry_id
      FROM actor_agent_relationships aar
-     INNER JOIN actors ac ON ac.id = aar.actor_id
      INNER JOIN agents ag ON ag.id = aar.agent_id
      WHERE aar.id = $1
      LIMIT 1`,
@@ -51,10 +60,12 @@ export async function getTerminationNotificationContext(
     return null;
   }
 
+  const actor = (await getActorById(String(row.actor_id))) as Record<string, unknown> | null;
+
   return {
-    actorEmail: row.actor_email || null,
-    actorName: row.actor_name || 'Actor',
-    actorRegistryId: row.actor_registry_id || null,
+    actorEmail: getString(actor?.email),
+    actorName: getActorName(actor),
+    actorRegistryId: getString(actor?.registry_id) || getString(actor?.registryId),
     agentEmail: row.agent_email || null,
     agencyName: row.agency_name || 'Agency',
     agentRegistryId: row.agent_registry_id || null,
@@ -191,20 +202,29 @@ export async function listPendingTerminations(params: { actorId?: string; agentI
        rt.effective_date,
        rt.status,
        a.agency_name,
-       a.registry_id AS agent_registry_id,
-       ac.registry_id AS actor_registry_id,
-       ac.stage_name,
-       ac.first_name,
-       ac.last_name
+       a.registry_id AS agent_registry_id
      FROM representation_terminations rt
      INNER JOIN agents a ON a.id = rt.agent_id
-     INNER JOIN actors ac ON ac.id = rt.actor_id
      WHERE ${filters.join(' AND ')}
      ORDER BY rt.effective_date ASC`,
     values
   );
 
-  return result.rows;
+  const enrichedRows = await Promise.all(
+    result.rows.map(async (row) => {
+      const actor = (await getActorById(String(row.actor_id))) as Record<string, unknown> | null;
+
+      return {
+        ...row,
+        actor_registry_id: getString(actor?.registry_id) || getString(actor?.registryId),
+        stage_name: getString(actor?.stage_name) || getString(actor?.stageName),
+        first_name: getString(actor?.first_name) || getString(actor?.firstName),
+        last_name: getString(actor?.last_name) || getString(actor?.lastName),
+      };
+    })
+  );
+
+  return enrichedRows;
 }
 
 export async function applyDueRepresentationTerminations(limit = 100) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { isAdmin } from '@/lib/auth';
 import { query } from '@/lib/db';
+import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
 
 // DB-OWNER: TI
 
@@ -29,29 +30,38 @@ export async function GET(): Promise<NextResponse> {
         up.is_pro,
         up.created_at,
         up.updated_at,
-        a.id AS actor_id,
-        a.first_name,
-        a.last_name,
-        a.stage_name,
-        a.verification_status,
-        a.registry_id,
         ag.id AS agent_id,
         ag.agency_name,
         ag.verification_status AS agent_verification_status,
         ag.registry_id AS agent_registry_id,
         ag.profile_completed AS agent_profile_completed
       FROM user_profiles up
-      LEFT JOIN actors a ON a.auth0_user_id = up.auth0_user_id AND a.deleted_at IS NULL
       LEFT JOIN agents ag ON ag.auth0_user_id = up.auth0_user_id AND ag.deleted_at IS NULL
       ORDER BY up.created_at DESC
     `
     );
 
+    const users = await Promise.all(
+      usersResult.rows.map(async (row) => {
+        const actor = await resolveActorRecordByAuth0UserId(String(row.auth0_user_id));
+
+        return {
+          ...row,
+          actor_id: actor?.id ?? null,
+          first_name: actor?.first_name ?? null,
+          last_name: actor?.last_name ?? null,
+          stage_name: actor?.stage_name ?? null,
+          verification_status: actor?.verification_status ?? null,
+          registry_id: actor?.registry_id ?? null,
+        };
+      })
+    );
+
     return NextResponse.json({
       success: true,
       data: {
-        users: usersResult.rows,
-        total: usersResult.rows.length,
+        users,
+        total: users.length,
       },
     });
   } catch (error) {
