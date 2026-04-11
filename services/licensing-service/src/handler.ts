@@ -1,6 +1,11 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
-import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
+import {
+  validateAuth0TokenWithStatus,
+  hasScope,
+  getOrCreateCorrelationId,
+  withCorrelationHeaders,
+} from '@trulyimagined/middleware';
 import { z } from 'zod';
 
 /**
@@ -89,10 +94,22 @@ function parseJsonBody<T>(event: APIGatewayProxyEvent, schema: z.ZodType<T>) {
 }
 
 export const handler: APIGatewayProxyHandler = async (event) => {
+  const correlationId = getOrCreateCorrelationId(event);
+  const responseHeaders = withCorrelationHeaders(corsHeaders, correlationId);
+  const withCorrelation = (response: {
+    statusCode: number;
+    headers?: Record<string, string>;
+    body: string;
+  }) => ({
+    ...response,
+    headers: withCorrelationHeaders(response.headers ?? corsHeaders, correlationId),
+  });
+
   console.log('[LICENSING-SERVICE] Request received:', {
     path: event.path,
     method: event.httpMethod,
     pathParameters: event.pathParameters,
+    correlationId,
   });
 
   const { httpMethod, path } = event;
@@ -100,14 +117,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
-      return { statusCode: 200, headers: corsHeaders, body: '' };
+      return { statusCode: 200, headers: responseHeaders, body: '' };
     }
 
     const authResult = await validateAuth0TokenWithStatus(event);
     if (!authResult.user) {
       return {
         statusCode: authResult.errorStatus || 401,
-        headers: corsHeaders,
+        headers: responseHeaders,
         body: JSON.stringify({
           error: authResult.errorStatus === 403 ? 'Token rejected' : 'Unauthorized',
         }),
@@ -121,7 +138,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (!hasScope(user, requiredScope)) {
       return {
         statusCode: 403,
-        headers: corsHeaders,
+        headers: responseHeaders,
         body: JSON.stringify({
           error: 'Forbidden',
           detail: `Missing required scope: ${requiredScope}`,
@@ -133,31 +150,31 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     // Route based on path and method
     if (path === '/v1/license/request' && httpMethod === 'POST') {
-      return await requestLicense(event, tenantId);
+      return withCorrelation(await requestLicense(event, tenantId));
     }
 
     if (path.startsWith('/v1/license/actor/') && httpMethod === 'GET') {
-      return await getLicenseRequests(event, tenantId);
+      return withCorrelation(await getLicenseRequests(event, tenantId));
     }
 
     if (path.startsWith('/v1/license/') && path.endsWith('/approve') && httpMethod === 'POST') {
-      return await approveLicense(event, tenantId);
+      return withCorrelation(await approveLicense(event, tenantId));
     }
 
     if (path.startsWith('/v1/license/') && path.endsWith('/reject') && httpMethod === 'POST') {
-      return await rejectLicense(event, tenantId);
+      return withCorrelation(await rejectLicense(event, tenantId));
     }
 
     return {
       statusCode: 404,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: JSON.stringify({ error: 'Not found' }),
     };
   } catch (error: any) {
-    console.error('[LICENSING-SERVICE] Error:', error);
+    console.error('[LICENSING-SERVICE] Error:', { error, correlationId });
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: JSON.stringify({
         error: 'Internal server error',
         message: error.message,

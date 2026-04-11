@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@trulyimagined/middleware', () => ({
   validateAuth0TokenWithStatus: vi.fn(),
   hasScope: vi.fn().mockReturnValue(false),
+  getOrCreateCorrelationId: vi.fn().mockReturnValue('test-correlation-id'),
+  withCorrelationHeaders: vi.fn((headers, correlationId) => ({
+    ...headers,
+    'X-Correlation-ID': correlationId,
+  })),
 }));
 
 vi.mock('@trulyimagined/database', () => ({

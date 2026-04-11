@@ -236,6 +236,36 @@ export function extractUserAgent(event: APIGatewayProxyEvent): string {
   return event.headers['User-Agent'] || event.headers['user-agent'] || 'unknown';
 }
 
+export function getOrCreateCorrelationId(event: APIGatewayProxyEvent): string {
+  const existing =
+    event.headers['X-Correlation-ID'] ||
+    event.headers['x-correlation-id'] ||
+    event.headers['X-Request-ID'] ||
+    event.headers['x-request-id'];
+
+  if (typeof existing === 'string' && existing.trim().length > 0) {
+    return existing.trim();
+  }
+
+  const uuidFactory = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto
+    ?.randomUUID;
+  if (typeof uuidFactory === 'function') {
+    return uuidFactory();
+  }
+
+  return `corr-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+export function withCorrelationHeaders(
+  headers: Record<string, string>,
+  correlationId: string
+): Record<string, string> {
+  return {
+    ...headers,
+    'X-Correlation-ID': correlationId,
+  };
+}
+
 // ==================== CONSENT ENFORCEMENT ====================
 
 /**

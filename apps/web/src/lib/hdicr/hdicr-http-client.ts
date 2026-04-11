@@ -18,6 +18,9 @@ type TokenCache = {
 };
 
 const tokenCacheByKey = new Map<string, TokenCache>();
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
+const DEFAULT_TOKEN_FETCH_TIMEOUT_MS = 10_000;
+const DEFAULT_REMOTE_FETCH_TIMEOUT_MS = 15_000;
 
 export class HdicrHttpError extends Error {
   statusCode: number;
@@ -108,26 +111,33 @@ async function getHdicrToken(domain: HdicrDomain): Promise<string> {
   const cacheKey = `${clientId}:${audience}`;
   const now = Date.now();
   const cachedToken = tokenCacheByKey.get(cacheKey);
-  if (cachedToken && now < cachedToken.expiresAt - 30_000) {
+  if (cachedToken && now < cachedToken.expiresAt - TOKEN_REFRESH_BUFFER_MS) {
     return cachedToken.token;
   }
 
   let tokenResponse: Response;
   try {
-    tokenResponse = await fetch(`https://${auth0Domain}/oauth/token`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+    tokenResponse = await fetchWithTimeout(
+      `https://${auth0Domain}/oauth/token`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          audience,
+          grant_type: 'client_credentials',
+        }),
+        cache: 'no-store',
       },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        audience,
-        grant_type: 'client_credentials',
-      }),
-      cache: 'no-store',
-    });
-  } catch {
+      resolveTimeoutMs('HDICR_TOKEN_FETCH_TIMEOUT_MS', DEFAULT_TOKEN_FETCH_TIMEOUT_MS)
+    );
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new HdicrHttpError(503, '[HDICR] Failed to acquire M2M token (timeout).');
+    }
     throw new HdicrHttpError(503, '[HDICR] Failed to acquire M2M token (network failure).');
   }
 
@@ -162,24 +172,37 @@ export async function invokeHdicrRemote<T>(params: {
   method: HdicrMethod;
   operation: string;
   body?: unknown;
+  correlationId?: string;
 }): Promise<T> {
   const url = new URL(params.path, params.baseUrl);
 
   const token = await getHdicrToken(params.domain);
+  const correlationId = params.correlationId || generateCorrelationId();
 
   let response: Response;
   try {
-    response = await fetch(url.toString(), {
-      method: params.method,
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+    response = await fetchWithTimeout(
+      url.toString(),
+      {
+        method: params.method,
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`,
+          'X-Correlation-ID': correlationId,
+          ...(params.body ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: params.body ? JSON.stringify(params.body) : undefined,
+        cache: 'no-store',
       },
-      body: params.body ? JSON.stringify(params.body) : undefined,
-      cache: 'no-store',
-    });
-  } catch {
+      resolveTimeoutMs('HDICR_REMOTE_FETCH_TIMEOUT_MS', DEFAULT_REMOTE_FETCH_TIMEOUT_MS)
+    );
+  } catch (error) {
+    if (isAbortError(error)) {
+      throw new HdicrHttpError(
+        503,
+        `[HDICR] Remote ${params.domain} ${params.operation} timed out (fail-closed).`
+      );
+    }
     throw new HdicrHttpError(
       503,
       `[HDICR] Remote ${params.domain} ${params.operation} failed due to network error (fail-closed).`
@@ -198,4 +221,52 @@ export async function invokeHdicrRemote<T>(params: {
 
 function capitalize(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function resolveTimeoutMs(envVar: string, fallbackMs: number): number {
+  const raw = process.env[envVar]?.trim();
+  if (!raw) {
+    return fallbackMs;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallbackMs;
+}
+
+async function fetchWithTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+function isAbortError(error: unknown): boolean {
+  if (error instanceof DOMException) {
+    return error.name === 'AbortError';
+  }
+
+  if (!error || typeof error !== 'object' || !('name' in error)) {
+    return false;
+  }
+
+  const namedError = error as { name?: unknown };
+  return namedError.name === 'AbortError';
+}
+
+function generateCorrelationId(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  return `corr-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }

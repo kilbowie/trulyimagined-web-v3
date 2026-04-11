@@ -21,7 +21,7 @@ describe('hdicr-http-client', () => {
     vi.restoreAllMocks();
   });
 
-  it('attaches bearer token and uses 30s-safe cache window', async () => {
+  it('attaches bearer token and uses 5m-safe cache window', async () => {
     process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
     process.env.AUTH0_DOMAIN = 'tenant.example.com';
     process.env.AUTH0_AUDIENCE = 'https://api.trulyimagined.com';
@@ -33,7 +33,7 @@ describe('hdicr-http-client', () => {
       .mockResolvedValueOnce({
         ok: true,
         status: 200,
-        json: async () => ({ access_token: 'token-abc', expires_in: 300 }),
+        json: async () => ({ access_token: 'token-abc', expires_in: 3600 }),
       })
       .mockResolvedValueOnce({
         ok: true,

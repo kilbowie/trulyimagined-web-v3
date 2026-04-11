@@ -1,6 +1,10 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient } from '@trulyimagined/database';
-import { validateAuth0TokenWithStatus } from '@trulyimagined/middleware';
+import {
+  validateAuth0TokenWithStatus,
+  getOrCreateCorrelationId,
+  withCorrelationHeaders,
+} from '@trulyimagined/middleware';
 import { z } from 'zod';
 
 /**
@@ -666,11 +670,29 @@ async function handleEndRelationship(event: APIGatewayProxyEvent, tenantId: stri
  * Main Lambda handler - routes to appropriate handler based on path and method
  */
 export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEvent) => {
+  const correlationId = getOrCreateCorrelationId(event);
+  const responseHeaders = withCorrelationHeaders(corsHeaders, correlationId);
+  const withCorrelation = (response: {
+    statusCode: number;
+    headers?: Record<string, string>;
+    body: string;
+  }) => ({
+    ...response,
+    headers: withCorrelationHeaders(response.headers ?? corsHeaders, correlationId),
+  });
+
+  console.log('[REPRESENTATION-SERVICE] Request received:', {
+    path: event.path,
+    method: event.httpMethod,
+    pathParameters: event.pathParameters,
+    correlationId,
+  });
+
   // Handle CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: '',
     };
   }
@@ -680,7 +702,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   if (!authResult.user) {
     return {
       statusCode: authResult.errorStatus || 401,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: JSON.stringify({
         error: authResult.errorStatus === 403 ? 'Token rejected' : 'Unauthorized',
       }),
@@ -697,7 +719,7 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   const method = event.httpMethod || '';
 
   if (path.includes('/actor') && method === 'GET' && path.includes('auth0UserId')) {
-    return handleGetActorByAuth0(event, tenantId);
+    return withCorrelation(await handleGetActorByAuth0(event, tenantId));
   }
 
   if (
@@ -706,22 +728,22 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     path.includes('auth0UserId') &&
     !path.includes('registry')
   ) {
-    return handleGetAgentByAuth0(event, tenantId);
+    return withCorrelation(await handleGetAgentByAuth0(event, tenantId));
   }
 
   if (path.includes('/agent-by-registry') && method === 'GET') {
-    return handleGetAgentByRegistry(event, tenantId);
+    return withCorrelation(await handleGetAgentByRegistry(event, tenantId));
   }
 
   if (path.includes('/active') && method === 'GET') {
     if (path.includes('/request/')) {
-      return handleCheckPendingRequest(event, tenantId);
+      return withCorrelation(await handleCheckPendingRequest(event, tenantId));
     }
     if (path.includes('/relationship/')) {
-      return handleCheckActiveRelationship(event, tenantId);
+      return withCorrelation(await handleCheckActiveRelationship(event, tenantId));
     }
     // Default: assume it's for representation
-    return handleGetActiveRepresentation(event, tenantId);
+    return withCorrelation(await handleGetActiveRepresentation(event, tenantId));
   }
 
   if (
@@ -730,15 +752,15 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     !path.includes('/requests') &&
     !path.includes('update')
   ) {
-    return handleCreateRepresentationRequest(event, tenantId);
+    return withCorrelation(await handleCreateRepresentationRequest(event, tenantId));
   }
 
   if (path.includes('/requests/incoming') && method === 'GET') {
-    return handleListIncomingRequests(event, tenantId);
+    return withCorrelation(await handleListIncomingRequests(event, tenantId));
   }
 
   if (path.includes('/requests/outgoing') && method === 'GET') {
-    return handleListOutgoingRequests(event, tenantId);
+    return withCorrelation(await handleListOutgoingRequests(event, tenantId));
   }
 
   if (
@@ -747,32 +769,32 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
     !path.includes('requests') &&
     !path.includes('update')
   ) {
-    return handleGetRepresentationRequest(event, tenantId);
+    return withCorrelation(await handleGetRepresentationRequest(event, tenantId));
   }
 
   if (path.includes('/request/update') && method === 'POST') {
-    return handleUpdateRepresentationRequest(event, tenantId);
+    return withCorrelation(await handleUpdateRepresentationRequest(event, tenantId));
   }
 
   if (path.includes('/relationship') && method === 'POST' && !path.includes('/end')) {
-    return handleCreateRelationship(event, tenantId);
+    return withCorrelation(await handleCreateRelationship(event, tenantId));
   }
 
   if (path.includes('/relationship') && method === 'GET' && !path.includes('/end')) {
-    return handleGetRelationship(event, tenantId);
+    return withCorrelation(await handleGetRelationship(event, tenantId));
   }
 
   if (path.includes('/relationship/end') && method === 'POST') {
-    return handleEndRelationship(event, tenantId);
+    return withCorrelation(await handleEndRelationship(event, tenantId));
   }
 
   if (path.includes('/relationship/active') && method === 'GET') {
-    return handleCheckActiveRelationship(event, tenantId);
+    return withCorrelation(await handleCheckActiveRelationship(event, tenantId));
   }
 
   return {
     statusCode: 404,
-    headers: corsHeaders,
+    headers: responseHeaders,
     body: JSON.stringify({ error: 'Not found' }),
   };
 };

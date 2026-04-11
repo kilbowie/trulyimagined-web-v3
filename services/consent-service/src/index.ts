@@ -1,5 +1,10 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
+import {
+  validateAuth0TokenWithStatus,
+  hasScope,
+  getOrCreateCorrelationId,
+  withCorrelationHeaders,
+} from '@trulyimagined/middleware';
 import { grantConsent } from './handlers/grant-consent';
 import { revokeConsent } from './handlers/revoke-consent';
 import { checkConsent } from './handlers/check-consent';
@@ -27,10 +32,14 @@ const corsHeaders = {
 };
 
 export const handler: APIGatewayProxyHandler = async (event) => {
+  const correlationId = getOrCreateCorrelationId(event);
+  const responseHeaders = withCorrelationHeaders(corsHeaders, correlationId);
+
   console.log('[CONSENT-SERVICE] Request received:', {
     path: event.path,
     method: event.httpMethod,
     pathParameters: event.pathParameters,
+    correlationId,
   });
 
   const { httpMethod, path } = event;
@@ -38,14 +47,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     // Handle CORS preflight
     if (httpMethod === 'OPTIONS') {
-      return { statusCode: 200, headers: corsHeaders, body: '' };
+      return { statusCode: 200, headers: responseHeaders, body: '' };
     }
 
     const authResult = await validateAuth0TokenWithStatus(event);
     if (!authResult.user) {
       return {
         statusCode: authResult.errorStatus || 401,
-        headers: corsHeaders,
+        headers: responseHeaders,
         body: JSON.stringify({
           error: authResult.errorStatus === 403 ? 'Token rejected' : 'Unauthorized',
         }),
@@ -59,7 +68,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     if (!hasScope(user, requiredScope)) {
       return {
         statusCode: 403,
-        headers: corsHeaders,
+        headers: responseHeaders,
         body: JSON.stringify({
           error: 'Forbidden',
           detail: `Missing required scope: ${requiredScope}`,
@@ -72,44 +81,44 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     // Route to handlers
     if (path === '/v1/consent/grant' && httpMethod === 'POST') {
       const response = await grantConsent(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     if (path === '/v1/consent/revoke' && httpMethod === 'POST') {
       const response = await revokeConsent(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     if (path === '/v1/consent/check' && httpMethod === 'GET') {
       const response = await checkConsent(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     if (path === '/v1/consent/enforcement/check' && httpMethod === 'POST') {
       const response = await checkConsentEnforcement(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     if (path === '/v1/consent/list' && httpMethod === 'GET') {
       const response = await listConsents(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     if (path.startsWith('/v1/consent/') && httpMethod === 'GET') {
       const response = await listConsents(event, tenantId);
-      return { ...response, headers: corsHeaders };
+      return { ...response, headers: responseHeaders };
     }
 
     return {
       statusCode: 404,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: JSON.stringify({ error: 'Not found' }),
     };
   } catch (error: any) {
-    console.error('[CONSENT-SERVICE] Error:', error);
+    console.error('[CONSENT-SERVICE] Error:', { error, correlationId });
     return {
       statusCode: 500,
-      headers: corsHeaders,
+      headers: responseHeaders,
       body: JSON.stringify({
         error: 'Internal server error',
         message: error.message,

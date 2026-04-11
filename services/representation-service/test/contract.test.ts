@@ -23,6 +23,11 @@ vi.mock('@trulyimagined/middleware', () => ({
       user: { sub: 'client@clients', tenantId: 'trulyimagined', scopes: ['hdicr:representation:read'] },
     };
   }),
+  getOrCreateCorrelationId: vi.fn().mockReturnValue('test-correlation-id'),
+  withCorrelationHeaders: vi.fn((headers, correlationId) => ({
+    ...headers,
+    'X-Correlation-ID': correlationId,
+  })),
 }));
 
 import { handler } from '../src/index';
