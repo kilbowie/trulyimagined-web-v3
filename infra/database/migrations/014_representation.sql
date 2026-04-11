@@ -6,7 +6,7 @@
 CREATE TABLE IF NOT EXISTS representation_requests (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  actor_id UUID NOT NULL REFERENCES actors(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL,
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
 
   status VARCHAR(50) NOT NULL DEFAULT 'pending'
@@ -33,7 +33,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS ux_representation_requests_pending_actor_agent
 CREATE TABLE IF NOT EXISTS actor_agent_relationships (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
-  actor_id UUID NOT NULL REFERENCES actors(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL,
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   representation_request_id UUID REFERENCES representation_requests(id) ON DELETE SET NULL,
 

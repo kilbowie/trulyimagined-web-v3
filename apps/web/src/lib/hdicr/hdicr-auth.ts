@@ -45,7 +45,9 @@ export async function getM2mToken(): Promise<string> {
       cache: 'no-store',
     });
   } catch (error) {
-    throw new Error(`Failed to acquire M2M token (network error): ${error instanceof Error ? error.message : 'unknown'}`);
+    throw new Error(
+      `Failed to acquire M2M token (network error): ${error instanceof Error ? error.message : 'unknown'}`
+    );
   }
 
   if (!response.ok) {

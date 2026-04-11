@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS representation_terminations (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
 
   relationship_id UUID NOT NULL REFERENCES actor_agent_relationships(id) ON DELETE CASCADE,
-  actor_id UUID NOT NULL REFERENCES actors(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL,
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
 
   initiated_by VARCHAR(20) NOT NULL CHECK (initiated_by IN ('actor', 'agent')),

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS agent_invitation_codes (
   agent_id UUID NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  used_by_actor_id UUID REFERENCES actors(id) ON DELETE SET NULL,
+  used_by_actor_id UUID,
   redeemed_at TIMESTAMP WITH TIME ZONE,
   tenant_id TEXT,
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),

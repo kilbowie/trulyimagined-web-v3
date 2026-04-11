@@ -59,7 +59,12 @@ END $$;
 -- actor_media -> actors
 DO $$
 BEGIN
-  ALTER TABLE actor_media DROP CONSTRAINT IF EXISTS actor_media_actor_id_fkey;
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'actor_media'
+  ) THEN
+    ALTER TABLE actor_media DROP CONSTRAINT IF EXISTS actor_media_actor_id_fkey;
+  END IF;
 END $$;
 
 -- ===========================================
@@ -161,7 +166,10 @@ $$;
 -- actor_media
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_validate_actor_media_actor') THEN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'actor_media'
+  ) AND NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'trg_validate_actor_media_actor') THEN
     CREATE TRIGGER trg_validate_actor_media_actor
       BEFORE INSERT OR UPDATE ON actor_media
       FOR EACH ROW EXECUTE FUNCTION public.fn_validate_hdicr_ref_actor();

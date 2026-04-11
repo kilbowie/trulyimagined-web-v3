@@ -3,6 +3,10 @@
 -- Date: 2026-03-23
 -- Description: Replace Auth0 RBAC with PostgreSQL-based role system
 
+-- Enable required extensions (idempotent for both HDICR and TI)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
 CREATE TABLE IF NOT EXISTS user_profiles (
   -- Primary key
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

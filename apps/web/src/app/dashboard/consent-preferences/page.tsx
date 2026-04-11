@@ -672,8 +672,7 @@ export default function ConsentPreferencesPage() {
 
       if (data.serviceUnavailable) {
         setError(
-          data.message ||
-            'Consent service is temporarily unavailable. Please try again shortly.'
+          data.message || 'Consent service is temporarily unavailable. Please try again shortly.'
         );
         setCurrentConsent(null);
         setLicenseCount(0);

@@ -4,12 +4,6 @@
 -- Purpose: Add tenant_id to TI-owned tables and normalize the existing nullable
 --          TEXT tenant_id on agent_invitation_codes to VARCHAR(100) NOT NULL.
 
--- ===========================================
--- ADD TENANT_ID COLUMNS (idempotent)
--- ===========================================
-ALTER TABLE actor_media
-  ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
-
 ALTER TABLE support_tickets
   ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 
@@ -60,12 +54,6 @@ END $$;
 -- TENANT-SCOPED INDEXES
 -- ===========================================
 
--- actor_media
-CREATE INDEX IF NOT EXISTS idx_actor_media_tenant_id
-  ON actor_media(tenant_id);
-CREATE INDEX IF NOT EXISTS idx_actor_media_tenant_actor_type
-  ON actor_media(tenant_id, actor_id, media_type);
-
 -- support_tickets
 CREATE INDEX IF NOT EXISTS idx_support_tickets_tenant_id
   ON support_tickets(tenant_id);
@@ -106,7 +94,7 @@ CREATE INDEX IF NOT EXISTS idx_actor_agent_relationships_tenant_actor
 CREATE INDEX IF NOT EXISTS idx_agency_team_members_tenant_id
   ON agency_team_members(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_agency_team_members_tenant_agent
-  ON agency_team_members(tenant_id, agent_id);
+  ON agency_team_members(tenant_id, agency_id);
 
 -- representation_terminations
 CREATE INDEX IF NOT EXISTS idx_representation_terminations_tenant_id
@@ -123,7 +111,6 @@ CREATE INDEX IF NOT EXISTS idx_agent_invitation_codes_tenant_agent
 -- ===========================================
 -- COLUMN DOCUMENTATION
 -- ===========================================
-COMMENT ON COLUMN actor_media.tenant_id IS 'Tenant identifier owning this media record';
 COMMENT ON COLUMN support_tickets.tenant_id IS 'Tenant identifier owning this support ticket';
 COMMENT ON COLUMN support_ticket_messages.tenant_id IS 'Tenant identifier owning this support ticket message';
 COMMENT ON COLUMN user_feedback.tenant_id IS 'Tenant identifier owning this feedback submission';

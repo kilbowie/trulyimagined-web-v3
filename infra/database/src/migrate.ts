@@ -50,6 +50,7 @@ const HDICR_MIGRATION_ORDER = [
 ];
 
 const TI_MIGRATION_ORDER = [
+  '0_ti_initial_extensions.sql',
   '002_user_profiles.sql',
   '005_actor_media.sql',
   '009_support_tickets.sql',
@@ -66,6 +67,7 @@ const TI_MIGRATION_ORDER = [
   '031_ti_remove_cross_db_fks_add_validators.sql',
   '032_ti_soft_delete_admin_views.sql',
   '033_ti_rls_policies.sql',
+  '034_ti_actor_media_tenant_backfill.sql',
 ];
 
 type MigrationDb = {
@@ -179,7 +181,6 @@ async function runMigrations() {
   console.log('[MIGRATION] Starting database migrations...\n');
   const domain = parseDomain();
   configureConnectionForDomain(domain);
-
   // Important: import the DB client only after DATABASE_URL has been finalized.
   // client.ts exports an eagerly initialized singleton that would otherwise lock
   // onto a stale URL before --domain remapping is applied.

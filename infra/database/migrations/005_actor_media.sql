@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS actor_media (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
   -- Actor reference
-  actor_id UUID NOT NULL REFERENCES actors(id) ON DELETE CASCADE,
+  actor_id UUID NOT NULL,
   
   -- Media details
   media_type VARCHAR(50) NOT NULL CHECK (media_type IN ('headshot', 'audio_reel', 'video_reel')),

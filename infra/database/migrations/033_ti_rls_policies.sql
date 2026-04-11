@@ -13,7 +13,6 @@
 -- ===========================================
 -- ENABLE RLS ON TI TABLES
 -- ===========================================
-ALTER TABLE actor_media               ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_tickets           ENABLE ROW LEVEL SECURITY;
 ALTER TABLE support_ticket_messages   ENABLE ROW LEVEL SECURITY;
 ALTER TABLE user_feedback             ENABLE ROW LEVEL SECURITY;
@@ -27,18 +26,6 @@ ALTER TABLE agent_invitation_codes    ENABLE ROW LEVEL SECURITY;
 -- ===========================================
 -- TENANT ISOLATION POLICIES
 -- ===========================================
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies WHERE tablename = 'actor_media' AND policyname = 'actor_media_tenant_isolation'
-  ) THEN
-    EXECUTE 'CREATE POLICY actor_media_tenant_isolation ON actor_media
-      FOR ALL
-      USING (tenant_id = current_setting(''app.current_tenant_id'', true))
-      WITH CHECK (tenant_id = current_setting(''app.current_tenant_id'', true))';
-  END IF;
-END $$;
-
 DO $$
 BEGIN
   IF NOT EXISTS (
