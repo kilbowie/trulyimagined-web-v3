@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { queryHdicr } from '@/lib/db';
+import { queryTi } from '@/lib/db';
+import {
+  getActorByAuth0UserId,
+  checkActiveConsent,
+  checkManualVerificationRequest,
+} from '@/lib/hdicr/client-helpers';
 
 // DB-OWNER: HDICR
 
@@ -24,7 +29,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profileResult = await queryHdicr(
+    const profileResult = await queryTi(
       `SELECT id, role, profile_completed
        FROM user_profiles
        WHERE auth0_user_id = $1
@@ -41,51 +46,22 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }
 
-    const actorResult = await queryHdicr(
-      `SELECT id, registry_id, verification_status
-       FROM actors
-       WHERE auth0_user_id = $1
-         AND tenant_id = $2
-         AND deleted_at IS NULL
-       LIMIT 1`,
-      [user.sub, DEFAULT_TENANT_ID]
-    );
-
-    const actor = actorResult.rows[0] || null;
+    const actor = await getActorByAuth0UserId(user.sub, DEFAULT_TENANT_ID);
     const actorId = actor?.id || null;
     const hasRegistration = Boolean(actorId);
-    const isVerified = actor?.verification_status === 'verified';
+    const isVerified = actor?.verificationStatus === 'verified';
 
     let hasActiveConsent = false;
     let hasManualVerificationRequest = false;
 
     if (actorId) {
-      const [consentResult, manualVerificationResult] = await Promise.all([
-        queryHdicr(
-          `SELECT EXISTS (
-             SELECT 1
-             FROM consent_ledger
-             WHERE actor_id = $1::uuid
-               AND status = 'active'
-           ) AS has_active_consent`,
-          [actorId]
-        ),
-        queryHdicr(
-          `SELECT EXISTS (
-             SELECT 1
-             FROM manual_verification_sessions
-             WHERE actor_id = $1::uuid
-               AND tenant_id = $2
-               AND status IN ('pending_scheduling', 'scheduled', 'completed')
-           ) AS has_manual_verification_request`,
-          [actorId, DEFAULT_TENANT_ID]
-        ),
+      const [consentResult, verificationResult] = await Promise.all([
+        checkActiveConsent(actorId),
+        checkManualVerificationRequest(actorId, DEFAULT_TENANT_ID),
       ]);
 
-      hasActiveConsent = Boolean(consentResult.rows[0]?.has_active_consent);
-      hasManualVerificationRequest = Boolean(
-        manualVerificationResult.rows[0]?.has_manual_verification_request
-      );
+      hasActiveConsent = consentResult;
+      hasManualVerificationRequest = verificationResult;
     }
 
     // Clarification-driven flow:
@@ -138,8 +114,8 @@ export async function GET() {
       success: true,
       data: {
         actorId,
-        registryId: actor?.registry_id || null,
-        verificationStatus: actor?.verification_status || 'unregistered',
+        registryId: actor?.registryId || null,
+        verificationStatus: actor?.verificationStatus || 'unregistered',
         profileCompleted: Boolean(profile.profile_completed),
         canProfileGoLive: hasRegistration && hasActiveConsent && isVerified,
         currentStep,

@@ -7,12 +7,23 @@ vi.mock('@/lib/auth0', () => ({
 }));
 
 vi.mock('@/lib/db', () => ({
-  queryHdicr: vi.fn(),
+  queryTi: vi.fn(),
+}));
+
+vi.mock('@/lib/hdicr/client-helpers', () => ({
+  getActorByAuth0UserId: vi.fn(),
+  checkActiveConsent: vi.fn(),
+  checkManualVerificationRequest: vi.fn(),
 }));
 
 import { GET } from './route';
 import { auth0 } from '@/lib/auth0';
-import { queryHdicr } from '@/lib/db';
+import { queryTi } from '@/lib/db';
+import {
+  getActorByAuth0UserId,
+  checkActiveConsent,
+  checkManualVerificationRequest,
+} from '@/lib/hdicr/client-helpers';
 
 describe('GET /api/onboarding/status - Contract Test', () => {
   beforeEach(() => {
@@ -34,16 +45,23 @@ describe('GET /api/onboarding/status - Contract Test', () => {
       user: { sub: 'auth0|actor-1' },
     } as any);
 
-    const mockQuery = vi.mocked(queryHdicr);
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ id: 'profile-1', role: 'Actor', profile_completed: true }],
-      } as any)
-      .mockResolvedValueOnce({
-        rows: [{ id: 'actor-1', registry_id: 'reg-1', verification_status: 'pending' }],
-      } as any)
-      .mockResolvedValueOnce({ rows: [{ has_active_consent: false }] } as any)
-      .mockResolvedValueOnce({ rows: [{ has_manual_verification_request: true }] } as any);
+    vi.mocked(queryTi).mockResolvedValueOnce({
+      rows: [{ id: 'profile-1', role: 'Actor', profile_completed: true }],
+    } as any);
+
+    vi.mocked(getActorByAuth0UserId).mockResolvedValueOnce({
+      id: 'actor-1',
+      auth0UserId: 'auth0|actor-1',
+      email: 'actor@example.com',
+      firstName: 'Test',
+      lastName: 'Actor',
+      registryId: 'reg-1',
+      verificationStatus: 'pending',
+      createdAt: '2024-01-01T00:00:00Z',
+    } as any);
+
+    vi.mocked(checkActiveConsent).mockResolvedValueOnce(false);
+    vi.mocked(checkManualVerificationRequest).mockResolvedValueOnce(true);
 
     const response = await GET();
     const data = await response.json();
