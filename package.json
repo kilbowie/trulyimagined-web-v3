@@ -11,6 +11,9 @@
   ],
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "db:migrate": "pnpm --filter @trulyimagined/database migrate",
+    "db:migrate:hdicr": "pnpm --filter @trulyimagined/database migrate:hdicr",
+    "db:migrate:ti": "pnpm --filter @trulyimagined/database migrate:ti",
     "build": "pnpm -r build",
     "lint": "pnpm -r lint",
     "check:hdicr-db-coimport": "bash scripts/check-hdicr-db-coimport.sh",
