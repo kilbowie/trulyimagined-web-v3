@@ -20,6 +20,48 @@ import crypto from 'crypto';
 import path from 'path';
 
 const TRACKING_TABLE = 'schema_migrations';
+const HDICR_DOMAIN = 'hdicr';
+const TI_DOMAIN = 'ti';
+
+const HDICR_MIGRATION_ORDER = [
+  '001_initial_schema.sql',
+  '002_user_profiles.sql',
+  '003_link_actors_to_user_profiles.sql',
+  '004_identity_links.sql',
+  '006_verifiable_credentials.sql',
+  '007_bitstring_status_lists.sql',
+  '008_consent_ledger_licenses.sql',
+  '016_tenant_isolation.sql',
+  '017_rls_policies.sql',
+  '018_neutral_schema_aliases.sql',
+  '019_manual_verification_sessions.sql',
+  '020_guardrails_foundation.sql',
+  '021_guardrails_immutability_and_audit.sql',
+  '022_guardrails_data_flow_contracts.sql',
+  '025_hdicr_tenant_completion.sql',
+  '026_hdicr_soft_delete_admin_views.sql',
+  '027_hdicr_outbox_sync_events.sql',
+  '028_hdicr_drop_ti_domain_tables.sql',
+];
+
+const TI_MIGRATION_ORDER = [
+  '002_user_profiles.sql',
+  '005_actor_media.sql',
+  '009_support_tickets.sql',
+  '010_user_feedback.sql',
+  '011_feedback_support_linkage.sql',
+  '012_user_profile_status_flags.sql',
+  '013_agents.sql',
+  '014_representation.sql',
+  '015_agency_team_members.sql',
+  '023_representation_terminations.sql',
+  '024_agent_invitation_codes.sql',
+  '029_ti_tenant_completion.sql',
+  '030_ti_hdicr_ref_schema.sql',
+  '031_ti_remove_cross_db_fks_add_validators.sql',
+  '032_ti_soft_delete_admin_views.sql',
+  '033_ti_rls_policies.sql',
+];
 
 /**
  * Parse --baseline=NNN from argv.
@@ -29,6 +71,63 @@ function parseBaseline(): string | null {
   const arg = process.argv.find((a) => a.startsWith('--baseline='));
   if (!arg) return null;
   return arg.split('=')[1].padStart(3, '0');
+}
+
+/** Parse --domain=hdicr|ti from argv. Defaults to null (all SQL files sorted). */
+function parseDomain(): string | null {
+  const arg = process.argv.find((a) => a.startsWith('--domain='));
+  if (!arg) return null;
+  const domain = arg.split('=')[1].toLowerCase();
+
+  if (domain !== HDICR_DOMAIN && domain !== TI_DOMAIN) {
+    throw new Error(
+      `Invalid --domain value: ${domain}. Use --domain=${HDICR_DOMAIN} or --domain=${TI_DOMAIN}`
+    );
+  }
+
+  return domain;
+}
+
+/** Pick target DB URL by migration domain and map into DATABASE_URL for DatabaseClient. */
+function configureConnectionForDomain(domain: string | null): void {
+  if (domain === HDICR_DOMAIN) {
+    if (!process.env.HDICR_DATABASE_URL) {
+      throw new Error('HDICR_DATABASE_URL environment variable is not set');
+    }
+    process.env.DATABASE_URL = process.env.HDICR_DATABASE_URL;
+    return;
+  }
+
+  if (domain === TI_DOMAIN) {
+    if (!process.env.TI_DATABASE_URL) {
+      throw new Error('TI_DATABASE_URL environment variable is not set');
+    }
+    process.env.DATABASE_URL = process.env.TI_DATABASE_URL;
+    return;
+  }
+}
+
+function getMigrationOrderByDomain(domain: string | null, files: string[]): string[] {
+  if (domain === HDICR_DOMAIN) {
+    return validateMigrationOrder(HDICR_MIGRATION_ORDER, files, HDICR_DOMAIN);
+  }
+
+  if (domain === TI_DOMAIN) {
+    return validateMigrationOrder(TI_MIGRATION_ORDER, files, TI_DOMAIN);
+  }
+
+  return files;
+}
+
+function validateMigrationOrder(order: string[], existingFiles: string[], domain: string): string[] {
+  const missing = order.filter((file) => !existingFiles.includes(file));
+  if (missing.length > 0) {
+    throw new Error(
+      `[MIGRATION] ${domain.toUpperCase()} migration order references missing file(s): ${missing.join(', ')}`
+    );
+  }
+
+  return order;
 }
 
 /** SHA-256 checksum of a file's contents, for drift detection. */
@@ -68,6 +167,8 @@ async function recordApplied(db: DatabaseClient, filename: string, sql: string):
 
 async function runMigrations() {
   console.log('[MIGRATION] Starting database migrations...\n');
+  const domain = parseDomain();
+  configureConnectionForDomain(domain);
 
   const db = DatabaseClient.getInstance();
   const migrationsDir = path.join(__dirname, '../migrations');
@@ -78,15 +179,21 @@ async function runMigrations() {
       process.exit(1);
     }
 
-    const files = fs
+    const allSqlFiles = fs
       .readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
       .sort();
 
-    if (files.length === 0) {
+    if (allSqlFiles.length === 0) {
       console.log('[MIGRATION] No migration files found.');
       await db.close();
       process.exit(0);
+    }
+
+    const files = getMigrationOrderByDomain(domain, allSqlFiles);
+
+    if (domain) {
+      console.log(`[MIGRATION] Domain mode: ${domain.toUpperCase()} (${files.length} migration(s) in locked order)\n`);
     }
 
     // Bootstrap tracking table

@@ -10,6 +10,8 @@
     "type-check": "tsc --noEmit",
     "dev": "tsc --watch",
     "migrate": "ts-node src/migrate.ts",
+    "migrate:hdicr": "ts-node src/migrate.ts --domain=hdicr",
+    "migrate:ti": "ts-node src/migrate.ts --domain=ti",
     "migrate:prod": "node dist/migrate.js"
   },
   "dependencies": {
