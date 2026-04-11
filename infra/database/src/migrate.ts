@@ -18,8 +18,13 @@ import { DatabaseClient } from './client';
 import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
+import dotenv from 'dotenv';
 
 const TRACKING_TABLE = 'schema_migrations';
+// Load env files in both common locations used by this monorepo.
+dotenv.config({ path: path.join(process.cwd(), '.env.local') });
+dotenv.config({ path: path.join(process.cwd(), 'apps', 'web', '.env.local') });
+
 const HDICR_DOMAIN = 'hdicr';
 const TI_DOMAIN = 'ti';
 
