@@ -1,8 +1,11 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { queryHdicr } from '@/lib/db';
+import { queryTi } from '@/lib/db';
+import { getActorByAuth0UserId } from '@/lib/hdicr/representation-client';
+import { getActorById } from '@/lib/hdicr/identity-client';
+import { hasAnyActiveConsent } from '@/lib/hdicr/consent-client';
 
-// DB-OWNER: HDICR
+// DB-OWNER: TI (local profile state) + HDICR via HTTP clients
 
 const DEFAULT_TENANT_ID = process.env.DEFAULT_TENANT_ID || 'trulyimagined';
 
@@ -22,7 +25,7 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const roleResult = await queryHdicr(
+    const roleResult = await queryTi(
       `SELECT role, profile_completed
        FROM user_profiles
        WHERE auth0_user_id = $1
@@ -41,34 +44,18 @@ export async function GET() {
 
     const profileCompleted = Boolean(roleResult.rows[0].profile_completed);
 
-    const actorResult = await queryHdicr(
-      `SELECT id, registry_id, verification_status, created_at
-       FROM actors
-       WHERE auth0_user_id = $1
-         AND tenant_id = $2
-         AND deleted_at IS NULL
-       LIMIT 1`,
-      [user.sub, DEFAULT_TENANT_ID]
-    );
+    const actorByAuth0 = await getActorByAuth0UserId(user.sub);
+    const actorId = (actorByAuth0?.id as string | undefined) || null;
+    const hasRegistration = Boolean(actorId);
 
-    const actor = actorResult.rows[0] || null;
-    const hasRegistration = Boolean(actor?.id);
-    const isVerified = actor?.verification_status === 'verified';
+    const actor = actorId ? await getActorById(actorId) : null;
+    const verificationStatus = (actor?.verificationStatus as string | undefined) || 'unregistered';
+    const registryId = (actor?.registryId as string | undefined) || null;
+    const isVerified = verificationStatus === 'verified';
 
-    let hasActiveConsent = false;
-
-    if (hasRegistration) {
-      const consentResult = await queryHdicr(
-        `SELECT EXISTS (
-           SELECT 1
-           FROM consent_ledger
-           WHERE actor_id = $1::uuid
-             AND status = 'active'
-         ) AS has_active_consent`,
-        [actor.id]
-      );
-      hasActiveConsent = Boolean(consentResult.rows[0]?.has_active_consent);
-    }
+    const hasActiveConsent = hasRegistration
+      ? await hasAnyActiveConsent(actorId!, DEFAULT_TENANT_ID)
+      : false;
 
     const profileLive = hasRegistration && isVerified && hasActiveConsent && profileCompleted;
 
@@ -105,8 +92,8 @@ export async function GET() {
       success: true,
       data: {
         actorId: actor?.id || null,
-        registryId: actor?.registry_id || null,
-        verificationStatus: actor?.verification_status || 'unregistered',
+        registryId,
+        verificationStatus,
         profileCompleted,
         steps,
         nextStep,

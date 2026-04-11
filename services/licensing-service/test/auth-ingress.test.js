@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@trulyimagined/middleware', () => ({
-  validateAuth0Token: vi.fn(),
+  validateAuth0TokenWithStatus: vi.fn(),
   hasScope: vi.fn().mockReturnValue(false),
 }));
 
@@ -21,7 +21,7 @@ vi.mock('@trulyimagined/database', () => ({
   },
 }));
 
-import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/handler';
 
 function makeEvent(method, path, overrides = {}) {
@@ -44,7 +44,10 @@ function makeEvent(method, path, overrides = {}) {
 
 describe('licensing-service auth ingress', () => {
   it('returns 401 for missing or invalid auth token', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce(null);
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: null,
+      errorStatus: 401,
+    });
 
     const response = await handler(makeEvent('POST', '/v1/license/request'), {}, () => {});
 
@@ -53,7 +56,9 @@ describe('licensing-service auth ingress', () => {
   });
 
   it('returns 403 when authenticated but missing read scope for GET', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
     const response = await handler(makeEvent('GET', '/v1/license/actor/actor-123'), {}, () => {});
@@ -63,9 +68,11 @@ describe('licensing-service auth ingress', () => {
   });
 
   it('returns 403 when authenticated but missing write scope for POST', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({
-      sub: 'client@clients',
-      scopes: ['hdicr:licensing:read'],
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: {
+        sub: 'client@clients',
+        scopes: ['hdicr:licensing:read'],
+      },
     });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
@@ -76,7 +83,9 @@ describe('licensing-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid request payloads', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(
@@ -98,7 +107,9 @@ describe('licensing-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid licensing pagination queries', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(

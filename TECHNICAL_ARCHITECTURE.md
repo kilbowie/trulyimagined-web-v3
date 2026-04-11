@@ -69,13 +69,13 @@ The web tier currently shares one physical PostgreSQL instance with HDICR servic
 
 | Owner | Tables                                                                                                                                                                                                                     | Notes                                                                                             |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, HDICR-facing `audit_log` entries                                                   | Core identity, consent, credential, and licensing records. Web access must go through HDICR APIs. |
-| TI    | `user_profiles`, `agents`, `actor_agent_relationships`, `representation_requests`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables | Product/workflow tables that remain in direct web control until the Phase 4 split.                |
+| HDICR | `actors`, `identity_links`, `consent_log`, `verifiable_credentials`, `credential_status_lists`, `licensing_requests`, `usage_tracking`, `representation_requests`, `actor_agent_relationships`, HDICR-facing `audit_log` entries | Core identity, consent, credential, licensing, and representation records. Web access must go through HDICR APIs. |
+| TI    | `user_profiles`, `agents`, `agency_team_members`, `actor_media`, `feedback`, `support_tickets`, `support_messages`, TI-facing notification records, billing tables                                                            | Product/workflow tables that remain in direct web control until the Phase 4 split.                |
 
 ### Transitional Clarifications
 
 - `user_profiles` remains TI-owned for now even though HDICR tables reference it. Any route that joins `user_profiles` with HDICR-owned tables is still classified `DB-OWNER: HDICR` because the boundary violation is driven by the HDICR side of the query.
-- `representation_requests` and `actor_agent_relationships` remain TI-owned in Phase 1. SEP-026 may later promote representation into a full HDICR service, at which point ownership will be revisited.
+- Representation ownership decision: `representation_requests` and `actor_agent_relationships` are HDICR-owned and must be accessed by TI through HDICR APIs only.
 - Migration files under `infra/database/migrations` must declare ownership explicitly with a `-- TABLE OWNER: HDICR | TI` header so schema changes remain reviewable during the shared-database period.
 
 ---

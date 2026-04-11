@@ -1,11 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@trulyimagined/middleware', () => ({
-  validateAuth0Token: vi.fn(),
+  validateAuth0TokenWithStatus: vi.fn(),
   hasScope: vi.fn().mockReturnValue(false),
 }));
 
-import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+vi.mock('@trulyimagined/database', () => ({
+  DatabaseClient: {
+    getInstance: () => ({
+      query: vi.fn(),
+    }),
+  },
+}));
+
+import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/index';
 
 function makeEvent(method, path, overrides = {}) {
@@ -28,7 +36,10 @@ function makeEvent(method, path, overrides = {}) {
 
 describe('consent-service auth ingress', () => {
   it('returns 401 for missing or invalid auth token', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce(null);
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: null,
+      errorStatus: 401,
+    });
 
     const response = await handler(makeEvent('GET', '/v1/consent/check'), {}, () => {});
 
@@ -37,7 +48,9 @@ describe('consent-service auth ingress', () => {
   });
 
   it('returns 403 when authenticated but missing read scope', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
     const response = await handler(makeEvent('GET', '/v1/consent/check'), {}, () => {});
@@ -47,9 +60,11 @@ describe('consent-service auth ingress', () => {
   });
 
   it('returns 403 when authenticated but missing write scope', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({
-      sub: 'client@clients',
-      scopes: ['hdicr:consent:read'],
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: {
+        sub: 'client@clients',
+        scopes: ['hdicr:consent:read'],
+      },
     });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
@@ -60,7 +75,9 @@ describe('consent-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid grant payloads', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(
@@ -78,7 +95,9 @@ describe('consent-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid consent-check queries', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(

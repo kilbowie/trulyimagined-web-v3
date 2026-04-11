@@ -10,7 +10,6 @@ Globals:
     Role: arn:aws:iam::440779547223:role/trimg-lambda-execution-role
     Environment:
       Variables:
-        DATABASE_URL: !Ref DatabaseURL
         NODE_ENV: !Ref Environment
         AUTH0_DOMAIN: !Ref Auth0Domain
         AUTH0_AUDIENCE: !Ref Auth0Audience
@@ -26,9 +25,9 @@ Parameters:
       - production
     Description: Deployment environment
 
-  DatabaseURL:
+  HdicrDatabaseURL:
     Type: String
-    Description: PostgreSQL connection string (format postgresql://user:pass@host:5432/db)
+    Description: HDICR PostgreSQL connection string (format postgresql://user:pass@host:5432/db)
     NoEcho: true
 
   Auth0Domain:
@@ -110,6 +109,10 @@ Resources:
       CodeUri: ../../services/identity-service/dist
       Handler: index.handler
       Description: Identity Registry - Actor registration and management
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref HdicrDatabaseURL
+          HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         RegisterActor:
           Type: Api
@@ -163,6 +166,10 @@ Resources:
       CodeUri: ../../services/consent-service/dist
       Handler: index.handler
       Description: Consent Ledger - Immutable consent recording
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref HdicrDatabaseURL
+          HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         GrantConsent:
           Type: Api
@@ -216,6 +223,10 @@ Resources:
       CodeUri: ../../services/licensing-service/dist
       Handler: index.handler
       Description: Licensing - Request and approve licenses
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref HdicrDatabaseURL
+          HDICR_DATABASE_URL: !Ref HdicrDatabaseURL
       Events:
         RequestLicense:
           Type: Api

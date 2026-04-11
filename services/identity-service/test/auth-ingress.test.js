@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('@trulyimagined/middleware', () => ({
-  validateAuth0Token: vi.fn(),
+  validateAuth0TokenWithStatus: vi.fn(),
   hasScope: vi.fn().mockReturnValue(false),
 }));
 
@@ -24,7 +24,7 @@ vi.mock('@trulyimagined/database', () => ({
   },
 }));
 
-import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
 import { handler } from '../src/index';
 
 function makeEvent(method, path, overrides = {}) {
@@ -47,7 +47,10 @@ function makeEvent(method, path, overrides = {}) {
 
 describe('identity-service auth ingress', () => {
   it('returns 401 for missing or invalid auth token', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce(null);
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: null,
+      errorStatus: 401,
+    });
 
     const response = await handler(makeEvent('GET', '/v1/identity'), {}, () => {});
 
@@ -56,7 +59,9 @@ describe('identity-service auth ingress', () => {
   });
 
   it('returns 403 when authenticated but missing required scope', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
     const response = await handler(makeEvent('GET', '/v1/identity'), {}, () => {});
@@ -66,9 +71,11 @@ describe('identity-service auth ingress', () => {
   });
 
   it('returns 403 with write scope missing for POST', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({
-      sub: 'client@clients',
-      scopes: ['hdicr:identity:read'],
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: {
+        sub: 'client@clients',
+        scopes: ['hdicr:identity:read'],
+      },
     });
     vi.mocked(hasScope).mockReturnValueOnce(false);
 
@@ -79,7 +86,9 @@ describe('identity-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid register payloads', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(
@@ -97,7 +106,9 @@ describe('identity-service auth ingress', () => {
   });
 
   it('returns structured 400 details for invalid pagination queries', async () => {
-    vi.mocked(validateAuth0Token).mockResolvedValueOnce({ sub: 'client@clients', scopes: [] });
+    vi.mocked(validateAuth0TokenWithStatus).mockResolvedValueOnce({
+      user: { sub: 'client@clients', scopes: [] },
+    });
     vi.mocked(hasScope).mockReturnValueOnce(true);
 
     const response = await handler(

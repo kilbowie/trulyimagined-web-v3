@@ -42,7 +42,7 @@ export function getHdicrRemoteBaseUrlOrThrow(domain: HdicrDomain, operation: str
   const baseUrl = getHdicrRemoteBaseUrl();
   if (!baseUrl) {
     throw new Error(
-      `[HDICR] ${capitalize(domain)} ${operation} is configured for remote mode but HDICR_REMOTE_BASE_URL is missing (fail-closed).`
+      `[HDICR] ${capitalize(domain)} ${operation} is configured for remote mode but HDICR_API_URL is missing (legacy fallback: HDICR_REMOTE_BASE_URL).`
     );
   }
 
@@ -50,8 +50,11 @@ export function getHdicrRemoteBaseUrlOrThrow(domain: HdicrDomain, operation: str
 }
 
 function resolveAudienceForDomain(domain: HdicrDomain): string | null {
+  const canonicalM2mAudience = process.env.AUTH0_M2M_AUDIENCE?.trim();
+  const legacyM2mAudience = process.env.HDICR_M2M_AUDIENCE?.trim();
+
   if (domain === 'identity' || domain === 'consent') {
-    return process.env.HDICR_M2M_AUDIENCE?.trim() || process.env.AUTH0_AUDIENCE?.trim() || null;
+    return canonicalM2mAudience || legacyM2mAudience || process.env.AUTH0_AUDIENCE?.trim() || null;
   }
 
   if (domain === 'licensing') {
@@ -65,17 +68,22 @@ function resolveClientCredentialsForDomain(domain: HdicrDomain): {
   clientId: string | null;
   clientSecret: string | null;
 } {
+  const canonicalClientId = process.env.AUTH0_M2M_CLIENT_ID?.trim() || null;
+  const canonicalClientSecret = process.env.AUTH0_M2M_CLIENT_SECRET?.trim() || null;
+  const legacyClientId = process.env.HDICR_CLIENT_ID?.trim() || null;
+  const legacyClientSecret = process.env.HDICR_CLIENT_SECRET?.trim() || null;
+
   if (domain === 'licensing') {
     return {
-      clientId: process.env.TI_M2M_CLIENT_ID?.trim() || process.env.HDICR_CLIENT_ID?.trim() || null,
+      clientId: process.env.TI_M2M_CLIENT_ID?.trim() || canonicalClientId || legacyClientId,
       clientSecret:
-        process.env.TI_M2M_CLIENT_SECRET?.trim() || process.env.HDICR_CLIENT_SECRET?.trim() || null,
+        process.env.TI_M2M_CLIENT_SECRET?.trim() || canonicalClientSecret || legacyClientSecret,
     };
   }
 
   return {
-    clientId: process.env.HDICR_CLIENT_ID?.trim() || null,
-    clientSecret: process.env.HDICR_CLIENT_SECRET?.trim() || null,
+    clientId: canonicalClientId || legacyClientId,
+    clientSecret: canonicalClientSecret || legacyClientSecret,
   };
 }
 
@@ -93,7 +101,7 @@ async function getHdicrToken(domain: HdicrDomain): Promise<string> {
   if (!auth0Domain || !audience || !clientId || !clientSecret) {
     throw new HdicrHttpError(
       503,
-      '[HDICR] Missing Auth0 M2M configuration for token acquisition (AUTH0_DOMAIN, audience via HDICR_M2M_AUDIENCE/AUTH0_AUDIENCE, and client credentials via HDICR_CLIENT_ID/HDICR_CLIENT_SECRET or TI_M2M_CLIENT_ID/TI_M2M_CLIENT_SECRET for licensing).'
+      '[HDICR] Missing Auth0 M2M configuration for token acquisition (AUTH0_DOMAIN, AUTH0_M2M_AUDIENCE/AUTH0_AUDIENCE, and AUTH0_M2M_CLIENT_ID/AUTH0_M2M_CLIENT_SECRET; legacy fallback: HDICR_CLIENT_ID/HDICR_CLIENT_SECRET).'
     );
   }
 

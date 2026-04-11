@@ -13,6 +13,13 @@ The Representation Service is an HDICR domain service that manages actor-agent r
 - **Representation Requests** — submission, approval, rejection, and withdrawal of representation requests
 - **Relationships** — creation, active state tracking, and termination of actor-agent relationships
 
+## Ownership and Deployment Boundary
+
+- **Service owner:** HDICR domain
+- **Database owner:** HDICR (`representation_requests`, `actor_agent_relationships`)
+- **Deployment rule:** this service must run with HDICR DB credentials only (`HDICR_DATABASE_URL` / `DATABASE_URL` mapped to HDICR DB)
+- **TI integration rule:** TI app must consume representation data via HTTP endpoints, not direct SQL against representation tables
+
 ## Endpoints
 
 ### GET `/v1/representation/actor`

@@ -192,6 +192,7 @@ export async function checkConsentEnforcement(input: ConsentEnforcementCheckInpu
 export async function listConsentRecords(input: ConsentListInput) {
   const payload = await invokeConsentRemote<{
     rows?: Array<Record<string, any>>;
+    consents?: { active?: Array<Record<string, any>> };
     totalCount?: number;
   }>({
     path:
@@ -207,6 +208,26 @@ export async function listConsentRecords(input: ConsentListInput) {
     rows: payload.rows || [],
     totalCount: payload.totalCount || 0,
   };
+}
+
+export async function hasAnyActiveConsent(actorId: string, tenantId?: string): Promise<boolean> {
+  const payload = await invokeConsentRemote<{
+    consents?: { active?: Array<Record<string, any>> };
+    rows?: Array<Record<string, any>>;
+  }>({
+    path:
+      `/v1/consent/list?actorId=${encodeURIComponent(actorId)}` +
+      `&limit=100&offset=0` +
+      `${tenantId ? `&tenantId=${encodeURIComponent(tenantId)}` : ''}`,
+    method: 'GET',
+    operation: 'consent-active-check',
+  });
+
+  if (Array.isArray(payload.consents?.active)) {
+    return payload.consents.active.length > 0;
+  }
+
+  return Array.isArray(payload.rows) ? payload.rows.length > 0 : false;
 }
 
 export async function createConsentLedgerEntry(params: CreateConsentEntryParams) {

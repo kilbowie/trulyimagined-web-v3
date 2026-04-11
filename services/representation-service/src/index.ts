@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient } from '@trulyimagined/database';
-import { validateAuth0Token } from '@trulyimagined/middleware';
+import { validateAuth0TokenWithStatus } from '@trulyimagined/middleware';
 import { z } from 'zod';
 
 /**
@@ -676,14 +676,18 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
   }
 
   // Validate authorization token - all endpoints require a valid caller
-  const user = await validateAuth0Token(event);
-  if (!user) {
+  const authResult = await validateAuth0TokenWithStatus(event);
+  if (!authResult.user) {
     return {
-      statusCode: 401,
+      statusCode: authResult.errorStatus || 401,
       headers: corsHeaders,
-      body: JSON.stringify({ error: 'Unauthorized' }),
+      body: JSON.stringify({
+        error: authResult.errorStatus === 403 ? 'Token rejected' : 'Unauthorized',
+      }),
     };
   }
+
+  const user = authResult.user;
 
   // Extract tenant_id from authenticated user
   const tenantId = user.tenantId ?? process.env.HDICR_DEFAULT_TENANT_ID ?? 'trulyimagined';

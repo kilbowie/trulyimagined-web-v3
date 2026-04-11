@@ -41,7 +41,8 @@ describe('[SEP-030] Representation Service - Auth Ingress', () => {
     };
 
     const response = await handler(event as APIGatewayProxyEvent);
-    expect(response.statusCode).toBe(401);
+    expect(response.statusCode).toBe(403);
+    expect(response.body).toContain('Token rejected');
   });
 
   it('should allow GET requests without auth (read-only endpoints)', async () => {

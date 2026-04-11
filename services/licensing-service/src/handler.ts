@@ -1,6 +1,6 @@
 import { APIGatewayProxyHandler, APIGatewayProxyEvent } from 'aws-lambda';
 import { DatabaseClient, queries } from '@trulyimagined/database';
-import { validateAuth0Token, hasScope } from '@trulyimagined/middleware';
+import { validateAuth0TokenWithStatus, hasScope } from '@trulyimagined/middleware';
 import { z } from 'zod';
 
 /**
@@ -103,14 +103,18 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return { statusCode: 200, headers: corsHeaders, body: '' };
     }
 
-    const user = await validateAuth0Token(event);
-    if (!user) {
+    const authResult = await validateAuth0TokenWithStatus(event);
+    if (!authResult.user) {
       return {
-        statusCode: 401,
+        statusCode: authResult.errorStatus || 401,
         headers: corsHeaders,
-        body: JSON.stringify({ error: 'Unauthorized' }),
+        body: JSON.stringify({
+          error: authResult.errorStatus === 403 ? 'Token rejected' : 'Unauthorized',
+        }),
       };
     }
+
+    const user = authResult.user;
 
     // Scope-based authorization: require appropriate scope per HTTP method.
     const requiredScope = httpMethod === 'GET' ? 'hdicr:licensing:read' : 'hdicr:licensing:write';

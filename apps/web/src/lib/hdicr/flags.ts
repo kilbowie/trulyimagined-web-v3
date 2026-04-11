@@ -90,7 +90,7 @@ export function getHdicrAdapterMode(domain: HdicrDomain): AdapterMode {
 }
 
 export function getHdicrRemoteBaseUrl(): string | null {
-  const baseUrl = process.env.HDICR_REMOTE_BASE_URL?.trim();
+  const baseUrl = process.env.HDICR_API_URL?.trim() || process.env.HDICR_REMOTE_BASE_URL?.trim();
   if (!baseUrl) {
     return null;
   }
@@ -114,7 +114,7 @@ export function warnIfRemoteModeEnabled(domain: HdicrDomain) {
   const baseUrl = getHdicrRemoteBaseUrl();
   if (!baseUrl) {
     console.warn(
-      `[HDICR] ${domain} adapter is set to remote mode without HDICR_REMOTE_BASE_URL. Remote operations should fail closed.`
+      `[HDICR] ${domain} adapter is set to remote mode without HDICR_API_URL (or legacy HDICR_REMOTE_BASE_URL). Remote operations should fail closed.`
     );
     return;
   }

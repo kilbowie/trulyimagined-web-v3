@@ -45,12 +45,19 @@ function getSubjectClientId(sub: unknown): string | undefined {
 
 // ==================== AUTH0 JWT VALIDATION ====================
 
-export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<AuthUser | null> {
+export type AuthValidationResult = {
+  user: AuthUser | null;
+  errorStatus?: 401 | 403;
+};
+
+export async function validateAuth0TokenWithStatus(
+  event: APIGatewayProxyEvent
+): Promise<AuthValidationResult> {
   const authHeader = event.headers.Authorization || event.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     console.error('[AUTH] Missing or invalid authorization header');
-    return null;
+    return { user: null, errorStatus: 401 };
   }
 
   const token = authHeader.substring(7);
@@ -78,7 +85,7 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
 
     if (!decoded || !decoded.sub) {
       console.error('[AUTH] Invalid token structure: missing sub');
-      return null;
+      return { user: null, errorStatus: 403 };
     }
 
     // Extract OAuth scopes: M2M tokens use the 'scope' string claim;
@@ -122,11 +129,16 @@ export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<A
     console.log(
       `[AUTH] Authenticated: ${identity} (tenant: ${tenantId}, scopes: ${scopes.join(', ') || 'none'})`
     );
-    return user;
+    return { user };
   } catch (error) {
     console.error('[AUTH] Token validation failed:', error);
-    return null;
+    return { user: null, errorStatus: 403 };
   }
+}
+
+export async function validateAuth0Token(event: APIGatewayProxyEvent): Promise<AuthUser | null> {
+  const result = await validateAuth0TokenWithStatus(event);
+  return result.user;
 }
 
 // ==================== AUTHORIZATION HELPERS ====================
