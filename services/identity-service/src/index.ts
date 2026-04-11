@@ -115,27 +115,26 @@ function validationErrorResponse(error: z.ZodError | string) {
   return {
     statusCode: 400,
     headers: corsHeaders,
-      return await getIdentityLinkByProviderAndProviderUser(event, tenantId);
+    body: JSON.stringify({
       error: 'Validation failed',
       details,
     }),
-      return await listIdentityLinks(event, tenantId);
+  };
 }
 
 function parseJsonBody<T>(event: APIGatewayProxyEvent, schema: z.ZodType<T>) {
-      return await createIdentityLink(event, tenantId);
-
+  let rawBody: unknown;
   try {
     rawBody = JSON.parse(event.body ?? '{}');
-      return await reactivateIdentityLink(event, tenantId);
+  } catch {
     return { success: false as const, response: validationErrorResponse('Invalid JSON body') };
   }
 
-      return await unlinkIdentityById(event, tenantId);
+  const parsed = schema.safeParse(rawBody);
   if (!parsed.success) {
     return { success: false as const, response: validationErrorResponse(parsed.error) };
   }
-      return await unlinkIdentityByProvider(event, tenantId);
+
   return { success: true as const, data: parsed.data };
 }
 

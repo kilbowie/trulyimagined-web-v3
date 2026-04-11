@@ -1,5 +1,30 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { APIGatewayProxyEvent } from 'aws-lambda';
+
+vi.mock('@trulyimagined/database', () => ({
+  DatabaseClient: {
+    getInstance: () => ({
+      query: vi.fn(),
+      queryWithTenant: vi.fn(),
+    }),
+  },
+}));
+
+vi.mock('@trulyimagined/middleware', () => ({
+  validateAuth0TokenWithStatus: vi.fn(async (event: APIGatewayProxyEvent) => {
+    const authHeader = event.headers?.Authorization || event.headers?.authorization;
+    if (!authHeader) {
+      return { user: null, errorStatus: 401 };
+    }
+    if (authHeader === 'Bearer invalid-token') {
+      return { user: null, errorStatus: 403 };
+    }
+    return {
+      user: { sub: 'client@clients', tenantId: 'trulyimagined', scopes: ['hdicr:representation:read'] },
+    };
+  }),
+}));
+
 import { handler } from '../src/index';
 
 /**
@@ -45,7 +70,7 @@ describe('[SEP-030] Representation Service - Auth Ingress', () => {
     expect(response.body).toContain('Token rejected');
   });
 
-  it('should allow GET requests without auth (read-only endpoints)', async () => {
+  it('should reject unauthenticated GET requests', async () => {
     const event: Partial<APIGatewayProxyEvent> = {
       httpMethod: 'GET',
       path: '/v1/representation/actor',
@@ -56,9 +81,7 @@ describe('[SEP-030] Representation Service - Auth Ingress', () => {
     };
 
     const response = await handler(event as APIGatewayProxyEvent);
-    // Should fail due to no auth, but not because auth is missing on GET
-    // (actual failure depends on DB connectivity in test env)
-    expect(response.statusCode).toBeGreaterThanOrEqual(400);
+    expect(response.statusCode).toBe(401);
   });
 
   it('should handle CORS preflight requests', async () => {

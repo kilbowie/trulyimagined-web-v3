@@ -12,6 +12,7 @@
     "test": "vitest run -c vitest.config.ts"
   },
   "dependencies": {
+    "@trulyimagined/database": "workspace:*",
     "@trulyimagined/types": "workspace:*",
     "@trulyimagined/utils": "workspace:*",
     "@trulyimagined/middleware": "workspace:*",
