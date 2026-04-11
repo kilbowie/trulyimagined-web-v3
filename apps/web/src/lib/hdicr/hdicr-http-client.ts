@@ -17,7 +17,7 @@ type TokenCache = {
   expiresAt: number;
 };
 
-let cachedToken: TokenCache | null = null;
+const tokenCacheByKey = new Map<string, TokenCache>();
 
 export class HdicrHttpError extends Error {
   statusCode: number;
@@ -49,28 +49,59 @@ export function getHdicrRemoteBaseUrlOrThrow(domain: HdicrDomain, operation: str
   return baseUrl;
 }
 
-async function getHdicrToken(): Promise<string> {
+function resolveAudienceForDomain(domain: HdicrDomain): string | null {
+  if (domain === 'identity' || domain === 'consent') {
+    return process.env.HDICR_M2M_AUDIENCE?.trim() || process.env.AUTH0_AUDIENCE?.trim() || null;
+  }
+
+  if (domain === 'licensing') {
+    return process.env.AUTH0_AUDIENCE?.trim() || null;
+  }
+
+  return process.env.AUTH0_AUDIENCE?.trim() || null;
+}
+
+function resolveClientCredentialsForDomain(domain: HdicrDomain): {
+  clientId: string | null;
+  clientSecret: string | null;
+} {
+  if (domain === 'licensing') {
+    return {
+      clientId: process.env.TI_M2M_CLIENT_ID?.trim() || process.env.HDICR_CLIENT_ID?.trim() || null,
+      clientSecret:
+        process.env.TI_M2M_CLIENT_SECRET?.trim() || process.env.HDICR_CLIENT_SECRET?.trim() || null,
+    };
+  }
+
+  return {
+    clientId: process.env.HDICR_CLIENT_ID?.trim() || null,
+    clientSecret: process.env.HDICR_CLIENT_SECRET?.trim() || null,
+  };
+}
+
+async function getHdicrToken(domain: HdicrDomain): Promise<string> {
   // Keep domain-client tests deterministic. Set HDICR_REAL_TOKEN_IN_TEST=true to
   // exercise real token acquisition within a test (e.g. transport-level tests).
   if (process.env.NODE_ENV === 'test' && process.env.HDICR_REAL_TOKEN_IN_TEST !== 'true') {
     return process.env.HDICR_TEST_M2M_TOKEN || 'test-token';
   }
 
-  const now = Date.now();
-  if (cachedToken && now < cachedToken.expiresAt - 30_000) {
-    return cachedToken.token;
-  }
-
   const auth0Domain = process.env.AUTH0_DOMAIN?.trim();
-  const audience = process.env.AUTH0_AUDIENCE?.trim();
-  const clientId = process.env.HDICR_CLIENT_ID?.trim();
-  const clientSecret = process.env.HDICR_CLIENT_SECRET?.trim();
+  const audience = resolveAudienceForDomain(domain);
+  const { clientId, clientSecret } = resolveClientCredentialsForDomain(domain);
 
   if (!auth0Domain || !audience || !clientId || !clientSecret) {
     throw new HdicrHttpError(
       503,
-      '[HDICR] Missing Auth0 M2M configuration for token acquisition (HDICR_CLIENT_ID/HDICR_CLIENT_SECRET/AUTH0_DOMAIN/AUTH0_AUDIENCE).'
+      '[HDICR] Missing Auth0 M2M configuration for token acquisition (AUTH0_DOMAIN, audience via HDICR_M2M_AUDIENCE/AUTH0_AUDIENCE, and client credentials via HDICR_CLIENT_ID/HDICR_CLIENT_SECRET or TI_M2M_CLIENT_ID/TI_M2M_CLIENT_SECRET for licensing).'
     );
+  }
+
+  const cacheKey = `${clientId}:${audience}`;
+  const now = Date.now();
+  const cachedToken = tokenCacheByKey.get(cacheKey);
+  if (cachedToken && now < cachedToken.expiresAt - 30_000) {
+    return cachedToken.token;
   }
 
   let tokenResponse: Response;
@@ -108,12 +139,12 @@ async function getHdicrToken(): Promise<string> {
     throw new HdicrHttpError(503, '[HDICR] Invalid M2M token response payload.');
   }
 
-  cachedToken = {
+  tokenCacheByKey.set(cacheKey, {
     token: tokenPayload.access_token,
     expiresAt: Date.now() + tokenPayload.expires_in * 1000,
-  };
+  });
 
-  return cachedToken.token;
+  return tokenPayload.access_token;
 }
 
 export async function invokeHdicrRemote<T>(params: {
@@ -126,7 +157,7 @@ export async function invokeHdicrRemote<T>(params: {
 }): Promise<T> {
   const url = new URL(params.path, params.baseUrl);
 
-  const token = await getHdicrToken();
+  const token = await getHdicrToken(params.domain);
 
   let response: Response;
   try {

@@ -670,6 +670,16 @@ export default function ConsentPreferencesPage() {
 
       const data = await res.json();
 
+      if (data.serviceUnavailable) {
+        setError(
+          data.message ||
+            'Consent service is temporarily unavailable. Please try again shortly.'
+        );
+        setCurrentConsent(null);
+        setLicenseCount(0);
+        return;
+      }
+
       if (data.current) {
         setCurrentConsent(data.current);
         // Merge loaded policy with defaults to ensure all fields exist (backward compatibility)
@@ -745,6 +755,13 @@ export default function ConsentPreferencesPage() {
       }
 
       const data = await res.json();
+
+      if (data.serviceUnavailable) {
+        throw new Error(
+          data.error || 'Consent service is temporarily unavailable. Please try again shortly.'
+        );
+      }
+
       setSuccess(`Consent updated successfully! Version ${data.entry.version} created.`);
       setReason('');
       setPendingUsageBlocked(null);

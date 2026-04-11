@@ -82,7 +82,19 @@ export async function POST(request: NextRequest) {
 
     const auth0UserId = session.user.sub;
 
-    const actorContext = await resolveActorContextByAuth0UserId(auth0UserId);
+    let actorContext: Awaited<ReturnType<typeof resolveActorContextByAuth0UserId>>;
+    try {
+      actorContext = await resolveActorContextByAuth0UserId(auth0UserId);
+    } catch (error) {
+      console.warn('[CONSENT LEDGER] HDICR actor context resolution unavailable', error);
+      return NextResponse.json(
+        {
+          error: 'Consent service temporarily unavailable',
+          serviceUnavailable: true,
+        },
+        { status: 503 }
+      );
+    }
 
     if (!actorContext) {
       return NextResponse.json(
@@ -117,14 +129,26 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || undefined;
 
     // 6. Create consent entry
-    const entry = await createConsentLedgerEntry({
-      actorId,
-      policy: policy as ConsentPolicy,
-      reason,
-      updatedBy: userProfileId,
-      ipAddress,
-      userAgent,
-    });
+    let entry: Awaited<ReturnType<typeof createConsentLedgerEntry>>;
+    try {
+      entry = await createConsentLedgerEntry({
+        actorId,
+        policy: policy as ConsentPolicy,
+        reason,
+        updatedBy: userProfileId,
+        ipAddress,
+        userAgent,
+      });
+    } catch (error) {
+      console.warn('[CONSENT LEDGER] HDICR create consent entry unavailable', error);
+      return NextResponse.json(
+        {
+          error: 'Consent service temporarily unavailable',
+          serviceUnavailable: true,
+        },
+        { status: 503 }
+      );
+    }
 
     if (!entry) {
       return NextResponse.json(
