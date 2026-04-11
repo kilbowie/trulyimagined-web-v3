@@ -12,11 +12,15 @@ export class DatabaseClient {
   private static instance: DatabaseClient;
 
   private constructor() {
-    const connectionString = process.env.DATABASE_URL;
+    const rawConnectionString = process.env.DATABASE_URL;
 
-    if (!connectionString) {
+    if (!rawConnectionString) {
       throw new Error('DATABASE_URL environment variable is not set');
     }
+
+    // Keep TLS behavior explicit in the pg client config and avoid relying on
+    // sslmode URL parsing semantics that changed in newer pg connection parsing.
+    const connectionString = rawConnectionString.replace(/\?sslmode=\w+/, '');
 
     // Configure SSL based on environment
     const isProduction = process.env.NODE_ENV === 'production';

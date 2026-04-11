@@ -30,10 +30,18 @@ ALTER TABLE credential_status_entries
   ADD COLUMN IF NOT EXISTS tenant_id VARCHAR(100) NOT NULL DEFAULT 'trulyimagined';
 
 -- manual_verification_sessions already has tenant_id from migration 019.
--- Ensure NOT NULL constraint and default are present (safe no-op if already correct).
-ALTER TABLE manual_verification_sessions
-  ALTER COLUMN tenant_id SET NOT NULL,
-  ALTER COLUMN tenant_id SET DEFAULT 'trulyimagined';
+-- Guard this block in case 019 has not been applied in an existing environment.
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'manual_verification_sessions'
+  ) THEN
+    ALTER TABLE manual_verification_sessions
+      ALTER COLUMN tenant_id SET NOT NULL,
+      ALTER COLUMN tenant_id SET DEFAULT 'trulyimagined';
+  END IF;
+END $$;
 
 -- ===========================================
 -- TENANT-SCOPED INDEXES
@@ -82,8 +90,16 @@ CREATE INDEX IF NOT EXISTS idx_credential_status_entries_tenant_credential
   ON credential_status_entries(tenant_id, credential_id);
 
 -- manual_verification_sessions composite (already has single-column index)
-CREATE INDEX IF NOT EXISTS idx_manual_verification_sessions_tenant_status
-  ON manual_verification_sessions(tenant_id, status) WHERE deleted_at IS NULL;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'manual_verification_sessions'
+  ) THEN
+    CREATE INDEX IF NOT EXISTS idx_manual_verification_sessions_tenant_status
+      ON manual_verification_sessions(tenant_id, status) WHERE deleted_at IS NULL;
+  END IF;
+END $$;
 
 -- ===========================================
 -- COLUMN DOCUMENTATION
@@ -95,4 +111,12 @@ COMMENT ON COLUMN licenses.tenant_id IS 'Tenant identifier owning this license g
 COMMENT ON COLUMN license_usage_log.tenant_id IS 'Tenant identifier for this license usage event';
 COMMENT ON COLUMN bitstring_status_lists.tenant_id IS 'Tenant identifier owning this bitstring status list';
 COMMENT ON COLUMN credential_status_entries.tenant_id IS 'Tenant identifier for this credential status entry';
-COMMENT ON COLUMN manual_verification_sessions.tenant_id IS 'Tenant identifier owning this verification session';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name = 'manual_verification_sessions'
+  ) THEN
+    COMMENT ON COLUMN manual_verification_sessions.tenant_id IS 'Tenant identifier owning this verification session';
+  END IF;
+END $$;

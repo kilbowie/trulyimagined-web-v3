@@ -14,16 +14,16 @@
  *   without executing them, then runs any migrations > 019 normally.
  */
 
-import { DatabaseClient } from './client';
 import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 import dotenv from 'dotenv';
 
 const TRACKING_TABLE = 'schema_migrations';
+const repoRoot = path.resolve(__dirname, '../../..');
 // Load env files in both common locations used by this monorepo.
-dotenv.config({ path: path.join(process.cwd(), '.env.local') });
-dotenv.config({ path: path.join(process.cwd(), 'apps', 'web', '.env.local') });
+dotenv.config({ path: path.join(repoRoot, '.env.local') });
+dotenv.config({ path: path.join(repoRoot, 'apps', 'web', '.env.local') });
 
 const HDICR_DOMAIN = 'hdicr';
 const TI_DOMAIN = 'ti';
@@ -67,6 +67,11 @@ const TI_MIGRATION_ORDER = [
   '032_ti_soft_delete_admin_views.sql',
   '033_ti_rls_policies.sql',
 ];
+
+type MigrationDb = {
+  query: <T = any>(text: string, params?: any[]) => Promise<{ rows: T[] }>;
+  close: () => Promise<void>;
+};
 
 /**
  * Parse --baseline=NNN from argv.
@@ -145,7 +150,7 @@ function migrationNumber(filename: string): string {
   return filename.split('_')[0].padStart(3, '0');
 }
 
-async function ensureTrackingTable(db: DatabaseClient): Promise<void> {
+async function ensureTrackingTable(db: MigrationDb): Promise<void> {
   await db.query(`
     CREATE TABLE IF NOT EXISTS ${TRACKING_TABLE} (
       id          SERIAL PRIMARY KEY,
@@ -156,14 +161,14 @@ async function ensureTrackingTable(db: DatabaseClient): Promise<void> {
   `);
 }
 
-async function getApplied(db: DatabaseClient): Promise<Set<string>> {
+async function getApplied(db: MigrationDb): Promise<Set<string>> {
   const { rows } = await db.query<{ filename: string }>(
     `SELECT filename FROM ${TRACKING_TABLE} ORDER BY filename`
   );
   return new Set(rows.map((r) => r.filename));
 }
 
-async function recordApplied(db: DatabaseClient, filename: string, sql: string): Promise<void> {
+async function recordApplied(db: MigrationDb, filename: string, sql: string): Promise<void> {
   await db.query(
     `INSERT INTO ${TRACKING_TABLE} (filename, checksum) VALUES ($1, $2) ON CONFLICT (filename) DO NOTHING`,
     [filename, checksum(sql)]
@@ -175,7 +180,11 @@ async function runMigrations() {
   const domain = parseDomain();
   configureConnectionForDomain(domain);
 
-  const db = DatabaseClient.getInstance();
+  // Important: import the DB client only after DATABASE_URL has been finalized.
+  // client.ts exports an eagerly initialized singleton that would otherwise lock
+  // onto a stale URL before --domain remapping is applied.
+  const { DatabaseClient } = await import('./client');
+  const db = DatabaseClient.getInstance() as MigrationDb;
   const migrationsDir = path.join(__dirname, '../migrations');
 
   try {
