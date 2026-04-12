@@ -44,3 +44,49 @@ PASS
 
 ### Decision / Deviation
 - No deviation in Phase 1. Branches anchored correctly and ready for extraction phases.
+
+## Phase 2: TI Extraction
+Date: 2026-04-12
+Operator: Adam Greene
+
+### Commands Executed
+- Source branch context: git checkout extract/ti-split-20260412 (monorepo)
+- Initialized target repo at C:/Users/adamr/OneDrive/Desktop/KilbowieConsulting/002-TrulyImagined/trulyimagined from remote main
+- Copied mapped TI scope:
+	- apps/web
+	- shared/types
+	- shared/utils
+	- infra/database
+	- services/*/openapi.yaml
+- Created TI root files:
+	- package.json
+	- pnpm-workspace.yaml
+	- tsconfig.json
+	- .gitignore
+	- vercel.json
+	- .npmrc
+- Ran TI validation gates:
+	- pnpm install --no-frozen-lockfile
+	- pnpm --filter @trulyimagined/types build
+	- pnpm --filter @trulyimagined/utils build
+	- pnpm --filter @trulyimagined/database build
+	- pnpm type-check
+	- pnpm test
+	- pnpm build
+	- pnpm test:contract
+- Committed and pushed target branch:
+	- git checkout -b extract/ti-split-20260412
+	- git add .
+	- git commit -m "extract: split TI into independent repo"
+	- git push -u origin extract/ti-split-20260412
+
+### Outputs (Summary)
+- TI target gates: type-check PASS, test PASS, build PASS, contract test PASS.
+- Contract gate validates included HDICR OpenAPI specs and required schema fields.
+- TI extraction branch pushed to remote successfully.
+
+### Validation Result
+PASS
+
+### Decision / Deviation
+- Proceeded with existing remote main README baseline per approved Phase 0 deviation.
