@@ -38,59 +38,55 @@ export async function GET() {
       .filter((id): id is string => id !== undefined);
 
     const sessionsByActorId =
-      pendingActorIds.length > 0
-        ? await batchGetLatestVerificationSessions(pendingActorIds)
-        : {};
+      pendingActorIds.length > 0 ? await batchGetLatestVerificationSessions(pendingActorIds) : {};
 
     const verifications = pendingActors.map((actor) => {
-        const actorId =
-          (typeof actor.id === 'string' ? actor.id : undefined) ??
-          (typeof actor.actor_id === 'string' ? actor.actor_id : undefined);
+      const actorId =
+        (typeof actor.id === 'string' ? actor.id : undefined) ??
+        (typeof actor.actor_id === 'string' ? actor.actor_id : undefined);
 
-        if (!actorId) {
-          return null;
-        }
+      if (!actorId) {
+        return null;
+      }
 
-        const latest = actorId ? sessionsByActorId[actorId] ?? undefined : undefined;
+      const latest = actorId ? (sessionsByActorId[actorId] ?? undefined) : undefined;
 
-        return {
-          actor_id: actorId,
-          registry_id:
-            (typeof actor.registry_id === 'string' ? actor.registry_id : undefined) ||
-            (typeof actor.registryId === 'string' ? actor.registryId : undefined) ||
-            null,
-          email: typeof actor.email === 'string' ? actor.email : null,
-          first_name:
-            (typeof actor.first_name === 'string' ? actor.first_name : undefined) ||
-            (typeof actor.firstName === 'string' ? actor.firstName : undefined) ||
-            null,
-          last_name:
-            (typeof actor.last_name === 'string' ? actor.last_name : undefined) ||
-            (typeof actor.lastName === 'string' ? actor.lastName : undefined) ||
-            null,
-          stage_name:
-            (typeof actor.stage_name === 'string' ? actor.stage_name : undefined) ||
-            (typeof actor.stageName === 'string' ? actor.stageName : undefined) ||
-            null,
-          verification_status:
-            (typeof actor.verification_status === 'string'
-              ? actor.verification_status
-              : undefined) ||
-            (typeof actor.verificationStatus === 'string' ? actor.verificationStatus : undefined) ||
-            null,
-          actor_created_at:
-            (typeof actor.created_at === 'string' ? actor.created_at : undefined) ||
-            (typeof actor.createdAt === 'string' ? actor.createdAt : undefined) ||
-            null,
-          verification_request_id: latest?.id ?? null,
-          request_status: latest?.status ?? null,
-          preferred_timezone: latest?.preferred_timezone ?? null,
-          phone_number: latest?.phone_number ?? null,
-          scheduled_at: latest?.scheduled_at ?? null,
-          request_created_at: latest?.created_at ?? null,
-          request_updated_at: latest?.updated_at ?? null,
-        };
-      });
+      return {
+        actor_id: actorId,
+        registry_id:
+          (typeof actor.registry_id === 'string' ? actor.registry_id : undefined) ||
+          (typeof actor.registryId === 'string' ? actor.registryId : undefined) ||
+          null,
+        email: typeof actor.email === 'string' ? actor.email : null,
+        first_name:
+          (typeof actor.first_name === 'string' ? actor.first_name : undefined) ||
+          (typeof actor.firstName === 'string' ? actor.firstName : undefined) ||
+          null,
+        last_name:
+          (typeof actor.last_name === 'string' ? actor.last_name : undefined) ||
+          (typeof actor.lastName === 'string' ? actor.lastName : undefined) ||
+          null,
+        stage_name:
+          (typeof actor.stage_name === 'string' ? actor.stage_name : undefined) ||
+          (typeof actor.stageName === 'string' ? actor.stageName : undefined) ||
+          null,
+        verification_status:
+          (typeof actor.verification_status === 'string' ? actor.verification_status : undefined) ||
+          (typeof actor.verificationStatus === 'string' ? actor.verificationStatus : undefined) ||
+          null,
+        actor_created_at:
+          (typeof actor.created_at === 'string' ? actor.created_at : undefined) ||
+          (typeof actor.createdAt === 'string' ? actor.createdAt : undefined) ||
+          null,
+        verification_request_id: latest?.id ?? null,
+        request_status: latest?.status ?? null,
+        preferred_timezone: latest?.preferred_timezone ?? null,
+        phone_number: latest?.phone_number ?? null,
+        scheduled_at: latest?.scheduled_at ?? null,
+        request_created_at: latest?.created_at ?? null,
+        request_updated_at: latest?.updated_at ?? null,
+      };
+    });
 
     const orderedVerifications = verifications
       .filter((value): value is NonNullable<typeof value> => value !== null)

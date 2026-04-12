@@ -920,7 +920,10 @@ async function getOpenVerificationSession(event: APIGatewayProxyEvent, tenantId:
 
   const { actorId, statusFilter } = parsed.data;
   const statuses = statusFilter
-    ? statusFilter.split(',').map((s) => s.trim()).filter(Boolean)
+    ? statusFilter
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
     : ['pending_scheduling', 'scheduled'];
 
   const placeholders = statuses.map((_, i) => `$${i + 3}`).join(', ');
@@ -1165,7 +1168,14 @@ async function completeVerificationSession(event: APIGatewayProxyEvent, tenantId
          completed_by_user_profile_id = $5::uuid,
          updated_at = NOW()
      WHERE id = $1::uuid AND tenant_id = $6`,
-    [session.id, verified ? 'completed' : 'failed', verified, notes || null, completedByUserProfileId, tenantId]
+    [
+      session.id,
+      verified ? 'completed' : 'failed',
+      verified,
+      notes || null,
+      completedByUserProfileId,
+      tenantId,
+    ]
   );
 
   return {

@@ -24,14 +24,17 @@ Use only the following files during implementation:
 Superseded docs are retained for history but must not be used as active runbooks.
 
 ### 1. **FINAL-DEPLOYMENT-CHECKLIST.md** (Master Reference)
+
 **What it is**: Complete 7-phase checklist from pre-deployment to launch  
 **Use this to**:
+
 - Track your progress week by week
 - Know exactly what to do next
 - Verify nothing is forgotten
 - Troubleshoot issues
 
 **How to use**:
+
 - Print it out or keep it open in another VS Code tab
 - Check off items as you complete them
 - Follow the phase order (Phase 1 → Phase 2, etc.)
@@ -39,8 +42,10 @@ Superseded docs are retained for history but must not be used as active runbooks
 ---
 
 ### 2. **TI-REPO-SETUP.md** (Truly Imagined Web App)
+
 **What it is**: Complete setup guide for the TI Next.js application  
 **Covers**:
+
 - Creating the GitHub repo
 - Installing dependencies
 - Building the HDICR HTTP client
@@ -49,6 +54,7 @@ Superseded docs are retained for history but must not be used as active runbooks
 - Testing locally and in production
 
 **How to use**:
+
 1. Create new GitHub repo: `trulyimagined-web`
 2. Follow steps 1-9 sequentially
 3. Deploy to Vercel
@@ -59,8 +65,10 @@ Superseded docs are retained for history but must not be used as active runbooks
 ---
 
 ### 3. **HDICR-REPO-SETUP.md** (Identity Registry Service)
+
 **What it is**: Complete setup guide for the HDICR Lambda service  
 **Covers**:
+
 - Creating the GitHub repo
 - Installing dependencies
 - Building the Lambda handler
@@ -71,6 +79,7 @@ Superseded docs are retained for history but must not be used as active runbooks
 - Testing locally and in production
 
 **How to use**:
+
 1. Create new GitHub repo: `hdicr-service`
 2. Follow steps 1-11 sequentially
 3. Deploy to AWS Lambda with SAM
@@ -81,8 +90,10 @@ Superseded docs are retained for history but must not be used as active runbooks
 ---
 
 ### 4. **hdicr-template.yaml** (SAM CloudFormation)
+
 **What it is**: Production-ready AWS SAM template for Lambda deployment  
 **Contains**:
+
 - Lambda function definition
 - API Gateway configuration
 - Custom domain setup
@@ -91,6 +102,7 @@ Superseded docs are retained for history but must not be used as active runbooks
 - Authorizer function
 
 **How to use**:
+
 1. Copy to `hdicr-service/infra/template.yaml`
 2. Reconcile handler/code paths against the extracted repo layout and update parameters (certificate ARN, domain, etc.)
 3. Run `sam deploy --guided` when ready
@@ -102,20 +114,24 @@ Superseded docs are retained for history but must not be used as active runbooks
 ## 🚀 Getting Started (Next 30 Minutes)
 
 ### Step 1: Read This Document (5 min)
+
 ✓ You're doing it now
 
 ### Step 2: Read the Checklist Overview (10 min)
+
 Open **FINAL-DEPLOYMENT-CHECKLIST.md** and read through the phases. You don't need to execute anything yet — just understand the journey.
 
 ### Step 3: Decide Which Repo to Start With (5 min)
 
 **Start with HDICR** (deployment-order critical path):
+
 - More complex
 - Need AWS setup first
 - SAM deployment takes longer
 - Estimated: 3-4 hours to production
 
 **Then continue with TI**:
+
 - Simpler setup after HDICR is reachable
 - Vercel deployment is automatic
 - Estimated: 2-3 hours once HDICR staging is healthy
@@ -123,6 +139,7 @@ Open **FINAL-DEPLOYMENT-CHECKLIST.md** and read through the phases. You don't ne
 **Recommendation**: Start with **HDICR** and confirm `https://hdicr.trulyimagined.com/health` is `200` before unpausing TI deployment.
 
 ### Step 4: Pick Your Repo Guide (5 min)
+
 - If starting with TI: Open **TI-REPO-SETUP.md**
 - If starting with HDICR: Open **HDICR-REPO-SETUP.md**
 
@@ -174,14 +191,14 @@ Before you start, verify you have:
 
 ## 🎯 Key Architecture Decisions (Confirmed)
 
-| Decision | Choice | Why |
-|----------|--------|-----|
-| Repos | **Separate** | Minimal setup, maximum independence |
-| TI Deployment | **Vercel** | Fast, automatic, reliable |
-| HDICR Deployment | **AWS Lambda/SAM** | AWS-native, pay-per-invocation, scales to zero |
-| Branding | **hdicr.trulyimagined.com** | Clear service identity within Truly Imagined domain |
-| Databases | **Separate** | `trimg-db-ti` + `trimg-db-v3` |
-| Auth | **Auth0 M2M** | TI → HDICR service-to-service |
+| Decision         | Choice                      | Why                                                 |
+| ---------------- | --------------------------- | --------------------------------------------------- |
+| Repos            | **Separate**                | Minimal setup, maximum independence                 |
+| TI Deployment    | **Vercel**                  | Fast, automatic, reliable                           |
+| HDICR Deployment | **AWS Lambda/SAM**          | AWS-native, pay-per-invocation, scales to zero      |
+| Branding         | **hdicr.trulyimagined.com** | Clear service identity within Truly Imagined domain |
+| Databases        | **Separate**                | `trimg-db-ti` + `trimg-db-v3`                       |
+| Auth             | **Auth0 M2M**               | TI → HDICR service-to-service                       |
 
 These decisions are locked in. No second-guessing needed.
 
@@ -189,14 +206,14 @@ These decisions are locked in. No second-guessing needed.
 
 ## 💰 Cost Reality
 
-| Service | Monthly | Notes |
-|---------|---------|-------|
-| RDS 2x | $50 | Fixed cost, both instances |
-| Lambda (HDICR) | $2 | Pay-per-invocation, scales to zero |
-| S3 (Media) | $10 | Depends on upload volume |
-| Vercel (TI) | $20 | Pro plan, automatic scaling |
-| DNS/CloudWatch | $10 | Minor services |
-| **TOTAL** | **$92** | Scales with demand |
+| Service        | Monthly | Notes                              |
+| -------------- | ------- | ---------------------------------- |
+| RDS 2x         | $50     | Fixed cost, both instances         |
+| Lambda (HDICR) | $2      | Pay-per-invocation, scales to zero |
+| S3 (Media)     | $10     | Depends on upload volume           |
+| Vercel (TI)    | $20     | Pro plan, automatic scaling        |
+| DNS/CloudWatch | $10     | Minor services                     |
+| **TOTAL**      | **$92** | Scales with demand                 |
 
 **Revenue model**: % of licensing revenue + studio subscriptions covers this easily.
 
@@ -217,12 +234,14 @@ These decisions are locked in. No second-guessing needed.
 ## 📞 Support & Troubleshooting
 
 Each setup guide contains:
+
 - ✅ Step-by-step instructions (never guessing what to do)
 - ✅ Code examples (copy-paste ready)
 - ✅ Configuration templates (all provided)
 - ✅ Troubleshooting section (common issues + fixes)
 
 **If something breaks:**
+
 1. Check the troubleshooting section in the relevant guide
 2. Check CloudWatch logs (HDICR) or Vercel logs (TI)
 3. Verify environment variables are correct
@@ -240,7 +259,7 @@ By the end of this, you'll understand:
 ✅ **Vercel** - Modern web app deployment  
 ✅ **M2M Authentication** - Service-to-service Auth0 flows  
 ✅ **Monorepo vs Separate Repos** - When to use each  
-✅ **CloudWatch** - AWS monitoring and logging  
+✅ **CloudWatch** - AWS monitoring and logging
 
 These are **enterprise-level infrastructure skills**. You're not just building a service — you're learning modern cloud architecture.
 
@@ -250,14 +269,15 @@ These are **enterprise-level infrastructure skills**. You're not just building a
 
 Use this to know where you are:
 
-| Status | Meaning |
-|--------|---------|
-| 🟢 Complete | This phase is done, you can move to the next |
-| 🟡 In Progress | You're currently working on this |
-| 🔴 Blocked | Something is stuck, check troubleshooting |
-| ⚪ Not Started | This phase is coming up |
+| Status         | Meaning                                      |
+| -------------- | -------------------------------------------- |
+| 🟢 Complete    | This phase is done, you can move to the next |
+| 🟡 In Progress | You're currently working on this             |
+| 🔴 Blocked     | Something is stuck, check troubleshooting    |
+| ⚪ Not Started | This phase is coming up                      |
 
 Example checklist usage:
+
 ```
 Week 1:
 - 🟢 Created GitHub repos
@@ -270,6 +290,7 @@ Week 1:
 ## 💡 Pro Tips
 
 ### **Do These Things**
+
 - ✅ Test locally before deploying
 - ✅ Use `.env.local` for local development
 - ✅ Keep secrets out of git
@@ -278,6 +299,7 @@ Week 1:
 - ✅ Take breaks (infrastructure setup is tedious)
 
 ### **Don't Do These Things**
+
 - ❌ Copy secrets into git
 - ❌ Deploy without testing locally first
 - ❌ Skip environment variable configuration
@@ -321,6 +343,7 @@ Launch 🚀
 **Pick one and do it:**
 
 ### Option A: Read Phase 1 of the Checklist (10 min)
+
 ```
 Open: FINAL-DEPLOYMENT-CHECKLIST.md
 Read: "Phase 1: Pre-Deployment Setup"
@@ -328,6 +351,7 @@ Do: Mark off everything you've already done
 ```
 
 ### Option B: Start TI Setup (2-3 hours, after HDICR health check)
+
 ```
 Open: TI-REPO-SETUP.md
 Do: Steps 1-2 (create repo + install deps) after HDICR is healthy
@@ -335,6 +359,7 @@ This gives you momentum once boundary dependencies are ready
 ```
 
 ### Option C: Start HDICR Setup (3-4 hours)
+
 ```
 Open: HDICR-REPO-SETUP.md
 Do: Steps 1-2 (create repo + install deps)
@@ -348,6 +373,7 @@ Infrastructure-first approach
 ## ✨ Final Words
 
 You've made smart architectural decisions:
+
 - ✅ Separate repos = maximum independence
 - ✅ Vercel for TI = speed and simplicity
 - ✅ AWS Lambda for HDICR = native AWS integration
@@ -357,6 +383,7 @@ You've made smart architectural decisions:
 **These decisions position you for success.**
 
 You now have:
+
 - ✅ Complete setup guides (no guessing)
 - ✅ Production-ready code templates
 - ✅ SAM CloudFormation template
@@ -369,12 +396,12 @@ You now have:
 
 ## 📚 All Documents Summary
 
-| File | Purpose | When to Use |
-|------|---------|------------|
-| **FINAL-DEPLOYMENT-CHECKLIST.md** | Master progress tracker | Track progress, know what's next |
-| **TI-REPO-SETUP.md** | TI implementation guide | Setting up the web app |
-| **HDICR-REPO-SETUP.md** | HDICR implementation guide | Setting up the service |
-| **hdicr-template.yaml** | AWS infrastructure code | Deploy HDICR to Lambda |
+| File                              | Purpose                    | When to Use                      |
+| --------------------------------- | -------------------------- | -------------------------------- |
+| **FINAL-DEPLOYMENT-CHECKLIST.md** | Master progress tracker    | Track progress, know what's next |
+| **TI-REPO-SETUP.md**              | TI implementation guide    | Setting up the web app           |
+| **HDICR-REPO-SETUP.md**           | HDICR implementation guide | Setting up the service           |
+| **hdicr-template.yaml**           | AWS infrastructure code    | Deploy HDICR to Lambda           |
 
 ---
 
@@ -382,4 +409,4 @@ You now have:
 
 ---
 
-*Questions before you start? Or ready to open VS Code and begin?*
+_Questions before you start? Or ready to open VS Code and begin?_

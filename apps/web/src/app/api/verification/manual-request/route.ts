@@ -4,10 +4,7 @@ import { isActor } from '@/lib/auth';
 import { sendManualVerificationRequestAdminEmail } from '@/lib/email';
 import { DEFAULT_TENANT_ID, resolveUserProfileId, writeAuditLog } from '@/lib/manual-verification';
 import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
-import {
-  getOpenVerificationSession,
-  createVerificationSession,
-} from '@/lib/hdicr/identity-client';
+import { getOpenVerificationSession, createVerificationSession } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 

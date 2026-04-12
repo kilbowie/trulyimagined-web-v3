@@ -3,7 +3,12 @@ import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
 import { sendVerificationCompleteEmail, sendVerificationRetryEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
-import { DEFAULT_TENANT_ID, getAdminContext, resolveUserProfileId, writeAuditLog } from '@/lib/manual-verification';
+import {
+  DEFAULT_TENANT_ID,
+  getAdminContext,
+  resolveUserProfileId,
+  writeAuditLog,
+} from '@/lib/manual-verification';
 import {
   getActorById,
   setActorVerificationStatus,
@@ -69,8 +74,11 @@ export async function POST(request: NextRequest) {
       resolvedActorId = sessionResult.actorId;
     } catch (err: unknown) {
       const status =
-        err instanceof Error && err.message.includes('404') ? 404 :
-        err instanceof Error && err.message.includes('session not found') ? 404 : 500;
+        err instanceof Error && err.message.includes('404')
+          ? 404
+          : err instanceof Error && err.message.includes('session not found')
+            ? 404
+            : 500;
       return NextResponse.json(
         { error: status === 404 ? 'Verification session not found' : 'Internal server error' },
         { status }
