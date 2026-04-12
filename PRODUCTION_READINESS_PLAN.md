@@ -18,6 +18,7 @@ Use only these documents for execution:
 5. `docs/PRE_DEPLOYMENT_VALIDATION/hdicr-template.yaml`
 6. `docs/PRE_DEPLOYMENT_VALIDATION/LOCAL-SMOKE-PREREQUISITES.md`
 7. `docs/PRE_DEPLOYMENT_VALIDATION/CROSS-BRANCH-EXTRACTION-COMPARISON.md`
+8. `docs/PRE_DEPLOYMENT_VALIDATION/REAL-EXTRACTION-EXECUTION-CHECKLIST.md`
 
 ## Superseded Documents (Do Not Execute From)
 
@@ -84,6 +85,7 @@ Use only these documents for execution:
   - Independent gates in extracted HDICR workspace: install ✓, type-check ✓, test ✓, build ✓
 - Consolidated operator reference:
   - `docs/PRE_DEPLOYMENT_VALIDATION/CROSS-BRANCH-EXTRACTION-COMPARISON.md`
+  - `docs/PRE_DEPLOYMENT_VALIDATION/REAL-EXTRACTION-EXECUTION-CHECKLIST.md`
 
 ### A + B + D Execution Delta (2026-04-12)
 
