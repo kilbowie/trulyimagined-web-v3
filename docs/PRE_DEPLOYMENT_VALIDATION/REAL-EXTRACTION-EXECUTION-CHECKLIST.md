@@ -3,6 +3,8 @@
 Date: 2026-04-12
 Purpose: Operator-grade, step-by-step execution checklist for real TI and HDICR repository extraction based on validated dry-runs.
 
+Companion mapping file: `docs/PRE_DEPLOYMENT_VALIDATION/REAL-EXTRACTION-COPY-MAP.md`
+
 ## Preconditions (Must Be True Before Starting)
 
 - [ ] You are on `develop` with a clean working tree.
