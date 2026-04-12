@@ -60,3 +60,24 @@ Phase 4 findings:
 - All canonical URLs locked and consistent
 - No circular dependencies or cross-repo coupling
 - Ready for Phase 5 Platform Configuration
+
+Phase 5 AWS infrastructure validation markers:
+
+- AWS_CREDENTIALS_VALID (account 440779547223)
+- AWS_REGION_CORRECT (eu-west-1)
+- ACM_CERTIFICATE_ISSUED (both domains SUCCESS)
+- S3_ARTIFACT_BUCKET_EXISTS (hdicr-sam-artifacts-1776018163)
+- S3_MEDIA_BUCKET_CONFIGURED (versioning ON, encryption ON, public access OFF, CORS ON)
+- S3_MEDIA_FOLDERS_CREATED (actors/, agencies/, studios/)
+- ENV_VARIABLES_DOCUMENTED (10 TI + 5 HDICR params)
+- AUTH0_CONFIG_VERIFIED (M2M audience locked, callbacks locked, secrets secure)
+- VERCEL_PREREQUISITES_READY (repo extracted, gates pass, domain ready)
+- LAMBDA_PREREQUISITES_READY (SAM template valid, artifact bucket ready)
+- DNS_PROVIDER_ACCESSIBLE (CNAME records can be added)
+
+Phase 5 deployment order locked:
+
+- HDICR DEPLOYS FIRST (Phase 6.1)
+- TI DEPLOYS SECOND (Phase 6.2)
+- Never deploy TI before HDICR
+- Ready for Phase 6 Deployment
