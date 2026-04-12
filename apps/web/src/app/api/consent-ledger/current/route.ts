@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
     let current: unknown = null;
     let history: unknown[] = [];
-    let licensesOnCurrentVersion: unknown[] = [];
+    let licensesOnCurrentVersion = 0;
     try {
       const result = await getCurrentConsentLedger(actorId, includeHistory);
       current = result.current;
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
         current: null,
         history: [],
         actorId,
-        licensesOnCurrentVersion: [],
+        licensesOnCurrentVersion: 0,
         serviceUnavailable: true,
         message: 'Consent service temporarily unavailable',
       });

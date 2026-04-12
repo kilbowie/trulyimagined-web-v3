@@ -5,7 +5,7 @@ import {
   getActiveRepresentationForActor,
   getActorByAuth0UserId,
 } from '@/lib/hdicr/representation-client';
-import { query } from '@/lib/db';
+import { getPendingTerminationByRelationshipId } from '@/lib/representation-termination';
 
 /**
  * GET /api/representation/my-agent
@@ -38,16 +38,7 @@ export async function GET() {
       });
     }
 
-    const terminationResult = await query(
-      `SELECT id, notice_date, effective_date, initiated_by, status, reason
-       FROM representation_terminations
-       WHERE relationship_id = $1
-         AND status = 'pending_termination'
-       LIMIT 1`,
-      [representation.id]
-    );
-
-    const pendingTermination = terminationResult.rows[0] || null;
+    const pendingTermination = await getPendingTerminationByRelationshipId(representation.id);
 
     return NextResponse.json({
       representation: {

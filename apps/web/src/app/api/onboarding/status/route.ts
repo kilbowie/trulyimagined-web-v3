@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { queryTi } from '@/lib/db';
+import { getUserProfile } from '@/lib/auth';
 import {
   getActorByAuth0UserId,
   checkActiveConsent,
@@ -29,19 +29,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const profileResult = await queryTi(
-      `SELECT id, role, profile_completed
-       FROM user_profiles
-       WHERE auth0_user_id = $1
-       LIMIT 1`,
-      [user.sub]
-    );
+    const profile = await getUserProfile();
 
-    if (profileResult.rows.length === 0) {
+    if (!profile) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    const profile = profileResult.rows[0];
     if (profile.role !== 'Actor') {
       return NextResponse.json({ error: 'Forbidden: Actor role required' }, { status: 403 });
     }

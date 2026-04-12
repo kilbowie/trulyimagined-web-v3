@@ -227,6 +227,19 @@ export async function listPendingTerminations(params: { actorId?: string; agentI
   return enrichedRows;
 }
 
+export async function getPendingTerminationByRelationshipId(relationshipId: string) {
+  const result = await query(
+    `SELECT id, notice_date, effective_date, initiated_by, status, reason
+     FROM representation_terminations
+     WHERE relationship_id = $1
+       AND status = 'pending_termination'
+     LIMIT 1`,
+    [relationshipId]
+  );
+
+  return result.rows[0] || null;
+}
+
 export async function applyDueRepresentationTerminations(limit = 100) {
   const startedAt = Date.now();
   const warningFailureRateThreshold = Number(
