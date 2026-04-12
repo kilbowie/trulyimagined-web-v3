@@ -1,0 +1,3 @@
+- Remote check links:
+  - https://github.com/kilbowie/trulyimagined
+  - https://github.com/kilbowie/hdicr
