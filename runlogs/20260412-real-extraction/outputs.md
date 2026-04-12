@@ -29,3 +29,8 @@ Phase 3 HDICR push verification:
 - HEAD (HDICR target): fe85e14
 - Branch: extract/hdicr-split-20260412
 - Remote ref: refs/heads/extract/hdicr-split-20260412
+
+Phase 3 blocker closure markers:
+- AWS_CLI_PRESENT
+- SAM_VERSION_1_158_0
+- SAM_VALIDATE_PASS

@@ -16,3 +16,7 @@
 	- branch: extract/hdicr-split-20260412
 	- commit: fe85e14c627102120329fd37c105543be208612f
 	- message: extract: split HDICR into independent repo
+
+- Phase 3 blocker closure evidence:
+	- sam version: 1.158.0 (absolute path invocation)
+	- sam validate: PASS for hdicr/infra/template.yaml

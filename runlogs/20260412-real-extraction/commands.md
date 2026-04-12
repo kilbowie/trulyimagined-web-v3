@@ -142,3 +142,27 @@ PASS WITH BLOCKER
 ### Decision / Deviation
 - Proceeded with existing remote main README baseline per approved Phase 0 deviation.
 - SAM validation is currently blocked in this environment because SAM CLI is not installed.
+
+## Phase 3 Blocker Closure: SAM Validation
+Date: 2026-04-12
+Operator: Adam Greene
+
+### Commands Executed
+- aws --version
+- winget install/search/install attempts for Amazon.SAM-CLI
+- direct SAM invocation via absolute path:
+	- C:/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd --version
+	- C:/Program Files/Amazon/AWSSAMCLI/bin/sam.cmd validate -t infra/template.yaml
+
+### Outputs (Summary)
+- AWS CLI confirmed installed.
+- SAM CLI available at absolute path and reports version 1.158.0.
+- Template validation passed:
+	- C:/Users/adamr/OneDrive/Desktop/KilbowieConsulting/002-TrulyImagined/hdicr/infra/template.yaml is a valid SAM Template.
+
+### Validation Result
+PASS
+
+### Decision / Deviation
+- Phase 3 SAM blocker closed.
+- Note: `sam` is not currently available on PATH in this shell, but validation succeeded using the installed absolute path executable.
