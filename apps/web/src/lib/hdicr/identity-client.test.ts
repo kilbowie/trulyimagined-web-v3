@@ -40,7 +40,9 @@ describe('identity-client - remote authoritative behavior', () => {
   it('fails closed at call time when remote base URL is missing', async () => {
     const { actorExistsByAuth0UserId } = await import('@/lib/hdicr/identity-client');
 
-    await expect(actorExistsByAuth0UserId('auth0|123')).rejects.toThrow('fail-closed');
+    await expect(actorExistsByAuth0UserId('auth0|123')).rejects.toThrow(
+      /HDICR_API_URL is missing/i
+    );
   });
 
   it('actorExistsByAuth0UserId remains remote-only even with local mode env', async () => {

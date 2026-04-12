@@ -317,6 +317,172 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /v1/identity/link/upsert:
+    post:
+      tags: [Identity Links]
+      operationId: upsertIdentityLink
+      summary: Upsert identity link by provider tuple
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Identity link upserted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/identity/{id}/verify:
+    post:
+      tags: [Identity]
+      operationId: setActorVerificationStatus
+      summary: Set actor verification status
+      parameters:
+        - $ref: '#/components/parameters/ActorId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Verification status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/identity/verification-sessions:
+    get:
+      tags: [Identity]
+      operationId: getOpenVerificationSession
+      summary: Get the latest open manual verification session for an actor
+      parameters:
+        - name: actorId
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Latest open verification session
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Identity]
+      operationId: createVerificationSession
+      summary: Create a pending manual verification session request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '201':
+          description: Verification session created
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/identity/verification-sessions/schedule:
+    post:
+      tags: [Identity]
+      operationId: scheduleVerificationSession
+      summary: Schedule or upsert a manual verification session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Verification session scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/identity/verification-sessions/batch-latest:
+    post:
+      tags: [Identity]
+      operationId: batchGetLatestVerificationSessions
+      summary: Get latest verification session per actor in batch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Latest sessions map
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/identity/verification-sessions/complete:
+    post:
+      tags: [Identity]
+      operationId: completeVerificationSession
+      summary: Complete or fail a manual verification session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Verification session completion recorded
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   /v1/identity/admin/users:
     get:
       tags: [Admin]

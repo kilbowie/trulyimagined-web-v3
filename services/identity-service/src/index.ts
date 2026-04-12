@@ -252,27 +252,27 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     }
 
     if (path === '/v1/identity/link/by-provider' && httpMethod === 'GET') {
-      return withCorrelation(await getIdentityLinkByProviderAndProviderUser(event));
+      return withCorrelation(await getIdentityLinkByProviderAndProviderUser(event, tenantId));
     }
 
     if (path === '/v1/identity/links' && httpMethod === 'GET') {
-      return withCorrelation(await listIdentityLinks(event));
+      return withCorrelation(await listIdentityLinks(event, tenantId));
     }
 
     if (path === '/v1/identity/link/create' && httpMethod === 'POST') {
-      return withCorrelation(await createIdentityLink(event));
+      return withCorrelation(await createIdentityLink(event, tenantId));
     }
 
     if (path === '/v1/identity/link/reactivate' && httpMethod === 'POST') {
-      return withCorrelation(await reactivateIdentityLink(event));
+      return withCorrelation(await reactivateIdentityLink(event, tenantId));
     }
 
     if (path === '/v1/identity/link/unlink-by-id' && httpMethod === 'POST') {
-      return withCorrelation(await unlinkIdentityById(event));
+      return withCorrelation(await unlinkIdentityById(event, tenantId));
     }
 
     if (path === '/v1/identity/link/unlink-by-provider' && httpMethod === 'POST') {
-      return withCorrelation(await unlinkIdentityByProvider(event));
+      return withCorrelation(await unlinkIdentityByProvider(event, tenantId));
     }
 
     if (path === '/v1/identity/link/upsert' && httpMethod === 'POST') {

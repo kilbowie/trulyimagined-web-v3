@@ -47,7 +47,7 @@ describe('consent-client - HDICR flag-awareness', () => {
         actorId: 'actor-123',
         consentType: 'voice_synthesis',
       })
-    ).rejects.toThrow('fail-closed');
+    ).rejects.toThrow(/HDICR_API_URL is missing/i);
   });
 
   it('revokeConsent calls remote endpoint', async () => {

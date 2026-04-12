@@ -297,6 +297,13 @@ Validation evidence (2026-04-11):
   - `@trulyimagined/representation-service` (4/4)
 - HDICR-owned table guardrail passed: `scripts/check-hdicr-owned-table-access.sh`
 - Direct `actors` SQL scan in `apps/web/src` returned no matches (2026-04-11 follow-up migration batch)
+- `pnpm check:sep042-readiness` -> passed
+- `pnpm check:tenant-neutral-readiness` -> passed
+- `npx vercel env ls preview` / `production` evidence captured:
+  - canonical M2M vars (`AUTH0_M2M_CLIENT_ID`, `AUTH0_M2M_CLIENT_SECRET`, `AUTH0_M2M_AUDIENCE`, `HDICR_API_URL`) are not currently present in Vercel preview/production env listings
+- Local M2M live smoke (Auth0 token + HDICR API call):
+  - token acquisition succeeded (HTTP 200)
+  - HDICR API call failed because local endpoint is unreachable (`localhost:4001`, TCP closed)
 
 ---
 

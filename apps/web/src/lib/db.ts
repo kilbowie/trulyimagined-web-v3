@@ -45,23 +45,16 @@ function createPool(connectionString?: string): Pool {
   );
 }
 
-const legacyConnectionString = process.env.DATABASE_URL;
+const hdicrConnectionString = process.env.HDICR_DATABASE_URL;
+const tiConnectionString = process.env.TI_DATABASE_URL;
 
-const hdicrConnectionString = process.env.HDICR_DATABASE_URL || legacyConnectionString;
-if (!process.env.HDICR_DATABASE_URL && legacyConnectionString) {
-  console.warn(
-    '[DB] Using legacy DATABASE_URL for HDICR pool. Set HDICR_DATABASE_URL for split credentials.'
+if (!tiConnectionString) {
+  throw new Error(
+    '[DB] TI_DATABASE_URL is required. Legacy DATABASE_URL fallback is disabled for split safety.'
   );
 }
 
-const tiConnectionString = process.env.TI_DATABASE_URL || legacyConnectionString;
-if (!process.env.TI_DATABASE_URL && legacyConnectionString) {
-  console.warn(
-    '[DB] Using legacy DATABASE_URL for TI pool. Set TI_DATABASE_URL for split credentials.'
-  );
-}
-
-const hdicrPool = createPool(hdicrConnectionString);
+const hdicrPool = hdicrConnectionString ? createPool(hdicrConnectionString) : null;
 const tiPool = createPool(tiConnectionString);
 
 // Backward compatible default pool. New code must use queryTi (TI-owned tables only).
@@ -136,9 +129,11 @@ export async function testConnection(): Promise<boolean> {
 }
 
 export async function testSplitConnections(): Promise<{ hdicr: boolean; ti: boolean }> {
-  const hdicr = await executeQuery(hdicrPool, 'HDICR', 'SELECT NOW()')
-    .then(() => true)
-    .catch(() => false);
+  const hdicr = hdicrPool
+    ? await executeQuery(hdicrPool, 'HDICR', 'SELECT NOW()')
+        .then(() => true)
+        .catch(() => false)
+    : false;
 
   const ti = await queryTi('SELECT NOW()')
     .then(() => true)

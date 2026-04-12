@@ -6,8 +6,8 @@ vi.mock('@/lib/auth0', () => ({
   },
 }));
 
-vi.mock('@/lib/db', () => ({
-  queryTi: vi.fn(),
+vi.mock('@/lib/auth', () => ({
+  getUserProfile: vi.fn(),
 }));
 
 vi.mock('@/lib/hdicr/client-helpers', () => ({
@@ -18,7 +18,7 @@ vi.mock('@/lib/hdicr/client-helpers', () => ({
 
 import { GET } from './route';
 import { auth0 } from '@/lib/auth0';
-import { queryTi } from '@/lib/db';
+import { getUserProfile } from '@/lib/auth';
 import {
   getActorByAuth0UserId,
   checkActiveConsent,
@@ -45,8 +45,10 @@ describe('GET /api/onboarding/status - Contract Test', () => {
       user: { sub: 'auth0|actor-1' },
     } as any);
 
-    vi.mocked(queryTi).mockResolvedValueOnce({
-      rows: [{ id: 'profile-1', role: 'Actor', profile_completed: true }],
+    vi.mocked(getUserProfile).mockResolvedValueOnce({
+      id: 'profile-1',
+      role: 'Actor',
+      profile_completed: true,
     } as any);
 
     vi.mocked(getActorByAuth0UserId).mockResolvedValueOnce({

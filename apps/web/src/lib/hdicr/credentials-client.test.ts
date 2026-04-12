@@ -21,7 +21,7 @@ describe('credentials-client - remote authoritative behavior', () => {
         includeRevoked: false,
         includeExpired: false,
       })
-    ).rejects.toThrow(/fail-closed/i);
+    ).rejects.toThrow(/HDICR_API_URL is missing/i);
   });
 
   it('listCredentialsByProfileId calls remote endpoint', async () => {

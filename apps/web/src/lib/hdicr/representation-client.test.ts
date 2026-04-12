@@ -33,7 +33,7 @@ describe('representation-client - remote authoritative behavior', () => {
   it('fails closed at call time when remote base URL is missing', async () => {
     const { getActorByAuth0UserId } = await import('@/lib/hdicr/representation-client');
 
-    await expect(getActorByAuth0UserId('auth0|abc')).rejects.toThrow('fail-closed');
+    await expect(getActorByAuth0UserId('auth0|abc')).rejects.toThrow(/HDICR_API_URL is missing/i);
   });
 
   it('createRepresentationRequest remains remote-only even with local mode env', async () => {

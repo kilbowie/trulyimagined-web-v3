@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GET } from './route';
 
 vi.mock('@/lib/auth0', () => ({
   auth0: {
@@ -15,6 +14,12 @@ vi.mock('@/lib/hdicr/representation-client', () => ({
   getActiveRepresentationForActor: vi.fn(),
   getActorByAuth0UserId: vi.fn(),
 }));
+
+vi.mock('@/lib/representation-termination', () => ({
+  getPendingTerminationByRelationshipId: vi.fn().mockResolvedValue(null),
+}));
+
+import { GET } from './route';
 
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';

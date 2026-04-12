@@ -35,7 +35,9 @@ describe('licensing-client - HDICR flag-awareness', () => {
   it('fails closed at call time when remote base URL is missing', async () => {
     const { listActorLicensingRequests } = await import('@/lib/hdicr/licensing-client');
 
-    await expect(listActorLicensingRequests('actor-123')).rejects.toThrow('fail-closed');
+    await expect(listActorLicensingRequests('actor-123')).rejects.toThrow(
+      /HDICR_API_URL is missing/i
+    );
   });
 
   it('listActorLicensingRequests remains remote-only even with local mode env', async () => {

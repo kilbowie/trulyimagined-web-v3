@@ -166,6 +166,33 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /v1/consent/enforcement/check:
+    post:
+      tags: [Consent]
+      operationId: checkConsentEnforcement
+      summary: Evaluate whether a requested action passes consent enforcement rules
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Enforcement evaluation result
+          content:
+            application/json:
+              schema:
+                type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
 components:
   securitySchemes:
     bearerAuth:
