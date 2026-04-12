@@ -19,6 +19,7 @@ Platform infrastructure for TI (Vercel) and HDICR (AWS Lambda + SAM) has been **
 ### AWS Credentials & Region
 
 ✅ **VERIFIED**:
+
 - AWS Account ID: `440779547223`
 - Caller Identity: ARN `arn:aws:iam::440779547223:root`
 - Configured Region: `eu-west-1`
@@ -27,6 +28,7 @@ Platform infrastructure for TI (Vercel) and HDICR (AWS Lambda + SAM) has been **
 ### ACM Certificate
 
 ✅ **VERIFIED**:
+
 - Certificate ARN: `arn:aws:acm:eu-west-1:440779547223:certificate/769f5ac8-d0a7-48f4-a822-17348373bab9`
 - Primary Domain: `*.trulyimagined.com` (Status: **SUCCESS** ✅)
 - Secondary Domain: `trulyimagined.com` (Status: **SUCCESS** ✅)
@@ -42,6 +44,7 @@ Platform infrastructure for TI (Vercel) and HDICR (AWS Lambda + SAM) has been **
 ### SAM Artifacts Bucket (HDICR Deployment)
 
 ✅ **VERIFIED**:
+
 - Bucket Name: `hdicr-sam-artifacts-1776018163`
 - Region: `eu-west-1`
 - Purpose: CloudFormation SAM artifacts staging
@@ -54,6 +57,7 @@ Platform infrastructure for TI (Vercel) and HDICR (AWS Lambda + SAM) has been **
 ✅ **FULLY CONFIGURED**:
 
 **Bucket Details**:
+
 - Bucket Name: `trulyimagined-media`
 - Region: `eu-west-1`
 - Purpose: Photo storage (actor headshots, agency/studio profile photos)
@@ -61,14 +65,15 @@ Platform infrastructure for TI (Vercel) and HDICR (AWS Lambda + SAM) has been **
 
 **Bucket Configuration**:
 
-| Setting | Status | Verification |
-|---------|--------|--------------|
-| **Versioning** | ✅ ENABLED | Protects against accidental deletes; version history maintained |
-| **Encryption** | ✅ ENABLED (AES256) | Server-side encryption at rest; default algorithm configured |
-| **Public Access Block** | ✅ ENABLED | BlockPublicAcls=True, BlockPublicPolicy=True; all access via IAM or presigned URLs |
-| **CORS Configuration** | ✅ CONFIGURED | AllowedOrigins: https://trulyimagined.com, http://localhost:3000; AllowedMethods: GET, PUT, POST, DELETE, HEAD |
+| Setting                 | Status              | Verification                                                                                                   |
+| ----------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| **Versioning**          | ✅ ENABLED          | Protects against accidental deletes; version history maintained                                                |
+| **Encryption**          | ✅ ENABLED (AES256) | Server-side encryption at rest; default algorithm configured                                                   |
+| **Public Access Block** | ✅ ENABLED          | BlockPublicAcls=True, BlockPublicPolicy=True; all access via IAM or presigned URLs                             |
+| **CORS Configuration**  | ✅ CONFIGURED       | AllowedOrigins: https://trulyimagined.com, http://localhost:3000; AllowedMethods: GET, PUT, POST, DELETE, HEAD |
 
 **Folder Structure** ✅ (verified via `aws s3 ls s3://trulyimagined-media/ --recursive`):
+
 ```
 actors/.keep                    (actor headshots)
 agencies/.keep                  (agency profile photos)
@@ -76,6 +81,7 @@ studios/.keep                   (studio project artwork)
 ```
 
 **Access Pattern**:
+
 - TI reads/writes via presigned URLs
 - HDICR can generate presigned URLs for authorized actors
 - Browser-based uploads supported via CORS
@@ -88,36 +94,44 @@ studios/.keep                   (studio project artwork)
 ### TI (Vercel) Environment Variables - Ready for Configuration
 
 **Database**:
+
 - [ ] `TI_DATABASE_URL` = PostgreSQL connection string (`postgresql://user:pass@host:5432/trimg_app_db`)
 
 **HDICR Integration**:
+
 - [ ] `HDICR_API_URL` = `https://hdicr.trulyimagined.com` (locked canonical URL)
 
 **Auth0 M2M (TI → HDICR Communication)**:
+
 - [ ] `AUTH0_M2M_CLIENT_ID` = Auth0 client credentials
 - [ ] `AUTH0_M2M_CLIENT_SECRET` = Auth0 client secret (**MARK SENSITIVE**)
 - [ ] `AUTH0_M2M_AUDIENCE` = `https://hdicr.trulyimagined.com` (locked)
 
 **Auth0 User Authentication**:
+
 - [ ] `AUTH0_DOMAIN` = Auth0 tenant domain (e.g., `your-tenant.auth0.com`)
 - [ ] `AUTH0_CLIENT_ID` = User auth client ID
 - [ ] `AUTH0_CLIENT_SECRET` = User auth secret (**MARK SENSITIVE**)
 - [ ] `AUTH0_BASE_URL` = `https://trulyimagined.com` (TI production URL)
 
 **Storage**:
+
 - [ ] `S3_BUCKET_NAME` = `trulyimagined-media` (if S3 client used from TI)
 - [ ] `S3_REGION` = `eu-west-1`
 
 ### HDICR (AWS Lambda) Environment Variables - SAM Parameters
 
 **Database**:
+
 - [ ] `HDICRDatabaseURL` = PostgreSQL connection string (`postgresql://user:pass@host:5432/hdicr_app_db`)
 
 **Auth0**:
+
 - [ ] `AUTH0_DOMAIN` = Auth0 tenant domain
 - [ ] `AUTH0_AUDIENCE` = `https://hdicr.trulyimagined.com` (locked canonical URL)
 
 **Infrastructure**:
+
 - [ ] `CertificateArn` = `arn:aws:acm:eu-west-1:440779547223:certificate/769f5ac8-d0a7-48f4-a822-17348373bab9`
 - [ ] `CustomDomainName` = `hdicr.trulyimagined.com`
 - [ ] `S3BucketName` = `trulyimagined-media` (for HDICR to read/write presigned URLs)
@@ -130,9 +144,10 @@ studios/.keep                   (studio project artwork)
 ### M2M (Machine-to-Machine) Application
 
 ✅ **VERIFIED CONFIGURATION**:
+
 - **Audience**: `https://hdicr.trulyimagined.com` ✅ (locked)
 - **Client Type**: Confidential (for backend M2M)
-- **Authorized Scopes**: 
+- **Authorized Scopes**:
   - `read:actors` (identity-service)
   - `read:identities` (identity-service)
   - `read:consent` (consent-service)
@@ -145,6 +160,7 @@ studios/.keep                   (studio project artwork)
 ### User Authentication Application
 
 ✅ **VERIFIED CONFIGURATION**:
+
 - **Callback URL**: `https://trulyimagined.com/api/auth/callback` (locked)
 - **Logout URL**: `https://trulyimagined.com` (locked)
 - **Base URL**: `https://trulyimagined.com` (TI production)
@@ -155,6 +171,7 @@ studios/.keep                   (studio project artwork)
 ### Credentials Management
 
 ✅ **CONFIRMED SECURE**:
+
 - M2M credentials: **NOT in git** (stored in Vercel Env Secrets and AWS SAM parameters)
 - User auth credentials: **NOT in git**
 - Secrets rotation policy: To be defined during Phase 6 setup
@@ -167,22 +184,26 @@ studios/.keep                   (studio project artwork)
 ### Prerequisites for TI Deployment
 
 **Repository**:
+
 - ✅ Extracted repo: `https://github.com/kilbowie/trulyimagined`
 - ✅ Branch ready: `extract/ti-split-20260412`
 - ✅ All gates passing: Build, test, contract checks ✅
 
 **Domain Configuration**:
+
 - [ ] Vercel project created and linked to `https://github.com/kilbowie/trulyimagined`
 - [ ] Domain `trulyimagined.com` added to Vercel
 - [ ] HTTPS: Automatic (Vercel managed)
 - [ ] Preview deployments: Enabled
 
 **Environment Variables** (see section 3):
+
 - [ ] 10 environment variables configured
 - [ ] Secrets marked as Sensitive: `AUTH0_M2M_CLIENT_SECRET`, `AUTH0_CLIENT_SECRET`
 - [ ] `HDICR_API_URL` locked to `https://hdicr.trulyimagined.com`
 
 **Deployment Strategy**:
+
 1. Merge `extract/ti-split-20260412` → `main` (Phase 6)
 2. Vercel automatically deploys to preview first
 3. Verify M2M connection to HDICR
@@ -197,6 +218,7 @@ studios/.keep                   (studio project artwork)
 ### SAM Deployment Prerequisites
 
 ✅ **VERIFIED**:
+
 - SAM template: `infra/template.yaml` (validated in Phase 3: `SAM_VALIDATE_PASS`)
 - Lambda function bundle: Ready in `hdicr` extracted repo
 - Docker availability: Required for SAM build (verify locally)
@@ -205,6 +227,7 @@ studios/.keep                   (studio project artwork)
 ### IAM Permissions Required
 
 **For deployment user**:
+
 - [ ] CloudFormation: `iam:CreateStack`, `iam:UpdateStack`, `iam:DescribeStacks`, `iam:DeleteStack`
 - [ ] Lambda: `lambda:CreateFunction`, `lambda:UpdateFunction`, `lambda:DeleteFunction`
 - [ ] API Gateway: `apigateway:*`
@@ -217,12 +240,14 @@ studios/.keep                   (studio project artwork)
 ### API Gateway Custom Domain
 
 ✅ **PREREQUISITES VERIFIED**:
+
 - ACM Certificate: `arn:aws:acm:eu-west-1:...` **ISSUED** ✅
 - Certificate Region: `eu-west-1` ✅
 - Target Domain: `hdicr.trulyimagined.com` ✅
 - DNS TTL: `3600` seconds (standard)
 
 **Workflow**:
+
 1. SAM deploy creates API Gateway endpoint (e.g., `d-xxxxx.execute-api.eu-west-1.amazonaws.com`)
 2. Add CNAME record at DNS provider:
    - Name: `hdicr`
@@ -237,12 +262,14 @@ studios/.keep                   (studio project artwork)
 ## 7. DNS Provider Readiness
 
 ✅ **VERIFIED PREREQUISITES**:
+
 - Registrar access: Confirmed available
 - Ability to add CNAME records: Confirmed
 - TTL support: Standard 3600 seconds supported
 - Current DNS records: Verified no conflicts for `hdicr.trulyimagined.com`
 
 **Records to Add (Phase 6)**:
+
 ```
 Record Type: CNAME
 Name:        hdicr.trulyimagined.com
@@ -261,22 +288,26 @@ TTL:         3600
 **Use Case**: Store and serve actor headshots, agency logos, studio photos
 
 **Configuration**:
+
 - ✅ Bucket versioning enabled (protects against deletes)
 - ✅ Encryption enabled (AES256)
 - ✅ Public access blocked (all requests must have presigned URL or IAM role)
 - ✅ CORS configured for `https://trulyimagined.com` and `http://localhost:3000`
 
 **Presigned URL Generation**:
+
 - TI code generates time-limited presigned URLs (default 1 hour)
 - Browser receives URL and can upload directly to S3
 - CORS allows cross-origin requests from TI domain
 
 **HDICR Integration**:
+
 - HDICR can generate presigned URLs for actor/agency/studio photos
 - TI retrieves URLs via HDICR API
 - Photos served securely with automatic expiration
 
 **Security Guarantees**:
+
 - ✅ No public listing of bucket (BlockPublicAcls)
 - ✅ No public bucket policy (BlockPublicPolicy)
 - ✅ Versioning prevents content deletion attacks
@@ -287,18 +318,18 @@ TTL:         3600
 
 ## Phase 5 Exit Criteria
 
-| Requirement | Status | Evidence |
-|-------------|--------|----------|
-| **AWS Credentials Valid** | ✅ PASS | `aws sts get-caller-identity` returns account 440779547223 |
-| **AWS Region Correct** | ✅ PASS | `eu-west-1` configured and verified |
-| **ACM Certificate ISSUED** | ✅ PASS | Both domains validated with SUCCESS status |
-| **S3 Artifact Bucket Exists** | ✅ PASS | `hdicr-sam-artifacts-1776018163` accessible |
+| Requirement                          | Status  | Evidence                                                                  |
+| ------------------------------------ | ------- | ------------------------------------------------------------------------- |
+| **AWS Credentials Valid**            | ✅ PASS | `aws sts get-caller-identity` returns account 440779547223                |
+| **AWS Region Correct**               | ✅ PASS | `eu-west-1` configured and verified                                       |
+| **ACM Certificate ISSUED**           | ✅ PASS | Both domains validated with SUCCESS status                                |
+| **S3 Artifact Bucket Exists**        | ✅ PASS | `hdicr-sam-artifacts-1776018163` accessible                               |
 | **S3 Media Bucket Fully Configured** | ✅ PASS | Versioning ON, Encryption ON, Public Access OFF, CORS ON, Folders created |
-| **Environment Variables Documented** | ✅ PASS | 10 TI vars + 5 HDICR params specified |
-| **Auth0 Config Verified** | ✅ PASS | M2M audience locked, callback URLs locked, secrets secure |
-| **Vercel Prerequisites Ready** | ✅ PASS | Repository extracted, gates pass, domain ready for config |
-| **AWS Lambda Prerequisites Ready** | ✅ PASS | SAM template valid, artifact bucket ready, IAM permissions verified |
-| **DNS Provider Accessible** | ✅ PASS | Can add CNAME records for custom domain |
+| **Environment Variables Documented** | ✅ PASS | 10 TI vars + 5 HDICR params specified                                     |
+| **Auth0 Config Verified**            | ✅ PASS | M2M audience locked, callback URLs locked, secrets secure                 |
+| **Vercel Prerequisites Ready**       | ✅ PASS | Repository extracted, gates pass, domain ready for config                 |
+| **AWS Lambda Prerequisites Ready**   | ✅ PASS | SAM template valid, artifact bucket ready, IAM permissions verified       |
+| **DNS Provider Accessible**          | ✅ PASS | Can add CNAME records for custom domain                                   |
 
 ---
 
@@ -335,6 +366,7 @@ TTL:         3600
 ✅ **Phase 5 COMPLETE** - All infrastructure prerequisites validated and documented. Platform is ready for Phase 6 (Deployment).
 
 **Infrastructure Status**:
+
 - AWS: ✅ Active, credentials valid, region correct, certificate issued
 - S3 Buckets: ✅ Both exist, media bucket fully configured
 - Auth0: ✅ M2M + user auth configured, audience locked

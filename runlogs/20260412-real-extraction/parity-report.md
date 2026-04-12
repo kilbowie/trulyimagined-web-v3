@@ -28,6 +28,7 @@ The TI contract gate test (`apps/web/src/lib/hdicr/openapi-contract-gate.contrac
 ### Evidence
 
 **TI Extracted Services** (all 4):
+
 ```
 services/
 ├── consent-service/
@@ -41,17 +42,26 @@ services/
 ```
 
 **TI Contract Gate References** (coded for 3 services):
+
 ```typescript
 type ServiceKey = 'identity' | 'consent' | 'licensing';
 
 const SPEC_PATHS: Record<ServiceKey, string> = {
   identity: path.resolve(process.cwd(), '..', '..', 'services', 'identity-service', 'openapi.yaml'),
   consent: path.resolve(process.cwd(), '..', '..', 'services', 'consent-service', 'openapi.yaml'),
-  licensing: path.resolve(process.cwd(), '..', '..', 'services', 'licensing-service', 'openapi.yaml'),
+  licensing: path.resolve(
+    process.cwd(),
+    '..',
+    '..',
+    'services',
+    'licensing-service',
+    'openapi.yaml'
+  ),
 };
 ```
 
 **TI Client Files** (all 4 present, including representation):
+
 ```
 apps/web/src/lib/hdicr/
 ├── consent-client.ts ✅ in contract gate
@@ -62,6 +72,7 @@ apps/web/src/lib/hdicr/
 ```
 
 **HDICR Extracted Services** (all 4):
+
 ```
 services/
 ├── consent-service/
@@ -85,6 +96,7 @@ services/
 The missing representation-service in the contract gate is likely **intentional** (SEP-020/021/022 domain exclusion noted in contract gate code). However, if representation operations are actively used in TI, the contract gate should be extended to include representation-service schema validation to maintain consistency.
 
 **Action Items**:
+
 - [ ] Confirm representation-service usage patterns in TI deployment
 - [ ] If representation is actively used, extend contract gate to include `representation` service type and schema validation
 
@@ -99,19 +111,21 @@ All canonical URLs are **locked and consistent** across both extracted repos.
 ### Evidence
 
 **HDICR (SAM Template Defaults)**:
+
 ```yaml
 # infra/template.yaml (lines 33-43)
 Parameters:
   Auth0Audience:
     Type: String
     Default: https://hdicr.trulyimagined.com
-    
+
   CustomDomainName:
     Type: String
     Default: hdicr.trulyimagined.com
 ```
 
 **TI (Configuration References)**:
+
 ```
 - HDICR_API_URL: Uses env var (default not hardcoded in extracted repo)
 - Auth0 M2M Audience: 'https://hdicr.trulyimagined.com' (test verification in hdicr-http-client.test.ts:218)
@@ -120,12 +134,14 @@ Parameters:
 ```
 
 **Search Results - URL References**:
+
 - TI: `hdicr.trulyimagined.com` appears in test vectors validating M2M audience
 - TI: `trulyimagined.com` appears in DID web issuer configuration, JWT audience claims, support contact
 - HDICR: `hdicr.trulyimagined.com` is the hardcoded default in SAM CloudFormation template
 - HDICR: `https://hdicr.trulyimagined.com` is the hardcoded Auth0Audience parameter default
 
 **No Drift Detected**:
+
 - ✅ All references to HDICR use `hdicr.trulyimagined.com` consistently
 - ✅ All references to TI use `trulyimagined.com` consistently
 - ✅ Auth0 M2M audience: `https://hdicr.trulyimagined.com` (locked in both repos)
@@ -137,6 +153,7 @@ Parameters:
 ✅ **PASS** - All canonical URLs are consistent, locked, and without drift between repos.
 
 **Locked Canonical URLs**:
+
 - Auth0 M2M Audience: `https://hdicr.trulyimagined.com` ✅
 - HDICR API Domain: `hdicr.trulyimagined.com` ✅
 - HDICR DID Issuer Prefix: `did:web:hdicr.trulyimagined.com` (present in credentials flow) ✅
@@ -150,6 +167,7 @@ Parameters:
 ### Finding
 
 Both extracted repos are **fully independent**:
+
 - ✅ TI contains NO imports from HDICR service packages (only uses shared packages + HTTP clients)
 - ✅ HDICR detected NO imports from TI service packages
 - ✅ No circular dependencies between shared packages
@@ -158,6 +176,7 @@ Both extracted repos are **fully independent**:
 ### Evidence
 
 **TI Package Structure** (verified via extraction):
+
 - `apps/web/` (Next.js web app) → depends on:
   - `shared/types`, `shared/utils`, `shared/middleware` (shared packages)
   - HTTP client wrappers in `src/lib/hdicr/` (internal to TI)
@@ -165,12 +184,14 @@ Both extracted repos are **fully independent**:
   - ✅ NO imports from `services/*`
 
 **HDICR Package Structure** (verified via extraction):
+
 - `services/{consent,identity,licensing,representation}-service/` → each depends on:
   - `shared/types`, `shared/utils`, `shared/middleware` (shared packages)
   - Database migrations from `infra/database/migrations/`
   - ✅ NO imports from `apps/web`
 
 **Shared Package Dependencies**:
+
 - ✅ `shared/types` - No external service dependencies
 - ✅ `shared/utils` - No cross-repo imports
 - ✅ `shared/middleware` - Depends only on `shared/types` and `shared/utils`
@@ -181,6 +202,7 @@ Both extracted repos are **fully independent**:
 ✅ **PASS** - Repos are fully decoupled. Both can build and deploy independently.
 
 **Build Independence Verified in Phase 2 & 3**:
+
 - TI builds independently: ✅ TYPECHECK_PASS, BUILD_PASS
 - HDICR builds independently: ✅ TYPECHECK_PASS, BUILD_PASS, SAM_VALIDATE_PASS
 
@@ -218,12 +240,12 @@ Both extracted repos are **fully independent**:
 
 All HDICR services are present in both repositories:
 
-| Service | HDICR Repo | TI Repo | Contract Gate | Status |
-|---------|-----------|--------|---------------|--------|
-| consent-service | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested | PASS |
-| identity-service | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested | PASS |
-| licensing-service | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested | PASS |
-| representation-service | ✅ openapi.yaml | ✅ openapi.yaml | ⚠️ not tested | ALERT |
+| Service                | HDICR Repo      | TI Repo         | Contract Gate | Status |
+| ---------------------- | --------------- | --------------- | ------------- | ------ |
+| consent-service        | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested     | PASS   |
+| identity-service       | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested     | PASS   |
+| licensing-service      | ✅ openapi.yaml | ✅ openapi.yaml | ✅ tested     | PASS   |
+| representation-service | ✅ openapi.yaml | ✅ openapi.yaml | ⚠️ not tested | ALERT  |
 
 ### M2M Client Validation
 
@@ -235,13 +257,13 @@ All HDICR services are present in both repositories:
 
 ## Phase 4 Exit Criteria
 
-| Criterion | Result | Evidence |
-|-----------|--------|----------|
-| **Contract Alignment**: TI references all HDICR OpenAPI specs | ✅ PASS | 4/4 specs present (1 not in contract gate by design) |
-| **Canonical URL Consistency**: No drift detected | ✅ PASS | All URLs locked across both repos |
-| **Dependency Independence**: No cross-repo coupling | ✅ PASS | TI only uses HTTP clients + shared packages; HDICR independent |
-| **Both repos build independently**: Verified in Phases 2 & 3 | ✅ PASS | TI BUILD_PASS, HDICR BUILD_PASS |
-| **Evidence Documented**: Parity report created | ✅ PASS | This report |
+| Criterion                                                     | Result  | Evidence                                                       |
+| ------------------------------------------------------------- | ------- | -------------------------------------------------------------- |
+| **Contract Alignment**: TI references all HDICR OpenAPI specs | ✅ PASS | 4/4 specs present (1 not in contract gate by design)           |
+| **Canonical URL Consistency**: No drift detected              | ✅ PASS | All URLs locked across both repos                              |
+| **Dependency Independence**: No cross-repo coupling           | ✅ PASS | TI only uses HTTP clients + shared packages; HDICR independent |
+| **Both repos build independently**: Verified in Phases 2 & 3  | ✅ PASS | TI BUILD_PASS, HDICR BUILD_PASS                                |
+| **Evidence Documented**: Parity report created                | ✅ PASS | This report                                                    |
 
 ---
 
@@ -250,6 +272,7 @@ All HDICR services are present in both repositories:
 ✅ **Phase 4 COMPLETE** - All parity checks pass. Extracted repos are ready for Phase 5 (Platform Configuration Readiness).
 
 **Findings**:
+
 1. Minor: representation-service not covered by contract gate (likely intentional, recommend validation)
 2. No canonical URL drift
 3. Complete dependency independence
