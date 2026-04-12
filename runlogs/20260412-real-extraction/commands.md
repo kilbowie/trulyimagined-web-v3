@@ -90,3 +90,55 @@ PASS
 
 ### Decision / Deviation
 - Proceeded with existing remote main README baseline per approved Phase 0 deviation.
+
+## Phase 3: HDICR Extraction
+Date: 2026-04-12
+Operator: Adam Greene
+
+### Commands Executed
+- Source branch context: git checkout extract/hdicr-split-20260412 (monorepo)
+- Initialized target repo at C:/Users/adamr/OneDrive/Desktop/KilbowieConsulting/002-TrulyImagined/hdicr from remote main
+- Copied mapped HDICR scope:
+	- services/identity-service
+	- services/consent-service
+	- services/licensing-service
+	- services/representation-service
+	- shared/types
+	- shared/utils
+	- shared/middleware
+	- infra/database
+- Created HDICR root files:
+	- package.json
+	- pnpm-workspace.yaml
+	- tsconfig.json
+	- .gitignore
+	- .npmrc
+	- infra/template.yaml
+- Ran HDICR validation gates:
+	- pnpm install --no-frozen-lockfile
+	- clean stale build metadata (*.tsbuildinfo, dist)
+	- pnpm --filter @trulyimagined/types build
+	- pnpm --filter @trulyimagined/utils build
+	- pnpm --filter @trulyimagined/middleware build
+	- pnpm --filter @trulyimagined/database build
+	- pnpm type-check
+	- pnpm test (required one repair run: pnpm install --force --no-frozen-lockfile)
+	- pnpm build
+	- sam validate -t infra/template.yaml (attempted)
+- Committed and pushed target branch:
+	- git checkout -b extract/hdicr-split-20260412
+	- git add .
+	- git commit -m "extract: split HDICR into independent repo"
+	- git push -u origin extract/hdicr-split-20260412
+
+### Outputs (Summary)
+- HDICR target gates: type-check PASS, test PASS, build PASS.
+- Initial TS6305 and Vitest module resolution issues were resolved by cleaning copied incremental/build artifacts and reinstalling dependencies with --force.
+- HDICR extraction branch pushed to remote successfully.
+
+### Validation Result
+PASS WITH BLOCKER
+
+### Decision / Deviation
+- Proceeded with existing remote main README baseline per approved Phase 0 deviation.
+- SAM validation is currently blocked in this environment because SAM CLI is not installed.

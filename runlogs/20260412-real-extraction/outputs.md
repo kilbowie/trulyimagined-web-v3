@@ -18,3 +18,14 @@ Phase 2 TI push verification:
 - HEAD (TI target): c3b4662
 - Branch: extract/ti-split-20260412
 - Remote ref: refs/heads/extract/ti-split-20260412
+
+Phase 3 HDICR gate markers:
+- TYPECHECK_PASS
+- TEST_PASS
+- BUILD_PASS
+- SAM_NOT_INSTALLED
+
+Phase 3 HDICR push verification:
+- HEAD (HDICR target): fe85e14
+- Branch: extract/hdicr-split-20260412
+- Remote ref: refs/heads/extract/hdicr-split-20260412

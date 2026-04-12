@@ -10,3 +10,9 @@
 	- branch: extract/ti-split-20260412
 	- commit: c3b46620ae3c90df57a6b6a847675395eea121ef
 	- message: extract: split TI into independent repo
+
+- Phase 3 HDICR target repo:
+	- repo: https://github.com/kilbowie/hdicr
+	- branch: extract/hdicr-split-20260412
+	- commit: fe85e14c627102120329fd37c105543be208612f
+	- message: extract: split HDICR into independent repo
