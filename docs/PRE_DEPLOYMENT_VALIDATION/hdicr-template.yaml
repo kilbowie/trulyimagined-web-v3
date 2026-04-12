@@ -1,0 +1,386 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: 'HDICR Service - Human Digital Identity, Consent & Registry - Lambda + API Gateway'
+
+Globals:
+  Function:
+    Timeout: 30
+    MemorySize: 512
+    Runtime: nodejs20.x
+    Environment:
+      Variables:
+        NODE_ENV: !Ref Environment
+        LOG_LEVEL: !Ref LogLevel
+        AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: production
+    AllowedValues:
+      - development
+      - staging
+      - production
+    Description: Deployment environment
+
+  LogLevel:
+    Type: String
+    Default: info
+    AllowedValues:
+      - debug
+      - info
+      - warn
+      - error
+    Description: CloudWatch log level
+
+  HDICRDatabaseURL:
+    Type: String
+    NoEcho: true
+    Description: PostgreSQL connection string for HDICR database (trimg-db-v3)
+
+  Auth0Domain:
+    Type: String
+    Description: Auth0 domain (e.g., your-tenant.auth0.com)
+
+  Auth0Audience:
+    Type: String
+    Default: https://hdicr.trulyimagined.com
+    Description: Auth0 API audience identifier
+
+  S3BucketName:
+    Type: String
+    Default: trulyimagined-media
+    Description: S3 bucket for media uploads and assets
+
+  CustomDomainName:
+    Type: String
+    Default: hdicr.trulyimagined.com
+    Description: Custom domain name for HDICR API
+
+  CertificateArn:
+    Type: String
+    Description: ACM certificate ARN for custom domain (must be in us-east-1)
+
+Conditions:
+  IsProduction: !Equals [!Ref Environment, production]
+  IsStaging: !Equals [!Ref Environment, staging]
+
+Resources:
+  # ============================================================================
+  # IAM Roles & Policies
+  # ============================================================================
+
+  HDICRLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AWSXRayDaemonWriteAccess
+      Policies:
+        - PolicyName: RDSAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - rds-db:connect
+                Resource: !Sub 'arn:aws:rds-db:${AWS::Region}:${AWS::AccountId}:dbuser:*/iamdbauth'
+        - PolicyName: S3Access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub 'arn:aws:s3:::${S3BucketName}'
+                  - !Sub 'arn:aws:s3:::${S3BucketName}/*'
+        - PolicyName: SecretsManagerAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                Resource: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:hdicr/*'
+
+  # ============================================================================
+  # Secrets Manager for sensitive data
+  # ============================================================================
+
+  HDICRDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: hdicr/database-url
+      Description: HDICR PostgreSQL database connection string
+      SecretString: !Ref HDICRDatabaseURL
+
+  Auth0Secret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: hdicr/auth0
+      Description: Auth0 configuration for HDICR
+      SecretString: !Sub |
+        {
+          "domain": "${Auth0Domain}",
+          "audience": "${Auth0Audience}"
+        }
+
+  # ============================================================================
+  # Lambda Function
+  # ============================================================================
+
+  HDICRFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hdicr-${Environment}'
+      CodeUri: services/
+      Handler: dist/index.handler
+      Role: !GetAtt HDICRLambdaExecutionRole.Arn
+      Description: HDICR - Identity Registry, Consent Management, Actor Representation
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          HDICR_DATABASE_URL: !Ref HDICRDatabaseURL
+          AUTH0_DOMAIN: !Ref Auth0Domain
+          AUTH0_AUDIENCE: !Ref Auth0Audience
+          S3_BUCKET_NAME: !Ref S3BucketName
+          LOG_LEVEL: !Ref LogLevel
+      Events:
+        RootPath:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HDICRApi
+            Path: /
+            Method: ANY
+        ProxyPath:
+          Type: Api
+          Properties:
+            RestApiId: !Ref HDICRApi
+            Path: /{proxy+}
+            Method: ANY
+      Tags:
+        Environment: !Ref Environment
+        Service: hdicr
+        ManagedBy: SAM
+      Tracing: Active
+      EphemeralStorage:
+        Size: 512
+
+  # ============================================================================
+  # API Gateway
+  # ============================================================================
+
+  HDICRApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Environment
+      TracingEnabled: true
+      LoggingLevel: INFO
+      DataTraceEnabled: false
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          LoggingLevel: INFO
+          DataTraceEnabled: false
+          MetricsEnabled: true
+          ThrottleSettings:
+            BurstLimit: 500
+            RateLimit: 100
+      Tags:
+        Environment: !Ref Environment
+        Service: hdicr
+      Auth:
+        DefaultAuthorizer: !Ref HDICRAuthorizer
+        AddDefaultAuthorizerToCorsPreflight: false
+
+  # ============================================================================
+  # Custom Authorizer (for M2M Bearer token validation)
+  # ============================================================================
+
+  HDICRAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Properties:
+      Name: HDICRBearerAuthorizer
+      Type: TOKEN
+      AuthorizerUri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AuthorizerFunction.Arn}/invocations'
+      AuthorizerResultTtlInSeconds: 300
+      IdentitySource: method.request.header.Authorization
+
+  AuthorizerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'hdicr-authorizer-${Environment}'
+      CodeUri: services/authorizer
+      Handler: dist/index.handler
+      Runtime: nodejs20.x
+      Timeout: 10
+      Environment:
+        Variables:
+          AUTH0_DOMAIN: !Ref Auth0Domain
+          AUTH0_AUDIENCE: !Ref Auth0Audience
+      Role: !GetAtt AuthorizerExecutionRole.Arn
+
+  AuthorizerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  AuthorizerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AuthorizerFunction
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HDICRApi}/*/*'
+
+  # ============================================================================
+  # API Gateway Custom Domain (Optional - requires pre-existing certificate)
+  # ============================================================================
+
+  HDICRCustomDomain:
+    Type: AWS::ApiGateway::DomainName
+    Properties:
+      DomainName: !Ref CustomDomainName
+      CertificateArn: !Ref CertificateArn
+      Tags:
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Service
+          Value: hdicr
+
+  HDICRBasePathMapping:
+    Type: AWS::ApiGateway::BasePathMapping
+    DependsOn: HDICRApi
+    Properties:
+      DomainName: !Ref HDICRCustomDomain
+      RestApiId: !Ref HDICRApi
+      StageName: !Ref Environment
+
+  # ============================================================================
+  # CloudWatch Alarms
+  # ============================================================================
+
+  LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hdicr-lambda-errors-${Environment}'
+      AlarmDescription: Alert when HDICR Lambda errors exceed threshold
+      MetricName: Errors
+      Namespace: AWS/Lambda
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HDICRFunction
+      TreatMissingData: notBreaching
+
+  LambdaDurationAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hdicr-lambda-duration-${Environment}'
+      AlarmDescription: Alert when HDICR Lambda duration is high
+      MetricName: Duration
+      Namespace: AWS/Lambda
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 5000
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref HDICRFunction
+      TreatMissingData: notBreaching
+
+  APIGatewayErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub 'hdicr-apigw-4xx-${Environment}'
+      AlarmDescription: Alert on high API Gateway 4xx error rates
+      MetricName: 4XXError
+      Namespace: AWS/ApiGateway
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 10
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: ApiName
+          Value: !Sub '${HDICRApi}'
+      TreatMissingData: notBreaching
+
+  # ============================================================================
+  # CloudWatch Log Group (explicit configuration)
+  # ============================================================================
+
+  HDICRLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/hdicr-${Environment}'
+      RetentionInDays: !If [IsProduction, 30, 7]
+
+  AuthorizerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/hdicr-authorizer-${Environment}'
+      RetentionInDays: !If [IsProduction, 14, 7]
+
+  # ============================================================================
+  # Outputs
+  # ============================================================================
+
+Outputs:
+  HDICRFunctionArn:
+    Description: HDICR Lambda function ARN
+    Value: !GetAtt HDICRFunction.Arn
+    Export:
+      Name: !Sub 'hdicr-function-arn-${Environment}'
+
+  HDICRApiEndpoint:
+    Description: HDICR API Gateway endpoint (temporary)
+    Value: !Sub 'https://${HDICRApi}.execute-api.${AWS::Region}.amazonaws.com/${Environment}'
+    Export:
+      Name: !Sub 'hdicr-api-endpoint-${Environment}'
+
+  HDICRCustomDomainName:
+    Description: HDICR custom domain name
+    Value: !Ref HDICRCustomDomain
+    Export:
+      Name: !Sub 'hdicr-custom-domain-${Environment}'
+
+  HDICRStackName:
+    Description: Name of this CloudFormation stack
+    Value: !Ref AWS::StackName
+
+  DatabaseSecretArn:
+    Description: Secrets Manager ARN for database connection string
+    Value: !GetAtt HDICRDatabaseSecret.Id
+    Export:
+      Name: !Sub 'hdicr-database-secret-${Environment}'
+
+  Auth0SecretArn:
+    Description: Secrets Manager ARN for Auth0 configuration
+    Value: !GetAtt Auth0Secret.Id
+    Export:
+      Name: !Sub 'hdicr-auth0-secret-${Environment}'

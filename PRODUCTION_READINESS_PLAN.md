@@ -12,6 +12,7 @@ Use only these documents for execution:
 3. `docs/PRE_DEPLOYMENT_VALIDATION/TI-REPO-SETUP.md`
 4. `docs/PRE_DEPLOYMENT_VALIDATION/HDICR-REPO-SETUP.md`
 5. `docs/PRE_DEPLOYMENT_VALIDATION/hdicr-template.yaml`
+6. `docs/PRE_DEPLOYMENT_VALIDATION/LOCAL-SMOKE-PREREQUISITES.md`
 
 ## Superseded Documents (Do Not Execute From)
 - `docs/PRE_DEPLOYMENT_VALIDATION/VERCEL-DEPLOYMENT-CHECKLIST.md`
@@ -36,16 +37,30 @@ Use only these documents for execution:
 ## Phase Backlog
 
 ### Phase 0: Governance Lock
-- [ ] P0-1 Confirm implementation run uses only Source Of Truth docs.
+- [x] P0-1 Confirm implementation run uses only Source Of Truth docs.
 - [ ] P0-2 Freeze canonical domain/audience values across all environments.
 - [ ] P0-3 Tag current monorepo commit as rollback anchor before extraction.
 
 ### Phase 1: NO-GO Blocker Closure (Pre-Split Baseline)
 - [ ] P1-1 Resolve all TypeScript/type-check failures in current workspace.
 - [ ] P1-2 Resolve all failing tests in current workspace.
-- [ ] P1-3 Eliminate remaining TI direct HDICR SQL runtime paths (HTTP-only boundary).
+- [x] P1-3 Eliminate remaining TI direct HDICR SQL runtime paths (HTTP-only boundary).
 - [ ] P1-4 Enforce split DB contract in production (no unsafe fallback behavior).
 - [ ] P1-5 Ensure local TI -> HDICR smoke test has explicit startup prerequisites and passes.
+
+### Execution Status (2026-04-12)
+- Implemented HTTP-only boundary for manual verification flows and removed route-level HDICR DB access patterns in TI runtime code.
+- Guardrail evidence:
+  - `pnpm check:hdicr-owned-table-access` -> pass
+  - `pnpm check:hdicr-db-coimport` -> pass
+  - `pnpm --filter web type-check` -> pass
+- Added explicit local smoke prerequisite validation:
+  - `pnpm check:local-ti-hdicr-smoke-prereqs`
+  - Runbook: `docs/PRE_DEPLOYMENT_VALIDATION/LOCAL-SMOKE-PREREQUISITES.md`
+- Remaining immediate closure tasks:
+  - Execute full workspace `pnpm type-check`, `pnpm test`, and `pnpm build` to close P1-1/P1-2 evidence.
+  - Remove or hard-fail any legacy DB fallback behavior required by P1-4.
+  - Run local smoke prerequisite check in a live local stack to close P1-5.
 
 ### Phase 2: Repo Split Execution
 - [ ] P2-1 Create `trulyimagined-web` repository.
