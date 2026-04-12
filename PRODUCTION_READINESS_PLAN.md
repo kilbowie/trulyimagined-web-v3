@@ -17,6 +17,7 @@ Use only these documents for execution:
 4. `docs/PRE_DEPLOYMENT_VALIDATION/HDICR-REPO-SETUP.md`
 5. `docs/PRE_DEPLOYMENT_VALIDATION/hdicr-template.yaml`
 6. `docs/PRE_DEPLOYMENT_VALIDATION/LOCAL-SMOKE-PREREQUISITES.md`
+7. `docs/PRE_DEPLOYMENT_VALIDATION/CROSS-BRANCH-EXTRACTION-COMPARISON.md`
 
 ## Superseded Documents (Do Not Execute From)
 
@@ -75,6 +76,14 @@ Use only these documents for execution:
 - **P1-5 (Local Smoke Prereqs)**: ⏸ In Progress
   - Added prerequisite documentation and check script
   - Requires live local stack to validate (env vars + running services)
+
+### Phase 2/3 Dry-Run Evidence (2026-04-12)
+- Executed TI extraction dry-run on branch `dryrun/extract-ti-from-pre-split-2026-04-12`.
+  - Independent gates in extracted TI workspace: install ✓, type-check ✓, test ✓, build ✓
+- Executed HDICR extraction dry-run on branch `dryrun/extract-hdicr-from-pre-split-2026-04-12`.
+  - Independent gates in extracted HDICR workspace: install ✓, type-check ✓, test ✓, build ✓
+- Consolidated operator reference:
+  - `docs/PRE_DEPLOYMENT_VALIDATION/CROSS-BRANCH-EXTRACTION-COMPARISON.md`
 
 ### A + B + D Execution Delta (2026-04-12)
 
