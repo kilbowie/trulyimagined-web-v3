@@ -10,7 +10,7 @@ info:
     name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
-  - url: https://api.trulyimagined.com
+  - url: https://hdicr.trulyimagined.com
     description: Production API
 tags:
   - name: Identity
@@ -359,7 +359,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessResponse'
+                $ref: '#/components/schemas/ActorVerifyResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -385,7 +385,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/OpenVerificationSessionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -406,7 +406,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/CreateVerificationSessionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -429,7 +429,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/ScheduleVerificationSessionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -452,7 +452,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/BatchLatestVerificationSessionsResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '500':
@@ -475,7 +475,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/CompleteVerificationSessionResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -805,6 +805,107 @@ components:
             - $ref: '#/components/schemas/RegistrationStatus'
             - type: 'null'
       required: [status]
+    VerificationSession:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+        preferred_timezone:
+          type: [string, 'null']
+        phone_number:
+          type: [string, 'null']
+        scheduled_at:
+          type: [string, 'null']
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, status, created_at, updated_at]
+    OpenVerificationSessionResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        session:
+          anyOf:
+            - $ref: '#/components/schemas/VerificationSession'
+            - type: 'null'
+      required: [session]
+    CreateVerificationSessionResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        session:
+          type: object
+          additionalProperties: false
+          properties:
+            id:
+              type: string
+              format: uuid
+            status:
+              type: string
+            createdAt:
+              type: string
+              format: date-time
+          required: [id, status, createdAt]
+      required: [success, session]
+    ScheduleVerificationSessionResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        verificationRequestId:
+          type: string
+          format: uuid
+      required: [success, verificationRequestId]
+    BatchLatestVerificationSessionsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        sessions:
+          type: object
+          additionalProperties:
+            anyOf:
+              - $ref: '#/components/schemas/VerificationSession'
+              - type: 'null'
+      required: [sessions]
+    CompleteVerificationSessionResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        sessionId:
+          type: string
+          format: uuid
+        actorId:
+          type: string
+          format: uuid
+      required: [success, sessionId, actorId]
+    ActorVerifyResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        success:
+          type: boolean
+        actorId:
+          type: string
+          format: uuid
+        verificationStatus:
+          type: string
+        verifiedAt:
+          type: [string, 'null']
+          format: date-time
+      required: [success, actorId, verificationStatus, verifiedAt]
     IdentityLink:
       type: object
       additionalProperties: false

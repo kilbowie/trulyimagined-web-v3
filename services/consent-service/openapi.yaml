@@ -10,7 +10,7 @@ info:
     name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
-  - url: https://api.trulyimagined.com
+  - url: https://hdicr.trulyimagined.com
     description: Production API
 tags:
   - name: Consent

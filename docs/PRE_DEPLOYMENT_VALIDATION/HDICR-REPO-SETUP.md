@@ -677,7 +677,7 @@ curl https://hdicr.trulyimagined.com/health
 
 # Test with bearer token (from TI application)
 curl -H "Authorization: Bearer <token>" \
-  https://api.trulyimagined.com/api/representation/actor-by-auth0/user_id
+  https://hdicr.trulyimagined.com/api/representation/actor-by-auth0/user_id
 
 # Check CloudWatch logs
 # AWS Console → CloudWatch → Logs → /aws/lambda/hdicr-production
@@ -699,7 +699,7 @@ curl -H "Authorization: Bearer <token>" \
 - [ ] `infra/template.yaml` configured with correct domain/certificate
 - [ ] Local testing passes (`npm run dev`)
 - [ ] AWS credentials configured
-- [ ] ACM certificate created for `api.trulyimagined.com`
+- [ ] ACM certificate created for `hdicr.trulyimagined.com`
 - [ ] S3 bucket created for SAM artifacts
 - [ ] `sam deploy --guided` completes successfully
 - [ ] DNS CNAME record configured
@@ -738,7 +738,7 @@ SAM template creates alarms for:
 
 **"Auth0 token validation failed"**
 - Verify M2M app exists in Auth0
-- Verify audience: `https://api.trulyimagined.com`
+- Verify audience: `https://hdicr.trulyimagined.com`
 - Check Auth0 logs for token issues
 
 **"Custom domain not working"**
@@ -751,4 +751,4 @@ SAM template creates alarms for:
 
 ## Next: Deploy TI
 
-Once HDICR is live at `api.trulyimagined.com`, follow **TI-REPO-SETUP.md** to deploy TI application and configure it to call HDICR.
+Once HDICR is live at `hdicr.trulyimagined.com`, follow **TI-REPO-SETUP.md** to deploy TI application and configure it to call HDICR.

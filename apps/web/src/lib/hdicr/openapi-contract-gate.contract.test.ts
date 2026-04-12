@@ -26,6 +26,36 @@ const CLIENT_FILES: Record<ServiceKey, string> = {
 const REQUIRED_SCHEMA_KEYS: Array<{ service: ServiceKey; schemaName: string; keys: string[] }> = [
   { service: 'identity', schemaName: 'ActorExistsResponse', keys: ['exists'] },
   { service: 'identity', schemaName: 'AdminUsersResponse', keys: ['users', 'total'] },
+  {
+    service: 'identity',
+    schemaName: 'OpenVerificationSessionResponse',
+    keys: ['session'],
+  },
+  {
+    service: 'identity',
+    schemaName: 'CreateVerificationSessionResponse',
+    keys: ['success', 'session'],
+  },
+  {
+    service: 'identity',
+    schemaName: 'ScheduleVerificationSessionResponse',
+    keys: ['success', 'verificationRequestId'],
+  },
+  {
+    service: 'identity',
+    schemaName: 'BatchLatestVerificationSessionsResponse',
+    keys: ['sessions'],
+  },
+  {
+    service: 'identity',
+    schemaName: 'CompleteVerificationSessionResponse',
+    keys: ['success', 'sessionId', 'actorId'],
+  },
+  {
+    service: 'identity',
+    schemaName: 'ActorVerifyResponse',
+    keys: ['success', 'actorId', 'verificationStatus', 'verifiedAt'],
+  },
   { service: 'consent', schemaName: 'ActorContextResponse', keys: ['context'] },
   { service: 'consent', schemaName: 'ConsentCheckResponse', keys: ['isGranted', 'consent'] },
   { service: 'licensing', schemaName: 'ActorIdResponse', keys: ['actorId'] },

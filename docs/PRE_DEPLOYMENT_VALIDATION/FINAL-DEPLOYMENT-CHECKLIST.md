@@ -12,12 +12,14 @@
 ### Phase 1: Pre-Deployment Setup (Week 1)
 
 #### Prepare Repositories
+
 - [ ] Create GitHub repo: `trulyimagined-web` (TI application)
 - [ ] Create GitHub repo: `hdicr-service` (HDICR service)
 - [ ] Clone both repos locally
 - [ ] Set up directory structures per guides
 
 #### TI Repository Setup
+
 - [ ] Copy code into `trulyimagined-web/`
 - [ ] Create `.env.example` with all required variables
 - [ ] Implement HDICR HTTP client (`src/lib/hdicr/`)
@@ -27,6 +29,7 @@
 - [ ] Push to GitHub
 
 #### HDICR Repository Setup
+
 - [ ] Copy code into `hdicr-service/`
 - [ ] Create `.env.example` with all required variables
 - [ ] Implement Lambda handler (`src/index.ts`)
@@ -40,6 +43,7 @@
 - [ ] Push to GitHub
 
 #### Pre-Deployment Infrastructure
+
 - [ ] AWS Account access verified
 - [ ] Vercel account access verified
 - [ ] Auth0 tenant access verified
@@ -52,6 +56,7 @@
   - [ ] Correct database created
 
 #### Auth0 Configuration
+
 - [ ] M2M application created
   - [ ] Client ID noted
   - [ ] Client Secret saved securely
@@ -68,6 +73,7 @@
 ### Phase 2: AWS Infrastructure Setup (Week 2 Start)
 
 #### AWS Preparation
+
 - [ ] AWS IAM user created with permissions:
   - [ ] CloudFormation
   - [ ] Lambda
@@ -85,6 +91,7 @@
   - [ ] `aws configure` with IAM credentials
 
 #### SAM Template Preparation
+
 - [ ] `infra/template.yaml` has correct parameters:
   - [ ] `CustomDomainName: hdicr.trulyimagined.com`
   - [ ] `CertificateArn: <your-cert-arn>`
@@ -97,14 +104,17 @@
 ### Phase 3: Vercel Project Setup Only (Week 2 Mid)
 
 Deployment order rule:
+
 - [ ] Do not deploy TI to Preview or Production until HDICR staging deploy is complete and `https://hdicr.trulyimagined.com/health` returns `200`.
 
 #### Create Vercel Project
+
 - [ ] Go to https://vercel.com/new
 - [ ] Import `trulyimagined-web` repository
 - [ ] Project created and linked
 
 #### Configure Vercel Environment
+
 - [ ] Set environment variables in Vercel:
   - [ ] `TI_DATABASE_URL`
   - [ ] `HDICR_API_URL` = `https://hdicr.trulyimagined.com`
@@ -117,9 +127,11 @@ Deployment order rule:
   - [ ] `AUTH0_BASE_URL` = `https://trulyimagined.com`
 
 #### Prepare TI Deployment (No Release Yet)
+
 - [ ] Keep TI deployment paused until Phase 4 HDICR validation is complete
 
 #### Configure TI Custom Domain
+
 - [ ] Add domain in Vercel: `trulyimagined.com`
 - [ ] Configure DNS:
   - [ ] Add CNAME record at registrar
@@ -128,6 +140,7 @@ Deployment order rule:
 - [ ] Test: `https://trulyimagined.com` loads
 
 #### TI Readiness Check (without HDICR dependency)
+
 - [ ] Can visit `https://trulyimagined.com`
 - [ ] Can log in via Auth0
 - [ ] Database connection works
@@ -137,12 +150,14 @@ Deployment order rule:
 ### Phase 4: AWS Lambda Deployment (Week 2 End)
 
 #### Build HDICR
+
 - [ ] In `hdicr-service/` directory:
   - [ ] `npm run build` succeeds
   - [ ] `dist/` directory created
   - [ ] No TypeScript errors
 
 #### Deploy with SAM
+
 - [ ] Run SAM build:
   ```bash
   sam build -t infra/template.yaml
@@ -167,6 +182,7 @@ Deployment order rule:
 - [ ] Authorizer Lambda created
 
 #### Configure HDICR Custom Domain
+
 - [ ] Get API Gateway endpoint from CloudFormation outputs
 - [ ] Add DNS CNAME record:
   - [ ] Name: `hdicr`
@@ -176,6 +192,7 @@ Deployment order rule:
 - [ ] Test: `curl https://hdicr.trulyimagined.com/health`
 
 #### Test HDICR
+
 - [ ] Can reach `https://hdicr.trulyimagined.com/health`
 - [ ] Returns status OK
 - [ ] Check CloudWatch logs for startup messages
@@ -186,11 +203,13 @@ Deployment order rule:
 ### Phase 5: Integration Testing (Week 3 Start)
 
 #### Deploy TI to Vercel
+
 - [ ] Push `main` branch to GitHub
 - [ ] Vercel auto-deploys
 - [ ] Deployment succeeds (check Vercel dashboard)
 
 #### Test TI → HDICR Integration
+
 - [ ] Log in to TI: `https://trulyimagined.com`
 - [ ] Navigate to dashboard
 - [ ] TI calls HDICR API successfully
@@ -200,6 +219,7 @@ Deployment order rule:
 - [ ] No errors in CloudWatch logs
 
 #### Verify Logs
+
 - [ ] Check Vercel logs for:
   - [ ] M2M token fetch success
   - [ ] HDICR API calls with correlation IDs
@@ -209,6 +229,7 @@ Deployment order rule:
   - [ ] Proper request/response flow
 
 #### Performance Testing
+
 - [ ] Dashboard loads in < 2 seconds
 - [ ] M2M token cached (no fetch on every request)
 - [ ] Database queries are fast
@@ -218,6 +239,7 @@ Deployment order rule:
 ### Phase 6: Production Hardening (Week 3 Mid)
 
 #### Monitoring & Alerts
+
 - [ ] CloudWatch alarms created:
   - [ ] Lambda errors > 5 per 5 min
   - [ ] Lambda duration > 5 seconds
@@ -226,6 +248,7 @@ Deployment order rule:
 - [ ] CloudWatch dashboard created for visibility
 
 #### Security Review
+
 - [ ] No secrets in git history
   - [ ] `git log -p | grep -i secret` returns nothing
 - [ ] All secrets in Vercel/AWS (not in repos)
@@ -235,6 +258,7 @@ Deployment order rule:
 - [ ] HTTPS enforced on both domains
 
 #### Documentation
+
 - [ ] README in both repos
   - [ ] Setup instructions
   - [ ] Environment variables documented
@@ -248,6 +272,7 @@ Deployment order rule:
 ### Phase 7: Final Validation (Week 3 End)
 
 #### Pre-Launch Testing
+
 - [ ] Both services deployed and live
 - [ ] Both domains accessible via HTTPS
 - [ ] Auth0 flows work (login/logout)
@@ -258,6 +283,7 @@ Deployment order rule:
 - [ ] Performance is acceptable
 
 #### Go-Live
+
 - [ ] Marketing/comms ready (if needed)
 - [ ] You've monitored logs for 24+ hours
 - [ ] No critical issues found
@@ -268,6 +294,7 @@ Deployment order rule:
 ## 🚀 Quick Reference Commands
 
 ### TI Repository
+
 ```bash
 # Local setup
 cd trulyimagined-web
@@ -282,6 +309,7 @@ curl https://trulyimagined.com
 ```
 
 ### HDICR Repository
+
 ```bash
 # Local setup
 cd hdicr-service
@@ -296,7 +324,7 @@ sam build -t infra/template.yaml
 sam deploy --guided
 
 # Test production
-curl https://api.trulyimagined.com/health
+curl https://hdicr.trulyimagined.com/health
 ```
 
 ---
@@ -322,11 +350,11 @@ Vercel
 └── TI Web App → https://trulyimagined.com
 
 AWS
-└── HDICR Lambda → https://api.trulyimagined.com
+└── HDICR Lambda → https://hdicr.trulyimagined.com
 
 Auth0
 ├── M2M Application (TI → HDICR)
-│   Audience: https://api.trulyimagined.com
+│   Audience: https://hdicr.trulyimagined.com
 │
 └── User Auth App (Login)
     Redirect: https://trulyimagined.com/api/auth/callback
@@ -349,35 +377,39 @@ RDS
 ✅ Logs show proper request flow with correlation IDs  
 ✅ No errors in Vercel or CloudWatch logs  
 ✅ Performance is acceptable (< 2s dashboard load)  
-✅ Both services auto-scale with demand  
+✅ Both services auto-scale with demand
 
 ---
 
 ## 📞 Troubleshooting Quick Links
 
 **TI Issues**
+
 - Check Vercel logs: Vercel Dashboard → Deployments → Logs
 - Check database connection: Test locally first
 - Check HDICR integration: Verify `HDICR_API_URL` env var
 
 **HDICR Issues**
+
 - Check CloudWatch logs: AWS Console → CloudWatch → Logs
 - Check database connection: Test local Lambda execution
 - Check token validation: Verify Auth0 M2M app exists
 
 **DNS Issues**
+
 - Verify CNAME record at registrar
 - Wait 5-15 minutes for propagation
-- Use `dig api.trulyimagined.com` to verify
+- Use `dig hdicr.trulyimagined.com` to verify
 
 ---
 
 ## 📝 Environment Variables Summary
 
 ### TI (.env.production in Vercel)
+
 ```
 TI_DATABASE_URL=postgresql://...
-HDICR_API_URL=https://api.trulyimagined.com
+HDICR_API_URL=https://hdicr.trulyimagined.com
 AUTH0_M2M_CLIENT_ID=...
 AUTH0_M2M_CLIENT_SECRET=...
 AUTH0_M2M_AUDIENCE=https://hdicr.trulyimagined.com
@@ -388,12 +420,13 @@ AUTH0_BASE_URL=https://trulyimagined.com
 ```
 
 ### HDICR (CloudFormation Parameters)
+
 ```
 HDICRDatabaseURL=postgresql://...
 Auth0Domain=your-tenant.auth0.com
 Auth0Audience=https://hdicr.trulyimagined.com
 CertificateArn=arn:aws:acm:...
-CustomDomainName=api.trulyimagined.com
+CustomDomainName=hdicr.trulyimagined.com
 S3BucketName=trulyimagined-media
 ```
 
@@ -401,11 +434,11 @@ S3BucketName=trulyimagined-media
 
 ## 📚 Document Reference
 
-| Document | Purpose | Use When |
-|----------|---------|----------|
-| TI-REPO-SETUP.md | Complete TI repo setup guide | Setting up TI application |
-| HDICR-REPO-SETUP.md | Complete HDICR repo setup guide | Setting up HDICR service |
-| hdicr-template.yaml | SAM CloudFormation template | Deploying HDICR to Lambda |
+| Document            | Purpose                         | Use When                  |
+| ------------------- | ------------------------------- | ------------------------- |
+| TI-REPO-SETUP.md    | Complete TI repo setup guide    | Setting up TI application |
+| HDICR-REPO-SETUP.md | Complete HDICR repo setup guide | Setting up HDICR service  |
+| hdicr-template.yaml | SAM CloudFormation template     | Deploying HDICR to Lambda |
 
 ---
 
@@ -417,7 +450,8 @@ S3BucketName=trulyimagined-media
 2. **HDICR-REPO-SETUP.md** → Deploy HDICR to Lambda
 3. **This checklist** → Track your progress
 
-**Estimated timeline**: 
+**Estimated timeline**:
+
 - Setup: 4-6 hours
 - Deployment: 30 minutes
 - Testing: 2-4 hours

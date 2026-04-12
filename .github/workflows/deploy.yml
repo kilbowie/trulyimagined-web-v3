@@ -236,7 +236,9 @@ jobs:
           NEXT_PUBLIC_APP_URL: https://trulyimagined.com
           NODE_ENV: production
           HDICR_ADAPTER_MODE: remote
-          HDICR_REMOTE_BASE_URL: https://api.trulyimagined.com
+          HDICR_API_URL: https://hdicr.trulyimagined.com
+          # Legacy alias retained for compatibility during transition.
+          HDICR_REMOTE_BASE_URL: https://hdicr.trulyimagined.com
 
   # Job 5: Deploy to Vercel
   deploy:
