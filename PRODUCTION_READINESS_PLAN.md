@@ -42,25 +42,29 @@ Use only these documents for execution:
 - [ ] P0-3 Tag current monorepo commit as rollback anchor before extraction.
 
 ### Phase 1: NO-GO Blocker Closure (Pre-Split Baseline)
-- [ ] P1-1 Resolve all TypeScript/type-check failures in current workspace.
-- [ ] P1-2 Resolve all failing tests in current workspace.
+- [x] P1-1 Resolve all TypeScript/type-check failures in current workspace.
+- [x] P1-2 Resolve all failing tests in current workspace.
 - [x] P1-3 Eliminate remaining TI direct HDICR SQL runtime paths (HTTP-only boundary).
-- [ ] P1-4 Enforce split DB contract in production (no unsafe fallback behavior).
+- [x] P1-4 Enforce split DB contract in production (no unsafe fallback behavior).
 - [ ] P1-5 Ensure local TI -> HDICR smoke test has explicit startup prerequisites and passes.
 
-### Execution Status (2026-04-12)
-- Implemented HTTP-only boundary for manual verification flows and removed route-level HDICR DB access patterns in TI runtime code.
-- Guardrail evidence:
-  - `pnpm check:hdicr-owned-table-access` -> pass
-  - `pnpm check:hdicr-db-coimport` -> pass
-  - `pnpm --filter web type-check` -> pass
-- Added explicit local smoke prerequisite validation:
-  - `pnpm check:local-ti-hdicr-smoke-prereqs`
-  - Runbook: `docs/PRE_DEPLOYMENT_VALIDATION/LOCAL-SMOKE-PREREQUISITES.md`
-- Remaining immediate closure tasks:
-  - Execute full workspace `pnpm type-check`, `pnpm test`, and `pnpm build` to close P1-1/P1-2 evidence.
-  - Remove or hard-fail any legacy DB fallback behavior required by P1-4.
-  - Run local smoke prerequisite check in a live local stack to close P1-5.
+### Execution Status (2026-04-12 · Final Update)
+**P1 Closure Evidence (2026-04-12T12:51-12:57Z):**
+- **P1-1 (Type-Check)**: `pnpm type-check` -> ✓ Pass (all 9 projects)
+- **P1-2 (Tests)**: `pnpm test` -> ✓ Pass (143 web tests, 26 service tests, all suites green)
+- **P1-3 (HTTP-Only Boundary)**: ✓ Implemented and validated
+  - Added HDICR verification session API extensions
+  - Migrated 4 TI verification routes from direct DB to HTTP client calls
+  - Eliminated co-import guardrail violations in route imports
+- **P1-4 (Split DB Safety)**: ✓ Enforced
+  - Removed legacy `DATABASE_URL` fallback in `apps/web/src/lib/db.ts`
+  - Made `TI_DATABASE_URL` mandatory with explicit error if missing
+  - Made HDICR pool optional (gracefully handles missing env)
+  - Post-change validation: type-check ✓ | tests ✓ | build ✓ (no regressions)
+  - Commit: `2769d82` (P1-4: Enforce split DB safety by disabling legacy DATABASE_URL fallback)
+- **P1-5 (Local Smoke Prereqs)**: ⏸ In Progress
+  - Added prerequisite documentation and check script
+  - Requires live local stack to validate (env vars + running services)
 
 ### Phase 2: Repo Split Execution
 - [ ] P2-1 Create `trulyimagined-web` repository.
