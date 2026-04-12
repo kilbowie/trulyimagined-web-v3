@@ -5,16 +5,18 @@ Purpose: Operator-grade, step-by-step execution checklist for real TI and HDICR 
 
 Companion mapping file: `docs/PRE_DEPLOYMENT_VALIDATION/REAL-EXTRACTION-COPY-MAP.md`
 
+Repository alias note: earlier planning names `trulyimagined-web` and `hdicr-service` map to actual target repos `trulyimagined` and `hdicr`.
+
 ## Preconditions (Must Be True Before Starting)
 
 - [ ] You are on `develop` with a clean working tree.
 - [ ] Rollback anchor tag exists: `pre-split-monorepo-2026-04-12`.
 - [ ] GitHub repositories exist:
-  - [ ] `trulyimagined-web`
-  - [ ] `hdicr-service`
+  - [ ] `trulyimagined`
+  - [ ] `hdicr`
 - [ ] Local folder layout for extraction exists (example):
-  - [ ] `<parent>/trulyimagined-web`
-  - [ ] `<parent>/hdicr-service`
+  - [ ] `C:/Users/adamr/OneDrive/Desktop/KilbowieConsulting/002-TrulyImagined/trulyimagined`
+  - [ ] `C:/Users/adamr/OneDrive/Desktop/KilbowieConsulting/002-TrulyImagined/hdicr`
 
 ## Phase A: Prepare Extraction Branches
 
@@ -43,7 +45,7 @@ From branch `extract/ti-real`, copy only:
 - `infra/database`
 - `services/*/openapi.yaml` (contract gate dependency)
 
-- [ ] TI scope copied into `trulyimagined-web` repo.
+- [ ] TI scope copied into `trulyimagined` repo.
 
 ### B2. Create TI root workspace files
 
@@ -97,7 +99,7 @@ From branch `extract/hdicr-real`, copy only:
 - `shared/middleware`
 - `infra/database`
 
-- [ ] HDICR scope copied into `hdicr-service` repo.
+- [ ] HDICR scope copied into `hdicr` repo.
 
 ### C2. Create HDICR root workspace files
 
