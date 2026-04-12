@@ -12,6 +12,7 @@
 This guide covers setting up the **HDICR (Human Digital Identity, Consent & Registry)** service as a standalone Node.js Lambda function deployed via AWS SAM.
 
 **Key points:**
+
 - Separate repository (independent from TI)
 - Deployed to AWS Lambda + API Gateway
 - Custom domain: `hdicr.trulyimagined.com`
@@ -63,6 +64,7 @@ hdicr-service/
 ## Step 1: Create Repository
 
 ### Option A: From Scratch
+
 ```bash
 # Create new Node.js project
 mkdir hdicr-service
@@ -83,7 +85,9 @@ git push -u origin main
 ```
 
 ### Option B: From Existing Code
+
 If you have existing HDICR code:
+
 ```bash
 # Move services into src/services/
 # Move middleware into src/middleware/
@@ -133,6 +137,7 @@ If you have existing HDICR code:
 ```
 
 Install:
+
 ```bash
 npm install
 ```
@@ -285,11 +290,7 @@ declare global {
 /**
  * Extract or generate correlation ID for request tracing
  */
-export function correlationIdMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function correlationIdMiddleware(req: Request, res: Response, next: NextFunction) {
   const correlationId = req.headers['x-correlation-id'] || uuidv4();
   req.correlationId = String(correlationId);
   res.setHeader('X-Correlation-ID', correlationId);
@@ -322,11 +323,7 @@ const jwksClient = new JwksClient({
  * Returns 401 if token is missing
  * Returns 403 if token is invalid/expired
  */
-export async function authMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
   // Missing token = 401
@@ -389,11 +386,7 @@ Request/response logging:
 ```typescript
 import { Request, Response, NextFunction } from 'express';
 
-export function loggingMiddleware(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function loggingMiddleware(req: Request, res: Response, next: NextFunction) {
   const start = Date.now();
 
   res.on('finish', () => {
@@ -418,12 +411,7 @@ Error handling:
 ```typescript
 import { Request, Response, NextFunction } from 'express';
 
-export function errorHandler(
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+export function errorHandler(error: Error, req: Request, res: Response, next: NextFunction) {
   console.error('[Error]', {
     message: error.message,
     stack: error.stack,
@@ -462,10 +450,7 @@ hdicrPool.on('error', (error) => {
 /**
  * Execute query against HDICR database
  */
-async function queryHdicr<T = any>(
-  text: string,
-  params?: any[]
-): Promise<T[]> {
+async function queryHdicr<T = any>(text: string, params?: any[]): Promise<T[]> {
   const start = Date.now();
   let client;
 
@@ -573,8 +558,8 @@ Use the SAM template provided in your package (copy from outputs).
 Parameters:
   CustomDomainName:
     Type: String
-    Default: hdicr.trulyimagined.com  # ← Update to your domain
-  
+    Default: hdicr.trulyimagined.com # ← Update to your domain
+
   CertificateArn:
     Type: String
     # Get this from AWS Certificate Manager
@@ -626,9 +611,11 @@ curl http://localhost:3000/health
 1. **AWS Account** with credentials configured
 2. **ACM Certificate** for `hdicr.trulyimagined.com` (in us-east-1)
    - Go to AWS Certificate Manager → Request certificate
-  - Domain: `hdicr.trulyimagined.com`
-   - Validation method: DNS
-   - Copy the certificate ARN
+
+- Domain: `hdicr.trulyimagined.com`
+- Validation method: DNS
+- Copy the certificate ARN
+
 3. **S3 Bucket** for SAM deployments
    ```bash
    aws s3 mb s3://hdicr-sam-artifacts-$(date +%s)
@@ -661,7 +648,7 @@ After SAM deployment completes:
 1. Get API Gateway endpoint from CloudFormation stack outputs
 2. Add CNAME record at your DNS provider:
    ```
-  Name: hdicr
+   Name: hdicr
    Value: d-xxxxx.execute-api.eu-west-1.amazonaws.com
    ```
 3. Wait for DNS to propagate (5-15 minutes)
@@ -723,6 +710,7 @@ aws logs tail /aws/lambda/hdicr-authorizer-production --follow
 ### CloudWatch Alarms
 
 SAM template creates alarms for:
+
 - Lambda errors > 5 per 5 minutes
 - Lambda duration > 5 seconds (average)
 - API Gateway 4xx errors > 10 per 5 minutes
@@ -732,16 +720,19 @@ SAM template creates alarms for:
 ## Troubleshooting
 
 **"Cannot connect to database"**
+
 - Verify RDS security group allows Lambda access
 - Verify `HDICR_DATABASE_URL` is correct
 - Check CloudWatch logs for connection errors
 
 **"Auth0 token validation failed"**
+
 - Verify M2M app exists in Auth0
 - Verify audience: `https://hdicr.trulyimagined.com`
 - Check Auth0 logs for token issues
 
 **"Custom domain not working"**
+
 - Verify ACM certificate is in us-east-1
 - Verify DNS CNAME record is correct
 - Wait 5-15 minutes for DNS propagation

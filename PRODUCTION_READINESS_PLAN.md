@@ -80,6 +80,7 @@ Use only these documents for execution:
   - Requires live local stack to validate (env vars + running services)
 
 ### Phase 2/3 Dry-Run Evidence (2026-04-12)
+
 - Executed TI extraction dry-run on branch `dryrun/extract-ti-from-pre-split-2026-04-12`.
   - Independent gates in extracted TI workspace: install ✓, type-check ✓, test ✓, build ✓
 - Executed HDICR extraction dry-run on branch `dryrun/extract-hdicr-from-pre-split-2026-04-12`.
