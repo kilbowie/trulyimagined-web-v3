@@ -64,7 +64,7 @@ if (!process.env.TI_DATABASE_URL && legacyConnectionString) {
 const hdicrPool = createPool(hdicrConnectionString);
 const tiPool = createPool(tiConnectionString);
 
-// Backward compatible default pool. New code should use queryHdicr/queryTi.
+// Backward compatible default pool. New code must use queryTi (TI-owned tables only).
 const pool = tiPool;
 
 async function executeQuery(
@@ -117,10 +117,6 @@ export async function query(text: string, params?: unknown[]): Promise<QueryResu
   return executeQuery(pool, 'DEFAULT', text, params);
 }
 
-export async function queryHdicr(text: string, params?: unknown[]): Promise<QueryResult> {
-  return executeQuery(hdicrPool, 'HDICR', text, params);
-}
-
 export async function queryTi(text: string, params?: unknown[]): Promise<QueryResult> {
   return executeQuery(tiPool, 'TI', text, params);
 }
@@ -140,7 +136,7 @@ export async function testConnection(): Promise<boolean> {
 }
 
 export async function testSplitConnections(): Promise<{ hdicr: boolean; ti: boolean }> {
-  const hdicr = await queryHdicr('SELECT NOW()')
+  const hdicr = await executeQuery(hdicrPool, 'HDICR', 'SELECT NOW()')
     .then(() => true)
     .catch(() => false);
 
@@ -151,7 +147,7 @@ export async function testSplitConnections(): Promise<{ hdicr: boolean; ti: bool
   return { hdicr, ti };
 }
 
-// Export pools for advanced use cases.
-export { pool, hdicrPool, tiPool };
+// hdicrPool is intentionally not exported — TI runtime must not query HDICR-owned tables directly.
+export { pool, tiPool };
 
-export default { query, queryHdicr, queryTi, testConnection, testSplitConnections, pool };
+export default { query, queryTi, testConnection, testSplitConnections, pool };

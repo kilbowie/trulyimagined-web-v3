@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isActor } from '@/lib/auth';
-import { queryHdicr, queryTi } from '@/lib/db';
 import { sendManualVerificationRequestAdminEmail } from '@/lib/email';
-import { DEFAULT_TENANT_ID, writeAuditLog } from '@/lib/manual-verification';
+import { DEFAULT_TENANT_ID, resolveUserProfileId, writeAuditLog } from '@/lib/manual-verification';
 import { resolveActorRecordByAuth0UserId } from '@/lib/hdicr/actor-identity';
+import {
+  getOpenVerificationSession,
+  createVerificationSession,
+} from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -58,15 +61,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const profileResult = await queryTi(
-      `SELECT id
-       FROM user_profiles
-       WHERE auth0_user_id = $1
-       LIMIT 1`,
-      [user.sub]
-    );
-
-    const userProfileId = profileResult.rows[0]?.id as string | undefined;
+    const userProfileId = await resolveUserProfileId(user.sub);
 
     const actor = {
       id: actorRecord.id,
@@ -100,48 +95,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const openSessionResult = await queryHdicr(
-      `SELECT id, status
-       FROM manual_verification_sessions
-       WHERE actor_id = $1::uuid
-         AND tenant_id = $2
-         AND deleted_at IS NULL
-         AND status IN ('pending_scheduling', 'scheduled')
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [actor.id, tenantId]
-    );
+    const openSession = await getOpenVerificationSession(actor.id);
 
-    if (openSessionResult.rows.length > 0) {
+    if (openSession !== null) {
       return NextResponse.json(
         {
           error: 'A manual verification request is already open for this actor',
           data: {
-            verificationRequestId: openSessionResult.rows[0].id,
-            status: openSessionResult.rows[0].status,
+            verificationRequestId: openSession.id,
+            status: openSession.status,
           },
         },
         { status: 409 }
       );
     }
 
-    const insertResult = await queryHdicr(
-      `INSERT INTO manual_verification_sessions (
-         actor_id,
-         requested_by_user_profile_id,
-         status,
-         preferred_timezone,
-         phone_number,
-         tenant_id
-       ) VALUES ($1::uuid, $2::uuid, 'pending_scheduling', $3, $4, $5)
-       RETURNING id, status, created_at`,
-      [actor.id, actor.user_profile_id, preferredTimezone, phoneNumber, tenantId]
-    );
+    const createdSession = await createVerificationSession({
+      actorId: actor.id,
+      requestedByUserProfileId: actor.user_profile_id,
+      preferredTimezone,
+      phoneNumber,
+    });
 
-    const verificationRequest = insertResult.rows[0] as {
-      id: string;
-      status: string;
-      created_at: string;
+    const verificationRequest = {
+      id: createdSession.id,
+      status: createdSession.status,
+      created_at: createdSession.createdAt,
     };
 
     await writeAuditLog({

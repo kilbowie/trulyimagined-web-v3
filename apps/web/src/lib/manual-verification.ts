@@ -25,6 +25,14 @@ export async function getAdminContext(auth0UserId: string): Promise<AdminContext
   };
 }
 
+export async function resolveUserProfileId(auth0UserId: string): Promise<string | null> {
+  const result = await queryTi(
+    `SELECT id FROM user_profiles WHERE auth0_user_id = $1 LIMIT 1`,
+    [auth0UserId]
+  );
+  return (result.rows[0]?.id as string | undefined) ?? null;
+}
+
 export async function writeAuditLog(options: {
   userProfileId: string;
   action: string;

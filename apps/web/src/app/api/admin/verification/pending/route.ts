@@ -1,9 +1,8 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { queryHdicr } from '@/lib/db';
 import { DEFAULT_TENANT_ID } from '@/lib/manual-verification';
-import { listActors } from '@/lib/hdicr/identity-client';
+import { listActors, batchGetLatestVerificationSessions } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -30,8 +29,20 @@ export async function GET() {
       return verificationStatus === 'pending';
     });
 
-    const verifications = await Promise.all(
-      pendingActors.map(async (actor) => {
+    const pendingActorIds = pendingActors
+      .map(
+        (actor) =>
+          (typeof actor.id === 'string' ? actor.id : undefined) ??
+          (typeof actor.actor_id === 'string' ? actor.actor_id : undefined)
+      )
+      .filter((id): id is string => id !== undefined);
+
+    const sessionsByActorId =
+      pendingActorIds.length > 0
+        ? await batchGetLatestVerificationSessions(pendingActorIds)
+        : {};
+
+    const verifications = pendingActors.map((actor) => {
         const actorId =
           (typeof actor.id === 'string' ? actor.id : undefined) ??
           (typeof actor.actor_id === 'string' ? actor.actor_id : undefined);
@@ -40,28 +51,7 @@ export async function GET() {
           return null;
         }
 
-        const latestSessionResult = await queryHdicr(
-          `SELECT id, status, preferred_timezone, phone_number, scheduled_at, created_at, updated_at
-           FROM manual_verification_sessions
-           WHERE actor_id = $1::uuid
-             AND tenant_id = $2
-             AND deleted_at IS NULL
-           ORDER BY created_at DESC
-           LIMIT 1`,
-          [actorId, tenantId]
-        );
-
-        const latest = latestSessionResult.rows[0] as
-          | {
-              id?: string;
-              status?: string;
-              preferred_timezone?: string;
-              phone_number?: string;
-              scheduled_at?: string;
-              created_at?: string;
-              updated_at?: string;
-            }
-          | undefined;
+        const latest = actorId ? sessionsByActorId[actorId] ?? undefined : undefined;
 
         return {
           actor_id: actorId,
@@ -83,7 +73,9 @@ export async function GET() {
             (typeof actor.stageName === 'string' ? actor.stageName : undefined) ||
             null,
           verification_status:
-            (typeof actor.verification_status === 'string' ? actor.verification_status : undefined) ||
+            (typeof actor.verification_status === 'string'
+              ? actor.verification_status
+              : undefined) ||
             (typeof actor.verificationStatus === 'string' ? actor.verificationStatus : undefined) ||
             null,
           actor_created_at:
@@ -98,8 +90,7 @@ export async function GET() {
           request_created_at: latest?.created_at ?? null,
           request_updated_at: latest?.updated_at ?? null,
         };
-      })
-    );
+      });
 
     const orderedVerifications = verifications
       .filter((value): value is NonNullable<typeof value> => value !== null)

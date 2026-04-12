@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { queryHdicr } from '@/lib/db';
 import { sendManualVerificationScheduledEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
 import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
-import { getActorById } from '@/lib/hdicr/identity-client';
+import { getActorById, scheduleVerificationSession } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
 
@@ -75,72 +74,15 @@ export async function POST(request: NextRequest) {
 
     const encryptedMeetingLink = encryptJSON({ meetingLink });
 
-    const openSessionResult = await queryHdicr(
-      `SELECT id
-       FROM manual_verification_sessions
-       WHERE actor_id = $1::uuid
-         AND tenant_id = $2
-         AND deleted_at IS NULL
-         AND status IN ('pending_scheduling', 'scheduled')
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [actorId, tenantId]
-    );
-
-    let verificationRequestId: string;
-
-    if (openSessionResult.rows.length > 0) {
-      verificationRequestId = openSessionResult.rows[0].id;
-      await queryHdicr(
-        `UPDATE manual_verification_sessions
-         SET status = 'scheduled',
-             scheduled_at = $2::timestamptz,
-             meeting_link_encrypted = $3,
-             meeting_platform = COALESCE($4, meeting_platform),
-             preferred_timezone = COALESCE($5, preferred_timezone),
-             phone_number = COALESCE($6, phone_number),
-             requested_by_user_profile_id = $7::uuid,
-             tenant_id = $8,
-             updated_at = NOW()
-         WHERE id = $1::uuid`,
-        [
-          verificationRequestId,
-          scheduledDate.toISOString(),
-          encryptedMeetingLink,
-          payload.meetingPlatform || 'external',
-          payload.preferredTimezone || null,
-          payload.phoneNumber || null,
-          adminContext.userProfileId,
-          tenantId,
-        ]
-      );
-    } else {
-      const insertResult = await queryHdicr(
-        `INSERT INTO manual_verification_sessions (
-           actor_id,
-           status,
-           preferred_timezone,
-           phone_number,
-           meeting_platform,
-           meeting_link_encrypted,
-           scheduled_at,
-           requested_by_user_profile_id,
-           tenant_id
-         ) VALUES ($1::uuid, 'scheduled', $2, $3, $4, $5, $6::timestamptz, $7::uuid, $8)
-         RETURNING id`,
-        [
-          actorId,
-          payload.preferredTimezone || null,
-          payload.phoneNumber || null,
-          payload.meetingPlatform || 'external',
-          encryptedMeetingLink,
-          scheduledDate.toISOString(),
-          adminContext.userProfileId,
-          tenantId,
-        ]
-      );
-      verificationRequestId = insertResult.rows[0].id;
-    }
+    const { verificationRequestId } = await scheduleVerificationSession({
+      actorId,
+      scheduledAt: scheduledDate.toISOString(),
+      meetingLinkEncrypted: encryptedMeetingLink,
+      meetingPlatform: payload.meetingPlatform || 'external',
+      preferredTimezone: payload.preferredTimezone || undefined,
+      phoneNumber: payload.phoneNumber || undefined,
+      requestedByUserProfileId: adminContext.userProfileId,
+    });
 
     await writeAuditLog({
       userProfileId: adminContext.userProfileId,
@@ -175,7 +117,8 @@ export async function POST(request: NextRequest) {
       try {
         await sendManualVerificationScheduledEmail({
           actorEmail,
-          actorName: actorStageName || [actorFirstName, actorLastName].filter(Boolean).join(' ') || 'there',
+          actorName:
+            actorStageName || [actorFirstName, actorLastName].filter(Boolean).join(' ') || 'there',
           meetingLink,
           meetingPlatform: payload.meetingPlatform || 'external',
           scheduledAt: scheduledDate.toISOString(),

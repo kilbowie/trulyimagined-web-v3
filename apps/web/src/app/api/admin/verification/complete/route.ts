@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { isAdmin } from '@/lib/auth';
-import { queryHdicr, queryTi } from '@/lib/db';
 import { sendVerificationCompleteEmail, sendVerificationRetryEmail } from '@/lib/email';
 import { encryptJSON } from '@trulyimagined/utils';
-import { DEFAULT_TENANT_ID, getAdminContext, writeAuditLog } from '@/lib/manual-verification';
+import { DEFAULT_TENANT_ID, getAdminContext, resolveUserProfileId, writeAuditLog } from '@/lib/manual-verification';
 import {
   getActorById,
   setActorVerificationStatus,
   upsertIdentityLink,
+  completeVerificationSession,
 } from '@/lib/hdicr/identity-client';
 
 // DB-OWNER: HDICR
@@ -55,34 +55,27 @@ export async function POST(request: NextRequest) {
 
     const tenantId = DEFAULT_TENANT_ID;
 
-    const sessionResult = verificationRequestId
-      ? await queryHdicr(
-          `SELECT mvs.id, mvs.actor_id
-           FROM manual_verification_sessions mvs
-           WHERE mvs.id = $1::uuid
-             AND mvs.tenant_id = $2
-             AND mvs.deleted_at IS NULL
-           LIMIT 1`,
-          [verificationRequestId, tenantId]
-        )
-      : await queryHdicr(
-          `SELECT mvs.id, mvs.actor_id
-           FROM manual_verification_sessions mvs
-           WHERE mvs.actor_id = $1::uuid
-             AND mvs.tenant_id = $2
-             AND mvs.deleted_at IS NULL
-           ORDER BY mvs.created_at DESC
-           LIMIT 1`,
-          [actorId, tenantId]
-        );
+    let resolvedSessionId: string;
+    let resolvedActorId: string;
 
-    if (sessionResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Verification session not found' }, { status: 404 });
+    try {
+      const sessionResult = await completeVerificationSession({
+        ...(verificationRequestId ? { sessionId: verificationRequestId } : { actorId }),
+        verified: payload.verified,
+        notes: payload.notes || undefined,
+        completedByUserProfileId: adminContext.userProfileId,
+      });
+      resolvedSessionId = sessionResult.sessionId;
+      resolvedActorId = sessionResult.actorId;
+    } catch (err: unknown) {
+      const status =
+        err instanceof Error && err.message.includes('404') ? 404 :
+        err instanceof Error && err.message.includes('session not found') ? 404 : 500;
+      return NextResponse.json(
+        { error: status === 404 ? 'Verification session not found' : 'Internal server error' },
+        { status }
+      );
     }
-
-    const verificationSession = sessionResult.rows[0];
-    const resolvedActorId: string = verificationSession.actor_id;
-    const resolvedSessionId: string = verificationSession.id;
 
     const actor = (await getActorById(resolvedActorId)) as Record<string, unknown> | null;
     if (!actor) {
@@ -107,50 +100,20 @@ export async function POST(request: NextRequest) {
       (typeof actor.lastName === 'string' ? actor.lastName : undefined) ||
       null;
 
-    await queryHdicr(
-      `UPDATE manual_verification_sessions
-       SET status = $2,
-           verified = $3,
-           completion_notes = $4,
-           completed_at = NOW(),
-           completed_by_user_profile_id = $5::uuid,
-           tenant_id = $6,
-           updated_at = NOW()
-       WHERE id = $1::uuid`,
-      [
-        resolvedSessionId,
-        payload.verified ? 'completed' : 'failed',
-        payload.verified,
-        payload.notes || null,
-        adminContext.userProfileId,
-        tenantId,
-      ]
-    );
-
     await setActorVerificationStatus(resolvedActorId, {
       verified: payload.verified,
       verifiedByUserProfileId: adminContext.userProfileId,
     });
 
     const displayName =
-      actorStageName ||
-      [actorFirstName, actorLastName].filter(Boolean).join(' ') ||
-      'there';
+      actorStageName || [actorFirstName, actorLastName].filter(Boolean).join(' ') || 'there';
 
     if (payload.verified) {
       if (!actorAuth0UserId) {
         return NextResponse.json({ error: 'Actor is missing auth0_user_id' }, { status: 404 });
       }
 
-      const profileResult = await queryTi(
-        `SELECT id
-         FROM user_profiles
-         WHERE auth0_user_id = $1
-         LIMIT 1`,
-        [actorAuth0UserId]
-      );
-
-      const userProfileId = profileResult.rows[0]?.id as string | undefined;
+      const userProfileId = await resolveUserProfileId(actorAuth0UserId);
 
       if (userProfileId) {
         const credentialData = encryptJSON({

@@ -284,6 +284,104 @@ export async function updateActorProfile(
   return payload.actor ?? null;
 }
 
+// ==================== MANUAL VERIFICATION SESSION CLIENTS ====================
+
+export interface VerificationSession {
+  id: string;
+  status: string;
+  preferred_timezone: string | null;
+  phone_number: string | null;
+  scheduled_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getOpenVerificationSession(
+  actorId: string
+): Promise<VerificationSession | null> {
+  const payload = await invokeIdentityRemote<{ session: VerificationSession | null }>({
+    path: `/v1/identity/verification-sessions?actorId=${encodeURIComponent(actorId)}`,
+    method: 'GET',
+    operation: 'verification-session-get-open',
+  });
+  return payload.session ?? null;
+}
+
+export async function createVerificationSession(params: {
+  actorId: string;
+  requestedByUserProfileId: string;
+  preferredTimezone: string;
+  phoneNumber: string;
+}): Promise<{ id: string; status: string; createdAt: string }> {
+  const payload = await invokeIdentityRemote<{
+    success: boolean;
+    session: { id: string; status: string; createdAt: string };
+  }>({
+    path: '/v1/identity/verification-sessions',
+    method: 'POST',
+    operation: 'verification-session-create',
+    body: params,
+  });
+  return payload.session;
+}
+
+export async function scheduleVerificationSession(params: {
+  actorId: string;
+  sessionId?: string;
+  scheduledAt: string;
+  meetingLinkEncrypted: string;
+  meetingPlatform?: string;
+  preferredTimezone?: string;
+  phoneNumber?: string;
+  requestedByUserProfileId: string;
+}): Promise<{ verificationRequestId: string }> {
+  const payload = await invokeIdentityRemote<{
+    success: boolean;
+    verificationRequestId: string;
+  }>({
+    path: '/v1/identity/verification-sessions/schedule',
+    method: 'POST',
+    operation: 'verification-session-schedule',
+    body: params,
+  });
+  return { verificationRequestId: payload.verificationRequestId };
+}
+
+export async function batchGetLatestVerificationSessions(
+  actorIds: string[]
+): Promise<Record<string, VerificationSession | null>> {
+  if (actorIds.length === 0) return {};
+  const payload = await invokeIdentityRemote<{
+    sessions: Record<string, VerificationSession | null>;
+  }>({
+    path: '/v1/identity/verification-sessions/batch-latest',
+    method: 'POST',
+    operation: 'verification-sessions-batch-latest',
+    body: { actorIds },
+  });
+  return payload.sessions;
+}
+
+export async function completeVerificationSession(params: {
+  sessionId?: string;
+  actorId?: string;
+  verified: boolean;
+  notes?: string;
+  completedByUserProfileId: string;
+}): Promise<{ sessionId: string; actorId: string }> {
+  const payload = await invokeIdentityRemote<{
+    success: boolean;
+    sessionId: string;
+    actorId: string;
+  }>({
+    path: '/v1/identity/verification-sessions/complete',
+    method: 'POST',
+    operation: 'verification-session-complete',
+    body: params,
+  });
+  return { sessionId: payload.sessionId, actorId: payload.actorId };
+}
+
 export async function upsertIdentityLink(params: {
   userProfileId: string;
   provider: string;

@@ -105,6 +105,45 @@ const SetActorVerificationStatusSchema = z.object({
   verifiedByUserProfileId: NonEmptyString,
 });
 
+const VerificationSessionsQuerySchema = z.object({
+  actorId: NonEmptyString,
+  statusFilter: z.string().trim().optional(),
+});
+
+const CreateVerificationSessionSchema = z.object({
+  actorId: NonEmptyString,
+  requestedByUserProfileId: NonEmptyString,
+  preferredTimezone: NonEmptyString,
+  phoneNumber: NonEmptyString,
+});
+
+const ScheduleVerificationSessionSchema = z.object({
+  actorId: NonEmptyString,
+  sessionId: NonEmptyString.optional(),
+  scheduledAt: NonEmptyString,
+  meetingLinkEncrypted: NonEmptyString,
+  meetingPlatform: z.string().trim().optional(),
+  preferredTimezone: z.string().trim().optional(),
+  phoneNumber: z.string().trim().optional(),
+  requestedByUserProfileId: NonEmptyString,
+});
+
+const BatchLatestSessionsSchema = z.object({
+  actorIds: z.array(NonEmptyString).min(1).max(500),
+});
+
+const CompleteVerificationSessionSchema = z
+  .object({
+    sessionId: NonEmptyString.optional(),
+    actorId: NonEmptyString.optional(),
+    verified: z.boolean(),
+    notes: z.string().trim().optional(),
+    completedByUserProfileId: NonEmptyString,
+  })
+  .refine((data) => data.sessionId || data.actorId, {
+    message: 'sessionId or actorId is required',
+  });
+
 const UpdateActorSchema = z
   .object({
     firstName: NonEmptyString.optional(),
@@ -238,6 +277,26 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     if (path === '/v1/identity/link/upsert' && httpMethod === 'POST') {
       return withCorrelation(await upsertIdentityLink(event, tenantId));
+    }
+
+    if (path === '/v1/identity/verification-sessions' && httpMethod === 'GET') {
+      return withCorrelation(await getOpenVerificationSession(event, tenantId));
+    }
+
+    if (path === '/v1/identity/verification-sessions' && httpMethod === 'POST') {
+      return withCorrelation(await createVerificationSession(event, tenantId));
+    }
+
+    if (path === '/v1/identity/verification-sessions/schedule' && httpMethod === 'POST') {
+      return withCorrelation(await scheduleVerificationSession(event, tenantId));
+    }
+
+    if (path === '/v1/identity/verification-sessions/batch-latest' && httpMethod === 'POST') {
+      return withCorrelation(await batchGetLatestVerificationSessions(event, tenantId));
+    }
+
+    if (path === '/v1/identity/verification-sessions/complete' && httpMethod === 'POST') {
+      return withCorrelation(await completeVerificationSession(event, tenantId));
     }
 
     if (path.endsWith('/verify') && httpMethod === 'POST') {
@@ -849,6 +908,273 @@ async function setActorVerificationStatus(event: APIGatewayProxyEvent, tenantId:
       actorId,
       verificationStatus: result.rows[0].verification_status,
       verifiedAt: result.rows[0].verified_at,
+    }),
+  };
+}
+
+// ==================== MANUAL VERIFICATION SESSION HANDLERS ====================
+
+async function getOpenVerificationSession(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsed = VerificationSessionsQuerySchema.safeParse(event.queryStringParameters ?? {});
+  if (!parsed.success) return validationErrorResponse(parsed.error);
+
+  const { actorId, statusFilter } = parsed.data;
+  const statuses = statusFilter
+    ? statusFilter.split(',').map((s) => s.trim()).filter(Boolean)
+    : ['pending_scheduling', 'scheduled'];
+
+  const placeholders = statuses.map((_, i) => `$${i + 3}`).join(', ');
+
+  const result = await db.queryWithTenant(
+    tenantId,
+    `SELECT id, status, preferred_timezone, phone_number, scheduled_at, created_at, updated_at
+     FROM manual_verification_sessions
+     WHERE actor_id = $1::uuid
+       AND tenant_id = $2
+       AND deleted_at IS NULL
+       AND status IN (${placeholders})
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [actorId, tenantId, ...statuses]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ session: result.rows[0] ?? null }),
+  };
+}
+
+async function createVerificationSession(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsedBody = parseJsonBody(event, CreateVerificationSessionSchema);
+  if (!parsedBody.success) return parsedBody.response;
+
+  const { actorId, requestedByUserProfileId, preferredTimezone, phoneNumber } = parsedBody.data;
+
+  const result = await db.queryWithTenant(
+    tenantId,
+    `INSERT INTO manual_verification_sessions (
+       actor_id, requested_by_user_profile_id, status, preferred_timezone, phone_number, tenant_id
+     ) VALUES ($1::uuid, $2::uuid, 'pending_scheduling', $3, $4, $5)
+     RETURNING id, status, created_at`,
+    [actorId, requestedByUserProfileId, preferredTimezone, phoneNumber, tenantId]
+  );
+
+  return {
+    statusCode: 201,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: true,
+      session: {
+        id: result.rows[0].id,
+        status: result.rows[0].status,
+        createdAt: result.rows[0].created_at,
+      },
+    }),
+  };
+}
+
+async function scheduleVerificationSession(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsedBody = parseJsonBody(event, ScheduleVerificationSessionSchema);
+  if (!parsedBody.success) return parsedBody.response;
+
+  const {
+    actorId,
+    sessionId,
+    scheduledAt,
+    meetingLinkEncrypted,
+    meetingPlatform,
+    preferredTimezone,
+    phoneNumber,
+    requestedByUserProfileId,
+  } = parsedBody.data;
+
+  let verificationRequestId: string;
+
+  if (sessionId) {
+    await db.queryWithTenant(
+      tenantId,
+      `UPDATE manual_verification_sessions
+       SET status = 'scheduled',
+           scheduled_at = $2::timestamptz,
+           meeting_link_encrypted = $3,
+           meeting_platform = COALESCE($4, meeting_platform),
+           preferred_timezone = COALESCE($5, preferred_timezone),
+           phone_number = COALESCE($6, phone_number),
+           requested_by_user_profile_id = $7::uuid,
+           updated_at = NOW()
+       WHERE id = $1::uuid AND tenant_id = $8`,
+      [
+        sessionId,
+        scheduledAt,
+        meetingLinkEncrypted,
+        meetingPlatform || 'external',
+        preferredTimezone || null,
+        phoneNumber || null,
+        requestedByUserProfileId,
+        tenantId,
+      ]
+    );
+    verificationRequestId = sessionId;
+  } else {
+    const openResult = await db.queryWithTenant(
+      tenantId,
+      `SELECT id FROM manual_verification_sessions
+       WHERE actor_id = $1::uuid AND tenant_id = $2 AND deleted_at IS NULL
+         AND status IN ('pending_scheduling', 'scheduled')
+       ORDER BY created_at DESC LIMIT 1`,
+      [actorId, tenantId]
+    );
+
+    if (openResult.rows.length > 0) {
+      verificationRequestId = openResult.rows[0].id;
+      await db.queryWithTenant(
+        tenantId,
+        `UPDATE manual_verification_sessions
+         SET status = 'scheduled',
+             scheduled_at = $2::timestamptz,
+             meeting_link_encrypted = $3,
+             meeting_platform = COALESCE($4, meeting_platform),
+             preferred_timezone = COALESCE($5, preferred_timezone),
+             phone_number = COALESCE($6, phone_number),
+             requested_by_user_profile_id = $7::uuid,
+             updated_at = NOW()
+         WHERE id = $1::uuid AND tenant_id = $8`,
+        [
+          verificationRequestId,
+          scheduledAt,
+          meetingLinkEncrypted,
+          meetingPlatform || 'external',
+          preferredTimezone || null,
+          phoneNumber || null,
+          requestedByUserProfileId,
+          tenantId,
+        ]
+      );
+    } else {
+      const insertResult = await db.queryWithTenant(
+        tenantId,
+        `INSERT INTO manual_verification_sessions (
+           actor_id, status, preferred_timezone, phone_number, meeting_platform,
+           meeting_link_encrypted, scheduled_at, requested_by_user_profile_id, tenant_id
+         ) VALUES ($1::uuid, 'scheduled', $2, $3, $4, $5, $6::timestamptz, $7::uuid, $8)
+         RETURNING id`,
+        [
+          actorId,
+          preferredTimezone || null,
+          phoneNumber || null,
+          meetingPlatform || 'external',
+          meetingLinkEncrypted,
+          scheduledAt,
+          requestedByUserProfileId,
+          tenantId,
+        ]
+      );
+      verificationRequestId = insertResult.rows[0].id;
+    }
+  }
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ success: true, verificationRequestId, status: 'scheduled' }),
+  };
+}
+
+async function batchGetLatestVerificationSessions(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsedBody = parseJsonBody(event, BatchLatestSessionsSchema);
+  if (!parsedBody.success) return parsedBody.response;
+
+  const { actorIds } = parsedBody.data;
+  const placeholders = actorIds.map((_, i) => `$${i + 2}::uuid`).join(', ');
+
+  const result = await db.queryWithTenant(
+    tenantId,
+    `SELECT DISTINCT ON (actor_id)
+       actor_id::text, id, status, preferred_timezone, phone_number,
+       scheduled_at, created_at, updated_at
+     FROM manual_verification_sessions
+     WHERE tenant_id = $1
+       AND actor_id IN (${placeholders})
+       AND deleted_at IS NULL
+     ORDER BY actor_id, created_at DESC`,
+    [tenantId, ...actorIds]
+  );
+
+  const sessions: Record<string, object | null> = {};
+  for (const id of actorIds) {
+    sessions[id] = null;
+  }
+  for (const row of result.rows) {
+    sessions[row.actor_id] = {
+      id: row.id,
+      status: row.status,
+      preferred_timezone: row.preferred_timezone,
+      phone_number: row.phone_number,
+      scheduled_at: row.scheduled_at,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({ sessions }),
+  };
+}
+
+async function completeVerificationSession(event: APIGatewayProxyEvent, tenantId: string) {
+  const parsedBody = parseJsonBody(event, CompleteVerificationSessionSchema);
+  if (!parsedBody.success) return parsedBody.response;
+
+  const { sessionId, actorId, verified, notes, completedByUserProfileId } = parsedBody.data;
+
+  const findResult = sessionId
+    ? await db.queryWithTenant(
+        tenantId,
+        `SELECT id, actor_id FROM manual_verification_sessions
+         WHERE id = $1::uuid AND tenant_id = $2 AND deleted_at IS NULL LIMIT 1`,
+        [sessionId, tenantId]
+      )
+    : await db.queryWithTenant(
+        tenantId,
+        `SELECT id, actor_id FROM manual_verification_sessions
+         WHERE actor_id = $1::uuid AND tenant_id = $2 AND deleted_at IS NULL
+         ORDER BY created_at DESC LIMIT 1`,
+        [actorId, tenantId]
+      );
+
+  if (findResult.rows.length === 0) {
+    return {
+      statusCode: 404,
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Verification session not found' }),
+    };
+  }
+
+  const session = findResult.rows[0];
+
+  await db.queryWithTenant(
+    tenantId,
+    `UPDATE manual_verification_sessions
+     SET status = $2,
+         verified = $3,
+         completion_notes = $4,
+         completed_at = NOW(),
+         completed_by_user_profile_id = $5::uuid,
+         updated_at = NOW()
+     WHERE id = $1::uuid AND tenant_id = $6`,
+    [session.id, verified ? 'completed' : 'failed', verified, notes || null, completedByUserProfileId, tenantId]
+  );
+
+  return {
+    statusCode: 200,
+    headers: corsHeaders,
+    body: JSON.stringify({
+      success: true,
+      sessionId: session.id,
+      actorId: session.actor_id,
     }),
   };
 }
