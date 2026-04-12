@@ -111,7 +111,7 @@ function findSchemaBlock(specText: string, schemaName: string): string {
 
   for (let i = startIndex + 1; i < lines.length; i += 1) {
     const line = lines[i];
-    if (/^    [A-Za-z0-9_]+:\s*$/.test(line)) {
+    if (/^[ ]{4}[A-Za-z0-9_]+:\s*$/.test(line)) {
       break;
     }
     block.push(line);

@@ -145,10 +145,6 @@ export default function OnboardingPage() {
     localStorage.setItem(CONSENT_DRAFT_KEY, JSON.stringify(consentDraft));
   }, [consentDraft]);
 
-  const stepIndex = useMemo(() => {
-    return Math.max(0, STEP_ORDER.indexOf(activeStep));
-  }, [activeStep]);
-
   const accessibleStepIndex = useMemo(() => {
     if (!status) {
       return 0;
