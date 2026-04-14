@@ -29,13 +29,7 @@ const CLIENT_FILES: Record<ServiceKey, string> = {
   identity: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'identity-client.ts'),
   consent: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'consent-client.ts'),
   licensing: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'licensing-client.ts'),
-  representation: path.resolve(
-    process.cwd(),
-    'src',
-    'lib',
-    'hdicr',
-    'representation-client.ts'
-  ),
+  representation: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'representation-client.ts'),
 };
 
 const REQUIRED_SCHEMA_KEYS: Array<{ service: ServiceKey; schemaName: string; keys: string[] }> = [

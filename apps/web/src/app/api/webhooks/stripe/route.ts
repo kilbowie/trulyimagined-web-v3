@@ -494,10 +494,13 @@ async function persistStripeEventReceipt(
     const alreadyProcessed = Boolean(existingResult.rows[0]?.processed);
     return { recorded: true, alreadyProcessed };
   } catch (error) {
-    console.warn('[STRIPE WEBHOOK] stripe_events persistence unavailable, continuing without replay DB', {
-      eventId: event.id,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    console.warn(
+      '[STRIPE WEBHOOK] stripe_events persistence unavailable, continuing without replay DB',
+      {
+        eventId: event.id,
+        error: error instanceof Error ? error.message : String(error),
+      }
+    );
 
     return { recorded: false, alreadyProcessed: false };
   }
@@ -521,7 +524,10 @@ async function markStripeEventProcessed(stripeEventId: string): Promise<void> {
   }
 }
 
-async function markStripeEventProcessingError(stripeEventId: string, error: unknown): Promise<void> {
+async function markStripeEventProcessingError(
+  stripeEventId: string,
+  error: unknown
+): Promise<void> {
   try {
     await queryTi(
       `UPDATE stripe_events
