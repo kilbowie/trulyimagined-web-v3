@@ -1,7 +1,7 @@
 # Post-Extraction Implementation Backlog
 
 Last updated: 2026-04-14
-Status: Pre-implementation planning
+Status: In progress (P0-1 complete, P1-1 in implementation)
 
 ## Confirmed Architecture Decision
 - D1 confirmed: `identity.verification_session.*` events are processed directly in TI at a single Stripe webhook endpoint, then synced to HDICR.
@@ -69,6 +69,10 @@ Close remaining repo-separation and production-readiness gaps, then implement an
   - Implement TI as the direct processor for `identity.verification_session.*` events at the Stripe webhook endpoint.
   - Implement outbound sync from TI to HDICR for KYC status/session updates.
   - Define retry, error handling, and reconciliation for TI->HDICR sync failures.
+- Implementation progress
+  - TI webhook now updates TI actor verification state on Stripe identity events before HDICR sync.
+  - HDICR identity sync calls now use bounded retry with structured failure logging.
+  - TI audit entries are persisted for identity webhook state transitions and sync-failure triage.
 - Inputs
   - docs/webhook-setup-guide/IMPLEMENTATION_PLAN.md
   - docs/webhook-setup-guide/copilot_webhook_audit_prompt.md
