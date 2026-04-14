@@ -112,6 +112,52 @@ export async function POST(request: NextRequest) {
         await handleVerificationCanceled(event.data.object as Stripe.Identity.VerificationSession);
         break;
 
+      // ===== PAYMENTS (LICENSES) =====
+      case 'charge.succeeded':
+        await handleChargeSucceeded(event.data.object as Stripe.Charge);
+        break;
+
+      case 'charge.failed':
+        await handleChargeFailed(event.data.object as Stripe.Charge);
+        break;
+
+      case 'charge.refunded':
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
+        break;
+
+      case 'charge.dispute.created':
+        await handleChargeDisputed(event.data.object as Stripe.Dispute);
+        break;
+
+      // ===== SUBSCRIPTION BILLING =====
+      case 'payment_intent.payment_failed':
+        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+
+      // ===== PAYOUTS (WITHDRAWALS) =====
+      case 'payout.created':
+        await handlePayoutCreated(event.data.object as Stripe.Payout);
+        break;
+
+      case 'payout.paid':
+        await handlePayoutPaid(event.data.object as Stripe.Payout);
+        break;
+
+      case 'payout.failed':
+        await handlePayoutFailed(event.data.object as Stripe.Payout);
+        break;
+
+      // ===== EXPLICITLY DEFERRED =====
+      // Acknowledged with 200 but no processing yet
+      case 'identity.verification_session.created':
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
+      case 'invoice.payment_failed':
+      case 'v2.core.account[identity].updated':
+        console.log('[STRIPE WEBHOOK] Event acknowledged but handling deferred:', event.type);
+        break;
+
       default:
         console.log('[STRIPE WEBHOOK] Unhandled event type:', event.type);
     }
@@ -613,6 +659,421 @@ async function withHdicrSyncRetries<T>(operation: string, handler: () => Promise
       lastError instanceof Error ? lastError.message : String(lastError)
     }`
   );
+}
+
+// ============================================================
+// PAYMENT / COMMERCIAL EVENT HANDLERS (P1-3)
+// ============================================================
+
+/**
+ * KYC gate: asserts the actor linked to a user_profile_id is verified.
+ * Throws if not found or not verified — surfaces as a 500 with stripe_events error.
+ */
+async function assertActorKycVerified(userProfileId: string, role: string): Promise<void> {
+  const result = await queryTi(
+    `SELECT verification_status FROM actors WHERE user_profile_id = $1 LIMIT 1`,
+    [userProfileId]
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error(
+      `[KYC Gate] No actor record for ${role} user_profile_id: ${userProfileId}`
+    );
+  }
+
+  const { verification_status } = result.rows[0] as { verification_status: string };
+  if (verification_status !== 'verified') {
+    throw new Error(
+      `[KYC Gate] ${role} is not verified (status: ${verification_status}) for user_profile_id: ${userProfileId}`
+    );
+  }
+}
+
+/**
+ * Upsert wallet balance: create row if absent, otherwise add delta atomically.
+ */
+async function upsertWalletBalance(userProfileId: string, deltaCents: number): Promise<void> {
+  await queryTi(
+    `INSERT INTO wallet_balances (user_profile_id, balance_cents, currency)
+     VALUES ($1, $2, 'gbp')
+     ON CONFLICT (user_profile_id) DO UPDATE
+     SET balance_cents = wallet_balances.balance_cents + $2,
+         updated_at    = NOW()`,
+    [userProfileId, deltaCents]
+  );
+}
+
+/**
+ * Handle charge.succeeded — create commercial_license, credit actor/agent wallets.
+ * Enforces KYC gate: both studio and actor must be verified (P1-5).
+ *
+ * Required charge metadata:
+ *   studio_user_profile_id, actor_user_profile_id
+ * Optional:
+ *   agent_user_profile_id, agent_commission_pct (default 25), use_case
+ */
+async function handleChargeSucceeded(charge: Stripe.Charge): Promise<void> {
+  const {
+    studio_user_profile_id: studioProfileId,
+    actor_user_profile_id: actorProfileId,
+    agent_user_profile_id: agentProfileId,
+    agent_commission_pct: rawCommission,
+    use_case: useCase,
+  } = charge.metadata ?? {};
+
+  if (!studioProfileId || !actorProfileId) {
+    console.warn('[STRIPE WEBHOOK] charge.succeeded: missing required metadata, skipping', {
+      chargeId: charge.id,
+    });
+    return;
+  }
+
+  // P1-5 KYC gate
+  await assertActorKycVerified(studioProfileId, 'studio');
+  await assertActorKycVerified(actorProfileId, 'actor');
+
+  const amountCents = charge.amount;
+  const currency = (charge.currency ?? 'gbp').toLowerCase();
+  const agentCommissionPct = agentProfileId
+    ? Math.max(0, Math.min(100, Number(rawCommission ?? 25)))
+    : 0;
+  const agentShare = agentProfileId ? Math.floor(amountCents * (agentCommissionPct / 100)) : 0;
+  const actorShare = amountCents - agentShare;
+
+  await queryTi(
+    `INSERT INTO commercial_licenses (
+       studio_user_profile_id,
+       actor_user_profile_id,
+       agent_user_profile_id,
+       stripe_charge_id,
+       amount_cents,
+       currency,
+       use_case,
+       status,
+       metadata
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, 'active', $8::jsonb)`,
+    [
+      studioProfileId,
+      actorProfileId,
+      agentProfileId ?? null,
+      charge.id,
+      amountCents,
+      currency,
+      useCase ?? null,
+      JSON.stringify({
+        agent_commission_pct: agentCommissionPct,
+        agent_share_cents: agentShare,
+        actor_share_cents: actorShare,
+      }),
+    ]
+  );
+
+  await upsertWalletBalance(actorProfileId, actorShare);
+  if (agentProfileId && agentShare > 0) {
+    await upsertWalletBalance(agentProfileId, agentShare);
+  }
+
+  await insertWebhookAuditEntry({
+    action: 'charge.succeeded',
+    userProfileId: actorProfileId,
+    resourceId: charge.id,
+    changes: {
+      studio_user_profile_id: studioProfileId,
+      actor_user_profile_id: actorProfileId,
+      agent_user_profile_id: agentProfileId ?? null,
+      amount_cents: amountCents,
+      actor_share_cents: actorShare,
+      agent_share_cents: agentShare,
+    },
+  });
+
+  console.log('[STRIPE WEBHOOK] Commercial license created, wallets credited', {
+    chargeId: charge.id,
+    actorProfileId,
+    amountCents,
+  });
+}
+
+/**
+ * Handle charge.failed — audit entry only.
+ */
+async function handleChargeFailed(charge: Stripe.Charge): Promise<void> {
+  const { actor_user_profile_id: actorProfileId, studio_user_profile_id: studioProfileId } =
+    charge.metadata ?? {};
+
+  const auditUserId = actorProfileId ?? studioProfileId;
+  if (auditUserId) {
+    await insertWebhookAuditEntry({
+      action: 'charge.failed',
+      userProfileId: auditUserId,
+      resourceId: charge.id,
+      changes: {
+        failure_code: charge.failure_code,
+        failure_message: charge.failure_message,
+        amount_cents: charge.amount,
+        studio_user_profile_id: studioProfileId ?? null,
+        actor_user_profile_id: actorProfileId ?? null,
+      },
+    });
+  }
+
+  console.warn('[STRIPE WEBHOOK] Charge failed', {
+    chargeId: charge.id,
+    failureCode: charge.failure_code,
+    failureMessage: charge.failure_message,
+  });
+}
+
+/**
+ * Handle charge.refunded — update commercial_license to 'refunded', reverse wallet credits.
+ */
+async function handleChargeRefunded(charge: Stripe.Charge): Promise<void> {
+  const licResult = await queryTi(
+    `SELECT id, actor_user_profile_id, agent_user_profile_id, amount_cents, metadata
+     FROM commercial_licenses
+     WHERE stripe_charge_id = $1
+     LIMIT 1`,
+    [charge.id]
+  );
+
+  if (licResult.rows.length === 0) {
+    console.warn('[STRIPE WEBHOOK] charge.refunded: no matching commercial_license', {
+      chargeId: charge.id,
+    });
+    return;
+  }
+
+  const lic = licResult.rows[0] as {
+    id: string;
+    actor_user_profile_id: string;
+    agent_user_profile_id: string | null;
+    amount_cents: number;
+    metadata: { actor_share_cents?: number; agent_share_cents?: number } | null;
+  };
+
+  const actorShare = lic.metadata?.actor_share_cents ?? lic.amount_cents;
+  const agentShare = lic.agent_user_profile_id ? (lic.metadata?.agent_share_cents ?? 0) : 0;
+
+  await upsertWalletBalance(lic.actor_user_profile_id, -actorShare);
+  if (lic.agent_user_profile_id && agentShare > 0) {
+    await upsertWalletBalance(lic.agent_user_profile_id, -agentShare);
+  }
+
+  const refundReason = charge.refunds?.data?.[0]?.reason ?? 'refunded';
+  await queryTi(
+    `UPDATE commercial_licenses
+     SET status       = 'refunded',
+         refunded_at  = NOW(),
+         refund_reason = $2,
+         updated_at   = NOW()
+     WHERE id = $1`,
+    [lic.id, refundReason]
+  );
+
+  await insertWebhookAuditEntry({
+    action: 'charge.refunded',
+    userProfileId: lic.actor_user_profile_id,
+    resourceId: charge.id,
+    changes: {
+      license_id: lic.id,
+      actor_share_reversed: actorShare,
+      agent_share_reversed: agentShare,
+      refund_reason: refundReason,
+    },
+  });
+
+  console.log('[STRIPE WEBHOOK] Charge refunded, wallets reversed', {
+    chargeId: charge.id,
+    licenseId: lic.id,
+  });
+}
+
+/**
+ * Handle charge.dispute.created — mark commercial_license as 'disputed'.
+ */
+async function handleChargeDisputed(dispute: Stripe.Dispute): Promise<void> {
+  const chargeId =
+    typeof dispute.charge === 'string' ? dispute.charge : (dispute.charge as Stripe.Charge).id;
+
+  const result = await queryTi(
+    `UPDATE commercial_licenses
+     SET status      = 'disputed',
+         disputed_at = NOW(),
+         updated_at  = NOW()
+     WHERE stripe_charge_id = $1
+     RETURNING id, actor_user_profile_id`,
+    [chargeId]
+  );
+
+  if (result.rows.length === 0) {
+    console.warn('[STRIPE WEBHOOK] charge.dispute.created: no matching commercial_license', {
+      chargeId,
+      disputeId: dispute.id,
+    });
+    return;
+  }
+
+  const lic = result.rows[0] as { id: string; actor_user_profile_id: string };
+
+  await insertWebhookAuditEntry({
+    action: 'charge.dispute.created',
+    userProfileId: lic.actor_user_profile_id,
+    resourceId: chargeId,
+    changes: { license_id: lic.id, dispute_id: dispute.id, dispute_reason: dispute.reason },
+  });
+
+  console.warn('[STRIPE WEBHOOK] Charge disputed, license flagged', {
+    chargeId,
+    disputeId: dispute.id,
+  });
+}
+
+/**
+ * Handle payment_intent.payment_failed — audit entry only.
+ */
+async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  const userProfileId =
+    paymentIntent.metadata?.user_profile_id ??
+    paymentIntent.metadata?.actor_user_profile_id;
+
+  if (userProfileId) {
+    await insertWebhookAuditEntry({
+      action: 'payment_intent.payment_failed',
+      userProfileId,
+      resourceId: paymentIntent.id,
+      changes: {
+        last_payment_error: paymentIntent.last_payment_error?.message ?? null,
+        amount: paymentIntent.amount,
+        currency: paymentIntent.currency,
+      },
+    });
+  }
+
+  console.warn('[STRIPE WEBHOOK] PaymentIntent failed', {
+    paymentIntentId: paymentIntent.id,
+    error: paymentIntent.last_payment_error?.message,
+  });
+}
+
+/**
+ * Handle payout.created — insert withdrawal row with status 'processing'.
+ *
+ * Required payout metadata:
+ *   user_profile_id  (the withdrawing user)
+ */
+async function handlePayoutCreated(payout: Stripe.Payout): Promise<void> {
+  const userProfileId = payout.metadata?.user_profile_id;
+
+  if (!userProfileId) {
+    console.warn('[STRIPE WEBHOOK] payout.created: missing user_profile_id in metadata', {
+      payoutId: payout.id,
+    });
+    return;
+  }
+
+  await queryTi(
+    `INSERT INTO withdrawals (
+       user_profile_id,
+       amount_cents,
+       currency,
+       status,
+       stripe_payout_id,
+       metadata
+     )
+     VALUES ($1, $2, $3, 'processing', $4, $5::jsonb)
+     ON CONFLICT (stripe_payout_id) DO NOTHING`,
+    [
+      userProfileId,
+      payout.amount,
+      (payout.currency ?? 'gbp').toLowerCase(),
+      payout.id,
+      JSON.stringify({ arrival_date: payout.arrival_date, method: payout.method }),
+    ]
+  );
+
+  await insertWebhookAuditEntry({
+    action: 'payout.created',
+    userProfileId,
+    resourceId: payout.id,
+    changes: { amount_cents: payout.amount, currency: payout.currency },
+  });
+
+  console.log('[STRIPE WEBHOOK] Withdrawal initiated (payout.created)', {
+    payoutId: payout.id,
+    userProfileId,
+    amountCents: payout.amount,
+  });
+}
+
+/**
+ * Handle payout.paid — mark withdrawal completed.
+ */
+async function handlePayoutPaid(payout: Stripe.Payout): Promise<void> {
+  const result = await queryTi(
+    `UPDATE withdrawals
+     SET status       = 'completed',
+         completed_at = NOW()
+     WHERE stripe_payout_id = $1
+     RETURNING id, user_profile_id`,
+    [payout.id]
+  );
+
+  if (result.rows.length === 0) {
+    console.warn('[STRIPE WEBHOOK] payout.paid: no matching withdrawal', { payoutId: payout.id });
+    return;
+  }
+
+  const row = result.rows[0] as { id: string; user_profile_id: string };
+
+  await insertWebhookAuditEntry({
+    action: 'payout.paid',
+    userProfileId: row.user_profile_id,
+    resourceId: payout.id,
+    changes: { withdrawal_id: row.id },
+  });
+
+  console.log('[STRIPE WEBHOOK] Withdrawal completed (payout.paid)', { payoutId: payout.id });
+}
+
+/**
+ * Handle payout.failed — mark withdrawal failed with reason.
+ */
+async function handlePayoutFailed(payout: Stripe.Payout): Promise<void> {
+  const failureReason =
+    payout.failure_message ?? payout.failure_code ?? 'payout_failed';
+
+  const result = await queryTi(
+    `UPDATE withdrawals
+     SET status         = 'failed',
+         failure_reason = $2
+     WHERE stripe_payout_id = $1
+     RETURNING id, user_profile_id`,
+    [payout.id, failureReason]
+  );
+
+  if (result.rows.length === 0) {
+    console.warn('[STRIPE WEBHOOK] payout.failed: no matching withdrawal', { payoutId: payout.id });
+    return;
+  }
+
+  const row = result.rows[0] as { id: string; user_profile_id: string };
+
+  await insertWebhookAuditEntry({
+    action: 'payout.failed',
+    userProfileId: row.user_profile_id,
+    resourceId: payout.id,
+    changes: {
+      withdrawal_id: row.id,
+      failure_message: payout.failure_message,
+      failure_code: payout.failure_code,
+    },
+  });
+
+  console.warn('[STRIPE WEBHOOK] Withdrawal failed (payout.failed)', {
+    payoutId: payout.id,
+    failureReason,
+  });
 }
 
 async function insertWebhookAuditEntry(params: {
