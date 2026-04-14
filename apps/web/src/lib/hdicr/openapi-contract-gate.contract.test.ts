@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-type ServiceKey = 'identity' | 'consent' | 'licensing';
+type ServiceKey = 'identity' | 'consent' | 'licensing' | 'representation';
 
 const SPEC_PATHS: Record<ServiceKey, string> = {
   identity: path.resolve(process.cwd(), '..', '..', 'services', 'identity-service', 'openapi.yaml'),
@@ -15,12 +15,27 @@ const SPEC_PATHS: Record<ServiceKey, string> = {
     'licensing-service',
     'openapi.yaml'
   ),
+  representation: path.resolve(
+    process.cwd(),
+    '..',
+    '..',
+    'services',
+    'representation-service',
+    'openapi.yaml'
+  ),
 };
 
 const CLIENT_FILES: Record<ServiceKey, string> = {
   identity: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'identity-client.ts'),
   consent: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'consent-client.ts'),
   licensing: path.resolve(process.cwd(), 'src', 'lib', 'hdicr', 'licensing-client.ts'),
+  representation: path.resolve(
+    process.cwd(),
+    'src',
+    'lib',
+    'hdicr',
+    'representation-client.ts'
+  ),
 };
 
 const REQUIRED_SCHEMA_KEYS: Array<{ service: ServiceKey; schemaName: string; keys: string[] }> = [
@@ -85,14 +100,48 @@ function readText(filePath: string): string {
 
 function extractOpenApiPaths(specText: string): string[] {
   const paths: string[] = [];
+  const serverBasePaths = extractServerBasePaths(specText);
   const pathRegex = /^\s{2}(\/v1\/[^\s:]+):\s*$/gm;
+  const shortPathRegex = /^\s{2}(\/[a-zA-Z0-9][^\s:]*):\s*$/gm;
   let match: RegExpExecArray | null;
 
   while ((match = pathRegex.exec(specText)) !== null) {
     paths.push(match[1]);
   }
 
-  return paths;
+  while ((match = shortPathRegex.exec(specText)) !== null) {
+    const shortPath = match[1];
+    if (shortPath.startsWith('/v1/')) {
+      continue;
+    }
+
+    for (const basePath of serverBasePaths) {
+      paths.push(`${basePath}${shortPath}`.replace(/\/{2,}/g, '/'));
+    }
+  }
+
+  return Array.from(new Set(paths));
+}
+
+function extractServerBasePaths(specText: string): string[] {
+  const basePaths: string[] = [];
+  const serverUrlRegex = /^\s*-\s+url:\s+([^\s]+)\s*$/gm;
+  let match: RegExpExecArray | null;
+
+  while ((match = serverUrlRegex.exec(specText)) !== null) {
+    const rawUrl = match[1].trim();
+    try {
+      const parsed = new URL(rawUrl);
+      const pathname = parsed.pathname.replace(/\/+$/, '') || '/';
+      if (pathname !== '/') {
+        basePaths.push(pathname);
+      }
+    } catch {
+      // Ignore malformed URLs in specs; raw path entries are still parsed separately.
+    }
+  }
+
+  return Array.from(new Set(basePaths));
 }
 
 function extractClientPaths(clientText: string): string[] {
@@ -156,6 +205,7 @@ describe('HDICR OpenAPI contract gate', () => {
       identity: extractOpenApiPaths(readText(SPEC_PATHS.identity)).map(toPathRegex),
       consent: extractOpenApiPaths(readText(SPEC_PATHS.consent)).map(toPathRegex),
       licensing: extractOpenApiPaths(readText(SPEC_PATHS.licensing)).map(toPathRegex),
+      representation: extractOpenApiPaths(readText(SPEC_PATHS.representation)).map(toPathRegex),
     };
 
     const missing: string[] = [];
@@ -180,6 +230,7 @@ describe('HDICR OpenAPI contract gate', () => {
       identity: readText(SPEC_PATHS.identity),
       consent: readText(SPEC_PATHS.consent),
       licensing: readText(SPEC_PATHS.licensing),
+      representation: readText(SPEC_PATHS.representation),
     };
 
     const missing: string[] = [];
