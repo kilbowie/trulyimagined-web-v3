@@ -38,6 +38,9 @@ const HDICR_SYNC_RETRY_DELAYS_MS = [250, 750];
  * Next.js automatically parses body, so we need to use raw request
  */
 export async function POST(request: NextRequest) {
+  let event: Stripe.Event | null = null;
+  let stripeEventRecorded = false;
+
   try {
     // Get raw body for signature verification
     const body = await request.text();
@@ -56,8 +59,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Webhook secret not configured' }, { status: 500 });
     }
 
-    let event: Stripe.Event;
-
     try {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err) {
@@ -73,6 +74,17 @@ export async function POST(request: NextRequest) {
       type: event.type,
       id: event.id,
     });
+
+    const replayState = await persistStripeEventReceipt(event, body);
+    stripeEventRecorded = replayState.recorded;
+
+    if (replayState.alreadyProcessed) {
+      console.log('[STRIPE WEBHOOK] Duplicate already-processed event replayed, acknowledging', {
+        id: event.id,
+        type: event.type,
+      });
+      return NextResponse.json({ received: true, replayed: true }, { status: 200 });
+    }
 
     // Handle verification session events
     switch (event.type) {
@@ -104,8 +116,14 @@ export async function POST(request: NextRequest) {
         console.log('[STRIPE WEBHOOK] Unhandled event type:', event.type);
     }
 
+    await markStripeEventProcessed(event.id);
+
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
+    if (event?.id && stripeEventRecorded) {
+      await markStripeEventProcessingError(event.id, error);
+    }
+
     console.error('[STRIPE WEBHOOK] Error processing webhook:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
@@ -388,6 +406,20 @@ async function updateTiVerificationStatus(params: {
   sessionId: string;
   errorReason?: string | null;
 }) {
+  const previousActorResult = await queryTi(
+    `SELECT id, verification_status
+     FROM actors
+     WHERE user_profile_id = $1
+     LIMIT 1`,
+    [params.userProfileId]
+  );
+
+  const previousActor = previousActorResult.rows[0] as
+    | { id?: string; verification_status?: string | null }
+    | undefined;
+
+  const oldStatus = previousActor?.verification_status ?? null;
+
   const actorResult = await queryTi(
     `UPDATE actors
      SET verification_status = $1,
@@ -418,6 +450,130 @@ async function updateTiVerificationStatus(params: {
       error_reason: params.errorReason || null,
     },
   });
+
+  await insertKycStatusTransitionEntry({
+    userProfileId: params.userProfileId,
+    oldStatus,
+    newStatus: params.verificationStatus,
+    stripeSessionId: params.sessionId,
+    triggerEvent: params.eventType,
+    reason: params.errorReason || null,
+  });
+}
+
+async function persistStripeEventReceipt(
+  event: Stripe.Event,
+  payloadJson: string
+): Promise<{ recorded: boolean; alreadyProcessed: boolean }> {
+  try {
+    const insertResult = await queryTi(
+      `INSERT INTO stripe_events (
+         stripe_event_id,
+         event_type,
+         payload,
+         processed
+       )
+       VALUES ($1, $2, $3::jsonb, FALSE)
+       ON CONFLICT (stripe_event_id) DO NOTHING
+       RETURNING id`,
+      [event.id, event.type, payloadJson]
+    );
+
+    if ((insertResult.rowCount ?? 0) > 0) {
+      return { recorded: true, alreadyProcessed: false };
+    }
+
+    const existingResult = await queryTi(
+      `SELECT processed
+       FROM stripe_events
+       WHERE stripe_event_id = $1
+       LIMIT 1`,
+      [event.id]
+    );
+
+    const alreadyProcessed = Boolean(existingResult.rows[0]?.processed);
+    return { recorded: true, alreadyProcessed };
+  } catch (error) {
+    console.warn('[STRIPE WEBHOOK] stripe_events persistence unavailable, continuing without replay DB', {
+      eventId: event.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+
+    return { recorded: false, alreadyProcessed: false };
+  }
+}
+
+async function markStripeEventProcessed(stripeEventId: string): Promise<void> {
+  try {
+    await queryTi(
+      `UPDATE stripe_events
+       SET processed = TRUE,
+           processing_error = NULL,
+           processed_at = NOW()
+       WHERE stripe_event_id = $1`,
+      [stripeEventId]
+    );
+  } catch (error) {
+    console.warn('[STRIPE WEBHOOK] Failed to mark stripe event as processed', {
+      stripeEventId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+async function markStripeEventProcessingError(stripeEventId: string, error: unknown): Promise<void> {
+  try {
+    await queryTi(
+      `UPDATE stripe_events
+       SET processed = FALSE,
+           processing_error = $2,
+           processed_at = NULL
+       WHERE stripe_event_id = $1`,
+      [stripeEventId, error instanceof Error ? error.message : String(error)]
+    );
+  } catch (updateError) {
+    console.warn('[STRIPE WEBHOOK] Failed to persist stripe event processing error', {
+      stripeEventId,
+      error: updateError instanceof Error ? updateError.message : String(updateError),
+    });
+  }
+}
+
+async function insertKycStatusTransitionEntry(params: {
+  userProfileId: string;
+  oldStatus: string | null;
+  newStatus: 'pending' | 'verified' | 'rejected';
+  stripeSessionId: string;
+  triggerEvent: string;
+  reason: string | null;
+}): Promise<void> {
+  try {
+    await queryTi(
+      `INSERT INTO kyc_status_transitions (
+         user_profile_id,
+         old_status,
+         new_status,
+         stripe_session_id,
+         trigger_event,
+         reason
+       )
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [
+        params.userProfileId,
+        params.oldStatus,
+        params.newStatus,
+        params.stripeSessionId,
+        params.triggerEvent,
+        params.reason,
+      ]
+    );
+  } catch (error) {
+    console.warn('[STRIPE WEBHOOK] Failed to persist kyc status transition', {
+      userProfileId: params.userProfileId,
+      triggerEvent: params.triggerEvent,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 async function withHdicrSyncRetries<T>(operation: string, handler: () => Promise<T>): Promise<T> {
