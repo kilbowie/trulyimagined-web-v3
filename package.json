@@ -21,6 +21,7 @@
     "check:hdicr-db-coimport": "bash scripts/check-hdicr-db-coimport.sh",
     "check:hdicr-owned-table-access": "bash scripts/check-hdicr-owned-table-access.sh",
     "check:db-separation-state": "node scripts/verify-db-separation-state.js",
+    "check:webhook-health": "node scripts/check-stripe-webhook-health.js",
     "check:sep042-readiness": "node scripts/verify-sep042-cutover-readiness.mjs",
     "check:tenant-neutral-readiness": "node scripts/verify-tenant-neutral-readiness.js",
     "check:local-ti-hdicr-smoke-prereqs": "node scripts/verify-local-ti-hdicr-smoke-prereqs.mjs",

@@ -43,6 +43,10 @@ vi.mock('@trulyimagined/utils', () => ({
   encryptJSON: vi.fn((value: unknown) => value),
 }));
 
+vi.mock('@sentry/nextjs', () => ({
+  captureMessage: vi.fn(),
+}));
+
 import { POST } from './route';
 
 describe('POST /api/webhooks/stripe - Contract Test', () => {

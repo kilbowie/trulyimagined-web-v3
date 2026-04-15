@@ -29,9 +29,23 @@ import {
 import { queryTi } from '@/lib/db';
 import { encryptJSON } from '@trulyimagined/utils';
 import Stripe from 'stripe';
+import * as Sentry from '@sentry/nextjs';
 
 const HDICR_SYNC_MAX_ATTEMPTS = 3;
 const HDICR_SYNC_RETRY_DELAYS_MS = [250, 750];
+const WEBHOOK_FAILURE_ALERT_WINDOW_MINUTES = Number.parseInt(
+  process.env.STRIPE_WEBHOOK_ALERT_WINDOW_MINUTES ?? '15',
+  10
+);
+const WEBHOOK_FAILURE_ALERT_THRESHOLD = Number.parseInt(
+  process.env.STRIPE_WEBHOOK_ALERT_THRESHOLD ?? '5',
+  10
+);
+const CRITICAL_WEBHOOK_EVENT_TYPES = new Set([
+  'identity.verification_session.verified',
+  'charge.succeeded',
+  'payout.failed',
+]);
 
 /**
  * Webhook handler - must be POST route with raw body
@@ -167,7 +181,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ received: true }, { status: 200 });
   } catch (error) {
     if (event?.id && stripeEventRecorded) {
-      await markStripeEventProcessingError(event.id, error);
+      await markStripeEventProcessingError(event.id, event.type, error);
     }
 
     console.error('[STRIPE WEBHOOK] Error processing webhook:', error);
@@ -572,8 +586,11 @@ async function markStripeEventProcessed(stripeEventId: string): Promise<void> {
 
 async function markStripeEventProcessingError(
   stripeEventId: string,
+  eventType: string,
   error: unknown
 ): Promise<void> {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+
   try {
     await queryTi(
       `UPDATE stripe_events
@@ -581,12 +598,79 @@ async function markStripeEventProcessingError(
            processing_error = $2,
            processed_at = NULL
        WHERE stripe_event_id = $1`,
-      [stripeEventId, error instanceof Error ? error.message : String(error)]
+      [stripeEventId, errorMessage]
     );
+
+    await emitWebhookFailureAlerts({
+      stripeEventId,
+      eventType,
+      errorMessage,
+    });
   } catch (updateError) {
     console.warn('[STRIPE WEBHOOK] Failed to persist stripe event processing error', {
       stripeEventId,
       error: updateError instanceof Error ? updateError.message : String(updateError),
+    });
+  }
+}
+
+async function emitWebhookFailureAlerts(params: {
+  stripeEventId: string;
+  eventType: string;
+  errorMessage: string;
+}): Promise<void> {
+  // Always capture critical event failures individually for rapid triage.
+  if (CRITICAL_WEBHOOK_EVENT_TYPES.has(params.eventType)) {
+    Sentry.captureMessage(
+      `[STRIPE WEBHOOK] Critical event processing failed: ${params.eventType}`,
+      'error'
+    );
+  }
+
+  const threshold = Number.isFinite(WEBHOOK_FAILURE_ALERT_THRESHOLD)
+    ? WEBHOOK_FAILURE_ALERT_THRESHOLD
+    : 5;
+  const windowMinutes = Number.isFinite(WEBHOOK_FAILURE_ALERT_WINDOW_MINUTES)
+    ? WEBHOOK_FAILURE_ALERT_WINDOW_MINUTES
+    : 15;
+
+  if (threshold <= 0 || windowMinutes <= 0) {
+    return;
+  }
+
+  try {
+    const result = await queryTi(
+      `SELECT COUNT(*)::int AS failure_count
+       FROM stripe_events
+       WHERE processed = FALSE
+         AND processing_error IS NOT NULL
+         AND received_at >= NOW() - ($1::int * INTERVAL '1 minute')`,
+      [windowMinutes]
+    );
+
+    const failureCount = Number(result.rows[0]?.failure_count ?? 0);
+    if (failureCount < threshold) {
+      return;
+    }
+
+    console.error('[STRIPE WEBHOOK][ALERT] Failure threshold exceeded', {
+      stripeEventId: params.stripeEventId,
+      eventType: params.eventType,
+      failureCount,
+      threshold,
+      windowMinutes,
+      errorMessage: params.errorMessage,
+    });
+
+    Sentry.captureMessage(
+      `[STRIPE WEBHOOK][ALERT] ${failureCount} failures in last ${windowMinutes}m (threshold ${threshold})`,
+      'error'
+    );
+  } catch (alertError) {
+    console.warn('[STRIPE WEBHOOK] Failed to emit threshold alert', {
+      stripeEventId: params.stripeEventId,
+      eventType: params.eventType,
+      error: alertError instanceof Error ? alertError.message : String(alertError),
     });
   }
 }
