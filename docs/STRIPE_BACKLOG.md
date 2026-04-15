@@ -1,6 +1,6 @@
 # Stripe Integration Backlog
 
-_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase B complete)_
+_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase C complete)_
 
 ---
 
@@ -155,7 +155,7 @@ _Depends on Phase B approval. Enables deal flow and platform revenue._
 
 ---
 
-- [ ] **STRIPE-005 — Deal Initiation: PaymentIntent with Application Fee + Transfer**
+- [x] **STRIPE-005 — Deal Initiation: PaymentIntent with Application Fee + Transfer** ✅ COMPLETE
   - **Priority:** CRITICAL
   - **Description:** Implement deal payment flow. Studio calls endpoint to initiate a deal;
     TI calculates platform fee using band logic, creates PaymentIntent with
@@ -169,21 +169,21 @@ _Depends on Phase B approval. Enables deal flow and platform revenue._
     | $50,001 – $100,000 | 9% |
     | > $100,000 | 7.5% |
   - **Depends on:** STRIPE-003 (actor must have Connect account), STRIPE-008
-  - **Files affected:**
-    - `apps/web/src/app/api/stripe/deals/initiate/route.ts` — NEW: `POST`, validates actor has `stripe_account_id`, calculates fee, creates PaymentIntent, inserts `deals` row
-    - `apps/web/src/lib/stripe/platformFee.ts` — NEW: fee band calculation utility
-    - New migration: create `deals` table with columns `id`, `studio_user_id`, `actor_user_id`, `deal_value_cents`, `platform_fee_cents`, `actor_payout_cents`, `stripe_payment_intent_id`, `stripe_transfer_id`, `status` (pending/paid/failed/reversed), `settled_at`, `created_at`
+  - **Implemented:**
+    - `apps/web/src/app/api/stripe/deals/initiate/route.ts` — `POST` route validates Enterprise/Admin caller, validates actor Connect readiness, calculates fee band, creates PaymentIntent with `application_fee_amount` + `transfer_data.destination`, inserts pending `deals` row, returns `clientSecret`
+    - `apps/web/src/lib/stripe/platformFee.ts` — fee band utility for 17.5% / 13% / 9% / 7.5%
+    - `infra/database/migrations/038_ti_deals_table.sql` — creates `deals` table (`studio_user_id`, `actor_user_id`, `deal_value_cents`, `platform_fee_cents`, `actor_payout_cents`, `stripe_payment_intent_id`, `stripe_transfer_id`, `status`, `settled_at`, timestamps)
 
 ---
 
-- [ ] **STRIPE-006 — Deal Settlement: `payment_intent.succeeded` Handler**
+- [x] **STRIPE-006 — Deal Settlement: `payment_intent.succeeded` Handler** ✅ COMPLETE
   - **Priority:** CRITICAL
   - **Description:** Add `payment_intent.succeeded` webhook handler. Marks deal as `'paid'`,
     records `settled_at`, logs Stripe transfer ID once `transfer.created` fires. Must be
     idempotent (check deal status before writing).
   - **Depends on:** STRIPE-005, STRIPE-002
-  - **Files affected:**
-    - `apps/web/src/app/api/webhooks/stripe/route.ts` — add `payment_intent.succeeded` case in platform event handler; update `deals` row status to `'paid'`
+  - **Implemented:**
+    - `apps/web/src/app/api/webhooks/stripe/route.ts` — added `payment_intent.succeeded` in deferred payment event branch, implemented idempotent `deals` settlement (`pending|failed` -> `paid`, sets `settled_at`), and linked `transfer.created` events to `deals.stripe_transfer_id` via source charge -> payment intent resolution
 
 ---
 
@@ -340,12 +340,12 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | ---------------------------- | ------------------------------------------------------------------------- | ------------ | ------------------------------------------------- |
 | **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review               |
 | **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review               |
-| **C — Marketplace Payments** | STRIPE-005, STRIPE-006                                                    | 0/2 complete | Phase B approved                                  |
+| **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                               | 2/2 complete | Complete — ready for Phase D review              |
 | **D — Subscriptions**        | STRIPE-009, STRIPE-010, STRIPE-016                                        | 0/3 complete | Phase C approved                                  |
 | **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                    | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live |
 | **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
 
-**Total progress: 7 / 16 items complete**
+**Total progress: 9 / 16 items complete**
 
 ---
 

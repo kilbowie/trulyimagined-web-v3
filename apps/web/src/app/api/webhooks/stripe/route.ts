@@ -137,6 +137,7 @@ export async function POST(request: NextRequest) {
       case 'charge.failed':
       case 'charge.refunded':
       case 'charge.dispute.created':
+      case 'payment_intent.succeeded':
       case 'payment_intent.payment_failed':
       case 'payout.created':
       case 'payout.paid':
@@ -156,6 +157,9 @@ export async function POST(request: NextRequest) {
                 break;
               case 'charge.dispute.created':
                 await handleChargeDisputed(capturedEvent.data.object as Stripe.Dispute);
+                break;
+              case 'payment_intent.succeeded':
+                await handlePaymentIntentSucceeded(capturedEvent.data.object as Stripe.PaymentIntent);
                 break;
               case 'payment_intent.payment_failed':
                 await handlePaymentIntentFailed(capturedEvent.data.object as Stripe.PaymentIntent);
@@ -724,15 +728,58 @@ async function handleConnectTransferCreated(
   accountId: string,
   transfer: Stripe.Transfer
 ): Promise<void> {
+  const sourceTransactionId =
+    typeof transfer.source_transaction === 'string'
+      ? transfer.source_transaction
+      : transfer.source_transaction?.id;
+
+  let paymentIntentId: string | null = null;
+
+  if (sourceTransactionId) {
+    try {
+      const charge = await stripe.charges.retrieve(sourceTransactionId, {
+        expand: ['payment_intent'],
+      });
+
+      paymentIntentId =
+        typeof charge.payment_intent === 'string'
+          ? charge.payment_intent
+          : charge.payment_intent?.id ?? null;
+
+      if (paymentIntentId) {
+        const updateResult = await queryTi(
+          `UPDATE deals
+           SET stripe_transfer_id = COALESCE(stripe_transfer_id, $2),
+               updated_at = NOW()
+           WHERE stripe_payment_intent_id = $1
+           RETURNING id, status`,
+          [paymentIntentId, transfer.id]
+        );
+
+        console.log('[STRIPE WEBHOOK] Connect transfer linked to deal', {
+          accountId,
+          transferId: transfer.id,
+          paymentIntentId,
+          dealsUpdated: updateResult.rowCount ?? 0,
+        });
+      }
+    } catch (error) {
+      console.warn('[STRIPE WEBHOOK] Failed resolving transfer source transaction charge', {
+        accountId,
+        transferId: transfer.id,
+        sourceTransactionId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   console.log('[STRIPE WEBHOOK] Connect transfer.created received', {
     accountId,
     transferId: transfer.id,
     amount: transfer.amount,
     currency: transfer.currency,
-    sourceTransaction:
-      typeof transfer.source_transaction === 'string'
-        ? transfer.source_transaction
-        : transfer.source_transaction?.id,
+    sourceTransaction: sourceTransactionId,
+    paymentIntentId,
   });
 }
 
@@ -1024,6 +1071,55 @@ async function handleChargeDisputed(dispute: Stripe.Dispute): Promise<void> {
   console.warn('[STRIPE WEBHOOK] Charge disputed, license flagged', {
     chargeId,
     disputeId: dispute.id,
+  });
+}
+
+/**
+ * Handle payment_intent.succeeded for deal settlement.
+ * Idempotent: only transitions pending/failed deals to paid.
+ */
+async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent): Promise<void> {
+  const result = await queryTi(
+    `UPDATE deals
+     SET status = 'paid',
+         settled_at = COALESCE(settled_at, NOW()),
+         updated_at = NOW()
+     WHERE stripe_payment_intent_id = $1
+       AND status IN ('pending', 'failed')
+     RETURNING id, studio_user_id, actor_user_id, status`,
+    [paymentIntent.id]
+  );
+
+  if ((result.rowCount ?? 0) === 0) {
+    console.log('[STRIPE WEBHOOK] payment_intent.succeeded already settled or deal not found', {
+      paymentIntentId: paymentIntent.id,
+    });
+    return;
+  }
+
+  const deal = result.rows[0] as {
+    id: string;
+    studio_user_id: string;
+    actor_user_id: string;
+    status: string;
+  };
+
+  await insertWebhookAuditEntry({
+    action: 'payment_intent.succeeded',
+    userProfileId: deal.actor_user_id,
+    resourceId: paymentIntent.id,
+    changes: {
+      deal_id: deal.id,
+      amount_cents: paymentIntent.amount,
+      currency: paymentIntent.currency,
+      studio_user_id: deal.studio_user_id,
+      actor_user_id: deal.actor_user_id,
+    },
+  });
+
+  console.log('[STRIPE WEBHOOK] Deal settled from payment_intent.succeeded', {
+    dealId: deal.id,
+    paymentIntentId: paymentIntent.id,
   });
 }
 
