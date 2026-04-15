@@ -25,6 +25,7 @@ import { NextResponse } from 'next/server';
 //
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 let lastCleanup = Date.now();
+const RATE_LIMIT_BYPASS_PREFIXES = ['/api/webhooks/stripe'];
 
 // Limits per route category (requests per window)
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
@@ -79,25 +80,31 @@ function isRateLimited(ip: string, pathname: string): boolean {
   return false;
 }
 
+function shouldBypassRateLimit(pathname: string): boolean {
+  return RATE_LIMIT_BYPASS_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
 export async function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
 
     // Rate limiting — applied before auth to block floods early
-    const ip =
-      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-      request.headers.get('x-real-ip') ||
-      '127.0.0.1';
+    if (!shouldBypassRateLimit(pathname)) {
+      const ip =
+        request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+        request.headers.get('x-real-ip') ||
+        '127.0.0.1';
 
-    if (isRateLimited(ip, pathname)) {
-      console.warn('[Middleware] Rate limit exceeded:', { ip, pathname });
-      return new NextResponse('Too Many Requests', {
-        status: 429,
-        headers: {
-          'Retry-After': '60',
-          'Content-Type': 'text/plain',
-        },
-      });
+      if (isRateLimited(ip, pathname)) {
+        console.warn('[Middleware] Rate limit exceeded:', { ip, pathname });
+        return new NextResponse('Too Many Requests', {
+          status: 429,
+          headers: {
+            'Retry-After': '60',
+            'Content-Type': 'text/plain',
+          },
+        });
+      }
     }
 
     // Debug: Log environment variables (only in development)
