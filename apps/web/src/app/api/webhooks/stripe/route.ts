@@ -126,40 +126,53 @@ export async function POST(request: NextRequest) {
         await handleVerificationCanceled(event.data.object as Stripe.Identity.VerificationSession);
         break;
 
-      // ===== PAYMENTS (LICENSES) =====
+      // ===== PAYMENTS & PAYOUTS — deferred via setImmediate (Option C: non-critical) =====
+      // Returns 200 immediately; handler runs after response is sent.
+      // Errors are caught inside setImmediate and recorded via markStripeEventProcessingError.
       case 'charge.succeeded':
-        await handleChargeSucceeded(event.data.object as Stripe.Charge);
-        break;
-
       case 'charge.failed':
-        await handleChargeFailed(event.data.object as Stripe.Charge);
-        break;
-
       case 'charge.refunded':
-        await handleChargeRefunded(event.data.object as Stripe.Charge);
-        break;
-
       case 'charge.dispute.created':
-        await handleChargeDisputed(event.data.object as Stripe.Dispute);
-        break;
-
-      // ===== SUBSCRIPTION BILLING =====
       case 'payment_intent.payment_failed':
-        await handlePaymentIntentFailed(event.data.object as Stripe.PaymentIntent);
-        break;
-
-      // ===== PAYOUTS (WITHDRAWALS) =====
       case 'payout.created':
-        await handlePayoutCreated(event.data.object as Stripe.Payout);
-        break;
-
       case 'payout.paid':
-        await handlePayoutPaid(event.data.object as Stripe.Payout);
-        break;
-
-      case 'payout.failed':
-        await handlePayoutFailed(event.data.object as Stripe.Payout);
-        break;
+      case 'payout.failed': {
+        const capturedEvent = event;
+        setImmediate(async () => {
+          try {
+            switch (capturedEvent.type) {
+              case 'charge.succeeded':
+                await handleChargeSucceeded(capturedEvent.data.object as Stripe.Charge);
+                break;
+              case 'charge.failed':
+                await handleChargeFailed(capturedEvent.data.object as Stripe.Charge);
+                break;
+              case 'charge.refunded':
+                await handleChargeRefunded(capturedEvent.data.object as Stripe.Charge);
+                break;
+              case 'charge.dispute.created':
+                await handleChargeDisputed(capturedEvent.data.object as Stripe.Dispute);
+                break;
+              case 'payment_intent.payment_failed':
+                await handlePaymentIntentFailed(capturedEvent.data.object as Stripe.PaymentIntent);
+                break;
+              case 'payout.created':
+                await handlePayoutCreated(capturedEvent.data.object as Stripe.Payout);
+                break;
+              case 'payout.paid':
+                await handlePayoutPaid(capturedEvent.data.object as Stripe.Payout);
+                break;
+              case 'payout.failed':
+                await handlePayoutFailed(capturedEvent.data.object as Stripe.Payout);
+                break;
+            }
+            await markStripeEventProcessed(capturedEvent.id);
+          } catch (err) {
+            await markStripeEventProcessingError(capturedEvent.id, capturedEvent.type, err);
+          }
+        });
+        return NextResponse.json({ received: true }, { status: 200 });
+      }
 
       // ===== EXPLICITLY DEFERRED =====
       // Acknowledged with 200 but no processing yet
