@@ -18,16 +18,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { stripe, mapStripeStatusToVerificationLevel, getVerifiedIdentityData } from '@/lib/stripe';
-import {
-  createStripeIdentityLinkRequiresInput,
-  createStripeIdentityLinkVerified,
-  getStripeIdentityLinkBySessionId,
-  markStripeIdentityLinkCanceled,
-  updateStripeIdentityLinkRequiresInput,
-  updateStripeIdentityLinkVerified,
-} from '@/lib/hdicr/stripe-webhook-client';
+import { verifyStripeIdentityConfirmed } from '@/lib/hdicr/stripe-webhook-client';
 import { queryTi } from '@/lib/db';
-import { encryptJSON } from '@trulyimagined/utils';
 import Stripe from 'stripe';
 import * as Sentry from '@sentry/nextjs';
 
@@ -248,69 +240,21 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
     // Map Stripe status to verification levels
     const levels = mapStripeStatusToVerificationLevel('verified');
 
-    // Check if identity link already exists for this session
-    const existingLink = await withHdicrSyncRetries('identity-link-lookup', () =>
-      getStripeIdentityLinkBySessionId(session.id, userProfileId)
+    await withHdicrSyncRetries('identity-verify-confirmed', () =>
+      verifyStripeIdentityConfirmed({
+        tiUserId: userProfileId,
+        verificationSessionId: session.id,
+        verifiedAt: new Date().toISOString(),
+        assuranceLevel: levels.assurance_level,
+      })
     );
 
-    if (existingLink?.id) {
-      console.log('[STRIPE WEBHOOK] Identity link already exists, updating:', {
-        linkId: existingLink.id,
-      });
-
-      // Encrypt credential_data before storing (Step 11: Database Encryption)
-      const encryptedCredentialData = encryptJSON(verifiedData);
-
-      // Update existing link
-      await withHdicrSyncRetries('identity-link-update-verified', () =>
-        updateStripeIdentityLinkVerified({
-          linkId: existingLink.id!,
-          verificationLevel: levels.verification_level,
-          assuranceLevel: levels.assurance_level,
-          encryptedCredentialData,
-          metadata: {
-            stripe_session_id: session.id,
-            gpg45_confidence: levels.gpg45_confidence,
-            eidas_level: levels.eidas_level,
-            last_error: session.last_error?.reason || null,
-            verified_at: new Date().toISOString(),
-          },
-          verifiedAt: new Date(),
-        })
-      );
-
-      console.log('[STRIPE WEBHOOK] Updated existing identity link');
-    } else {
-      // Encrypt credential_data before storing (Step 11: Database Encryption)
-      const encryptedCredentialData = encryptJSON(verifiedData);
-
-      // Create new identity link
-      const linkResult = await withHdicrSyncRetries('identity-link-create-verified', () =>
-        createStripeIdentityLinkVerified({
-          userProfileId,
-          sessionId: session.id,
-          verificationLevel: levels.verification_level,
-          assuranceLevel: levels.assurance_level,
-          encryptedCredentialData,
-          metadata: {
-            stripe_session_id: session.id,
-            gpg45_confidence: levels.gpg45_confidence,
-            eidas_level: levels.eidas_level,
-            verified_at: new Date().toISOString(),
-          },
-          verifiedAt: new Date(),
-        })
-      );
-
-      const linkId = linkResult?.id;
-
-      console.log('[STRIPE WEBHOOK] Created identity link:', {
-        linkId,
-        userProfileId,
-        sessionId: session.id,
-        verificationLevel: levels.verification_level,
-      });
-    }
+    console.log('[STRIPE WEBHOOK] Synced verified identity to HDICR', {
+      userProfileId,
+      sessionId: session.id,
+      assuranceLevel: levels.assurance_level,
+      hasVerifiedData: Boolean(verifiedData),
+    });
   } catch (error) {
     await insertWebhookAuditEntry({
       action: 'identity.verification_session.verified.sync_failed',
@@ -352,60 +296,10 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
     errorReason: session.last_error?.reason || null,
   });
 
-  // Map Stripe status to verification levels
-  const levels = mapStripeStatusToVerificationLevel('requires_input');
-
-  // Check if identity link exists
-  const existingLink = await withHdicrSyncRetries('identity-link-lookup', () =>
-    getStripeIdentityLinkBySessionId(session.id, userProfileId)
-  );
-
-  if (existingLink?.id) {
-    // Update existing link with requires_input status
-    await withHdicrSyncRetries('identity-link-update-requires-input', () =>
-      updateStripeIdentityLinkRequiresInput({
-        linkId: existingLink.id!,
-        verificationLevel: levels.verification_level,
-        assuranceLevel: levels.assurance_level,
-        metadata: {
-          stripe_session_id: session.id,
-          gpg45_confidence: levels.gpg45_confidence,
-          eidas_level: levels.eidas_level,
-          last_error: session.last_error?.reason || 'requires_input',
-          status: 'requires_input',
-        },
-      })
-    );
-
-    console.log('[STRIPE WEBHOOK] Updated identity link to requires_input status');
-  } else {
-    // Encrypt credential_data before storing (Step 11: Database Encryption)
-    const credentialData = {
-      status: 'requires_input',
-      last_error: session.last_error?.reason,
-    };
-    const encryptedCredentialData = encryptJSON(credentialData);
-
-    // Create new link with requires_input status
-    await withHdicrSyncRetries('identity-link-create-requires-input', () =>
-      createStripeIdentityLinkRequiresInput({
-        userProfileId,
-        sessionId: session.id,
-        verificationLevel: levels.verification_level,
-        assuranceLevel: levels.assurance_level,
-        encryptedCredentialData,
-        metadata: {
-          stripe_session_id: session.id,
-          gpg45_confidence: levels.gpg45_confidence,
-          eidas_level: levels.eidas_level,
-          last_error: session.last_error?.reason || 'requires_input',
-          status: 'requires_input',
-        },
-      })
-    );
-
-    console.log('[STRIPE WEBHOOK] Created identity link with requires_input status');
-  }
+  console.log('[STRIPE WEBHOOK] requires_input recorded in TI; HDICR sync not required', {
+    sessionId: session.id,
+    userProfileId,
+  });
 }
 
 /**
@@ -455,26 +349,10 @@ async function handleVerificationCanceled(session: Stripe.Identity.VerificationS
     sessionId: session.id,
   });
 
-  // Check if identity link exists and mark as canceled
-  const existingLink = await withHdicrSyncRetries('identity-link-lookup', () =>
-    getStripeIdentityLinkBySessionId(session.id, userProfileId)
-  );
-
-  if (existingLink?.id) {
-    await withHdicrSyncRetries('identity-link-cancel', () =>
-      markStripeIdentityLinkCanceled(
-        existingLink.id!,
-        {
-          stripe_session_id: session.id,
-          status: 'canceled',
-          canceled_at: new Date().toISOString(),
-        },
-        userProfileId
-      )
-    );
-
-    console.log('[STRIPE WEBHOOK] Marked identity link as inactive (canceled)');
-  }
+  console.log('[STRIPE WEBHOOK] canceled/redacted recorded in TI; HDICR sync not required', {
+    sessionId: session.id,
+    userProfileId,
+  });
 }
 
 async function updateTiVerificationStatus(params: {

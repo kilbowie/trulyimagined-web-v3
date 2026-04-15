@@ -1,6 +1,6 @@
 # Stripe Integration Backlog
 
-_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase A in progress)_
+_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase A complete)_
 
 ---
 
@@ -69,7 +69,6 @@ _Foundational decisions that all other phases depend on. Must be approved before
 
 ---
 
-- [ ] **STRIPE-002 — Hybrid Async Webhook Processing Model**
 - [x] **STRIPE-002 — Hybrid Async Webhook Processing Model** ✅ COMPLETE
   - **Priority:** HIGH
   - **Decision applied:** Option C (hybrid — identity/critical inline, charge/payout deferred)
@@ -78,7 +77,6 @@ _Foundational decisions that all other phases depend on. Must be approved before
 
 ---
 
-- [ ] **STRIPE-008 — Stripe API Version Upgrade**
 - [x] **STRIPE-008 — Stripe API Version Upgrade** ✅ COMPLETE
   - **Priority:** MEDIUM
   - **Depends on:** None
@@ -89,7 +87,6 @@ _Foundational decisions that all other phases depend on. Must be approved before
 
 ---
 
-- [ ] **STRIPE-011 — Event Persistence: Keep `stripe_events`, Add Missing Columns**
 - [x] **STRIPE-011 — Event Persistence: Keep `stripe_events`, Add Missing Columns** ✅ COMPLETE
   - **Priority:** LOW
   - **Depends on:** None
@@ -97,24 +94,20 @@ _Foundational decisions that all other phases depend on. Must be approved before
 
 ---
 
-- [ ] **STRIPE-013 — HDICR Identity Sync: Migrate to `POST /identity/verify-confirmed`**
+- [x] **STRIPE-013 — HDICR Identity Sync: Migrate to `POST /identity/verify-confirmed`** ✅ COMPLETE
   - **Priority:** HIGH
-  - **Description:** Replace the existing multi-call identity link pattern
-    (`/v1/identity/link/create`, `/v1/identity/link/reactivate`) with a single call to
-    `POST /identity/verify-confirmed`. This endpoint does not yet exist in HDICR and must be
-    implemented there. Two-part item spanning both repos.
+  - **Description:** Replaced the existing multi-call identity link pattern with a single TI→HDICR
+    sync call to `POST /identity/verify-confirmed`.
   - **Decision applied:** `/identity/verify-confirmed` everywhere (user decision #3)
-  - **Depends on:** None (but HDICR endpoint must be available before TI side goes to production)
-  - **Files affected — TI:**
-    - `apps/web/src/lib/hdicr/identity-client.ts` — add `verifyIdentityConfirmed(params)` function calling `POST /identity/verify-confirmed` with `{ ti_user_id, verification_session_id, verified_at, assurance_level }`
-    - `apps/web/src/lib/hdicr/stripe-webhook-client.ts` — replace `createStripeIdentityLinkVerified` / `updateStripeIdentityLinkVerified` / `createStripeIdentityLinkRequiresInput` with single `verifyIdentityConfirmed()` call for the `verified` event; update or remove `requires_input` and `canceled` handlers accordingly
-    - `apps/web/src/app/api/webhooks/stripe/route.ts` — update `identity.verification_session.verified` handler to use new client function
-  - **Files affected — HDICR (separate repo):**
-    - New route handler: `POST /identity/verify-confirmed` in HDICR `identity-service`
-    - Accepts: `{ ti_user_id, verification_session_id, verified_at, assurance_level }`
-    - Updates actor's identity record in consent registry; returns 200 on success
-    - Must be protected by Auth0 M2M token validation (same pattern as existing HDICR routes)
-  - **⚠️ Note:** TI and HDICR implementations must be coordinated. Deploy HDICR endpoint first or use feature flag to avoid breaking production sync during rollout.
+  - **Depends on:** None
+  - **Implemented — TI:**
+    - `apps/web/src/lib/hdicr/identity-client.ts` — added `verifyIdentityConfirmed(params)` calling `POST /identity/verify-confirmed`
+    - `apps/web/src/lib/hdicr/stripe-webhook-client.ts` — now delegates to single verify-confirmed client call
+    - `apps/web/src/app/api/webhooks/stripe/route.ts` — `identity.verification_session.verified` now uses `verifyStripeIdentityConfirmed`; removed legacy link CRUD calls for `requires_input`/`canceled`
+  - **Implemented — HDICR:**
+    - `services/identity-service/src/index.ts` — added route and handler for `POST /identity/verify-confirmed`
+    - `infra/template.yaml` — exposed API event path `/identity/verify-confirmed` on `IdentityFunction`
+  - **Validation:** TI type-check + contract tests pass; HDICR identity-service type-check + tests pass
 
 ---
 
@@ -317,14 +310,14 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 
 | Phase                        | Items                                                                  | Status       | Gate Condition                                        |
 | ---------------------------- | ---------------------------------------------------------------------- | ------------ | ----------------------------------------------------- |
-| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 | 4/5 complete | STRIPE-013 spans HDICR repo — awaiting HDICR endpoint |
+| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review |
 | **B — Connect Platform**     | STRIPE-003, STRIPE-004                                                 | 0/2 complete | Phase A approved                                      |
 | **C — Marketplace Payments** | STRIPE-005, STRIPE-006                                                 | 0/2 complete | Phase B approved                                      |
 | **D — Subscriptions**        | STRIPE-009, STRIPE-010                                                 | 0/2 complete | Phase C approved                                      |
 | **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                 | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live     |
 | **F — Hardening**            | STRIPE-014, STRIPE-015                                                 | 0/2 complete | Phase E approved                                      |
 
-**Total progress: 4 / 15 items complete**
+**Total progress: 5 / 15 items complete**
 
 ---
 
@@ -370,9 +363,7 @@ STRIPE_PRICE_STUDIO_MID_ANNUAL
 
 ## Notes
 
-- **STRIPE-013 cross-repo dependency**: TI's `verify-confirmed` client can be written immediately,
-  but production deploy must be coordinated with HDICR endpoint availability. Deploy HDICR first
-  or use a feature flag / graceful fallback on the TI side during rollout.
+- **STRIPE-013 deployment order completed**: HDICR endpoint and TI client/webhook updates are both implemented and validated.
 - **STRIPE-009 renaming**: `STRIPE_PRICE_ACTOR_MONTHLY` → `STRIPE_PRICE_ACTOR_CREATOR_MONTHLY`
   is a rename, not just an addition. Existing Vercel env var must be updated and old key removed.
 - **Middleware** (`apps/web/src/middleware.ts`): Rate-limit bypass is at `/api/webhooks/stripe`

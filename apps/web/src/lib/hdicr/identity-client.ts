@@ -181,6 +181,25 @@ export async function listIdentityLinks(userProfileId: string, activeOnly: boole
   throw new Error('[HDICR] Remote identity links list returned an unexpected payload.');
 }
 
+export async function verifyIdentityConfirmed(params: {
+  tiUserId: string;
+  verificationSessionId: string;
+  verifiedAt: string;
+  assuranceLevel: string;
+}) {
+  return invokeIdentityRemote<Record<string, unknown>>({
+    path: '/identity/verify-confirmed',
+    method: 'POST',
+    operation: 'identity-verify-confirmed',
+    body: {
+      ti_user_id: params.tiUserId,
+      verification_session_id: params.verificationSessionId,
+      verified_at: params.verifiedAt,
+      assurance_level: params.assuranceLevel,
+    },
+  });
+}
+
 export async function getActorRegistrationStatus(auth0UserId: string) {
   const payload = await invokeIdentityRemote<{ status?: Record<string, unknown> | null }>({
     path: `/v1/identity/registration-status?auth0UserId=${encodeURIComponent(auth0UserId)}`,

@@ -84,4 +84,28 @@ describe('identity-client - remote authoritative behavior', () => {
       expect.objectContaining({ method: 'GET' })
     );
   });
+
+  it('verifyIdentityConfirmed calls verify-confirmed endpoint', async () => {
+    process.env.HDICR_REMOTE_BASE_URL = 'https://hdicr.example.com';
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ success: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock as unknown as typeof fetch);
+
+    const { verifyIdentityConfirmed } = await import('@/lib/hdicr/identity-client');
+
+    await verifyIdentityConfirmed({
+      tiUserId: 'profile-123',
+      verificationSessionId: 'vs_123',
+      verifiedAt: '2026-04-15T12:00:00.000Z',
+      assuranceLevel: 'high',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://hdicr.example.com/identity/verify-confirmed',
+      expect.objectContaining({ method: 'POST' })
+    );
+  });
 });
