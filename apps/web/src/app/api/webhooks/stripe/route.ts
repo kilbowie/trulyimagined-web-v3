@@ -17,7 +17,12 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { stripe, mapStripeStatusToVerificationLevel, getVerifiedIdentityData } from '@/lib/stripe';
+import {
+  stripe,
+  mapStripeStatusToVerificationLevel,
+  getVerifiedIdentityData,
+  mapConnectAccountStatus,
+} from '@/lib/stripe';
 import { verifyStripeIdentityConfirmed } from '@/lib/hdicr/stripe-webhook-client';
 import { queryTi } from '@/lib/db';
 import Stripe from 'stripe';
@@ -90,6 +95,13 @@ export async function POST(request: NextRequest) {
         type: event.type,
       });
       return NextResponse.json({ received: true, replayed: true }, { status: 200 });
+    }
+
+    // Connect events are delivered for connected accounts with event.account populated.
+    if (event.account) {
+      await handleConnectEvent(event);
+      await markStripeEventProcessed(event.id);
+      return NextResponse.json({ received: true, connect: true }, { status: 200 });
     }
 
     // Handle verification session events
@@ -427,12 +439,13 @@ async function persistStripeEventReceipt(
          stripe_event_id,
          event_type,
          payload,
-         processed
+         processed,
+         connect_account_id
        )
-       VALUES ($1, $2, $3::jsonb, FALSE)
+       VALUES ($1, $2, $3::jsonb, FALSE, $4)
        ON CONFLICT (stripe_event_id) DO NOTHING
        RETURNING id`,
-      [event.id, event.type, payloadJson]
+      [event.id, event.type, payloadJson, event.account ?? null]
     );
 
     if ((insertResult.rowCount ?? 0) > 0) {
@@ -639,6 +652,113 @@ async function withHdicrSyncRetries<T>(operation: string, handler: () => Promise
       lastError instanceof Error ? lastError.message : String(lastError)
     }`
   );
+}
+
+// ============================================================
+// CONNECT EVENT HANDLERS (P2)
+// ============================================================
+
+async function handleConnectEvent(event: Stripe.Event): Promise<void> {
+  const accountId = event.account;
+
+  if (!accountId) {
+    return;
+  }
+
+  switch (event.type) {
+    case 'account.updated':
+      await handleConnectAccountUpdated(accountId, event.data.object as Stripe.Account);
+      break;
+
+    case 'transfer.created':
+      await handleConnectTransferCreated(accountId, event.data.object as Stripe.Transfer);
+      break;
+
+    case 'transfer.reversed':
+      await handleConnectTransferReversed(accountId, event.data.object as Stripe.Transfer);
+      break;
+
+    case 'transfer.updated':
+      await handleConnectTransferUpdated(accountId, event.data.object as Stripe.Transfer);
+      break;
+
+    default:
+      console.log('[STRIPE WEBHOOK] Unhandled Connect event type:', {
+        type: event.type,
+        accountId,
+      });
+  }
+}
+
+async function handleConnectAccountUpdated(
+  accountId: string,
+  account: Stripe.Account
+): Promise<void> {
+  const status = mapConnectAccountStatus(account);
+  const normalizedStatus = status.onboardingComplete
+    ? 'active'
+    : status.disabledReason
+      ? 'restricted'
+      : 'pending';
+
+  const result = await queryTi(
+    `UPDATE actors
+     SET stripe_account_status = $2,
+         stripe_onboarding_complete = $3,
+         updated_at = NOW()
+     WHERE stripe_account_id = $1
+     RETURNING id, user_profile_id`,
+    [accountId, normalizedStatus, status.onboardingComplete]
+  );
+
+  console.log('[STRIPE WEBHOOK] Connect account status updated', {
+    accountId,
+    normalizedStatus,
+    onboardingComplete: status.onboardingComplete,
+    requirementsDue: status.requirementsDue,
+    actorUpdated: (result.rowCount ?? 0) > 0,
+  });
+}
+
+async function handleConnectTransferCreated(
+  accountId: string,
+  transfer: Stripe.Transfer
+): Promise<void> {
+  console.log('[STRIPE WEBHOOK] Connect transfer.created received', {
+    accountId,
+    transferId: transfer.id,
+    amount: transfer.amount,
+    currency: transfer.currency,
+    sourceTransaction:
+      typeof transfer.source_transaction === 'string'
+        ? transfer.source_transaction
+        : transfer.source_transaction?.id,
+  });
+}
+
+async function handleConnectTransferReversed(
+  accountId: string,
+  transfer: Stripe.Transfer
+): Promise<void> {
+  console.warn('[STRIPE WEBHOOK] Connect transfer.reversed received', {
+    accountId,
+    transferId: transfer.id,
+    amountReversed: transfer.amount_reversed,
+    amount: transfer.amount,
+    currency: transfer.currency,
+  });
+}
+
+async function handleConnectTransferUpdated(
+  accountId: string,
+  transfer: Stripe.Transfer
+): Promise<void> {
+  console.log('[STRIPE WEBHOOK] Connect transfer.updated received', {
+    accountId,
+    transferId: transfer.id,
+    amount: transfer.amount,
+    currency: transfer.currency,
+  });
 }
 
 // ============================================================

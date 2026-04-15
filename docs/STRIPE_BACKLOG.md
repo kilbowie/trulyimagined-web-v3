@@ -1,6 +1,6 @@
 # Stripe Integration Backlog
 
-_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase A complete)_
+_Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase B complete)_
 
 ---
 
@@ -35,22 +35,22 @@ Identity events.
 
 | File Path                                                        | Feature                   | Status         | Notes                                                                                                                                 |
 | ---------------------------------------------------------------- | ------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web/src/app/api/webhooks/stripe/route.ts`                  | Webhook handler           | `NEEDS_UPDATE` | Has identity + charge + payout handlers. Missing `payment_intent.succeeded`, Connect events, async model                              |
-| `apps/web/src/lib/stripe.ts`                                     | Stripe singleton          | `NEEDS_UPDATE` | API version 2026-02-25.clover (target: 2026-03-25.dahlia). No Connect account methods                                                 |
+| `apps/web/src/app/api/webhooks/stripe/route.ts`                  | Webhook handler           | `NEEDS_UPDATE` | Async model and Connect routing implemented (`event.account`, `account.updated`, `transfer.*`). Still missing `payment_intent.succeeded` |
+| `apps/web/src/lib/stripe.ts`                                     | Stripe singleton          | `NEEDS_UPDATE` | API version aligned (2026-03-25.dahlia) and Connect helpers added.                                            |
 | `apps/web/src/lib/billing.ts`                                    | Subscription plans        | `NEEDS_UPDATE` | 3 monthly prices only; target 13 prices (monthly + annual + seat addon)                                                               |
 | `apps/web/src/app/api/billing/checkout/route.ts`                 | Checkout session          | `NEEDS_UPDATE` | No Connect provisioning or deal logic                                                                                                 |
 | `apps/web/src/app/api/billing/portal/route.ts`                   | Billing portal            | `CORRECT`      | Basic portal redirect working                                                                                                         |
 | `apps/web/src/app/api/billing/summary/route.ts`                  | Subscription summary      | `NEEDS_UPDATE` | No annual/seat-addon awareness                                                                                                        |
 | `apps/web/src/app/api/verification/start/route.ts`               | Identity session start    | `NEEDS_UPDATE` | Multi-provider pattern; target Stripe-only under `/api/stripe/identity/session`                                                       |
 | `apps/web/src/app/api/verification/status/route.ts`              | Identity session status   | `NEEDS_UPDATE` | Multi-provider aggregation; target Stripe-only under `/api/stripe/identity/status`                                                    |
-| `apps/web/src/lib/hdicr/stripe-webhook-client.ts`                | HDICR identity sync       | `NEEDS_UPDATE` | Calls old link CRUD endpoints; replace with single `verify-confirmed` call                                                            |
-| `apps/web/src/lib/hdicr/identity-client.ts`                      | HDICR identity client     | `NEEDS_UPDATE` | Add `verifyIdentityConfirmed()` function targeting `/identity/verify-confirmed`                                                       |
+| `apps/web/src/lib/hdicr/stripe-webhook-client.ts`                | HDICR identity sync       | `CORRECT`      | Uses single `verify-confirmed` flow from Stripe verified webhook event                                                                 |
+| `apps/web/src/lib/hdicr/identity-client.ts`                      | HDICR identity client     | `CORRECT`      | `verifyIdentityConfirmed()` implemented against `/identity/verify-confirmed`                                                           |
 | `apps/web/src/middleware.ts`                                     | Webhook rate-limit bypass | `CORRECT`      | Bypasses `/api/webhooks/stripe` — correct, no change needed                                                                           |
 | `infra/database/migrations/035_ti_webhook_commercial_tables.sql` | Webhook + commerce schema | `NEEDS_UPDATE` | Has `stripe_events`, `commercial_licenses`, `wallet_balances`; missing `user_subscriptions`, `deals`, Connect account fields on users |
-| `apps/web/.env.example`                                          | Environment template      | `NEEDS_UPDATE` | Has 3 monthly prices; missing 10 price IDs and Connect redirect URLs                                                                  |
+| `apps/web/.env.example`                                          | Environment template      | `NEEDS_UPDATE` | Connect redirect URLs + canonical 13 price env vars added. Billing code still needs STRIPE-009/016 alignment                         |
 | `hdicr/infra/samconfig.toml`                                     | HDICR infra config        | `REMOVE`       | Wires `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — architecture violation                                                          |
 | `hdicr/infra/template.yaml`                                      | HDICR SAM template        | `REMOVE`       | Contains Stripe env params on Lambda — architecture violation                                                                         |
-| `apps/web/src/app/api/stripe/`                                   | Connect + deal routes     | `MISSING`      | Entire directory does not exist; 5+ routes required                                                                                   |
+| `apps/web/src/app/api/stripe/connect/`                           | Connect lifecycle routes  | `CORRECT`      | `create`, `onboarding`, `return`, `refresh`, `status` implemented                                                                     |
 
 ---
 
@@ -117,33 +117,35 @@ _Depends on Phase A approval. Enables actor payout eligibility._
 
 ---
 
-- [ ] **STRIPE-003 — Stripe Connect Express Account Lifecycle**
+- [x] **STRIPE-003 — Stripe Connect Express Account Lifecycle** ✅ COMPLETE
   - **Priority:** CRITICAL
   - **Description:** Implement full actor Connect Express onboarding: account creation, account
     link generation (onboarding URL), return and refresh URL handlers, account status endpoint.
     Actors must complete Connect onboarding to be payout-eligible for deals.
   - **Depends on:** STRIPE-008
-  - **Files affected:**
-    - `apps/web/src/app/api/stripe/connect/create/route.ts` — NEW: `POST`, creates Stripe Connect Express account for actor, stores `stripe_account_id` on user record
-    - `apps/web/src/app/api/stripe/connect/onboarding/route.ts` — NEW: `POST`, creates AccountLink for hosted onboarding, returns URL
-    - `apps/web/src/app/api/stripe/connect/return/route.ts` — NEW: `GET`, return URL after actor completes onboarding (check status + redirect)
-    - `apps/web/src/app/api/stripe/connect/refresh/route.ts` — NEW: `GET`, refresh URL if onboarding link expires (generate new link + redirect)
-    - `apps/web/src/app/api/stripe/connect/status/route.ts` — NEW: `GET`, returns `{ onboarding_complete, payouts_enabled, charges_enabled, account_id }`
-    - `apps/web/src/lib/stripe.ts` — add `createConnectAccount()`, `createAccountLink()`, `retrieveConnectAccount()` helpers
-    - `apps/web/.env.example` — add `STRIPE_CONNECT_RETURN_URL`, `STRIPE_CONNECT_REFRESH_URL`
-    - New migration: add `stripe_account_id VARCHAR`, `stripe_account_status VARCHAR`, `stripe_onboarding_complete BOOLEAN DEFAULT false` to `users` table
+  - **Implemented:**
+    - `apps/web/src/app/api/stripe/connect/create/route.ts` — creates Express account, stores `stripe_account_id`
+    - `apps/web/src/app/api/stripe/connect/onboarding/route.ts` — creates AccountLink onboarding URL
+    - `apps/web/src/app/api/stripe/connect/return/route.ts` — updates status and redirects back to dashboard
+    - `apps/web/src/app/api/stripe/connect/refresh/route.ts` — regenerates onboarding URL
+    - `apps/web/src/app/api/stripe/connect/status/route.ts` — returns onboarding/capability status
+    - `apps/web/src/lib/stripe.ts` — added `createConnectExpressAccount`, `createConnectOnboardingLink`, `retrieveConnectAccount`, `mapConnectAccountStatus`
+    - `apps/web/.env.example` — `STRIPE_CONNECT_RETURN_URL`, `STRIPE_CONNECT_REFRESH_URL`
+    - `infra/database/migrations/037_ti_connect_account_fields.sql` — adds `stripe_account_id`, `stripe_account_status`, `stripe_onboarding_complete` to `actors`
 
 ---
 
-- [ ] **STRIPE-004 — Connect Webhook Event Routing**
+- [x] **STRIPE-004 — Connect Webhook Event Routing** ✅ COMPLETE
   - **Priority:** CRITICAL
   - **Description:** Add event routing for Connect events distinguished by presence of
     `event.account`. Handle: `account.updated` (sync onboarding status), `transfer.created`
     (log successful payout), `transfer.reversed` (log reversal), `transfer.updated`.
     Platform events (no `event.account`) continue to existing handlers.
   - **Depends on:** STRIPE-002, STRIPE-003
-  - **Files affected:**
-    - `apps/web/src/app/api/webhooks/stripe/route.ts` — add top-level `if (event.account)` branch before existing event.type routing; implement `account.updated`, `transfer.created`, `transfer.reversed`, `transfer.updated` handlers
+  - **Implemented:**
+    - `apps/web/src/app/api/webhooks/stripe/route.ts` — top-level Connect branch when `event.account` exists
+    - Implemented handlers: `account.updated`, `transfer.created`, `transfer.reversed`, `transfer.updated`
+    - `stripe_events` persistence now stores `connect_account_id` from webhook payload for Connect deliveries
 
 ---
 
@@ -194,24 +196,24 @@ _Depends on Phase C approval. Completes the billing model._
 - [ ] **STRIPE-009 — Expand Subscription Price Matrix to 13 Prices**
   - **Priority:** HIGH
   - **Description:** Current implementation has 3 monthly prices. Target is 13 price IDs:
-    Actor Creator (monthly + annual), Agency Independent/Boutique/Agency (monthly + annual each),
-    Agency Seat Addon (monthly), Studio Indie/Mid (monthly + annual each). All IDs stored as
+    Actor Professional (monthly + yearly), Agency Independent/Boutique/SME (monthly + yearly each),
+    Agency Seat Addon, Studio Indie/Midmarket (monthly + yearly each). All IDs stored as
     env vars referencing prices pre-created in Stripe Dashboard.
   - **Decision applied:** Option C — prices pre-created in Dashboard, referenced by env var.
   - **Required env vars (new):**
-    - `STRIPE_PRICE_ACTOR_CREATOR_MONTHLY` (rename from `STRIPE_PRICE_ACTOR_MONTHLY`)
-    - `STRIPE_PRICE_ACTOR_CREATOR_ANNUAL`
+    - `STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY`
+    - `STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY`
     - `STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY`
-    - `STRIPE_PRICE_AGENCY_INDEPENDENT_ANNUAL`
+    - `STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY`
     - `STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY`
-    - `STRIPE_PRICE_AGENCY_BOUTIQUE_ANNUAL`
-    - `STRIPE_PRICE_AGENCY_AGENCY_MONTHLY`
-    - `STRIPE_PRICE_AGENCY_AGENCY_ANNUAL`
-    - `STRIPE_PRICE_AGENCY_SEAT_ADDON_MONTHLY`
+    - `STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY`
+    - `STRIPE_PRICE_AGENCY_SME_MONTHLY`
+    - `STRIPE_PRICE_AGENCY_SME_YEARLY`
+    - `STRIPE_PRICE_AGENCY_SEAT_ADDON`
     - `STRIPE_PRICE_STUDIO_INDIE_MONTHLY`
-    - `STRIPE_PRICE_STUDIO_INDIE_ANNUAL`
-    - `STRIPE_PRICE_STUDIO_MID_MONTHLY`
-    - `STRIPE_PRICE_STUDIO_MID_ANNUAL`
+    - `STRIPE_PRICE_STUDIO_INDIE_YEARLY`
+    - `STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY`
+    - `STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY`
   - **Depends on:** STRIPE-008
   - **Files affected:**
     - `apps/web/src/lib/billing.ts` — redefine plan map with all 13 prices; add `interval` (monthly/annual) to plan selection logic; add seat-addon support
@@ -232,6 +234,32 @@ _Depends on Phase C approval. Completes the billing model._
   - **Depends on:** STRIPE-009, STRIPE-002
   - **Files affected:**
     - `apps/web/src/app/api/webhooks/stripe/route.ts` — add `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted` handlers with `user_subscriptions` DB writes
+
+---
+
+- [ ] **STRIPE-016 — Canonical Stripe Price Env Var Alignment (Vercel Names)**
+  - **Priority:** HIGH
+  - **Description:** Update TI billing plan mapping to use the canonical Vercel env var names
+    already provisioned in production/staging, and remove legacy placeholder naming from code.
+  - **Depends on:** STRIPE-009
+  - **Canonical env vars (provided):**
+    - `STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY`
+    - `STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY`
+    - `STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY`
+    - `STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY`
+    - `STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY`
+    - `STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY`
+    - `STRIPE_PRICE_AGENCY_SME_MONTHLY`
+    - `STRIPE_PRICE_AGENCY_SME_YEARLY`
+    - `STRIPE_PRICE_AGENCY_SEAT_ADDON`
+    - `STRIPE_PRICE_STUDIO_INDIE_MONTHLY`
+    - `STRIPE_PRICE_STUDIO_INDIE_YEARLY`
+    - `STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY`
+    - `STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY`
+  - **Files affected:**
+    - `apps/web/src/lib/billing.ts` — replace legacy env key names in plan map
+    - `apps/web/.env.example` — keep canonical names only (remove deprecated placeholders)
+    - `docs/STRIPE_BACKLOG.md` — keep canonical list as source of truth
 
 ---
 
@@ -308,16 +336,16 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 
 ## Phase Gate Checklist
 
-| Phase                        | Items                                                                  | Status       | Gate Condition                                        |
-| ---------------------------- | ---------------------------------------------------------------------- | ------------ | ----------------------------------------------------- |
-| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review |
-| **B — Connect Platform**     | STRIPE-003, STRIPE-004                                                 | 0/2 complete | Phase A approved                                      |
-| **C — Marketplace Payments** | STRIPE-005, STRIPE-006                                                 | 0/2 complete | Phase B approved                                      |
-| **D — Subscriptions**        | STRIPE-009, STRIPE-010                                                 | 0/2 complete | Phase C approved                                      |
-| **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                 | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live     |
-| **F — Hardening**            | STRIPE-014, STRIPE-015                                                 | 0/2 complete | Phase E approved                                      |
+| Phase                        | Items                                                                     | Status       | Gate Condition                                    |
+| ---------------------------- | ------------------------------------------------------------------------- | ------------ | ------------------------------------------------- |
+| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review               |
+| **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                               | 2/2 complete | Complete — ready for Phase C review              |
+| **C — Marketplace Payments** | STRIPE-005, STRIPE-006                                                    | 0/2 complete | Phase B approved                                  |
+| **D — Subscriptions**        | STRIPE-009, STRIPE-010, STRIPE-016                                        | 0/3 complete | Phase C approved                                  |
+| **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                    | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live |
+| **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
 
-**Total progress: 5 / 15 items complete**
+**Total progress: 7 / 16 items complete**
 
 ---
 
@@ -329,34 +357,39 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 STRIPE_SECRET_KEY
 STRIPE_PUBLISHABLE_KEY
 STRIPE_WEBHOOK_SECRET
-STRIPE_PRICE_ACTOR_MONTHLY       ← rename to STRIPE_PRICE_ACTOR_CREATOR_MONTHLY
-STRIPE_PRICE_AGENT_MONTHLY       ← replace with agency tier vars (see STRIPE-009)
-STRIPE_PRICE_STUDIO_MONTHLY      ← replace with studio tier vars (see STRIPE-009)
-```
-
-### To Add (STRIPE-003)
-
-```
 STRIPE_CONNECT_RETURN_URL
 STRIPE_CONNECT_REFRESH_URL
-```
-
-### To Add (STRIPE-009) — 13 price IDs total
-
-```
-STRIPE_PRICE_ACTOR_CREATOR_MONTHLY
-STRIPE_PRICE_ACTOR_CREATOR_ANNUAL
+STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY
+STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY
 STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY
-STRIPE_PRICE_AGENCY_INDEPENDENT_ANNUAL
+STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY
 STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY
-STRIPE_PRICE_AGENCY_BOUTIQUE_ANNUAL
-STRIPE_PRICE_AGENCY_AGENCY_MONTHLY
-STRIPE_PRICE_AGENCY_AGENCY_ANNUAL
-STRIPE_PRICE_AGENCY_SEAT_ADDON_MONTHLY
+STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY
+STRIPE_PRICE_AGENCY_SME_MONTHLY
+STRIPE_PRICE_AGENCY_SME_YEARLY
+STRIPE_PRICE_AGENCY_SEAT_ADDON
 STRIPE_PRICE_STUDIO_INDIE_MONTHLY
-STRIPE_PRICE_STUDIO_INDIE_ANNUAL
-STRIPE_PRICE_STUDIO_MID_MONTHLY
-STRIPE_PRICE_STUDIO_MID_ANNUAL
+STRIPE_PRICE_STUDIO_INDIE_YEARLY
+STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY
+STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY
+```
+
+### Canonical Price Vars (STRIPE-009 + STRIPE-016)
+
+```
+STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY
+STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY
+STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY
+STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY
+STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY
+STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY
+STRIPE_PRICE_AGENCY_SME_MONTHLY
+STRIPE_PRICE_AGENCY_SME_YEARLY
+STRIPE_PRICE_AGENCY_SEAT_ADDON
+STRIPE_PRICE_STUDIO_INDIE_MONTHLY
+STRIPE_PRICE_STUDIO_INDIE_YEARLY
+STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY
+STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY
 ```
 
 ---
@@ -364,7 +397,7 @@ STRIPE_PRICE_STUDIO_MID_ANNUAL
 ## Notes
 
 - **STRIPE-013 deployment order completed**: HDICR endpoint and TI client/webhook updates are both implemented and validated.
-- **STRIPE-009 renaming**: `STRIPE_PRICE_ACTOR_MONTHLY` → `STRIPE_PRICE_ACTOR_CREATOR_MONTHLY`
-  is a rename, not just an addition. Existing Vercel env var must be updated and old key removed.
+- **Pricing env var source of truth**: use the canonical Vercel variable names listed in STRIPE-016;
+  do not introduce alternate aliases in billing code.
 - **Middleware** (`apps/web/src/middleware.ts`): Rate-limit bypass is at `/api/webhooks/stripe`
   and must stay unchanged. No middleware changes required across all 15 items.

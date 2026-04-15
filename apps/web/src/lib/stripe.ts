@@ -190,6 +190,77 @@ export async function getVerificationSession(sessionId: string) {
   return session;
 }
 
+export type ConnectAccountStatus = {
+  accountId: string;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  onboardingComplete: boolean;
+  requirementsDue: string[];
+  disabledReason: string | null;
+};
+
+export function mapConnectAccountStatus(account: Stripe.Account): ConnectAccountStatus {
+  const requirementsDue = account.requirements?.currently_due ?? [];
+  const disabledReason = account.requirements?.disabled_reason ?? null;
+  const onboardingComplete =
+    account.details_submitted &&
+    account.charges_enabled &&
+    account.payouts_enabled &&
+    requirementsDue.length === 0 &&
+    !disabledReason;
+
+  return {
+    accountId: account.id,
+    chargesEnabled: account.charges_enabled,
+    payoutsEnabled: account.payouts_enabled,
+    detailsSubmitted: account.details_submitted,
+    onboardingComplete,
+    requirementsDue,
+    disabledReason,
+  };
+}
+
+export async function createConnectExpressAccount(params: {
+  email: string;
+  country?: string;
+  metadata?: Record<string, string>;
+}): Promise<Stripe.Account> {
+  return stripe.accounts.create({
+    type: 'express',
+    email: params.email,
+    country: params.country ?? 'GB',
+    business_type: 'individual',
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+    metadata: params.metadata,
+  });
+}
+
+export async function createConnectOnboardingLink(accountId: string): Promise<Stripe.AccountLink> {
+  const returnUrl = process.env.STRIPE_CONNECT_RETURN_URL;
+  const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
+
+  if (!returnUrl || !refreshUrl) {
+    throw new Error(
+      'STRIPE_CONNECT_RETURN_URL and STRIPE_CONNECT_REFRESH_URL must be configured'
+    );
+  }
+
+  return stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: refreshUrl,
+    return_url: returnUrl,
+    type: 'account_onboarding',
+  });
+}
+
+export async function retrieveConnectAccount(accountId: string): Promise<Stripe.Account> {
+  return stripe.accounts.retrieve(accountId);
+}
+
 /**
  * Get verified identity data from completed session
  *
