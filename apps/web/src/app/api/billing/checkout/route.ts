@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { z } from 'zod';
 import {
+  getAgencySeatAddonPriceId,
+  type BillingInterval,
   getOrCreateStripeCustomer,
   getPlanById,
   getPlanPriceId,
@@ -13,6 +15,8 @@ import { stripe } from '@/lib/stripe';
 
 const CheckoutSchema = z.object({
   planId: z.string().min(1),
+  interval: z.enum(['monthly', 'yearly']).optional(),
+  seatCount: z.number().int().min(1).max(500).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -58,15 +62,44 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const priceId = getPlanPriceId(selectedPlan);
+    const selectedInterval =
+      (payload.data.interval as BillingInterval | undefined) ?? selectedPlan.defaultInterval;
+
+    const priceId = getPlanPriceId(selectedPlan, selectedInterval);
     if (!priceId) {
+      const missingEnvKey = selectedPlan.priceEnvKeys[selectedInterval];
       return NextResponse.json(
         {
           success: false,
-          error: `${selectedPlan.priceEnvKey} is not configured for this environment.`,
+          error: `${missingEnvKey ?? 'Selected plan price'} is not configured for this environment.`,
         },
         { status: 503 }
       );
+    }
+
+    const lineItems: Array<{ price: string; quantity: number }> = [{ price: priceId, quantity: 1 }];
+
+    const seatCount = payload.data.seatCount ?? 1;
+    const additionalSeatCount = seatCount > 1 ? seatCount - 1 : 0;
+    if (
+      additionalSeatCount > 0 &&
+      ['agency_independent', 'agency_boutique', 'agency_sme'].includes(selectedPlan.id)
+    ) {
+      const addonPriceId = getAgencySeatAddonPriceId();
+      if (!addonPriceId) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'STRIPE_PRICE_AGENCY_SEAT_ADDON is not configured for this environment.',
+          },
+          { status: 503 }
+        );
+      }
+
+      lineItems.push({
+        price: addonPriceId,
+        quantity: additionalSeatCount,
+      });
     }
 
     const customer = await getOrCreateStripeCustomer({
@@ -86,12 +119,7 @@ export async function POST(request: NextRequest) {
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customer.id,
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       allow_promotion_codes: true,
       billing_address_collection: 'auto',
       customer_update: {
@@ -103,6 +131,8 @@ export async function POST(request: NextRequest) {
         auth0_user_id: auth0UserId,
         user_profile_id: profile.id,
         requested_plan_id: selectedPlan.id,
+        requested_interval: selectedInterval,
+        requested_seat_count: String(seatCount),
       },
       subscription_data: {
         metadata: {
@@ -110,6 +140,8 @@ export async function POST(request: NextRequest) {
           auth0_user_id: auth0UserId,
           user_profile_id: profile.id,
           plan_id: selectedPlan.id,
+          interval: selectedInterval,
+          seat_count: String(seatCount),
         },
       },
       success_url: `${appBaseUrl}/dashboard/account/billing?checkout=success`,
@@ -120,6 +152,8 @@ export async function POST(request: NextRequest) {
       success: true,
       url: checkoutSession.url,
       sessionId: checkoutSession.id,
+      interval: selectedInterval,
+      seatCount,
     });
   } catch (error) {
     console.error('[BILLING_CHECKOUT_ERROR]', error);

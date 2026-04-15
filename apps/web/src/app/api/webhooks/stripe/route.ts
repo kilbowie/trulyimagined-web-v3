@@ -23,6 +23,7 @@ import {
   getVerifiedIdentityData,
   mapConnectAccountStatus,
 } from '@/lib/stripe';
+import { getAgencySeatAddonPriceId, getPlanByPriceId } from '@/lib/billing';
 import { verifyStripeIdentityConfirmed } from '@/lib/hdicr/stripe-webhook-client';
 import { queryTi } from '@/lib/db';
 import Stripe from 'stripe';
@@ -139,6 +140,9 @@ export async function POST(request: NextRequest) {
       case 'charge.dispute.created':
       case 'payment_intent.succeeded':
       case 'payment_intent.payment_failed':
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated':
+      case 'customer.subscription.deleted':
       case 'payout.created':
       case 'payout.paid':
       case 'payout.failed': {
@@ -166,6 +170,15 @@ export async function POST(request: NextRequest) {
               case 'payment_intent.payment_failed':
                 await handlePaymentIntentFailed(capturedEvent.data.object as Stripe.PaymentIntent);
                 break;
+              case 'customer.subscription.created':
+                await handleSubscriptionCreated(capturedEvent.data.object as Stripe.Subscription);
+                break;
+              case 'customer.subscription.updated':
+                await handleSubscriptionUpdated(capturedEvent.data.object as Stripe.Subscription);
+                break;
+              case 'customer.subscription.deleted':
+                await handleSubscriptionDeleted(capturedEvent.data.object as Stripe.Subscription);
+                break;
               case 'payout.created':
                 await handlePayoutCreated(capturedEvent.data.object as Stripe.Payout);
                 break;
@@ -187,9 +200,6 @@ export async function POST(request: NextRequest) {
       // ===== EXPLICITLY DEFERRED =====
       // Acknowledged with 200 but no processing yet
       case 'identity.verification_session.created':
-      case 'customer.subscription.created':
-      case 'customer.subscription.updated':
-      case 'customer.subscription.deleted':
       case 'invoice.payment_failed':
         console.log('[STRIPE WEBHOOK] Event acknowledged but handling deferred:', event.type);
         break;
@@ -1149,6 +1159,226 @@ async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): P
     paymentIntentId: paymentIntent.id,
     error: paymentIntent.last_payment_error?.message,
   });
+}
+
+function deriveSubscriptionSeatCount(subscription: Stripe.Subscription): number {
+  const addonPriceId = getAgencySeatAddonPriceId();
+  if (!addonPriceId) {
+    return 1;
+  }
+
+  const addonItem = subscription.items.data.find((item) => item.price.id === addonPriceId);
+  const addonQuantity = addonItem?.quantity ?? 0;
+  return Math.max(1, addonQuantity + 1);
+}
+
+function deriveSubscriptionInterval(subscription: Stripe.Subscription): 'monthly' | 'yearly' | 'unknown' {
+  const addonPriceId = getAgencySeatAddonPriceId();
+  const primaryItem = subscription.items.data.find((item) => item.price.id !== addonPriceId);
+  const interval = primaryItem?.price.recurring?.interval;
+
+  if (interval === 'month') {
+    return 'monthly';
+  }
+
+  if (interval === 'year') {
+    return 'yearly';
+  }
+
+  return 'unknown';
+}
+
+function deriveSubscriptionPlanKey(subscription: Stripe.Subscription): string {
+  const metadataPlan = subscription.metadata?.plan_id;
+  if (metadataPlan && metadataPlan.trim()) {
+    return metadataPlan.trim();
+  }
+
+  const addonPriceId = getAgencySeatAddonPriceId();
+  const primaryItem = subscription.items.data.find((item) => item.price.id !== addonPriceId);
+  const matchedPlan = primaryItem ? getPlanByPriceId(primaryItem.price.id) : null;
+
+  return matchedPlan?.plan.id ?? 'unknown';
+}
+
+function deriveSubscriptionPeriodEndEpoch(subscription: Stripe.Subscription): number | null {
+  const addonPriceId = getAgencySeatAddonPriceId();
+  const primaryItem = subscription.items.data.find((item) => item.price.id !== addonPriceId);
+
+  return primaryItem?.current_period_end ?? null;
+}
+
+async function handleSubscriptionCreated(subscription: Stripe.Subscription): Promise<void> {
+  const userProfileId = subscription.metadata?.user_profile_id;
+
+  if (!userProfileId) {
+    console.warn('[STRIPE WEBHOOK] subscription.created missing user_profile_id metadata', {
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  const interval = deriveSubscriptionInterval(subscription);
+  const seatCount = deriveSubscriptionSeatCount(subscription);
+  const planKey = deriveSubscriptionPlanKey(subscription);
+  const periodEndEpoch = deriveSubscriptionPeriodEndEpoch(subscription);
+
+  await queryTi(
+    `INSERT INTO user_subscriptions (
+       user_id,
+       stripe_subscription_id,
+       stripe_customer_id,
+       plan_key,
+       interval,
+       status,
+       current_period_end,
+       seat_count
+     )
+     VALUES (
+       $1,
+       $2,
+       $3,
+       $4,
+       $5,
+       $6,
+       CASE WHEN $7::bigint IS NULL THEN NULL ELSE to_timestamp($7::bigint) END,
+       $8
+     )
+     ON CONFLICT (stripe_subscription_id) DO UPDATE
+     SET stripe_customer_id   = EXCLUDED.stripe_customer_id,
+         plan_key             = EXCLUDED.plan_key,
+         interval             = EXCLUDED.interval,
+         status               = EXCLUDED.status,
+         current_period_end   = EXCLUDED.current_period_end,
+         seat_count           = EXCLUDED.seat_count,
+         updated_at           = NOW()`,
+    [
+      userProfileId,
+      subscription.id,
+      String(subscription.customer),
+      planKey,
+      interval,
+      subscription.status,
+      periodEndEpoch,
+      seatCount,
+    ]
+  );
+
+  console.log('[STRIPE WEBHOOK] subscription.created synced to user_subscriptions', {
+    subscriptionId: subscription.id,
+    userProfileId,
+    planKey,
+    interval,
+    seatCount,
+  });
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Promise<void> {
+  const userProfileId =
+    subscription.metadata?.user_profile_id ??
+    (await resolveUserProfileIdFromSubscriptionId(subscription.id)) ??
+    null;
+
+  if (!userProfileId) {
+    console.warn('[STRIPE WEBHOOK] subscription.updated unable to resolve user_profile_id', {
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  const interval = deriveSubscriptionInterval(subscription);
+  const seatCount = deriveSubscriptionSeatCount(subscription);
+  const planKey = deriveSubscriptionPlanKey(subscription);
+  const periodEndEpoch = deriveSubscriptionPeriodEndEpoch(subscription);
+
+  await queryTi(
+    `INSERT INTO user_subscriptions (
+       user_id,
+       stripe_subscription_id,
+       stripe_customer_id,
+       plan_key,
+       interval,
+       status,
+       current_period_end,
+       seat_count
+     )
+     VALUES (
+       $1,
+       $2,
+       $3,
+       $4,
+       $5,
+       $6,
+       CASE WHEN $7::bigint IS NULL THEN NULL ELSE to_timestamp($7::bigint) END,
+       $8
+     )
+     ON CONFLICT (stripe_subscription_id) DO UPDATE
+     SET stripe_customer_id   = EXCLUDED.stripe_customer_id,
+         plan_key             = EXCLUDED.plan_key,
+         interval             = EXCLUDED.interval,
+         status               = EXCLUDED.status,
+         current_period_end   = EXCLUDED.current_period_end,
+         seat_count           = EXCLUDED.seat_count,
+         updated_at           = NOW()`,
+    [
+      userProfileId,
+      subscription.id,
+      String(subscription.customer),
+      planKey,
+      interval,
+      subscription.status,
+      periodEndEpoch,
+      seatCount,
+    ]
+  );
+
+  console.log('[STRIPE WEBHOOK] subscription.updated synced to user_subscriptions', {
+    subscriptionId: subscription.id,
+    userProfileId,
+    planKey,
+    interval,
+    seatCount,
+    status: subscription.status,
+  });
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Promise<void> {
+  const result = await queryTi(
+    `UPDATE user_subscriptions
+     SET status = 'canceled',
+         current_period_end = CASE
+           WHEN $2::bigint IS NULL THEN current_period_end
+           ELSE to_timestamp($2::bigint)
+         END,
+         updated_at = NOW()
+     WHERE stripe_subscription_id = $1
+     RETURNING id, user_id`,
+    [subscription.id, deriveSubscriptionPeriodEndEpoch(subscription)]
+  );
+
+  if ((result.rowCount ?? 0) === 0) {
+    console.warn('[STRIPE WEBHOOK] subscription.deleted no matching local subscription row', {
+      subscriptionId: subscription.id,
+    });
+    return;
+  }
+
+  console.log('[STRIPE WEBHOOK] subscription.deleted marked canceled', {
+    subscriptionId: subscription.id,
+    affectedRows: result.rowCount ?? 0,
+  });
+}
+
+async function resolveUserProfileIdFromSubscriptionId(subscriptionId: string): Promise<string | null> {
+  const result = await queryTi(
+    `SELECT user_id
+     FROM user_subscriptions
+     WHERE stripe_subscription_id = $1
+     LIMIT 1`,
+    [subscriptionId]
+  );
+
+  return (result.rows[0]?.user_id as string | undefined) ?? null;
 }
 
 /**

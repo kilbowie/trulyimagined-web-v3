@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import {
+  getAgencySeatAddonPriceId,
+  getPlanByPriceId,
   findStripeCustomerByAuth0User,
   getPlanPriceId,
   getPlansForRoles,
@@ -33,8 +35,14 @@ export async function GET() {
 
     const availablePlans = getPlansForRoles(roles).map((plan) => ({
       ...plan,
-      configured: Boolean(getPlanPriceId(plan)),
+      configured: Boolean(getPlanPriceId(plan, 'monthly') || getPlanPriceId(plan, 'yearly')),
+      configuredByInterval: {
+        monthly: Boolean(getPlanPriceId(plan, 'monthly')),
+        yearly: Boolean(getPlanPriceId(plan, 'yearly')),
+      },
     }));
+
+    const localSubscriptions = await queryLocalSubscriptions(String(profile.id));
 
     if (!isStripeBillingConfigured()) {
       return NextResponse.json({
@@ -43,6 +51,7 @@ export async function GET() {
         role: profile.role || null,
         customer: null,
         subscription: null,
+        localSubscriptions,
         invoices: [],
         billingHistory: [],
         paymentsHistory: [],
@@ -60,6 +69,7 @@ export async function GET() {
         role: profile.role || null,
         customer: null,
         subscription: null,
+        localSubscriptions,
         invoices: [],
         billingHistory: [],
         paymentsHistory: [],
@@ -78,6 +88,7 @@ export async function GET() {
 
     const activeSubscription = subscriptionList.data[0] || null;
     const firstSubscriptionItem = activeSubscription?.items?.data?.[0] || null;
+    const addonPriceId = getAgencySeatAddonPriceId();
 
     const invoiceList = await stripe.invoices.list({
       customer: customer.id,
@@ -152,9 +163,16 @@ export async function GET() {
             status: activeSubscription.status,
             cancelAtPeriodEnd: activeSubscription.cancel_at_period_end,
             currentPeriodEnd: firstSubscriptionItem?.current_period_end || null,
+            interval: firstSubscriptionItem?.price.recurring?.interval || null,
+            seatAddonQuantity:
+              activeSubscription.items.data.find((item) => item.price.id === addonPriceId)
+                ?.quantity || 0,
             items: activeSubscription.items.data.map((item) => ({
+              planMatch: getPlanByPriceId(item.price.id),
               id: item.id,
               priceId: item.price.id,
+              quantity: item.quantity || 0,
+              interval: item.price.recurring?.interval || null,
               productName:
                 typeof item.price.product === 'string'
                   ? item.price.product
@@ -164,6 +182,7 @@ export async function GET() {
             })),
           }
         : null,
+      localSubscriptions,
       invoices: invoiceList.data.map((invoice) => ({
         id: invoice.id,
         number: invoice.number,
@@ -189,5 +208,33 @@ export async function GET() {
       },
       { status: 500 }
     );
+  }
+}
+
+async function queryLocalSubscriptions(userId: string) {
+  try {
+    const { queryTi } = await import('@/lib/db');
+    const result = await queryTi(
+      `SELECT
+         id,
+         stripe_subscription_id,
+         stripe_customer_id,
+         plan_key,
+         interval,
+         status,
+         seat_count,
+         current_period_end,
+         created_at,
+         updated_at
+       FROM user_subscriptions
+       WHERE user_id = $1
+       ORDER BY updated_at DESC
+       LIMIT 10`,
+      [userId]
+    );
+
+    return result.rows;
+  } catch {
+    return [];
   }
 }
