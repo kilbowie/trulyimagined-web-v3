@@ -35,14 +35,19 @@ Close remaining repo-separation and production-readiness gaps, then implement an
 
 ### P0-2 Publish and verify live Stripe webhook endpoint
 
+> **BLOCKED** — endpoint must be deployed and reachable before Stripe webhook registration
+> can be completed. Run `pnpm check:webhook-endpoint` once the production deploy is live
+> to verify reachability and get the exact event list to register in Stripe Dashboard.
+
 - Scope
   - Confirm production endpoint is live at https://trulyimagined.com/api/webhooks/stripe.
   - Register endpoint in Stripe and finalize STRIPE_WEBHOOK_SECRET for production.
 - Files
   - trulyimagined/apps/web/src/app/api/webhooks/stripe/route.ts
   - trulyimagined/apps/web/vercel.json
+  - scripts/verify-webhook-endpoint-live.mjs  ← readiness probe (new)
 - Acceptance criteria
-  - Endpoint returns expected non-404 behavior in production.
+  - `pnpm check:webhook-endpoint` exits 0 (HTTP 400 from unsigned probe confirms route is live).
   - Stripe dashboard delivery log shows successful event delivery to production endpoint.
   - STRIPE_WEBHOOK_SECRET updated and deployed.
 
@@ -68,6 +73,11 @@ Close remaining repo-separation and production-readiness gaps, then implement an
   - TI: pnpm build, pnpm type-check, pnpm test, pnpm test:contract pass.
   - HDICR: pnpm build, pnpm type-check, pnpm test, sam validate -t infra/template.yaml pass.
   - Webhook endpoint and remote integration smoke checks pass.
+- TI gate status (April 2026)
+  - ✅ `pnpm type-check` — passes (ce7d2f8 fixed 4 TS errors in route.ts)
+  - ✅ `pnpm test:contract` — 30 files, 103 tests passing
+  - ⏳ `pnpm build` — not yet run in CI
+  - ⏳ HDICR side — not yet verified
 
 ## P1 Required Before Production Cutover (Webhook and Licensing Flows)
 
