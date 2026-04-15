@@ -168,12 +168,17 @@ export async function POST(request: NextRequest) {
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
       case 'invoice.payment_failed':
-      case 'v2.core.account[identity].updated':
         console.log('[STRIPE WEBHOOK] Event acknowledged but handling deferred:', event.type);
         break;
 
       default:
-        console.log('[STRIPE WEBHOOK] Unhandled event type:', event.type);
+        // v2 event types (e.g. 'v2.core.account[identity].updated') are not yet in the
+        // Stripe SDK enum but are valid Stripe deliveries — fall through here.
+        if ((event.type as string).startsWith('v2.')) {
+          console.log('[STRIPE WEBHOOK] v2 event acknowledged but handling deferred:', event.type);
+        } else {
+          console.log('[STRIPE WEBHOOK] Unhandled event type:', event.type);
+        }
     }
 
     await markStripeEventProcessed(event.id);
@@ -246,7 +251,7 @@ async function handleVerificationVerified(session: Stripe.Identity.VerificationS
       // Update existing link
       await withHdicrSyncRetries('identity-link-update-verified', () =>
         updateStripeIdentityLinkVerified({
-          linkId: existingLink.id,
+          linkId: existingLink.id!,
           verificationLevel: levels.verification_level,
           assuranceLevel: levels.assurance_level,
           encryptedCredentialData,
@@ -346,7 +351,7 @@ async function handleVerificationRequiresInput(session: Stripe.Identity.Verifica
     // Update existing link with requires_input status
     await withHdicrSyncRetries('identity-link-update-requires-input', () =>
       updateStripeIdentityLinkRequiresInput({
-        linkId: existingLink.id,
+        linkId: existingLink.id!,
         verificationLevel: levels.verification_level,
         assuranceLevel: levels.assurance_level,
         metadata: {
@@ -445,7 +450,7 @@ async function handleVerificationCanceled(session: Stripe.Identity.VerificationS
   if (existingLink?.id) {
     await withHdicrSyncRetries('identity-link-cancel', () =>
       markStripeIdentityLinkCanceled(
-        existingLink.id,
+        existingLink.id!,
         {
           stripe_session_id: session.id,
           status: 'canceled',
