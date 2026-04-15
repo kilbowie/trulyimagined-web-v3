@@ -9,7 +9,7 @@ STRIPE_PUBLISHABLE_KEY=pk_live_xxxxxxxxxxxxxxxxxxxx
 STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxx  # Generated after webhook endpoint created
 
 # Database (TI service)
-DATABASE_URL=postgresql://user:password@localhost:5432/truly_imagined_prod
+TI_DATABASE_URL=postgresql://user:password@localhost:5432/truly_imagined_prod
 
 # Logging
 LOG_LEVEL=info
@@ -84,63 +84,25 @@ After creating the endpoint:
 
 ---
 
-## 3. Webhook Endpoint Implementation in Express.js
+## 3. Webhook Endpoint Implementation in TI (Next.js App Router)
 
-### Mount the webhook router in your main app:
+The production handler is implemented in:
 
-```javascript
-// app.js or index.js
-const express = require('express');
-const webhookRouter = require('./routes/webhooks/stripe');
+- `apps/web/src/app/api/webhooks/stripe/route.ts`
 
-const app = express();
+This endpoint is automatically mounted by Next.js at:
 
-// IMPORTANT: Webhook must be BEFORE JSON parsing middleware
-// because Stripe signature verification requires raw request body
-app.use('/api/webhooks/stripe', webhookRouter);
-
-// Then add JSON parsing for other routes
-app.use(express.json());
-
-// Other routes...
-```
-
-**Webhook will be accessible at:**
 ```
 https://trulyimagined.com/api/webhooks/stripe
 ```
 
-### Vercel-specific deployment notes:
+Implementation notes for the current TI runtime:
 
-```javascript
-// For Vercel serverless functions (api/webhooks/stripe.js):
-import express from 'express';
-import Stripe from 'stripe';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-const app = express();
-
-// Raw body for signature verification
-app.post('/', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(
-      req.body,
-      sig,
-      process.env.STRIPE_WEBHOOK_SECRET
-    );
-  } catch (err) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Process event...
-  res.json({ received: true });
-});
-
-export default app;
-```
+- Signature verification uses `stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`.
+- Idempotency and replay protection are backed by the TI-owned `stripe_events` table.
+- Identity events update TI actor verification state first, then sync to HDICR with bounded retries.
+- Financial events update TI-owned `commercial_licenses`, `wallet_balances`, and `withdrawals` tables.
+- Deferred events are acknowledged and explicitly logged as deferred.
 
 ---
 
@@ -212,10 +174,10 @@ export default app;
   LIMIT 50;
   ```
 
-- Check `audit_events` for business logic execution:
+- Check `audit_log` for business logic execution:
   ```sql
-  SELECT event_type, entity_type, outcome, created_at
-  FROM audit_events
+  SELECT action, user_id, resource_type, created_at
+  FROM audit_log
   WHERE created_at > NOW() - INTERVAL '1 hour'
   ORDER BY created_at DESC;
   ```
@@ -233,10 +195,11 @@ export default app;
 - 10 hours delay
 - 24 hours delay
 
-**Your webhook handler must:**
-1. Return `200 OK` within 5 seconds
-2. Process asynchronously (don't block response)
-3. Check idempotency (same event shouldn't be processed twice)
+**Current TI handler behavior:**
+1. Verifies signature on every request
+2. Persists raw event receipt to `stripe_events` and short-circuits already-processed replays
+3. Processes handlers inline, then marks processed on success
+4. Persists `processing_error` on failure for triage and replay support
 
 ### If a webhook fails repeatedly:
 
@@ -249,14 +212,12 @@ export default app;
 
 ## 7. Security Best Practices
 
-### Signature Verification (already in handler.js):
-```javascript
-const sig = req.headers['stripe-signature'];
-const event = stripe.webhooks.constructEvent(
-  req.body,
-  sig,
-  process.env.STRIPE_WEBHOOK_SECRET
-);
+### Signature Verification (already in `route.ts`):
+```typescript
+const body = await request.text();
+const headersList = await headers();
+const signature = headersList.get('stripe-signature');
+const event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
 ```
 
 ✓ **Always verify before trusting event data**
@@ -297,7 +258,7 @@ Before deploying to production:
 - [ ] Endpoint returns `200 OK` within 5 seconds (test with `stripe trigger`)
 - [ ] Webhook signing verification is enabled
 - [ ] Idempotency check is working (check `stripe_events` table)
-- [ ] Audit logging is working (check `audit_events` table)
+- [ ] Audit logging is working (check `audit_log` table)
 - [ ] KYC gates are enforced (test unverified user trying to purchase)
 - [ ] Error handling catches and logs all exceptions
 - [ ] Sensitive data (API keys, etc.) is NOT logged
@@ -353,7 +314,8 @@ Every 90 days (recommended):
 }
 ```
 
-The handler code automatically fetches full data if thin payload detected.
+Current TI handler expects event payloads that contain required metadata and does not auto-fetch
+missing objects for thin payloads. Ensure required metadata is set at event creation time.
 
 ---
 

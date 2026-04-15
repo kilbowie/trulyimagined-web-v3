@@ -1,8 +1,21 @@
 # Truly Imagined: Stripe Webhook Implementation Plan
 
 **Generated:** April 2026  
-**Status:** Ready for implementation  
+**Status:** In progress (P1-3 and P1-8 implemented in TI runtime)  
 **Environment:** Production (Vercel + RDS)
+
+---
+
+## Extracted-Repo Alignment (April 2026)
+
+This plan originated from a generic webhook template. In the extracted TI repo, authoritative
+implementation now lives in:
+
+- `apps/web/src/app/api/webhooks/stripe/route.ts`
+- `infra/database/migrations/035_ti_webhook_commercial_tables.sql`
+
+The standalone `stripe-webhook-handler.js` file remains reference material only and is not mounted
+in production.
 
 ---
 
@@ -71,14 +84,12 @@ Studio Profile (with KYC)
 - Run this against both TI and HDICR repos to identify gaps
 - Output format: spreadsheet of missing components
 
-### 2. **stripe-webhook-handler.js**
-- Production-grade Node.js/Express webhook handler
-- Handles 19 Stripe events
-- Supports snapshot + thin payloads (auto-detects and fetches if needed)
-- KYC gates enforced in code
-- Idempotency checking
-- Immutable audit logging
-- Ready to deploy
+### 2. **apps/web/src/app/api/webhooks/stripe/route.ts**
+- Production Next.js App Router webhook route
+- Handles identity events plus implemented payment/payout events
+- Idempotency and replay checks via `stripe_events`
+- KYC gate and wallet split logic in `charge.succeeded`
+- Structured processing-error persistence and alert hooks
 
 ### 3. **WEBHOOK_SETUP_GUIDE.md**
 - Complete environment setup (`.env` variables)
@@ -88,13 +99,11 @@ Studio Profile (with KYC)
 - Security best practices
 - Deployment checklist
 
-### 4. **database-migration.sql**
+### 4. **infra/database/migrations/035_ti_webhook_commercial_tables.sql**
 - PostgreSQL migration for TI RDS
-- 9 tables: users, subscriptions, licenses, wallet_balances, payout_requests, withdrawals, audit_events, kyc_audit, stripe_events
-- Immutable audit tables (triggers prevent updates)
-- KYC gates as database constraints
-- Indexes for performance
-- Views for easy reporting
+- Adds TI-owned webhook/commercial tables (`stripe_events`, `kyc_status_transitions`, `commercial_licenses`, `wallet_balances`, `payout_requests`, `withdrawals`)
+- Non-destructive idempotent creation pattern (`IF NOT EXISTS`)
+- Indexes and updated_at triggers for operational use
 
 ---
 
@@ -120,7 +129,7 @@ Studio Profile (with KYC)
 - [ ] Deploy environment variables to Vercel
 
 ### Phase 4: Webhook Implementation (2-3 days)
-- [ ] Deploy `stripe-webhook-handler.js` to `/api/webhooks/stripe`
+- [x] Implement Next.js route at `apps/web/src/app/api/webhooks/stripe/route.ts`
 - [ ] Test locally with Stripe CLI:
   ```bash
   stripe listen --forward-to localhost:3000/api/webhooks/stripe
@@ -129,8 +138,8 @@ Studio Profile (with KYC)
   ```
 - [ ] Verify signature verification works
 - [ ] Verify idempotency (send same event twice → only processes once)
-- [ ] Check audit logging (query `audit_events` table)
-- [ ] Test snapshot vs thin payloads (see handler code)
+- [ ] Check audit logging (query `audit_log` table)
+- [ ] Validate required metadata contract for processed event types
 
 ### Phase 5: KYC Gate Testing (1-2 days)
 - [ ] Create test user with `kyc_status = 'unverified'`
@@ -156,10 +165,12 @@ Studio Profile (with KYC)
 - [ ] Check for errors in `stripe_events.processing_error`
 
 ### Phase 8: Monitoring & Hardening (ongoing)
-- [ ] Set up CloudWatch/Vercel logs monitoring
-- [ ] Create alerts for failed webhook events
+- [x] Persist webhook processing errors to `stripe_events.processing_error`
+- [x] Add repeated-failure alert hooks in webhook route
+- [x] Add operational query script: `scripts/check-stripe-webhook-health.js`
+- [ ] Wire `pnpm check:webhook-health` into scheduled monitoring
 - [ ] Create alerts for KYC gate bypasses (attempt to charge unverified user)
-- [ ] Weekly audit of `audit_events` table
+- [ ] Weekly audit of `audit_log` table
 - [ ] Quarterly webhook secret rotation
 
 ---
