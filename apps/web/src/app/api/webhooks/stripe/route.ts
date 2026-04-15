@@ -159,7 +159,9 @@ export async function POST(request: NextRequest) {
                 await handleChargeDisputed(capturedEvent.data.object as Stripe.Dispute);
                 break;
               case 'payment_intent.succeeded':
-                await handlePaymentIntentSucceeded(capturedEvent.data.object as Stripe.PaymentIntent);
+                await handlePaymentIntentSucceeded(
+                  capturedEvent.data.object as Stripe.PaymentIntent
+                );
                 break;
               case 'payment_intent.payment_failed':
                 await handlePaymentIntentFailed(capturedEvent.data.object as Stripe.PaymentIntent);
@@ -744,7 +746,7 @@ async function handleConnectTransferCreated(
       paymentIntentId =
         typeof charge.payment_intent === 'string'
           ? charge.payment_intent
-          : charge.payment_intent?.id ?? null;
+          : (charge.payment_intent?.id ?? null);
 
       if (paymentIntentId) {
         const updateResult = await queryTi(

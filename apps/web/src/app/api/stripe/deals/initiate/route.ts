@@ -32,7 +32,10 @@ export async function POST(request: NextRequest) {
 
     const profile = await getUserProfile();
     if (!profile) {
-      return NextResponse.json({ success: false, error: 'User profile not found' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
     }
 
     const role = String(profile.role || '');

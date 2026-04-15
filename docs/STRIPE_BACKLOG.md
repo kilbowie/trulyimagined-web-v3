@@ -340,7 +340,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | ---------------------------- | ------------------------------------------------------------------------- | ------------ | ------------------------------------------------- |
 | **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review               |
 | **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review               |
-| **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                               | 2/2 complete | Complete — ready for Phase D review              |
+| **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
 | **D — Subscriptions**        | STRIPE-009, STRIPE-010, STRIPE-016                                        | 0/3 complete | Phase C approved                                  |
 | **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                    | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live |
 | **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
