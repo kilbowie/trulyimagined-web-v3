@@ -80,11 +80,13 @@ Studio Profile (with KYC)
 ## Files Generated
 
 ### 1. **copilot_webhook_audit_prompt.md**
+
 - VS Code Copilot audit checklist (10 sections, 50+ checkpoints)
 - Run this against both TI and HDICR repos to identify gaps
 - Output format: spreadsheet of missing components
 
 ### 2. **apps/web/src/app/api/webhooks/stripe/route.ts**
+
 - Production Next.js App Router webhook route
 - Handles identity events plus implemented payment/payout events
 - Idempotency and replay checks via `stripe_events`
@@ -92,6 +94,7 @@ Studio Profile (with KYC)
 - Structured processing-error persistence and alert hooks
 
 ### 3. **WEBHOOK_SETUP_GUIDE.md**
+
 - Complete environment setup (`.env` variables)
 - Step-by-step Stripe Dashboard configuration
 - Local testing with Stripe CLI or ngrok
@@ -100,6 +103,7 @@ Studio Profile (with KYC)
 - Deployment checklist
 
 ### 4. **infra/database/migrations/035_ti_webhook_commercial_tables.sql**
+
 - PostgreSQL migration for TI RDS
 - Adds TI-owned webhook/commercial tables (`stripe_events`, `kyc_status_transitions`, `commercial_licenses`, `wallet_balances`, `payout_requests`, `withdrawals`)
 - Non-destructive idempotent creation pattern (`IF NOT EXISTS`)
@@ -110,18 +114,21 @@ Studio Profile (with KYC)
 ## Implementation Timeline
 
 ### Phase 1: Preparation (1-2 days)
+
 - [ ] Run Copilot audit on both TI and HDICR repos
 - [ ] Create gap list (database, endpoints, handlers)
 - [ ] Provision Stripe test account (if not already done)
 - [ ] Set up local development environment (Stripe CLI, ngrok)
 
 ### Phase 2: Database Setup (1 day)
+
 - [ ] Run `database-migration.sql` on TI production RDS
 - [ ] Verify all tables created with correct constraints
 - [ ] Create database user/role for webhook handler (read/write)
 - [ ] Test audit table immutability (attempt UPDATE → should fail)
 
 ### Phase 3: Environment Configuration (1 day)
+
 - [ ] Generate Stripe API keys (Secret + Publishable)
 - [ ] Set up Stripe Connect for agents
 - [ ] Register webhook endpoint in Stripe Dashboard (see SETUP_GUIDE.md)
@@ -129,6 +136,7 @@ Studio Profile (with KYC)
 - [ ] Deploy environment variables to Vercel
 
 ### Phase 4: Webhook Implementation (2-3 days)
+
 - [x] Implement Next.js route at `apps/web/src/app/api/webhooks/stripe/route.ts`
 - [ ] Test locally with Stripe CLI:
   ```bash
@@ -142,6 +150,7 @@ Studio Profile (with KYC)
 - [ ] Validate required metadata contract for processed event types
 
 ### Phase 5: KYC Gate Testing (1-2 days)
+
 - [ ] Create test user with `kyc_status = 'unverified'`
 - [ ] Attempt to create license → should fail (constraint violation)
 - [ ] Trigger `identity.verification_session.verified` → kyc_status → 'verified'
@@ -150,6 +159,7 @@ Studio Profile (with KYC)
 - [ ] Test agent payout request → verify wallet balance decreases atomically
 
 ### Phase 6: Payment Flow Testing (1-2 days)
+
 - [ ] Create test charge with `charge.succeeded` event
 - [ ] Verify license record created
 - [ ] Verify wallet splits calculated correctly (agent % + actor %)
@@ -158,6 +168,7 @@ Studio Profile (with KYC)
 - [ ] Test subscription events → verify idempotency
 
 ### Phase 7: Staging to Production (1 day)
+
 - [ ] Switch webhook endpoint from test to live Stripe account
 - [ ] Update `STRIPE_WEBHOOK_SECRET` to live signing secret
 - [ ] Deploy to production (Vercel)
@@ -165,6 +176,7 @@ Studio Profile (with KYC)
 - [ ] Check for errors in `stripe_events.processing_error`
 
 ### Phase 8: Monitoring & Hardening (ongoing)
+
 - [x] Persist webhook processing errors to `stripe_events.processing_error`
 - [x] Add repeated-failure alert hooks in webhook route
 - [x] Add operational query script: `scripts/check-stripe-webhook-health.js`
@@ -281,25 +293,25 @@ v2.core.account[identity].updated
 
 ```sql
 -- Subscription requires verified user
-ALTER TABLE subscriptions ADD CONSTRAINT 
+ALTER TABLE subscriptions ADD CONSTRAINT
   subscription_requires_verified_user CHECK (
     (SELECT kyc_status FROM users WHERE id = user_id) = 'verified'
   );
 
 -- License requires all three users verified
-ALTER TABLE licenses ADD CONSTRAINT 
+ALTER TABLE licenses ADD CONSTRAINT
   license_requires_verified_studio CHECK (
     (SELECT kyc_status FROM users WHERE id = studio_id) = 'verified'
   );
 
 -- Payout requires agent + actor verified
-ALTER TABLE payout_requests ADD CONSTRAINT 
+ALTER TABLE payout_requests ADD CONSTRAINT
   payout_requires_verified_agent CHECK (
     (SELECT kyc_status FROM users WHERE id = agent_id) = 'verified'
   );
 
 -- Wallet only exists if user verified
-ALTER TABLE wallet_balances ADD CONSTRAINT 
+ALTER TABLE wallet_balances ADD CONSTRAINT
   wallet_requires_verified_user CHECK (
     (SELECT kyc_status FROM users WHERE id = user_id) = 'verified'
   );
@@ -328,6 +340,7 @@ if (studio.kyc_status !== 'verified') {
 ## Idempotency & Retries
 
 **Stripe will retry webhooks automatically if you don't return 200 OK:**
+
 - 1 min, 5 min, 30 min, 2 hr, 5 hr, 10 hr, 24 hr delays
 
 **Handler prevents duplicate processing:**
@@ -341,6 +354,7 @@ SELECT id FROM stripe_events WHERE stripe_event_id = 'evt_xxx';
 ```
 
 **Manual retry from Stripe Dashboard:**
+
 1. Go to Webhooks → endpoint → event log
 2. Find failed event
 3. Click "Resend"
@@ -383,6 +397,7 @@ ORDER BY requested_at DESC;
 ```
 
 ### Vercel Logs:
+
 ```bash
 # Check recent webhook logs
 vercel logs --tail
@@ -392,6 +407,7 @@ vercel logs --tail | grep "ERROR\|error\|failed"
 ```
 
 ### Stripe Dashboard:
+
 1. **Webhooks** → select endpoint
 2. **Logs** tab shows all delivery attempts + responses
 3. **Events** tab shows API calls (for context)
@@ -421,7 +437,7 @@ vercel logs --tail | grep "ERROR\|error\|failed"
 ✓ KYC gates at database + code level  
 ✓ Immutable audit trail  
 ✓ Per-license auditability  
-✓ Atomic wallet splits  
+✓ Atomic wallet splits
 
 ### Phase 2 (Future):
 

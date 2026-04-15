@@ -13,14 +13,14 @@ Deferred, or No Action.
 
 ## Identity Verification (KYC)
 
-| Event | Status | Handler | TI DB Writes | Audit |
-|---|---|---|---|---|
-| `identity.verification_session.created` | Deferred | Acknowledged, no-op | None | None |
-| `identity.verification_session.processing` | ✅ Implemented | `handleVerificationProcessing` | `actors.verification_status = 'pending'`, `kyc_status_transitions` | `audit_log` |
-| `identity.verification_session.requires_input` | ✅ Implemented | `handleVerificationRequiresInput` | `actors.verification_status = 'pending'`, `kyc_status_transitions` | `audit_log` |
-| `identity.verification_session.verified` | ✅ Implemented | `handleVerificationVerified` | `actors.verification_status = 'verified'`, `kyc_status_transitions` | `audit_log` |
-| `identity.verification_session.redacted` | ✅ Implemented | `handleVerificationCanceled` | `actors.verification_status = 'rejected'`, `kyc_status_transitions` | `audit_log` |
-| `identity.verification_session.canceled` | ✅ Implemented | `handleVerificationCanceled` | `actors.verification_status = 'rejected'`, `kyc_status_transitions` | `audit_log` |
+| Event                                          | Status         | Handler                           | TI DB Writes                                                        | Audit       |
+| ---------------------------------------------- | -------------- | --------------------------------- | ------------------------------------------------------------------- | ----------- |
+| `identity.verification_session.created`        | Deferred       | Acknowledged, no-op               | None                                                                | None        |
+| `identity.verification_session.processing`     | ✅ Implemented | `handleVerificationProcessing`    | `actors.verification_status = 'pending'`, `kyc_status_transitions`  | `audit_log` |
+| `identity.verification_session.requires_input` | ✅ Implemented | `handleVerificationRequiresInput` | `actors.verification_status = 'pending'`, `kyc_status_transitions`  | `audit_log` |
+| `identity.verification_session.verified`       | ✅ Implemented | `handleVerificationVerified`      | `actors.verification_status = 'verified'`, `kyc_status_transitions` | `audit_log` |
+| `identity.verification_session.redacted`       | ✅ Implemented | `handleVerificationCanceled`      | `actors.verification_status = 'rejected'`, `kyc_status_transitions` | `audit_log` |
+| `identity.verification_session.canceled`       | ✅ Implemented | `handleVerificationCanceled`      | `actors.verification_status = 'rejected'`, `kyc_status_transitions` | `audit_log` |
 
 HDICR sync: all identity events trigger `withHdicrSyncRetries` after TI state is updated.
 
@@ -28,22 +28,22 @@ HDICR sync: all identity events trigger `withHdicrSyncRetries` after TI state is
 
 ## Payments (Licenses)
 
-| Event | Status | Handler | TI DB Writes | Audit |
-|---|---|---|---|---|
-| `charge.succeeded` | ✅ Implemented | `handleChargeSucceeded` | INSERT `commercial_licenses`, UPSERT `wallet_balances` (actor + agent) | `audit_log` |
-| `charge.failed` | ✅ Implemented | `handleChargeFailed` | None | `audit_log` (if metadata present) |
-| `charge.refunded` | ✅ Implemented | `handleChargeRefunded` | UPDATE `commercial_licenses.status = 'refunded'`, UPSERT `wallet_balances` (negative delta) | `audit_log` |
-| `charge.dispute.created` | ✅ Implemented | `handleChargeDisputed` | UPDATE `commercial_licenses.status = 'disputed'` | `audit_log` |
+| Event                    | Status         | Handler                 | TI DB Writes                                                                                | Audit                             |
+| ------------------------ | -------------- | ----------------------- | ------------------------------------------------------------------------------------------- | --------------------------------- |
+| `charge.succeeded`       | ✅ Implemented | `handleChargeSucceeded` | INSERT `commercial_licenses`, UPSERT `wallet_balances` (actor + agent)                      | `audit_log`                       |
+| `charge.failed`          | ✅ Implemented | `handleChargeFailed`    | None                                                                                        | `audit_log` (if metadata present) |
+| `charge.refunded`        | ✅ Implemented | `handleChargeRefunded`  | UPDATE `commercial_licenses.status = 'refunded'`, UPSERT `wallet_balances` (negative delta) | `audit_log`                       |
+| `charge.dispute.created` | ✅ Implemented | `handleChargeDisputed`  | UPDATE `commercial_licenses.status = 'disputed'`                                            | `audit_log`                       |
 
 ### `charge.succeeded` — required charge metadata
 
-| Field | Required | Notes |
-|---|---|---|
-| `studio_user_profile_id` | Yes | TI user_profile.id of the studio |
-| `actor_user_profile_id` | Yes | TI user_profile.id of the actor |
-| `agent_user_profile_id` | No | TI user_profile.id of agent; omit if unrepresented |
-| `agent_commission_pct` | No | Integer 0–100; defaults to 25 if agent present |
-| `use_case` | No | Free-text licence use description |
+| Field                    | Required | Notes                                              |
+| ------------------------ | -------- | -------------------------------------------------- |
+| `studio_user_profile_id` | Yes      | TI user_profile.id of the studio                   |
+| `actor_user_profile_id`  | Yes      | TI user_profile.id of the actor                    |
+| `agent_user_profile_id`  | No       | TI user_profile.id of agent; omit if unrepresented |
+| `agent_commission_pct`   | No       | Integer 0–100; defaults to 25 if agent present     |
+| `use_case`               | No       | Free-text licence use description                  |
 
 ### KYC gate (P1-5 coverage)
 
@@ -57,58 +57,58 @@ observable and the event is replayable via the `stripe_events` table.
 
 ## Subscriptions
 
-| Event | Status | Notes |
-|---|---|---|
+| Event                           | Status   | Notes                                  |
+| ------------------------------- | -------- | -------------------------------------- |
 | `customer.subscription.created` | Deferred | Subscription model not yet implemented |
-| `customer.subscription.updated` | Deferred | |
-| `customer.subscription.deleted` | Deferred | |
+| `customer.subscription.updated` | Deferred |                                        |
+| `customer.subscription.deleted` | Deferred |                                        |
 
 ---
 
 ## Subscription Billing
 
-| Event | Status | Handler | TI DB Writes | Audit |
-|---|---|---|---|---|
-| `invoice.payment_failed` | Deferred | Acknowledged, no-op | None | None |
-| `payment_intent.payment_failed` | ✅ Implemented | `handlePaymentIntentFailed` | None | `audit_log` (if metadata present) |
+| Event                           | Status         | Handler                     | TI DB Writes | Audit                             |
+| ------------------------------- | -------------- | --------------------------- | ------------ | --------------------------------- |
+| `invoice.payment_failed`        | Deferred       | Acknowledged, no-op         | None         | None                              |
+| `payment_intent.payment_failed` | ✅ Implemented | `handlePaymentIntentFailed` | None         | `audit_log` (if metadata present) |
 
 ---
 
 ## Payouts (Withdrawals)
 
-| Event | Status | Handler | TI DB Writes | Audit |
-|---|---|---|---|---|
-| `payout.created` | ✅ Implemented | `handlePayoutCreated` | INSERT `withdrawals` (status `processing`) | `audit_log` |
-| `payout.paid` | ✅ Implemented | `handlePayoutPaid` | UPDATE `withdrawals.status = 'completed'` | `audit_log` |
-| `payout.failed` | ✅ Implemented | `handlePayoutFailed` | UPDATE `withdrawals.status = 'failed'`, `failure_reason` | `audit_log` |
+| Event            | Status         | Handler               | TI DB Writes                                             | Audit       |
+| ---------------- | -------------- | --------------------- | -------------------------------------------------------- | ----------- |
+| `payout.created` | ✅ Implemented | `handlePayoutCreated` | INSERT `withdrawals` (status `processing`)               | `audit_log` |
+| `payout.paid`    | ✅ Implemented | `handlePayoutPaid`    | UPDATE `withdrawals.status = 'completed'`                | `audit_log` |
+| `payout.failed`  | ✅ Implemented | `handlePayoutFailed`  | UPDATE `withdrawals.status = 'failed'`, `failure_reason` | `audit_log` |
 
 ### `payout.created` — required payout metadata
 
-| Field | Required | Notes |
-|---|---|---|
-| `user_profile_id` | Yes | TI user_profile.id of the withdrawing user |
+| Field             | Required | Notes                                      |
+| ----------------- | -------- | ------------------------------------------ |
+| `user_profile_id` | Yes      | TI user_profile.id of the withdrawing user |
 
 ---
 
 ## Agent Connected Account
 
-| Event | Status | Notes |
-|---|---|---|
+| Event                               | Status   | Notes                                                           |
+| ----------------------------------- | -------- | --------------------------------------------------------------- |
 | `v2.core.account[identity].updated` | Deferred | Connected account model deferred until HDICR independence phase |
 
 ---
 
 ## Summary Counts
 
-| Category | Implemented | Deferred |
-|---|---|---|
-| Identity / KYC | 5 | 1 (`created` — no action needed at creation time) |
-| Payments | 4 | 0 |
-| Subscriptions | 0 | 3 |
-| Billing | 1 | 1 (`invoice.payment_failed`) |
-| Payouts | 3 | 0 |
-| Connected Account | 0 | 1 |
-| **Total** | **13** | **6** |
+| Category          | Implemented | Deferred                                          |
+| ----------------- | ----------- | ------------------------------------------------- |
+| Identity / KYC    | 5           | 1 (`created` — no action needed at creation time) |
+| Payments          | 4           | 0                                                 |
+| Subscriptions     | 0           | 3                                                 |
+| Billing           | 1           | 1 (`invoice.payment_failed`)                      |
+| Payouts           | 3           | 0                                                 |
+| Connected Account | 0           | 1                                                 |
+| **Total**         | **13**      | **6**                                             |
 
 ---
 
@@ -140,10 +140,10 @@ All handlers rely on the `stripe_events` replay guard implemented in P1-4:
 
 ## Related Backlog Items
 
-| Item | Relationship |
-|---|---|
-| P1-2 | Migration 035 creates the TI tables written by these handlers |
-| P1-4 | Idempotency/replay guard already implemented; all handlers benefit |
+| Item | Relationship                                                                      |
+| ---- | --------------------------------------------------------------------------------- |
+| P1-2 | Migration 035 creates the TI tables written by these handlers                     |
+| P1-4 | Idempotency/replay guard already implemented; all handlers benefit                |
 | P1-5 | KYC gate (`assertActorKycVerified`) is implemented inside `handleChargeSucceeded` |
-| P1-6 | License split logic (wallet credits) implemented inside `handleChargeSucceeded` |
-| P1-7 | Payout/withdrawal lifecycle implemented via `handlePayout*` |
+| P1-6 | License split logic (wallet credits) implemented inside `handleChargeSucceeded`   |
+| P1-7 | Payout/withdrawal lifecycle implemented via `handlePayout*`                       |

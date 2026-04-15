@@ -22,6 +22,7 @@ EMAIL_FROM=notifications@trulyimagined.com
 ```
 
 **IMPORTANT:**
+
 - Never commit `.env.local` or `.env.production` to Git
 - Use GitHub Secrets (if using GitHub Actions) or Vercel Environment Variables
 - Rotate webhook secrets every 90 days
@@ -32,10 +33,12 @@ EMAIL_FROM=notifications@trulyimagined.com
 ## 2. Register Webhook Endpoint in Stripe Dashboard
 
 ### Step 1: Access Webhook Settings
+
 1. Go to **Stripe Dashboard** → **Developers** → **Webhooks**
 2. Click **Add endpoint**
 
 ### Step 2: Configure Endpoint
+
 - **Endpoint URL**: `https://trulyimagined.com/api/webhooks/stripe`
   - For local testing with ngrok: `https://xxxxx.ngrok.io/api/webhooks/stripe`
 - **Events to send**: Select the 19 events (see list below)
@@ -46,6 +49,7 @@ EMAIL_FROM=notifications@trulyimagined.com
 **Select these 19 events:**
 
 **Identity Verification (KYC):**
+
 - [ ] `identity.verification_session.created`
 - [ ] `identity.verification_session.processing`
 - [ ] `identity.verification_session.requires_input`
@@ -54,30 +58,37 @@ EMAIL_FROM=notifications@trulyimagined.com
 - [ ] `identity.verification_session.canceled`
 
 **Payments (Licenses):**
+
 - [ ] `charge.succeeded` ✓ CRITICAL
 - [ ] `charge.failed`
 - [ ] `charge.refunded`
 - [ ] `charge.dispute.created`
 
 **Subscriptions:**
+
 - [ ] `customer.subscription.created`
 - [ ] `customer.subscription.updated`
 - [ ] `customer.subscription.deleted`
 
 **Subscription Billing:**
+
 - [ ] `invoice.payment_failed`
 - [ ] `payment_intent.payment_failed`
 
 **Payouts (Withdrawals):**
+
 - [ ] `payout.created`
 - [ ] `payout.paid`
 - [ ] `payout.failed`
 
 **Agent Connected Account:**
+
 - [ ] `v2.core.account[identity].updated`
 
 ### Step 4: Copy Webhook Secret
+
 After creating the endpoint:
+
 1. Click the endpoint to open details
 2. Copy the **Signing Secret** (starts with `whsec_`)
 3. Paste into `.env.local` as `STRIPE_WEBHOOK_SECRET`
@@ -113,16 +124,19 @@ Implementation notes for the current TI runtime:
 1. **Install Stripe CLI** (https://stripe.com/docs/stripe-cli)
 
 2. **Login to your Stripe account:**
+
    ```bash
    stripe login
    ```
 
 3. **Forward events to local endpoint:**
+
    ```bash
    stripe listen --events charge.succeeded,charge.failed,customer.subscription.created,identity.verification_session.verified --forward-to localhost:3000/api/webhooks/stripe
    ```
 
 4. **Copy the webhook signing secret** from CLI output and add to `.env.local`:
+
    ```
    STRIPE_WEBHOOK_SECRET=whsec_xxxx...
    ```
@@ -137,6 +151,7 @@ Implementation notes for the current TI runtime:
 ### Option B: Use ngrok (for HTTPS tunneling)
 
 1. **Start ngrok tunnel:**
+
    ```bash
    ngrok http 3000
    ```
@@ -167,6 +182,7 @@ Implementation notes for the current TI runtime:
 ### In your application:
 
 - Query `stripe_events` table:
+
   ```sql
   SELECT event_type, processed, processing_error, received_at
   FROM stripe_events
@@ -187,6 +203,7 @@ Implementation notes for the current TI runtime:
 ## 6. Error Handling & Retries
 
 ### Stripe automatically retries failed webhooks:
+
 - 1 minute delay
 - 5 minutes delay
 - 30 minutes delay
@@ -196,6 +213,7 @@ Implementation notes for the current TI runtime:
 - 24 hours delay
 
 **Current TI handler behavior:**
+
 1. Verifies signature on every request
 2. Persists raw event receipt to `stripe_events` and short-circuits already-processed replays
 3. Processes handlers inline, then marks processed on success
@@ -213,6 +231,7 @@ Implementation notes for the current TI runtime:
 ## 7. Security Best Practices
 
 ### Signature Verification (already in `route.ts`):
+
 ```typescript
 const body = await request.text();
 const headersList = await headers();
@@ -240,6 +259,7 @@ const event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE
 ```
 
 ### HTTPS Only:
+
 - Production endpoint **must** use HTTPS
 - Stripe won't send to HTTP endpoints (security risk)
 - Vercel provides HTTPS automatically
@@ -283,6 +303,7 @@ Every 90 days (recommended):
 ## 10. Payload Style Reference
 
 **Snapshot payloads** (default):
+
 ```json
 {
   "id": "evt_1234567890",
@@ -300,6 +321,7 @@ Every 90 days (recommended):
 ```
 
 **Thin payloads** (minimal data):
+
 ```json
 {
   "id": "evt_1234567890",

@@ -78,7 +78,8 @@ async function run() {
       console.log('[stripe-webhook-health] Recent failed events', latestFailuresResult.rows);
     }
 
-    const thresholdBreached = Number.isFinite(threshold) && threshold > 0 && failedInWindow >= threshold;
+    const thresholdBreached =
+      Number.isFinite(threshold) && threshold > 0 && failedInWindow >= threshold;
     const staleBreached = staleUnprocessed > 0;
 
     if (thresholdBreached || staleBreached) {

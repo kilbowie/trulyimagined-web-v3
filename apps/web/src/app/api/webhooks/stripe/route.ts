@@ -760,9 +760,7 @@ async function assertActorKycVerified(userProfileId: string, role: string): Prom
   );
 
   if (result.rows.length === 0) {
-    throw new Error(
-      `[KYC Gate] No actor record for ${role} user_profile_id: ${userProfileId}`
-    );
+    throw new Error(`[KYC Gate] No actor record for ${role} user_profile_id: ${userProfileId}`);
   }
 
   const { verification_status } = result.rows[0] as { verification_status: string };
@@ -1018,8 +1016,7 @@ async function handleChargeDisputed(dispute: Stripe.Dispute): Promise<void> {
  */
 async function handlePaymentIntentFailed(paymentIntent: Stripe.PaymentIntent): Promise<void> {
   const userProfileId =
-    paymentIntent.metadata?.user_profile_id ??
-    paymentIntent.metadata?.actor_user_profile_id;
+    paymentIntent.metadata?.user_profile_id ?? paymentIntent.metadata?.actor_user_profile_id;
 
   if (userProfileId) {
     await insertWebhookAuditEntry({
@@ -1124,8 +1121,7 @@ async function handlePayoutPaid(payout: Stripe.Payout): Promise<void> {
  * Handle payout.failed — mark withdrawal failed with reason.
  */
 async function handlePayoutFailed(payout: Stripe.Payout): Promise<void> {
-  const failureReason =
-    payout.failure_message ?? payout.failure_code ?? 'payout_failed';
+  const failureReason = payout.failure_message ?? payout.failure_code ?? 'payout_failed';
 
   const result = await queryTi(
     `UPDATE withdrawals
