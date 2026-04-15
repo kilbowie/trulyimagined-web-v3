@@ -244,9 +244,7 @@ export async function createConnectOnboardingLink(accountId: string): Promise<St
   const refreshUrl = process.env.STRIPE_CONNECT_REFRESH_URL;
 
   if (!returnUrl || !refreshUrl) {
-    throw new Error(
-      'STRIPE_CONNECT_RETURN_URL and STRIPE_CONNECT_REFRESH_URL must be configured'
-    );
+    throw new Error('STRIPE_CONNECT_RETURN_URL and STRIPE_CONNECT_REFRESH_URL must be configured');
   }
 
   return stripe.accountLinks.create({

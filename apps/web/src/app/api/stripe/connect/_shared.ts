@@ -1,7 +1,11 @@
 import { auth0 } from '@/lib/auth0';
 import { getUserProfile } from '@/lib/auth';
 import { queryTi } from '@/lib/db';
-import { mapConnectAccountStatus, retrieveConnectAccount, type ConnectAccountStatus } from '@/lib/stripe';
+import {
+  mapConnectAccountStatus,
+  retrieveConnectAccount,
+  type ConnectAccountStatus,
+} from '@/lib/stripe';
 
 type ConnectActorContext = {
   auth0UserId: string;

@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
   const accountId = url.searchParams.get('account') || url.searchParams.get('account_id');
 
   if (!accountId) {
-    return NextResponse.json({ error: 'Missing Stripe account id in query string' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Missing Stripe account id in query string' },
+      { status: 400 }
+    );
   }
 
   try {
@@ -24,12 +27,18 @@ export async function GET(request: NextRequest) {
     const baseUrl = resolveAppBaseUrl(request);
     const destination = new URL('/dashboard/verify-identity', baseUrl);
 
-    destination.searchParams.set('connect_status', status.onboardingComplete ? 'complete' : 'pending');
+    destination.searchParams.set(
+      'connect_status',
+      status.onboardingComplete ? 'complete' : 'pending'
+    );
     destination.searchParams.set('account_id', accountId);
 
     return NextResponse.redirect(destination);
   } catch (error) {
     console.error('[STRIPE CONNECT] return route failed', error);
-    return NextResponse.json({ error: 'Failed to process Connect return callback' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to process Connect return callback' },
+      { status: 500 }
+    );
   }
 }

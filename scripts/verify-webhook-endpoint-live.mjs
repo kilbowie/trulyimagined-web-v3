@@ -36,7 +36,9 @@ async function probe() {
 
   if (res.status === 400) {
     const body = await res.text().catch(() => '');
-    console.log(`[verify-webhook-endpoint] PASS — endpoint is live and rejecting unsigned requests (${body.slice(0, 120)})`);
+    console.log(
+      `[verify-webhook-endpoint] PASS — endpoint is live and rejecting unsigned requests (${body.slice(0, 120)})`
+    );
     console.log('');
     console.log('Next step: Register this URL in the Stripe Dashboard');
     console.log(`  URL: ${url}`);
@@ -68,8 +70,12 @@ async function probe() {
 
   if (res.status === 200) {
     // Should not happen without a valid signature — but some proxy health checks return 200
-    console.warn(`[verify-webhook-endpoint] WARN — unexpectedly got 200 without a Stripe-Signature.`);
-    console.warn('  → The route may not be enforcing signature verification. Investigate route.ts.');
+    console.warn(
+      `[verify-webhook-endpoint] WARN — unexpectedly got 200 without a Stripe-Signature.`
+    );
+    console.warn(
+      '  → The route may not be enforcing signature verification. Investigate route.ts.'
+    );
     process.exit(1);
   }
 
@@ -84,12 +90,18 @@ async function probe() {
 
   // 401/403 from Vercel deployment protection
   if (res.status === 401 || res.status === 403) {
-    console.error(`[verify-webhook-endpoint] FAIL — ${res.status} (Vercel Deployment Protection may be enabled).`);
-    console.error('  → Disable protection for this route or configure a bypass secret, then retry.');
+    console.error(
+      `[verify-webhook-endpoint] FAIL — ${res.status} (Vercel Deployment Protection may be enabled).`
+    );
+    console.error(
+      '  → Disable protection for this route or configure a bypass secret, then retry.'
+    );
     process.exit(2);
   }
 
-  console.warn(`[verify-webhook-endpoint] UNEXPECTED status ${res.status} — manual review required.`);
+  console.warn(
+    `[verify-webhook-endpoint] UNEXPECTED status ${res.status} — manual review required.`
+  );
   process.exit(1);
 }
 

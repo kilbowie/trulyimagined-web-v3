@@ -45,7 +45,7 @@ Close remaining repo-separation and production-readiness gaps, then implement an
 - Files
   - trulyimagined/apps/web/src/app/api/webhooks/stripe/route.ts
   - trulyimagined/apps/web/vercel.json
-  - scripts/verify-webhook-endpoint-live.mjs  ← readiness probe (new)
+  - scripts/verify-webhook-endpoint-live.mjs ← readiness probe (new)
 - Acceptance criteria
   - `pnpm check:webhook-endpoint` exits 0 (HTTP 400 from unsigned probe confirms route is live).
   - Stripe dashboard delivery log shows successful event delivery to production endpoint.

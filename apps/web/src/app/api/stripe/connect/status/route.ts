@@ -35,6 +35,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error('[STRIPE CONNECT] status route failed', error);
-    return NextResponse.json({ error: 'Failed to retrieve Connect account status' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to retrieve Connect account status' },
+      { status: 500 }
+    );
   }
 }
