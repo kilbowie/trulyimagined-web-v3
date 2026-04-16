@@ -1392,11 +1392,7 @@ async function syncSubscriptionEntitlements(userProfileId: string): Promise<void
          AND status = ANY($2::text[])
          AND plan_key = ANY($3::text[])
      ) AS has_entitlement`,
-    [
-      userProfileId,
-      Array.from(ENTITLED_SUBSCRIPTION_STATUSES),
-      Array.from(ENTITLEMENT_PLAN_KEYS),
-    ]
+    [userProfileId, Array.from(ENTITLED_SUBSCRIPTION_STATUSES), Array.from(ENTITLEMENT_PLAN_KEYS)]
   );
 
   const hasEntitlement = Boolean(entitlementResult.rows[0]?.has_entitlement);
@@ -1419,7 +1415,9 @@ async function syncSubscriptionEntitlements(userProfileId: string): Promise<void
   }
 
   await insertWebhookAuditEntry({
-    action: hasEntitlement ? 'subscription.entitlement.provisioned' : 'subscription.entitlement.revoked',
+    action: hasEntitlement
+      ? 'subscription.entitlement.provisioned'
+      : 'subscription.entitlement.revoked',
     userProfileId,
     resourceId: userProfileId,
     changes: {
@@ -1573,9 +1571,10 @@ async function insertWebhookAuditEntry(params: {
   changes: Record<string, unknown>;
 }) {
   try {
-    const resourceIdIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      params.resourceId
-    );
+    const resourceIdIsUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        params.resourceId
+      );
 
     const changes = {
       ...params.changes,
