@@ -2,7 +2,7 @@
 
 _Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase D complete)_
 
-_Review update: 2026-04-16 Phase D concrete defects fixed; entitlement provisioning/revocation remains open._
+_Review update: 2026-04-16 Phase D concrete defects fixed; webhook-driven `is_pro` entitlement synchronization implemented._
 
 ---
 
@@ -238,6 +238,7 @@ _Depends on Phase C approval. Completes the billing model._
     - `apps/web/src/app/api/webhooks/stripe/route.ts` — added deferred handlers for `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`
     - `user_subscriptions` writes are idempotent via `ON CONFLICT (stripe_subscription_id) DO UPDATE`
     - Subscription interval/plan mapping and seat count extraction added from Stripe subscription items + metadata
+    - Webhook handlers now synchronize TI entitlement state by updating `user_profiles.is_pro` from active subscription state for supported `plan_key` values
   - **2026-04-16 defect fix:** subscription metadata / local persistence now resolve and use TI-local `user_profiles.id` values for `user_subscriptions.user_id` and billing summary lookups, rather than relying on remote billing profile ids.
 
 ---
@@ -283,11 +284,12 @@ _Depends on Phase C approval. Completes the billing model._
   - **Files updated:**
     - `apps/web/src/app/api/webhooks/stripe/route.ts`
 
-- [ ] **REVIEW-OPEN-001 — Subscription entitlement provisioning/revocation**
-  - **Priority:** HIGH
-  - **Summary:** Phase D currently mirrors Stripe subscription state into `user_subscriptions` and billing summary responses, but it still does not provision or revoke application entitlements/tier access when `customer.subscription.created|updated|deleted` events arrive.
-  - **Impact:** Back-office billing state is synchronized, but product access enforcement remains incomplete.
-  - **Suggested next step:** Define the entitlement model keyed by `plan_key` and wire subscription webhook handlers to apply/revoke role or feature access accordingly.
+- [x] **REVIEW-FIX-003 — Subscription entitlement provisioning/revocation**
+  - **Status:** Fixed 2026-04-16
+  - **Summary:** Stripe subscription webhook handlers now synchronize app entitlement state by recomputing `user_profiles.is_pro` from entitled subscription rows in `user_subscriptions` after create/update/delete events.
+  - **Current model:** `is_pro` is the active app-level entitlement primitive. This is sufficient for current enforcement paths that already read `user_profiles.is_pro`, while leaving room for future plan-specific feature flags if needed.
+  - **Files updated:**
+    - `apps/web/src/app/api/webhooks/stripe/route.ts`
 
 ---
 

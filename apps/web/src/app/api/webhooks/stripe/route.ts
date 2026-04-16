@@ -17,6 +17,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
+import { BILLING_PLANS } from '@/lib/billing';
 import {
   stripe,
   mapStripeStatusToVerificationLevel,
@@ -44,6 +45,8 @@ const CRITICAL_WEBHOOK_EVENT_TYPES = new Set([
   'charge.succeeded',
   'payout.failed',
 ]);
+const ENTITLED_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
+const ENTITLEMENT_PLAN_KEYS = new Set(BILLING_PLANS.map((plan) => plan.id));
 
 /**
  * Webhook handler - must be POST route with raw body
@@ -1266,6 +1269,8 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription): Pro
     ]
   );
 
+  await syncSubscriptionEntitlements(userProfileId);
+
   console.log('[STRIPE WEBHOOK] subscription.created synced to user_subscriptions', {
     subscriptionId: subscription.id,
     userProfileId,
@@ -1334,6 +1339,8 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription): Pro
     ]
   );
 
+  await syncSubscriptionEntitlements(userProfileId);
+
   console.log('[STRIPE WEBHOOK] subscription.updated synced to user_subscriptions', {
     subscriptionId: subscription.id,
     userProfileId,
@@ -1365,9 +1372,64 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
     return;
   }
 
+  const affectedUserProfileId = result.rows[0]?.user_id as string | undefined;
+  if (affectedUserProfileId) {
+    await syncSubscriptionEntitlements(affectedUserProfileId);
+  }
+
   console.log('[STRIPE WEBHOOK] subscription.deleted marked canceled', {
     subscriptionId: subscription.id,
     affectedRows: result.rowCount ?? 0,
+  });
+}
+
+async function syncSubscriptionEntitlements(userProfileId: string): Promise<void> {
+  const entitlementResult = await queryTi(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM user_subscriptions
+       WHERE user_id = $1
+         AND status = ANY($2::text[])
+         AND plan_key = ANY($3::text[])
+     ) AS has_entitlement`,
+    [
+      userProfileId,
+      Array.from(ENTITLED_SUBSCRIPTION_STATUSES),
+      Array.from(ENTITLEMENT_PLAN_KEYS),
+    ]
+  );
+
+  const hasEntitlement = Boolean(entitlementResult.rows[0]?.has_entitlement);
+
+  const updateResult = await queryTi(
+    `UPDATE user_profiles
+     SET is_pro = $2,
+         updated_at = NOW()
+     WHERE id = $1
+     RETURNING id`,
+    [userProfileId, hasEntitlement]
+  );
+
+  if ((updateResult.rowCount ?? 0) === 0) {
+    console.warn('[STRIPE WEBHOOK] subscription entitlement sync found no TI user profile', {
+      userProfileId,
+      hasEntitlement,
+    });
+    return;
+  }
+
+  await insertWebhookAuditEntry({
+    action: hasEntitlement ? 'subscription.entitlement.provisioned' : 'subscription.entitlement.revoked',
+    userProfileId,
+    resourceId: userProfileId,
+    changes: {
+      is_pro: hasEntitlement,
+    },
+  });
+
+  console.log('[STRIPE WEBHOOK] Subscription entitlement synchronized', {
+    userProfileId,
+    hasEntitlement,
   });
 }
 
