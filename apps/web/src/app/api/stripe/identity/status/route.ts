@@ -2,10 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
 import { getStripeIdentityStatus } from '@/lib/stripe/identity';
 
-/**
- * GET /api/verification/status
- * Legacy compatibility route for Stripe identity status.
- */
 export async function GET(_request: NextRequest) {
   try {
     const session = await auth0.getSession();
@@ -22,7 +18,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(verificationStatus, { status: 200 });
   } catch (error) {
-    console.error('[VERIFICATION-STATUS] Error:', error);
+    console.error('[STRIPE_IDENTITY_STATUS] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {

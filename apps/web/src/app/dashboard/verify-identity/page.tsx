@@ -61,7 +61,7 @@ export default function VerifyIdentityPage() {
       setLoading(true);
 
       // Fetch verification status
-      const statusRes = await fetch('/api/verification/status');
+      const statusRes = await fetch('/api/stripe/identity/status');
       if (statusRes.status === 401) {
         router.push('/auth/login');
         return;
@@ -82,20 +82,15 @@ export default function VerifyIdentityPage() {
     }
   }
 
-  async function startVerification(provider: 'stripe' | 'mock' | 'onfido' | 'yoti' = 'stripe') {
+  async function startVerification() {
     try {
       setVerifying(true);
       setError(null);
       setSuccessMessage(null);
 
-      const response = await fetch('/api/verification/start', {
+      const response = await fetch('/api/stripe/identity/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          provider,
-          verificationType: 'identity',
-          documents: ['passport'],
-        }),
       });
 
       const data = await response.json();
@@ -105,13 +100,13 @@ export default function VerifyIdentityPage() {
       }
 
       // Handle Stripe Identity redirect
-      if (provider === 'stripe' && data.url) {
+      if (data.url) {
         // Redirect user to Stripe Identity hosted page
         window.location.href = data.url;
         return;
       }
 
-      setSuccessMessage(data.message || `Verification started with ${provider}`);
+      setSuccessMessage(data.message || 'Verification started with Stripe');
 
       // Refresh data
       await fetchData();
@@ -120,13 +115,9 @@ export default function VerifyIdentityPage() {
     } catch (err) {
       console.error('[VERIFY-IDENTITY] Verification error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      if (provider === 'stripe') {
-        setError(
-          `${errorMessage}. You can retry Stripe verification or request a founder-led video call below.`
-        );
-      } else {
-        setError(errorMessage);
-      }
+      setError(
+        `${errorMessage}. You can retry Stripe verification or request a founder-led video call below.`
+      );
       setVerifying(false);
     }
   }
@@ -360,7 +351,7 @@ export default function VerifyIdentityPage() {
                   </div>
                 </div>
                 <button
-                  onClick={() => startVerification('stripe')}
+                  onClick={() => startVerification()}
                   disabled={verifying}
                   className="w-full md:w-auto md:ml-4 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed font-semibold shadow-sm"
                 >
@@ -427,91 +418,6 @@ export default function VerifyIdentityPage() {
               </div>
             </div>
 
-            {/* Development/Testing Options */}
-            <div className="pt-4 border-t border-border">
-              <h3 className="text-sm font-semibold text-foreground mb-3">
-                Development & Testing Options
-              </h3>
-
-              {/* Mock Verification (Development) */}
-              <div className="border border-border rounded-lg p-4 mb-3 bg-background">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">Mock Verification</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Instantly create a high-assurance identity link for testing purposes
-                      (development only)
-                    </p>
-                    <div className="mt-2 flex gap-2">
-                      <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 rounded border border-green-300 dark:border-green-800">
-                        Instant
-                      </span>
-                      <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded border border-purple-300 dark:border-purple-800">
-                        HIGH verification
-                      </span>
-                      <span className="text-xs px-2 py-1 bg-orange-100 dark:bg-orange-950/40 text-orange-700 dark:text-orange-300 rounded border border-orange-300 dark:border-orange-800">
-                        Development only
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => startVerification('mock')}
-                    disabled={verifying}
-                    className="w-full md:w-auto md:ml-4 px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-secondary/80 disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
-                  >
-                    {verifying ? 'Processing...' : 'Start Mock'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Onfido (Legacy, requires API key) */}
-              <div className="border border-border rounded-lg p-4 mb-3 opacity-70 bg-background">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">Onfido KYC (Legacy)</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Professional identity verification - requires ONFIDO_API_TOKEN
-                    </p>
-                    <div className="mt-2">
-                      <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded border border-border">
-                        Not configured
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    disabled
-                    className="w-full md:w-auto md:ml-4 px-4 py-2 bg-muted text-muted-foreground rounded cursor-not-allowed"
-                  >
-                    Not Available
-                  </button>
-                </div>
-              </div>
-
-              {/* Yoti (Legacy, requires API key) */}
-              <div className="border border-border rounded-lg p-4 opacity-70 bg-background">
-                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-foreground">
-                      Yoti Digital Identity (Legacy)
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Government-certified digital identity - requires YOTI_CLIENT_SDK_ID
-                    </p>
-                    <div className="mt-2">
-                      <span className="text-xs px-2 py-1 bg-muted text-muted-foreground rounded border border-border">
-                        Not configured
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    disabled
-                    className="w-full md:w-auto md:ml-4 px-4 py-2 bg-muted text-muted-foreground rounded cursor-not-allowed"
-                  >
-                    Not Available
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
 

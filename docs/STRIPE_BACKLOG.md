@@ -299,7 +299,7 @@ _Depends on Phase D approval. Removes architectural violations and aligns identi
 
 ---
 
-- [ ] **STRIPE-007 — Identity Route Namespace Alignment**
+- [x] **STRIPE-007 — Identity Route Namespace Alignment**
   - **Priority:** MEDIUM
   - **Description:** Current identity routes (`/api/verification/start`, `/api/verification/status`)
     still have multi-provider logic (mock, Onfido, Yoti, Stripe). Target is Stripe-only under
@@ -311,10 +311,15 @@ _Depends on Phase D approval. Removes architectural violations and aligns identi
     - `apps/web/src/app/api/stripe/identity/status/route.ts` — NEW: `GET`, Stripe-only verification status (replaces `/api/verification/status`)
     - `apps/web/src/app/api/verification/start/route.ts` — deprecate or redirect to new route
     - `apps/web/src/app/api/verification/status/route.ts` — deprecate or redirect to new route
+  - **Implemented:**
+    - Added Stripe-only routes under `/api/stripe/identity/session` and `/api/stripe/identity/status`
+    - Updated onboarding + dashboard callers to use the new Stripe namespace directly
+    - Reduced legacy `/api/verification/start` to a compatibility wrapper that rejects non-Stripe providers and delegates Stripe requests to the shared Stripe identity flow
+    - Reduced legacy `/api/verification/status` to a compatibility wrapper over the shared Stripe identity status implementation
 
 ---
 
-- [ ] **STRIPE-012 — Remove Stripe Config from HDICR Infra**
+- [x] **STRIPE-012 — Remove Stripe Config from HDICR Infra**
   - **Priority:** HIGH
   - **Description:** HDICR infra currently wires `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`
     as Lambda environment parameters — an architecture violation. HDICR should have zero Stripe
@@ -325,6 +330,10 @@ _Depends on Phase D approval. Removes architectural violations and aligns identi
     - `hdicr/infra/samconfig.toml` — remove `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` parameter entries
     - `hdicr/infra/template.yaml` — remove `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` from Lambda env block
     - Verify no HDICR service code references either variable (grep confirms zero service-side Stripe code)
+  - **Implemented:**
+    - Removed Stripe secret parameters from `hdicr/infra/template.yaml`
+    - Removed Stripe secret overrides from `hdicr/infra/samconfig.toml`
+    - Reconfirmed remaining references are infra-only and removed as part of this cleanup
 
 ---
 
@@ -372,7 +381,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review               |
 | **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
 | **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review               |
-| **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                    | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live |
+| **E — HDICR Cleanup**        | STRIPE-007 ✅, STRIPE-012 ✅                                              | 2/2 complete | Complete — ready for Phase F hardening            |
 | **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
 
 **Total progress: 12 / 16 items complete**

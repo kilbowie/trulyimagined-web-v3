@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
-import { getStripeIdentityStatus } from '@/lib/stripe/identity';
+import { startStripeIdentitySession } from '@/lib/stripe/identity';
 
-/**
- * GET /api/verification/status
- * Legacy compatibility route for Stripe identity status.
- */
-export async function GET(_request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     const session = await auth0.getSession();
     const user = session?.user;
@@ -15,18 +11,30 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const verificationStatus = await getStripeIdentityStatus(user.sub);
-    if (!verificationStatus) {
+    const verificationResult = await startStripeIdentitySession({
+      auth0UserId: user.sub,
+      email: user.email,
+      legalName: user.name,
+      professionalName: user.nickname,
+    });
+
+    if (!verificationResult) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
-    return NextResponse.json(verificationStatus, { status: 200 });
+    return NextResponse.json(
+      {
+        success: true,
+        ...verificationResult,
+      },
+      { status: 201 }
+    );
   } catch (error) {
-    console.error('[VERIFICATION-STATUS] Error:', error);
+    console.error('[STRIPE_IDENTITY_SESSION] Error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json(
       {
-        error: 'Failed to retrieve verification status',
+        error: 'Failed to start verification',
         message: errorMessage,
       },
       { status: 500 }

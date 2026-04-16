@@ -33,11 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (method === 'stripe') {
-      const stripeStart = await forwardJson(request, '/api/verification/start', {
-        provider: 'stripe',
-        verificationType: 'identity',
-        documents: ['passport'],
-      });
+      const stripeStart = await forwardJson(request, '/api/stripe/identity/session', {});
 
       if (!stripeStart.ok) {
         return NextResponse.json(
