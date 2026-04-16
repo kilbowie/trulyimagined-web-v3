@@ -17,6 +17,15 @@ vi.mock('@/lib/stripe', () => ({
       constructEvent: mockConstructEvent,
     },
   },
+  mapConnectAccountStatus: vi.fn(() => ({
+    accountId: 'acct_123',
+    chargesEnabled: true,
+    payoutsEnabled: true,
+    detailsSubmitted: true,
+    onboardingComplete: true,
+    requirementsDue: [],
+    disabledReason: null,
+  })),
   mapStripeStatusToVerificationLevel: vi.fn(() => ({
     verification_level: 'high',
     assurance_level: 'high',
@@ -138,6 +147,57 @@ describe('POST /api/webhooks/stripe - Contract Test', () => {
     expect(mockQueryTi).toHaveBeenCalledWith(
       expect.stringContaining('SET processed = TRUE'),
       expect.any(Array)
+    );
+  });
+
+  it('routes connected-account events by event.account and acknowledges them separately', async () => {
+    mockConstructEvent.mockReturnValue({
+      id: 'evt_connect_1',
+      type: 'account.updated',
+      account: 'acct_123',
+      data: {
+        object: {
+          id: 'acct_123',
+          details_submitted: true,
+          charges_enabled: true,
+          payouts_enabled: true,
+          requirements: {
+            currently_due: [],
+            disabled_reason: null,
+          },
+        },
+      },
+    });
+
+    mockQueryTi.mockImplementation(async (sql: string) => {
+      if (sql.includes('INSERT INTO stripe_events')) {
+        return { rowCount: 1, rows: [{ id: 'stripe-row-2' }] };
+      }
+
+      if (sql.includes('UPDATE actors') && sql.includes('stripe_account_status')) {
+        return { rowCount: 1, rows: [{ id: 'actor-123', user_profile_id: 'profile-123' }] };
+      }
+
+      if (sql.includes('UPDATE stripe_events') && sql.includes('SET processed = TRUE')) {
+        return { rowCount: 1, rows: [] };
+      }
+
+      return { rowCount: 0, rows: [] };
+    });
+
+    const request = new NextRequest('http://localhost:3000/api/webhooks/stripe', {
+      method: 'POST',
+      body: JSON.stringify({ id: 'evt_connect_1' }),
+    });
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data).toEqual({ received: true, connect: true });
+    expect(mockQueryTi).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE actors'),
+      ['acct_123', 'active', true]
     );
   });
 });

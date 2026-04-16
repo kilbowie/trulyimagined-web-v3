@@ -354,6 +354,15 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
     - `apps/web/src/app/api/stripe/connect/` — test files for Connect routes
     - `apps/web/src/app/api/stripe/deals/` — test file for deal initiation
     - `apps/web/src/app/api/webhooks/stripe/` — extend existing webhook contract tests
+  - **2026-04-16 progress:** Initial hardening slice added.
+    - Added legacy compatibility wrapper tests to prove deprecated `/api/verification/*` routes fix forward to Stripe-only behavior instead of reactivating legacy providers.
+    - Added contract coverage for Connect account creation response shape.
+    - Added contract coverage for deal initiation response shape with `clientSecret` present.
+    - Extended webhook contract coverage for Connect event routing via `event.account`.
+  - **Remaining to complete STRIPE-014:**
+    - Add subscription webhook handler response coverage.
+    - Add explicit `payment_intent.succeeded` idempotency coverage.
+    - Expand Connect route coverage beyond account creation as needed.
 
 ---
 
@@ -382,7 +391,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
 | **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review               |
 | **E — HDICR Cleanup**        | STRIPE-007 ✅, STRIPE-012 ✅                                              | 2/2 complete | Complete — ready for Phase F hardening            |
-| **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
+| **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | In progress — STRIPE-014 initial test slice added |
 
 **Total progress: 12 / 16 items complete**
 
