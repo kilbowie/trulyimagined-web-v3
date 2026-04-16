@@ -195,9 +195,10 @@ describe('POST /api/webhooks/stripe - Contract Test', () => {
 
     expect(response.status).toBe(200);
     expect(data).toEqual({ received: true, connect: true });
-    expect(mockQueryTi).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE actors'),
-      ['acct_123', 'active', true]
-    );
+    expect(mockQueryTi).toHaveBeenCalledWith(expect.stringContaining('UPDATE actors'), [
+      'acct_123',
+      'active',
+      true,
+    ]);
   });
 });

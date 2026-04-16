@@ -1,5 +1,8 @@
 import { createVerificationSession } from '@/lib/stripe';
-import { getUserProfileIdByAuth0UserId, getVerificationLinksSummary } from '@/lib/hdicr/identity-client';
+import {
+  getUserProfileIdByAuth0UserId,
+  getVerificationLinksSummary,
+} from '@/lib/hdicr/identity-client';
 
 type StripeIdentitySessionParams = {
   auth0UserId: string;
@@ -40,7 +43,9 @@ export async function startStripeIdentitySession(params: StripeIdentitySessionPa
     status: session.status,
     clientSecret: session.client_secret,
     url: session.url,
-    expiresAt: sessionData.expires_at ? new Date(sessionData.expires_at * 1000).toISOString() : null,
+    expiresAt: sessionData.expires_at
+      ? new Date(sessionData.expires_at * 1000).toISOString()
+      : null,
     message: 'Please complete the verification process using the provided URL or client secret',
     nextSteps: [
       'User redirects to session.url or uses client_secret with @stripe/stripe-js',
@@ -148,10 +153,7 @@ function calculateVerificationStatus(links: VerificationLink[]) {
   let overallStatus = 'partially-verified';
   if (highestVerificationLevel === 'very-high' || highestAssuranceLevel === 'high') {
     overallStatus = 'fully-verified';
-  } else if (
-    highestVerificationLevel === 'high' ||
-    highestAssuranceLevel === 'substantial'
-  ) {
+  } else if (highestVerificationLevel === 'high' || highestAssuranceLevel === 'substantial') {
     overallStatus = 'verified';
   }
 

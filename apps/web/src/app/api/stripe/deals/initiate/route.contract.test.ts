@@ -40,8 +40,13 @@ describe('POST /api/stripe/deals/initiate - Contract Test', () => {
   });
 
   it('returns the deal initiation shape with a clientSecret', async () => {
-    vi.mocked(auth0.getSession).mockResolvedValueOnce({ user: { sub: 'auth0|studio-123' } } as never);
-    vi.mocked(getUserProfile).mockResolvedValueOnce({ id: 'studio-profile-123', role: 'Enterprise' } as never);
+    vi.mocked(auth0.getSession).mockResolvedValueOnce({
+      user: { sub: 'auth0|studio-123' },
+    } as never);
+    vi.mocked(getUserProfile).mockResolvedValueOnce({
+      id: 'studio-profile-123',
+      role: 'Enterprise',
+    } as never);
     vi.mocked(calculateDealBreakdown).mockReturnValueOnce({
       dealValueCents: 10000,
       platformFeeCents: 1500,

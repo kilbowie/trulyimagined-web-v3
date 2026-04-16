@@ -417,7 +417,6 @@ export default function VerifyIdentityPage() {
                 </Link>
               </div>
             </div>
-
           </div>
         </div>
 
