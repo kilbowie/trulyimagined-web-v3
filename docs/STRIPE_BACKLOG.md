@@ -379,6 +379,22 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
   - **Depends on:** All prior items complete
   - **Files affected:**
     - `scripts/` — new production validation script covering Connect + deals + subscriptions
+  - **2026-04-16 progress:**
+    - Added `scripts/validate-stripe-production.mjs` with `preflight` mode (safe env + webhook liveness checks) and `live` mode (Stripe test-mode validation flow).
+    - Added package scripts:
+      - `pnpm check:stripe-production`
+      - `pnpm check:stripe-production:live`
+    - Live mode currently validates:
+      - webhook endpoint liveness
+      - Connect account creation + onboarding URL
+      - deal payment intent + platform fee application
+      - subscription checkout session creation for each of the 13 canonical price env vars
+      - identity session creation
+      - optional `stripe_events` webhook evidence check when `TI_DATABASE_URL` is set
+      - optional HDICR `/identity/verify-confirmed` reachability check when HDICR/Auth0 M2M env vars are set
+  - **Remaining to complete STRIPE-015:**
+    - Execute `pnpm check:stripe-production:live` against deployed test environment with real test-mode credentials and capture run output.
+    - Perform one full end-to-end verify-confirmed sync using a real TI test user (not synthetic probe payload).
 
 ---
 

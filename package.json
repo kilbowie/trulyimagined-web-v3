@@ -23,6 +23,8 @@
     "check:db-separation-state": "node scripts/verify-db-separation-state.js",
     "check:webhook-health": "node scripts/check-stripe-webhook-health.js",
     "check:webhook-endpoint": "node scripts/verify-webhook-endpoint-live.mjs",
+    "check:stripe-production": "node scripts/validate-stripe-production.mjs",
+    "check:stripe-production:live": "node scripts/validate-stripe-production.mjs --live",
     "check:sep042-readiness": "node scripts/verify-sep042-cutover-readiness.mjs",
     "check:tenant-neutral-readiness": "node scripts/verify-tenant-neutral-readiness.js",
     "check:local-ti-hdicr-smoke-prereqs": "node scripts/verify-local-ti-hdicr-smoke-prereqs.mjs",
