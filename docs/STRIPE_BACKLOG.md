@@ -359,9 +359,9 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
     - Added contract coverage for Connect account creation response shape.
     - Added contract coverage for deal initiation response shape with `clientSecret` present.
     - Extended webhook contract coverage for Connect event routing via `event.account`.
+    - Added webhook contract coverage for `customer.subscription.created` acknowledgment and deferred subscription persistence path.
+    - Added explicit webhook contract coverage for `payment_intent.succeeded` idempotency when deals are already settled.
   - **Remaining to complete STRIPE-014:**
-    - Add subscription webhook handler response coverage.
-    - Add explicit `payment_intent.succeeded` idempotency coverage.
     - Expand Connect route coverage beyond account creation as needed.
 
 ---
