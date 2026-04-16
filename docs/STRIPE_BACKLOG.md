@@ -343,7 +343,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 
 ---
 
-- [ ] **STRIPE-014 — Integration Contract Tests: Connect + Payments**
+- [x] **STRIPE-014 — Integration Contract Tests: Connect + Payments**
   - **Priority:** HIGH
   - **Description:** Extend contract test suite to cover new Stripe Connect and payment flows.
     Current 103 tests cover identity webhook scenarios. Add tests for: Connect account creation
@@ -361,8 +361,8 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
     - Extended webhook contract coverage for Connect event routing via `event.account`.
     - Added webhook contract coverage for `customer.subscription.created` acknowledgment and deferred subscription persistence path.
     - Added explicit webhook contract coverage for `payment_intent.succeeded` idempotency when deals are already settled.
-  - **Remaining to complete STRIPE-014:**
-    - Expand Connect route coverage beyond account creation as needed.
+    - Added remaining Connect-route contract coverage for `status`, `onboarding`, `refresh`, and `return` route behaviors.
+  - **Status:** Complete 2026-04-16
 
 ---
 
@@ -391,9 +391,9 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
 | **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review               |
 | **E — HDICR Cleanup**        | STRIPE-007 ✅, STRIPE-012 ✅                                              | 2/2 complete | Complete — ready for Phase F hardening            |
-| **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | In progress — STRIPE-014 initial test slice added |
+| **F — Hardening**            | STRIPE-014 ✅, STRIPE-015                                                 | 1/2 complete | In progress — proceed with production validation   |
 
-**Total progress: 12 / 16 items complete**
+**Total progress: 13 / 16 items complete**
 
 ---
 
