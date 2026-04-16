@@ -1172,7 +1172,9 @@ function deriveSubscriptionSeatCount(subscription: Stripe.Subscription): number 
   return Math.max(1, addonQuantity + 1);
 }
 
-function deriveSubscriptionInterval(subscription: Stripe.Subscription): 'monthly' | 'yearly' | 'unknown' {
+function deriveSubscriptionInterval(
+  subscription: Stripe.Subscription
+): 'monthly' | 'yearly' | 'unknown' {
   const addonPriceId = getAgencySeatAddonPriceId();
   const primaryItem = subscription.items.data.find((item) => item.price.id !== addonPriceId);
   const interval = primaryItem?.price.recurring?.interval;
@@ -1369,7 +1371,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription): Pro
   });
 }
 
-async function resolveUserProfileIdFromSubscriptionId(subscriptionId: string): Promise<string | null> {
+async function resolveUserProfileIdFromSubscriptionId(
+  subscriptionId: string
+): Promise<string | null> {
   const result = await queryTi(
     `SELECT user_id
      FROM user_subscriptions
@@ -1507,6 +1511,15 @@ async function insertWebhookAuditEntry(params: {
   changes: Record<string, unknown>;
 }) {
   try {
+    const resourceIdIsUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+      params.resourceId
+    );
+
+    const changes = {
+      ...params.changes,
+      external_resource_id: resourceIdIsUuid ? undefined : params.resourceId,
+    };
+
     await queryTi(
       `INSERT INTO audit_log (
          user_id,
@@ -1517,7 +1530,12 @@ async function insertWebhookAuditEntry(params: {
          changes
        )
        VALUES ($1, 'system', $2, 'stripe_webhook_identity', $3::uuid, $4::jsonb)`,
-      [params.userProfileId, params.action, params.resourceId, JSON.stringify(params.changes)]
+      [
+        params.userProfileId,
+        params.action,
+        resourceIdIsUuid ? params.resourceId : null,
+        JSON.stringify(changes),
+      ]
     );
   } catch (error) {
     console.error('[STRIPE WEBHOOK] Failed to persist webhook audit entry', {

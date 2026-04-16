@@ -2,6 +2,8 @@
 
 _Truly Imagined · TI Repo · Last updated: 2026-04-15 (Phase D complete)_
 
+_Review update: 2026-04-16 Phase D concrete defects fixed; entitlement provisioning/revocation remains open._
+
 ---
 
 ## Confirmed Architecture Summary
@@ -33,24 +35,24 @@ Identity events.
 
 ## Current State Audit
 
-| File Path                                                        | Feature                   | Status         | Notes                                                                                                                                    |
-| ---------------------------------------------------------------- | ------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/web/src/app/api/webhooks/stripe/route.ts`                  | Webhook handler           | `CORRECT`      | Async model, Connect routing, `payment_intent.succeeded`, and subscription lifecycle handlers implemented |
-| `apps/web/src/lib/stripe.ts`                                     | Stripe singleton          | `NEEDS_UPDATE` | API version aligned (2026-03-25.dahlia) and Connect helpers added.                                                                       |
-| `apps/web/src/lib/billing.ts`                                    | Subscription plans        | `CORRECT`      | Canonical 13-price matrix implemented with monthly/yearly interval support and agency seat-addon lookup                                   |
-| `apps/web/src/app/api/billing/checkout/route.ts`                 | Checkout session          | `CORRECT`      | Interval-aware subscription checkout and agency seat-addon support implemented                                                            |
-| `apps/web/src/app/api/billing/portal/route.ts`                   | Billing portal            | `CORRECT`      | Basic portal redirect working                                                                                                            |
-| `apps/web/src/app/api/billing/summary/route.ts`                  | Subscription summary      | `CORRECT`      | Annual/seat-addon awareness and local `user_subscriptions` state included                                                                 |
-| `apps/web/src/app/api/verification/start/route.ts`               | Identity session start    | `NEEDS_UPDATE` | Multi-provider pattern; target Stripe-only under `/api/stripe/identity/session`                                                          |
-| `apps/web/src/app/api/verification/status/route.ts`              | Identity session status   | `NEEDS_UPDATE` | Multi-provider aggregation; target Stripe-only under `/api/stripe/identity/status`                                                       |
-| `apps/web/src/lib/hdicr/stripe-webhook-client.ts`                | HDICR identity sync       | `CORRECT`      | Uses single `verify-confirmed` flow from Stripe verified webhook event                                                                   |
-| `apps/web/src/lib/hdicr/identity-client.ts`                      | HDICR identity client     | `CORRECT`      | `verifyIdentityConfirmed()` implemented against `/identity/verify-confirmed`                                                             |
-| `apps/web/src/middleware.ts`                                     | Webhook rate-limit bypass | `CORRECT`      | Bypasses `/api/webhooks/stripe` — correct, no change needed                                                                              |
-| `infra/database/migrations/035_ti_webhook_commercial_tables.sql` | Webhook + commerce schema | `NEEDS_UPDATE` | Base schema present; follow-up migrations 037/038/039 add Connect, deals, and user subscription lifecycle tables                         |
-| `apps/web/.env.example`                                          | Environment template      | `NEEDS_UPDATE` | Connect redirect URLs + canonical 13 price env vars added. Billing code still needs STRIPE-009/016 alignment                             |
-| `hdicr/infra/samconfig.toml`                                     | HDICR infra config        | `REMOVE`       | Wires `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — architecture violation                                                             |
-| `hdicr/infra/template.yaml`                                      | HDICR SAM template        | `REMOVE`       | Contains Stripe env params on Lambda — architecture violation                                                                            |
-| `apps/web/src/app/api/stripe/connect/`                           | Connect lifecycle routes  | `CORRECT`      | `create`, `onboarding`, `return`, `refresh`, `status` implemented                                                                        |
+| File Path                                                        | Feature                   | Status         | Notes                                                                                                            |
+| ---------------------------------------------------------------- | ------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/api/webhooks/stripe/route.ts`                  | Webhook handler           | `CORRECT`      | Async model, Connect routing, `payment_intent.succeeded`, and subscription lifecycle handlers implemented        |
+| `apps/web/src/lib/stripe.ts`                                     | Stripe singleton          | `NEEDS_UPDATE` | API version aligned (2026-03-25.dahlia) and Connect helpers added.                                               |
+| `apps/web/src/lib/billing.ts`                                    | Subscription plans        | `CORRECT`      | Canonical 13-price matrix implemented with monthly/yearly interval support and agency seat-addon lookup          |
+| `apps/web/src/app/api/billing/checkout/route.ts`                 | Checkout session          | `CORRECT`      | Interval-aware subscription checkout and agency seat-addon support implemented                                   |
+| `apps/web/src/app/api/billing/portal/route.ts`                   | Billing portal            | `CORRECT`      | Basic portal redirect working                                                                                    |
+| `apps/web/src/app/api/billing/summary/route.ts`                  | Subscription summary      | `CORRECT`      | Annual/seat-addon awareness and local `user_subscriptions` state included                                        |
+| `apps/web/src/app/api/verification/start/route.ts`               | Identity session start    | `NEEDS_UPDATE` | Multi-provider pattern; target Stripe-only under `/api/stripe/identity/session`                                  |
+| `apps/web/src/app/api/verification/status/route.ts`              | Identity session status   | `NEEDS_UPDATE` | Multi-provider aggregation; target Stripe-only under `/api/stripe/identity/status`                               |
+| `apps/web/src/lib/hdicr/stripe-webhook-client.ts`                | HDICR identity sync       | `CORRECT`      | Uses single `verify-confirmed` flow from Stripe verified webhook event                                           |
+| `apps/web/src/lib/hdicr/identity-client.ts`                      | HDICR identity client     | `CORRECT`      | `verifyIdentityConfirmed()` implemented against `/identity/verify-confirmed`                                     |
+| `apps/web/src/middleware.ts`                                     | Webhook rate-limit bypass | `CORRECT`      | Bypasses `/api/webhooks/stripe` — correct, no change needed                                                      |
+| `infra/database/migrations/035_ti_webhook_commercial_tables.sql` | Webhook + commerce schema | `NEEDS_UPDATE` | Base schema present; follow-up migrations 037/038/039 add Connect, deals, and user subscription lifecycle tables |
+| `apps/web/.env.example`                                          | Environment template      | `NEEDS_UPDATE` | Connect redirect URLs + canonical 13 price env vars added. Billing code still needs STRIPE-009/016 alignment     |
+| `hdicr/infra/samconfig.toml`                                     | HDICR infra config        | `REMOVE`       | Wires `STRIPE_SECRET_KEY` + `STRIPE_WEBHOOK_SECRET` — architecture violation                                     |
+| `hdicr/infra/template.yaml`                                      | HDICR SAM template        | `REMOVE`       | Contains Stripe env params on Lambda — architecture violation                                                    |
+| `apps/web/src/app/api/stripe/connect/`                           | Connect lifecycle routes  | `CORRECT`      | `create`, `onboarding`, `return`, `refresh`, `status` implemented                                                |
 
 ---
 
@@ -236,6 +238,7 @@ _Depends on Phase C approval. Completes the billing model._
     - `apps/web/src/app/api/webhooks/stripe/route.ts` — added deferred handlers for `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`
     - `user_subscriptions` writes are idempotent via `ON CONFLICT (stripe_subscription_id) DO UPDATE`
     - Subscription interval/plan mapping and seat count extraction added from Stripe subscription items + metadata
+  - **2026-04-16 defect fix:** subscription metadata / local persistence now resolve and use TI-local `user_profiles.id` values for `user_subscriptions.user_id` and billing summary lookups, rather than relying on remote billing profile ids.
 
 ---
 
@@ -262,6 +265,29 @@ _Depends on Phase C approval. Completes the billing model._
     - `apps/web/src/lib/billing.ts` — legacy placeholder env keys removed; canonical Vercel naming now used as source of truth
     - `apps/web/.env.example` — canonical env vars retained, no alternate aliases
     - `docs/STRIPE_BACKLOG.md` — canonical list retained and confirmed
+
+---
+
+## Review Findings Follow-up
+
+- [x] **REVIEW-FIX-001 — Phase D local subscription id mismatch**
+  - **Status:** Fixed 2026-04-16
+  - **Summary:** Checkout metadata and billing summary now resolve TI-local `user_profiles.id` using `auth0_user_id` before interacting with `user_subscriptions`.
+  - **Files updated:**
+    - `apps/web/src/app/api/billing/checkout/route.ts`
+    - `apps/web/src/app/api/billing/summary/route.ts`
+
+- [x] **REVIEW-FIX-002 — Webhook audit entry resilience for Stripe ids**
+  - **Status:** Fixed 2026-04-16
+  - **Summary:** Webhook audit logging no longer assumes all `resource_id` values are UUIDs. Non-UUID Stripe ids are preserved in `changes.external_resource_id` while UUID resource ids continue to populate `audit_log.resource_id`.
+  - **Files updated:**
+    - `apps/web/src/app/api/webhooks/stripe/route.ts`
+
+- [ ] **REVIEW-OPEN-001 — Subscription entitlement provisioning/revocation**
+  - **Priority:** HIGH
+  - **Summary:** Phase D currently mirrors Stripe subscription state into `user_subscriptions` and billing summary responses, but it still does not provision or revoke application entitlements/tier access when `customer.subscription.created|updated|deleted` events arrive.
+  - **Impact:** Back-office billing state is synchronized, but product access enforcement remains incomplete.
+  - **Suggested next step:** Define the entitlement model keyed by `plan_key` and wire subscription webhook handlers to apply/revoke role or feature access accordingly.
 
 ---
 
@@ -343,7 +369,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 | **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review               |
 | **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review               |
 | **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
-| **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                                 | 3/3 complete | Complete — ready for Phase E review              |
+| **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review               |
 | **E — HDICR Cleanup**        | STRIPE-007, STRIPE-012                                                    | 0/2 complete | Phase D approved + STRIPE-013 HDICR endpoint live |
 | **F — Hardening**            | STRIPE-014, STRIPE-015                                                    | 0/2 complete | Phase E approved                                  |
 

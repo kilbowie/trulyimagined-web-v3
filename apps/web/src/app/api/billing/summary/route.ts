@@ -12,6 +12,7 @@ import {
   getBillingOpportunities,
   getBillingProfileByAuth0UserId,
 } from '@/lib/hdicr/billing-client';
+import { queryTi } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 
 export async function GET() {
@@ -31,6 +32,8 @@ export async function GET() {
       );
     }
 
+    const localUserProfileId = await resolveLocalUserProfileId(auth0UserId);
+
     const roles = profile.role ? [profile.role] : [];
 
     const availablePlans = getPlansForRoles(roles).map((plan) => ({
@@ -42,7 +45,9 @@ export async function GET() {
       },
     }));
 
-    const localSubscriptions = await queryLocalSubscriptions(String(profile.id));
+    const localSubscriptions = localUserProfileId
+      ? await queryLocalSubscriptions(localUserProfileId)
+      : [];
 
     if (!isStripeBillingConfigured()) {
       return NextResponse.json({
@@ -237,4 +242,16 @@ async function queryLocalSubscriptions(userId: string) {
   } catch {
     return [];
   }
+}
+
+async function resolveLocalUserProfileId(auth0UserId: string): Promise<string | null> {
+  const result = await queryTi(
+    `SELECT id
+     FROM user_profiles
+     WHERE auth0_user_id = $1
+     LIMIT 1`,
+    [auth0UserId]
+  );
+
+  return (result.rows[0]?.id as string | undefined) ?? null;
 }

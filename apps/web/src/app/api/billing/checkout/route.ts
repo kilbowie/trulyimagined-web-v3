@@ -11,6 +11,7 @@ import {
   isStripeBillingConfigured,
 } from '@/lib/billing';
 import { getBillingProfileByAuth0UserId } from '@/lib/hdicr/billing-client';
+import { queryTi } from '@/lib/db';
 import { stripe } from '@/lib/stripe';
 
 const CheckoutSchema = z.object({
@@ -47,6 +48,14 @@ export async function POST(request: NextRequest) {
     if (!profile) {
       return NextResponse.json(
         { success: false, error: 'User profile not found' },
+        { status: 404 }
+      );
+    }
+
+    const localUserProfileId = await resolveLocalUserProfileId(auth0UserId);
+    if (!localUserProfileId) {
+      return NextResponse.json(
+        { success: false, error: 'Local TI user profile not found' },
         { status: 404 }
       );
     }
@@ -129,7 +138,7 @@ export async function POST(request: NextRequest) {
       metadata: {
         app: 'trulyimagined',
         auth0_user_id: auth0UserId,
-        user_profile_id: profile.id,
+        user_profile_id: localUserProfileId,
         requested_plan_id: selectedPlan.id,
         requested_interval: selectedInterval,
         requested_seat_count: String(seatCount),
@@ -138,7 +147,7 @@ export async function POST(request: NextRequest) {
         metadata: {
           app: 'trulyimagined',
           auth0_user_id: auth0UserId,
-          user_profile_id: profile.id,
+          user_profile_id: localUserProfileId,
           plan_id: selectedPlan.id,
           interval: selectedInterval,
           seat_count: String(seatCount),
@@ -165,4 +174,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+async function resolveLocalUserProfileId(auth0UserId: string): Promise<string | null> {
+  const result = await queryTi(
+    `SELECT id
+     FROM user_profiles
+     WHERE auth0_user_id = $1
+     LIMIT 1`,
+    [auth0UserId]
+  );
+
+  return (result.rows[0]?.id as string | undefined) ?? null;
 }
