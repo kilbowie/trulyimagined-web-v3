@@ -7,7 +7,7 @@ import {
   getUserProfileIdByAuth0UserId,
   reactivateIdentityLink,
 } from '@/lib/hdicr/identity-client';
-import { validateBody, routeErrorResponse } from '@/lib/validation';
+import { validateBody, routeErrorResponse, extractCorrelationId } from '@/lib/validation';
 
 const IdentityLinkSchema = z.object({
   provider: z.string().min(1),
@@ -43,6 +43,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User profile not found' }, { status: 404 });
     }
 
+    const correlationId = extractCorrelationId(request);
+
     const existingLink = await getIdentityLinkByProviderAndProviderUser(
       userId,
       provider,
@@ -61,7 +63,7 @@ export async function POST(request: NextRequest) {
           credentialData,
           metadata,
           expiresAt,
-        });
+        }, correlationId);
 
         console.log('[IDENTITY-LINK] Reactivated existing link:', {
           linkId: existing.id,
@@ -103,7 +105,7 @@ export async function POST(request: NextRequest) {
       credentialData,
       metadata,
       expiresAt,
-    });
+    }, correlationId);
 
     console.log('[IDENTITY-LINK] Created new identity link:', {
       linkId: newLink.id,

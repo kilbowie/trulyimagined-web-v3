@@ -67,6 +67,7 @@ async function invokeConsentRemote<T>(params: {
   method: 'GET' | 'POST';
   operation: string;
   body?: unknown;
+  correlationId?: string;
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'consent',
@@ -146,16 +147,17 @@ export async function resolveActorIdByAuth0UserId(auth0UserId: string): Promise<
   return context?.actorId || null;
 }
 
-export async function grantConsent(input: ConsentGrantInput) {
+export async function grantConsent(input: ConsentGrantInput, correlationId?: string) {
   return invokeConsentRemote<Record<string, unknown>>({
     path: '/v1/consent/grant',
     method: 'POST',
     operation: 'consent-grant',
     body: input,
+    correlationId,
   });
 }
 
-export async function revokeConsent(input: ConsentRevokeInput) {
+export async function revokeConsent(input: ConsentRevokeInput, correlationId?: string, correlationId?: string) {
   return invokeConsentRemote<{
     notFound: boolean;
     record: Record<string, unknown> | null;
@@ -164,6 +166,7 @@ export async function revokeConsent(input: ConsentRevokeInput) {
     method: 'POST',
     operation: 'consent-revoke',
     body: input,
+    correlationId,
   });
 }
 

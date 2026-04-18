@@ -12,7 +12,7 @@ import {
 import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
 import { sendRepresentationRequestCreatedEmail } from '@/lib/email';
 import { writeAuditLog } from '@/lib/manual-verification';
-import { validateBody, routeErrorResponse } from '@/lib/validation';
+import { validateBody, routeErrorResponse, extractCorrelationId } from '@/lib/validation';
 
 const RepresentationRequestSchema = z
   .object({
@@ -121,11 +121,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const correlationId = extractCorrelationId(request);
+
     const createdRequest = await createRepresentationRequest({
       actorId: actor.id,
       agentId: agent.id,
       message: payload.message,
-    });
+    }, correlationId);
 
     if (invitationCodeRecord) {
       const redeemed = await redeemInvitationCode({

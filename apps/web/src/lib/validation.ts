@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z, ZodType } from 'zod';
 import { isHdicrHttpError } from '@/lib/hdicr/hdicr-http-client';
 
@@ -93,4 +93,22 @@ export function routeErrorResponse(error: unknown): NextResponse {
     { success: false, error: 'Internal server error', message },
     { status: 500 }
   );
+}
+
+/**
+ * Extract the X-Correlation-ID header from an incoming request for propagation
+ * to outbound HDICR calls.
+ *
+ * If the header is absent or empty, returns `undefined` so that `invokeHdicrRemote`
+ * will generate a fresh UUID. This keeps header-based tracing opt-in for callers
+ * while guaranteeing every HDICR call always carries a correlation ID.
+ *
+ * Usage in a route handler:
+ * ```ts
+ * const correlationId = extractCorrelationId(request);
+ * await grantConsent(input, correlationId);
+ * ```
+ */
+export function extractCorrelationId(request: NextRequest): string | undefined {
+  return request.headers.get('x-correlation-id')?.trim() || undefined;
 }

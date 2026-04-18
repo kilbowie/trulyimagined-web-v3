@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { grantConsent } from '@/lib/hdicr/consent-client';
-import { validateBody, routeErrorResponse } from '@/lib/validation';
+import { validateBody, routeErrorResponse, extractCorrelationId } from '@/lib/validation';
 
 const GrantConsentSchema = z.object({
   actorId: z.string().min(1),
@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     const ipAddress =
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
+    const correlationId = extractCorrelationId(request);
 
     const consentRecord = await grantConsent({
       actorId,
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
       requesterType: session.user['https://trulyimagined.com/role'] || 'actor',
       ipAddress,
       userAgent,
-    });
+    }, correlationId);
 
     console.log('[CONSENT] Consent granted:', {
       id: consentRecord.id,

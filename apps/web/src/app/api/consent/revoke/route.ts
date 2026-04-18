@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { revokeConsent } from '@/lib/hdicr/consent-client';
-import { validateBody, routeErrorResponse } from '@/lib/validation';
+import { validateBody, routeErrorResponse, extractCorrelationId } from '@/lib/validation';
 
 const RevokeConsentSchema = z
   .object({
@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     const ipAddress =
       request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
     const userAgent = request.headers.get('user-agent') || 'unknown';
+    const correlationId = extractCorrelationId(request);
 
     const revokeResult = await revokeConsent({
       actorId,
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
       reason: reason || undefined,
       ipAddress,
       userAgent,
-    });
+    }, correlationId);
 
     if (revokeResult.notFound) {
       return NextResponse.json({ error: 'Consent not found' }, { status: 404 });

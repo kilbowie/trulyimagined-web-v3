@@ -11,6 +11,7 @@ async function invokeRepresentationRemote<T>(params: {
   method: 'GET' | 'POST';
   operation: string;
   body?: unknown;
+  correlationId?: string;
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'representation',
@@ -75,7 +76,7 @@ export async function createRepresentationRequest(params: {
   actorId: string;
   agentId: string;
   message?: string | null;
-}) {
+}, correlationId?: string) {
   const payload = await invokeRepresentationRemote<{ request?: Record<string, any> | null }>({
     path: '/v1/representation/request',
     method: 'POST',
@@ -85,6 +86,7 @@ export async function createRepresentationRequest(params: {
       agentId: params.agentId,
       message: params.message?.trim() || null,
     },
+    correlationId,
   });
 
   return payload.request ?? null;

@@ -9,6 +9,7 @@ async function invokeIdentityRemote<T>(params: {
   method: 'GET' | 'POST' | 'PUT';
   operation: string;
   body?: unknown;
+  correlationId?: string;
 }): Promise<T> {
   return invokeHdicrRemote<T>({
     domain: 'identity',
@@ -106,12 +107,13 @@ export async function reactivateIdentityLink(params: {
   credentialData?: unknown;
   metadata?: Record<string, unknown>;
   expiresAt?: string;
-}) {
+}, correlationId?: string) {
   await invokeIdentityRemote<{ success?: boolean }>({
     path: '/v1/identity/link/reactivate',
     method: 'POST',
     operation: 'identity-link-reactivate',
     body: params,
+    correlationId,
   });
 
   return;
@@ -127,12 +129,13 @@ export async function createIdentityLink(params: {
   credentialData?: unknown;
   metadata?: Record<string, unknown>;
   expiresAt?: string;
-}) {
+}, correlationId?: string) {
   return invokeIdentityRemote<Record<string, unknown>>({
     path: '/v1/identity/link/create',
     method: 'POST',
     operation: 'identity-link-create',
     body: params,
+    correlationId,
   });
 }
 
