@@ -83,21 +83,21 @@ Dates: 2026-05-04 → 2026-05-15 | Milestone: M2
 
 | Week | Item   | Task                                                                     | Owner Role      | Status | Depends On     | Effort   |
 | ---- | ------ | ------------------------------------------------------------------------ | --------------- | ------ | -------------- | -------- |
-| W3   | WS1-03 | Extend webhook handler: subscription + invoice lifecycle events          | Full-stack / BE | TODO   | WS1-02         | 2–3 days |
-| W3   | WS2-01 | Replace `billing.ts` 3-plan model with full launch tier catalog          | Full-stack / BE | TODO   | —              | 2–3 days |
-| W3   | WS2-02 | Add all `STRIPE_PRICE_*` env vars and update `.env.example`              | Full-stack / BE | TODO   | WS2-01         | 1 day    |
-| W4   | WS2-03 | Implement subscription access provisioning and revocation logic          | Full-stack / BE | TODO   | WS1-03, WS2-01 | 4–6 days |
-| W4   | WS9-01 | Define and document launch pricing catalog (Actor, Agency, Studio tiers) | Full-stack / BE | TODO   | WS2-01         | 2–3 days |
-| W4   | WS6-05 | Make launch-scope gaps explicit in UI — remove or stub dead-end routes   | Full-stack / FE | TODO   | WS2-01         | 1–2 days |
+| W3   | WS1-03 | Extend webhook handler: subscription + invoice lifecycle events          | Full-stack / BE | DONE   | WS1-02         | 2–3 days |
+| W3   | WS2-01 | Replace `billing.ts` 3-plan model with full launch tier catalog          | Full-stack / BE | DONE   | —              | 2–3 days |
+| W3   | WS2-02 | Add all `STRIPE_PRICE_*` env vars and update `.env.example`              | Full-stack / BE | DONE   | WS2-01         | 1 day    |
+| W4   | WS2-03 | Implement subscription access provisioning and revocation logic          | Full-stack / BE | DONE   | WS1-03, WS2-01 | 4–6 days |
+| W4   | WS9-01 | Define and document launch pricing catalog (Actor, Agency, Studio tiers) | Full-stack / BE | DONE   | WS2-01         | 2–3 days |
+| W4   | WS6-05 | Make launch-scope gaps explicit in UI — remove or stub dead-end routes   | Full-stack / FE | DONE   | WS2-01         | 1–2 days |
 
 **M2 Gate Check (2026-05-15):**
 
-- [ ] `customer.subscription.created/updated/deleted` and `invoice.payment_succeeded/failed` handled and tested
-- [ ] Full planned tier catalog lives in `billing.ts` — all Actor, Agency, and Studio tiers, monthly + annual
-- [ ] `STRIPE_PRICE_*` env keys documented and aligned with tier model
-- [ ] Access provisioning and revocation operates correctly on subscription lifecycle events
-- [ ] Launch-scope pricing catalog data model is committed and review-ready for WS9-02
-- [ ] UI dead ends removed or cleanly stubbed for launch scope
+- [x] `customer.subscription.created/updated/deleted` and `invoice.payment_succeeded/failed` handled and tested
+- [x] Full planned tier catalog lives in `billing.ts` — all Actor, Agency, and Studio tiers, monthly + annual
+- [x] `STRIPE_PRICE_*` env keys documented and aligned with tier model
+- [x] Access provisioning and revocation operates correctly on subscription lifecycle events
+- [x] Launch-scope pricing catalog data model is committed and review-ready for WS9-02
+- [x] UI dead ends removed or cleanly stubbed for launch scope
 
 ---
 
@@ -160,7 +160,7 @@ Dates: 2026-06-15 → 2026-06-26 | Milestone: M5
 | ---- | ------ | ---------------------------------------------------------------- | --------------- | ------ | -------------- | -------- |
 | W9   | WS5-01 | Wire TI deal approval to HDICR consent check                     | Full-stack / BE | TODO   | WS4-05, WS1-02 | 3–5 days |
 | W9   | WS4-08 | Implement PaymentIntent creation for deal payments               | Full-stack / BE | TODO   | WS4-07         | 3–4 days |
-| W9   | WS2-04 | Implement agency seat allocation and enforcement                 | Full-stack / BE | TODO   | WS2-03         | 2–3 days |
+| W9   | WS2-04 | Implement agency seat allocation and enforcement                 | Full-stack / BE | DONE   | WS2-03         | 2–3 days |
 | W10  | WS5-02 | Implement TI-side licence minting from approved and paid deals   | Full-stack / BE | TODO   | WS5-01, WS4-08 | 3–4 days |
 | W10  | WS5-03 | Verify and harden `license_usage_log` ingestion path             | Full-stack / BE | TODO   | WS5-02         | 2–3 days |
 | W10  | WS7-04 | Add webhook lag and retry visibility (operational observability) | Platform        | TODO   | WS1-02         | 1–2 days |

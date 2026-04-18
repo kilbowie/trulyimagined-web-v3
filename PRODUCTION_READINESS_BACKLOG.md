@@ -290,7 +290,7 @@ Implementation implication:
 | WS6-02 | P2       | TODO   | Add admin licence dashboard                                        | TI   |
 | WS6-03 | P2       | TODO   | Add payouts / earnings dashboard for actor and agency roles        | TI   |
 | WS6-04 | P2       | TODO   | Add refund processing UI if refunds are in launch scope            | TI   |
-| WS6-05 | P2       | TODO   | Make launch-scope gaps explicit in UI instead of leaving dead ends | TI   |
+| WS6-05 | P2       | DONE   | Make launch-scope gaps explicit in UI instead of leaving dead ends | TI   |
 
 #### WS6 Guidance
 
@@ -301,8 +301,8 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                                       | Repo       |
 | ------ | -------- | ------ | -------------------------------------------------------------------------- | ---------- |
-| WS7-01 | P1       | TODO   | Add rate limiting to payment, billing, webhook, and verification endpoints | TI         |
-| WS7-02 | P1       | TODO   | Standardize input validation across all state-changing routes              | TI + HDICR |
+| WS7-01 | P1       | DONE   | Add rate limiting to payment, billing, webhook, and verification endpoints | TI         |
+| WS7-02 | P1       | DONE   | Standardize input validation across all state-changing routes              | TI + HDICR |
 | WS7-03 | P2       | TODO   | Replace ad hoc console logging with structured logs                        | TI + HDICR |
 | WS7-04 | P2       | TODO   | Add webhook lag and retry visibility                                       | TI         |
 | WS7-05 | P2       | TODO   | Verify Sentry coverage for both handled and unhandled failures             | TI         |
@@ -343,7 +343,7 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                                                                | Repo |
 | ------ | -------- | ------ | --------------------------------------------------------------------------------------------------- | ---- |
-| WS9-01 | P1       | TODO   | Define launch pricing catalog for Actor, Agency, and Studio profile types and tier metadata         | TI   |
+| WS9-01 | P1       | DONE   | Define launch pricing catalog for Actor, Agency, and Studio profile types and tier metadata         | TI   |
 | WS9-02 | P1       | TODO   | Build public Pricing page with side-by-side tier comparison by profile type                         | TI   |
 | WS9-03 | P1       | TODO   | Implement currency behavior: default USD, default GBP for UK users, and explicit USD/GBP toggle     | TI   |
 | WS9-04 | P2       | TODO   | Add pricing correctness tests, locale tests, and content-governance checks for publicly shown plans | TI   |
