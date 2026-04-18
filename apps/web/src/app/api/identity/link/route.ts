@@ -7,7 +7,7 @@ import {
   getUserProfileIdByAuth0UserId,
   reactivateIdentityLink,
 } from '@/lib/hdicr/identity-client';
-import { validateBody } from '@/lib/validation';
+import { validateBody, routeErrorResponse } from '@/lib/validation';
 
 const IdentityLinkSchema = z.object({
   provider: z.string().min(1),
@@ -126,13 +126,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     console.error('[IDENTITY-LINK] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json(
-      {
-        error: 'Failed to link identity provider',
-        message: errorMessage,
-      },
-      { status: 500 }
-    );
+    return routeErrorResponse(error);
   }
 }

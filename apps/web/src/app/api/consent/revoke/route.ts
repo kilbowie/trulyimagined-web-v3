@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { revokeConsent } from '@/lib/hdicr/consent-client';
-import { validateBody } from '@/lib/validation';
+import { validateBody, routeErrorResponse } from '@/lib/validation';
 
 const RevokeConsentSchema = z
   .object({
@@ -80,10 +80,6 @@ export async function POST(request: NextRequest) {
     );
   } catch (error: unknown) {
     console.error('[API] Revoke consent error:', error);
-    const err = error as Error;
-    return NextResponse.json(
-      { error: 'Internal server error', message: err.message },
-      { status: 500 }
-    );
+    return routeErrorResponse(error);
   }
 }

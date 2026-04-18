@@ -12,7 +12,7 @@ import {
 import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
 import { sendRepresentationRequestCreatedEmail } from '@/lib/email';
 import { writeAuditLog } from '@/lib/manual-verification';
-import { validateBody } from '@/lib/validation';
+import { validateBody, routeErrorResponse } from '@/lib/validation';
 
 const RepresentationRequestSchema = z
   .object({
@@ -181,6 +181,6 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('[REPRESENTATION_REQUEST] POST error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return routeErrorResponse(error);
   }
 }

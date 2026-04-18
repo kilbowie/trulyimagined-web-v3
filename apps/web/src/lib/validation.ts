@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z, ZodType } from 'zod';
+import { isHdicrHttpError } from '@/lib/hdicr/hdicr-http-client';
 
 /**
  * Standard validation error response shape.
@@ -59,4 +60,37 @@ export async function validateBody<T>(
   }
 
   return { ok: true, data: parsed.data };
+}
+
+/**
+ * Translate an unknown error thrown during a route handler into an appropriate
+ * NextResponse.
+ *
+ * - HdicrHttpError with status 503 or network failure: returns 503 to the caller
+ *   so they know an upstream dependency is unavailable (fail-closed, not silent).
+ * - HdicrHttpError with other status codes: passes through the HDICR status.
+ * - All other errors: returns 500.
+ *
+ * Usage in a route catch block:
+ * ```ts
+ * } catch (error) {
+ *   console.error('[ROUTE] Operation failed:', error);
+ *   return routeErrorResponse(error);
+ * }
+ * ```
+ */
+export function routeErrorResponse(error: unknown): NextResponse {
+  if (isHdicrHttpError(error)) {
+    const statusCode = error.statusCode >= 500 ? error.statusCode : 500;
+    return NextResponse.json(
+      { success: false, error: 'Upstream service error', message: error.message },
+      { status: statusCode }
+    );
+  }
+
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  return NextResponse.json(
+    { success: false, error: 'Internal server error', message },
+    { status: 500 }
+  );
 }
