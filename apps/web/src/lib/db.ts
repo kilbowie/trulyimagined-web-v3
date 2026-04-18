@@ -1,5 +1,30 @@
 import { Pool, QueryResult } from 'pg';
 
+const isProduction = process.env.NODE_ENV === 'production';
+const rdsCaCert = process.env.RDS_CA_CERT;
+
+if (isProduction && !rdsCaCert) {
+  throw new Error(
+    '[DB] RDS_CA_CERT is required in production. Set this env var to the AWS RDS CA bundle PEM content.'
+  );
+}
+
+/**
+ * Build the ssl config for a pool connection.
+ *
+ * Production: full certificate validation against the AWS RDS CA bundle.
+ * Development (cert present): full validation — matches production behaviour.
+ * Development (cert absent): rejectUnauthorized disabled — local convenience only.
+ * Never disabled in production (enforced by startup guard above).
+ */
+function buildSslConfig(): object {
+  if (rdsCaCert) {
+    return { ca: rdsCaCert, rejectUnauthorized: true };
+  }
+  // isProduction + no cert: thrown above — this path is only reached in development.
+  return { rejectUnauthorized: false };
+}
+
 function normalizeConnectionString(connectionString?: string): string | undefined {
   if (!connectionString) {
     return undefined;
@@ -15,6 +40,7 @@ function normalizeConnectionString(connectionString?: string): string | undefine
 function createPool(connectionString?: string): Pool {
   const normalized = normalizeConnectionString(connectionString);
   const dbUrl = normalized ? new URL(normalized.replace('postgresql://', 'postgres://')) : null;
+  const ssl = buildSslConfig();
 
   return new Pool(
     dbUrl
@@ -24,9 +50,7 @@ function createPool(connectionString?: string): Pool {
           database: dbUrl.pathname.split('/')[1],
           user: dbUrl.username,
           password: decodeURIComponent(dbUrl.password),
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl,
           max: 20,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 10000,
@@ -34,9 +58,7 @@ function createPool(connectionString?: string): Pool {
         }
       : {
           connectionString: normalized,
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl,
           max: 20,
           idleTimeoutMillis: 30000,
           connectionTimeoutMillis: 10000,
