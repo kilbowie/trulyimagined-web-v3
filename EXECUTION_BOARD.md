@@ -60,20 +60,20 @@ Dates: 2026-04-21 → 2026-05-01 | Milestone: M1
 
 | Week | Item   | Task                                                                    | Owner Role      | Status | Depends On | Effort   |
 | ---- | ------ | ----------------------------------------------------------------------- | --------------- | ------ | ---------- | -------- |
-| W1   | WS1-01 | Replace `rejectUnauthorized: false` with validated RDS TLS              | Full-stack / BE | TODO   | —          | 2–3 days |
-| W1   | WS7-01 | Add rate limiting to payment, billing, webhook, and verification routes | Full-stack / BE | TODO   | —          | 2–3 days |
-| W1   | WS7-02 | Standardize input validation across all write routes (TI)               | Full-stack / BE | TODO   | —          | 2–3 days |
-| W2   | WS1-02 | Add `stripe_webhook_events` deduplication table and processing guard    | Full-stack / BE | TODO   | WS1-01     | 2–3 days |
-| W2   | WS1-04 | Verify fail-closed behavior when HDICR is unavailable                   | Full-stack / BE | TODO   | —          | 1–2 days |
-| W2   | WS1-05 | Add correlation ID propagation across TI → HDICR requests (baseline)    | Platform        | TODO   | —          | 2–3 days |
+| W1   | WS1-01 | Replace `rejectUnauthorized: false` with validated RDS TLS              | Full-stack / BE | DONE   | —          | 2–3 days |
+| W1   | WS7-01 | Add rate limiting to payment, billing, webhook, and verification routes | Full-stack / BE | DONE   | —          | 2–3 days |
+| W1   | WS7-02 | Standardize input validation across all write routes (TI)               | Full-stack / BE | DONE   | —          | 2–3 days |
+| W2   | WS1-02 | Add `stripe_webhook_events` deduplication table and processing guard    | Full-stack / BE | DONE   | WS1-01     | 2–3 days |
+| W2   | WS1-04 | Verify fail-closed behavior when HDICR is unavailable                   | Full-stack / BE | DONE   | —          | 1–2 days |
+| W2   | WS1-05 | Add correlation ID propagation across TI → HDICR requests (baseline)    | Platform        | DONE   | —          | 2–3 days |
 
 **M1 Gate Check (2026-05-01):**
 
-- [ ] `lib/db.ts` has no `rejectUnauthorized: false` in any active code path
-- [ ] `stripe_webhook_events` table exists with unique event ID constraint; duplicate delivery returns `200`
-- [ ] Sensitive routes (webhook, billing, verification) have rate limits
-- [ ] Correlation ID propagates from TI outbound requests into HDICR logs
-- [ ] HDICR unavailability returns a safe fail-closed response to TI callers
+- [x] `lib/db.ts` has no `rejectUnauthorized: false` in any active code path
+- [x] `stripe_webhook_events` table exists with unique event ID constraint; duplicate delivery returns `200`
+- [x] Sensitive routes (webhook, billing, verification) have rate limits
+- [x] Correlation ID propagates from TI outbound requests into HDICR logs
+- [x] HDICR unavailability returns a safe fail-closed response to TI callers
 
 ---
 
