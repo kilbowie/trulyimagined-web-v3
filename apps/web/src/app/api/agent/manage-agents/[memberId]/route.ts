@@ -4,6 +4,10 @@ import { getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
 import { sendAgencyTeamInviteEmail } from '@/lib/email';
+import {
+  AgencySeatCapacityError,
+  assertAgencySeatCapacityForNextStatus,
+} from '@/lib/agency-seat-limits';
 
 // DB-OWNER: TI
 
@@ -49,7 +53,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const body = (await request.json()) as UpdatePayload;
 
     const existing = await query(
-      `SELECT id, access_permissions
+      `SELECT id, status, access_permissions
        FROM agency_team_members
        WHERE id = $1
          AND agency_id = $2
@@ -62,7 +66,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
     }
 
-    const current = existing.rows[0];
+    const current = existing.rows[0] as {
+      id: string;
+      status: 'invited' | 'active' | 'disabled';
+      access_permissions: Record<string, boolean>;
+    };
 
     const role =
       body.memberRole === 'Agent' ? 'Agent' : body.memberRole === 'Assistant' ? 'Assistant' : null;
@@ -70,6 +78,29 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       body.status === 'invited' || body.status === 'active' || body.status === 'disabled'
         ? body.status
         : null;
+
+    if (status && status !== current.status) {
+      try {
+        await assertAgencySeatCapacityForNextStatus({
+          agencyId: auth.agent.id,
+          memberId,
+          nextStatus: status,
+        });
+      } catch (error) {
+        if (error instanceof AgencySeatCapacityError) {
+          return NextResponse.json(
+            {
+              error:
+                'Seat capacity reached for your subscription. Upgrade or free a seat before this change.',
+              code: error.code,
+              seatAllocation: error.allocation,
+            },
+            { status: 409 }
+          );
+        }
+        throw error;
+      }
+    }
 
     const mergedPermissions = body.accessPermissions
       ? {
@@ -155,13 +186,40 @@ export async function POST(_request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Team member not found' }, { status: 404 });
     }
 
-    const member = existing.rows[0];
+    const member = existing.rows[0] as {
+      id: string;
+      email: string;
+      full_name: string | null;
+      member_role: 'Agent' | 'Assistant';
+      status: 'invited' | 'active' | 'disabled';
+      agency_name: string | null;
+    };
 
     if (member.status === 'active') {
       return NextResponse.json(
         { error: 'Cannot resend invite for active members.' },
         { status: 400 }
       );
+    }
+
+    try {
+      await assertAgencySeatCapacityForNextStatus({
+        agencyId: auth.agent.id,
+        memberId,
+        nextStatus: 'invited',
+      });
+    } catch (error) {
+      if (error instanceof AgencySeatCapacityError) {
+        return NextResponse.json(
+          {
+            error: 'Your current agency subscription has no free seats for additional members.',
+            code: error.code,
+            seatAllocation: error.allocation,
+          },
+          { status: 409 }
+        );
+      }
+      throw error;
     }
 
     const inviteToken = crypto.randomUUID();

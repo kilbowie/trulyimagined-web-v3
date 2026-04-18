@@ -7,7 +7,7 @@ export default defineConfig({
     include: [
       'src/app/api/**/*.contract.test.ts',
       'src/app/dashboard/**/*.test.ts',
-      'src/lib/hdicr/**/*.test.ts',
+      'src/lib/**/*.test.ts',
     ],
     clearMocks: true,
     restoreMocks: true,

@@ -4,6 +4,11 @@ import { getUserRoles } from '@/lib/auth';
 import { query } from '@/lib/db';
 import { getAgentByAuth0Id } from '@/lib/representation';
 import { sendAgencyTeamInviteEmail } from '@/lib/email';
+import {
+  AgencySeatCapacityError,
+  assertAgencySeatCapacityForNextStatus,
+  getAgencySeatAllocation,
+} from '@/lib/agency-seat-limits';
 
 // DB-OWNER: TI
 
@@ -94,6 +99,8 @@ export async function GET() {
       [auth.agent.id]
     );
 
+    const seatAllocation = await getAgencySeatAllocation(auth.agent.id);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -104,6 +111,7 @@ export async function GET() {
         },
         owner: owner.rows[0] || null,
         members: members.rows,
+        seatAllocation,
       },
     });
   } catch (error) {
@@ -163,6 +171,25 @@ export async function POST(request: NextRequest) {
         { error: 'This email is already added to your agency team.' },
         { status: 409 }
       );
+    }
+
+    try {
+      await assertAgencySeatCapacityForNextStatus({
+        agencyId: auth.agent.id,
+        nextStatus: 'invited',
+      });
+    } catch (error) {
+      if (error instanceof AgencySeatCapacityError) {
+        return NextResponse.json(
+          {
+            error: 'Your current agency subscription has no free seats for additional members.',
+            code: error.code,
+            seatAllocation: error.allocation,
+          },
+          { status: 409 }
+        );
+      }
+      throw error;
     }
 
     const userProfileResult = await query(
