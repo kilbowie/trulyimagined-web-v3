@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import {
   createIdentityLink,
@@ -6,6 +7,18 @@ import {
   getUserProfileIdByAuth0UserId,
   reactivateIdentityLink,
 } from '@/lib/hdicr/identity-client';
+import { validateBody } from '@/lib/validation';
+
+const IdentityLinkSchema = z.object({
+  provider: z.string().min(1),
+  providerUserId: z.string().min(1),
+  providerType: z.string().min(1),
+  verificationLevel: z.enum(['low', 'medium', 'high', 'very-high']).optional(),
+  assuranceLevel: z.enum(['low', 'substantial', 'high']).optional(),
+  credentialData: z.record(z.unknown()).optional(),
+  metadata: z.record(z.unknown()).optional(),
+  expiresAt: z.string().datetime({ offset: true }).optional(),
+});
 
 /**
  * POST /api/identity/link
@@ -16,59 +29,14 @@ import {
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get Auth0 session
     const session = await auth0.getSession();
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const {
-      provider,
-      providerUserId,
-      providerType,
-      verificationLevel,
-      assuranceLevel,
-      credentialData,
-      metadata,
-      expiresAt,
-    } = body;
-
-    // Validation
-    if (!provider || !providerUserId || !providerType) {
-      return NextResponse.json(
-        {
-          error: 'Missing required fields',
-          required: ['provider', 'providerUserId', 'providerType'],
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate verification level
-    const validVerificationLevels = ['low', 'medium', 'high', 'very-high'];
-    if (verificationLevel && !validVerificationLevels.includes(verificationLevel)) {
-      return NextResponse.json(
-        {
-          error: 'Invalid verification level',
-          valid: validVerificationLevels,
-        },
-        { status: 400 }
-      );
-    }
-
-    // Validate assurance level (eIDAS)
-    const validAssuranceLevels = ['low', 'substantial', 'high'];
-    if (assuranceLevel && !validAssuranceLevels.includes(assuranceLevel)) {
-      return NextResponse.json(
-        {
-          error: 'Invalid assurance level',
-          valid: validAssuranceLevels,
-        },
-        { status: 400 }
-      );
-    }
+    const validation = await validateBody(request, IdentityLinkSchema);
+    if (!validation.ok) return validation.response;
+    const { provider, providerUserId, providerType, verificationLevel, assuranceLevel, credentialData, metadata, expiresAt } = validation.data;
 
     const userId = await getUserProfileIdByAuth0UserId(session.user.sub);
     if (!userId) {

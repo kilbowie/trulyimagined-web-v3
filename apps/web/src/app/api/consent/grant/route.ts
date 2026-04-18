@@ -1,43 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { grantConsent } from '@/lib/hdicr/consent-client';
+import { validateBody } from '@/lib/validation';
+
+const GrantConsentSchema = z.object({
+  actorId: z.string().min(1),
+  consentType: z.enum(['voice_synthesis', 'image_usage', 'full_likeness']),
+  scope: z
+    .object({
+      projectName: z.string().optional(),
+      projectId: z.string().optional(),
+      duration: z
+        .object({
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        })
+        .optional(),
+      usageTypes: z.array(z.string()).optional(),
+      territories: z.array(z.string()).optional(),
+    })
+    .optional(),
+});
 
 /**
  * POST /api/consent/grant
  * Grants consent for identity usage
- *
- * Body:
- * {
- *   actorId: string
- *   consentType: 'voice_synthesis' | 'image_usage' | 'full_likeness'
- *   scope: {
- *     projectName?: string
- *     projectId?: string
- *     duration?: { startDate, endDate }
- *     usageTypes?: string[]
- *     territories?: string[]
- *   }
- * }
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get Auth0 session
     const session = await auth0.getSession();
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { actorId, consentType, scope } = body;
-
-    // Validation
-    if (!actorId || !consentType) {
-      return NextResponse.json(
-        { error: 'Missing required fields: actorId, consentType' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateBody(request, GrantConsentSchema);
+    if (!validation.ok) return validation.response;
+    const { actorId, consentType, scope } = validation.data;
 
     // Get IP and User Agent from request
     const ipAddress =

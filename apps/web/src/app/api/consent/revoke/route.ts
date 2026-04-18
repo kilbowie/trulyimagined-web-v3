@@ -1,43 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { revokeConsent } from '@/lib/hdicr/consent-client';
+import { validateBody } from '@/lib/validation';
+
+const RevokeConsentSchema = z
+  .object({
+    actorId: z.string().min(1),
+    consentId: z.string().optional(),
+    consentType: z.string().optional(),
+    projectId: z.string().optional(),
+    reason: z.string().optional(),
+  })
+  .refine((d) => d.consentId || d.consentType || d.projectId, {
+    message: 'Must provide consentId, consentType, or projectId to revoke',
+  });
 
 /**
  * POST /api/consent/revoke
  * Revokes previously granted consent
- *
- * Body:
- * {
- *   actorId: string
- *   consentId?: string    // Revoke specific consent
- *   consentType?: string  // Revoke all consents of this type
- *   projectId?: string    // Revoke consents for specific project
- *   reason?: string
- * }
  */
 export async function POST(request: NextRequest) {
   try {
-    // Get Auth0 session
     const session = await auth0.getSession();
-
-    if (!session || !session.user) {
+    if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { actorId, consentId, consentType, projectId, reason } = body;
-
-    // Validation
-    if (!actorId) {
-      return NextResponse.json({ error: 'Missing required field: actorId' }, { status: 400 });
-    }
-
-    if (!consentId && !consentType && !projectId) {
-      return NextResponse.json(
-        { error: 'Must provide consentId, consentType, or projectId to revoke' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateBody(request, RevokeConsentSchema);
+    if (!validation.ok) return validation.response;
+    const { actorId, consentId, consentType, projectId, reason } = validation.data;
 
     // Get IP and User Agent
     const ipAddress =

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { auth0 } from '@/lib/auth0';
 import { getUserRoles } from '@/lib/auth';
 import {
@@ -11,12 +12,17 @@ import {
 import { getInvitationCodeForRedeem, redeemInvitationCode } from '@/lib/agent-invitation-codes';
 import { sendRepresentationRequestCreatedEmail } from '@/lib/email';
 import { writeAuditLog } from '@/lib/manual-verification';
+import { validateBody } from '@/lib/validation';
 
-interface RequestPayload {
-  agentRegistryId?: string;
-  invitationCode?: string;
-  message?: string;
-}
+const RepresentationRequestSchema = z
+  .object({
+    agentRegistryId: z.string().min(1).optional(),
+    invitationCode: z.string().min(1).optional(),
+    message: z.string().max(1000).optional(),
+  })
+  .refine((d) => d.invitationCode || d.agentRegistryId, {
+    message: 'Either invitationCode or agentRegistryId is required',
+  });
 
 /**
  * POST /api/representation/request
@@ -51,16 +57,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = (await request.json()) as RequestPayload;
-    const invitationCode = payload.invitationCode?.trim().toUpperCase();
-    const agentRegistryId = payload.agentRegistryId?.trim();
-
-    if (!invitationCode && !agentRegistryId) {
-      return NextResponse.json(
-        { error: 'Either invitationCode or agentRegistryId is required' },
-        { status: 400 }
-      );
-    }
+    const validation = await validateBody(request, RepresentationRequestSchema);
+    if (!validation.ok) return validation.response;
+    const invitationCode = validation.data.invitationCode?.trim().toUpperCase();
+    const agentRegistryId = validation.data.agentRegistryId?.trim();
 
     let agent: Record<string, any> | null = null;
     let invitationCodeRecord: { id: string } | null = null;
