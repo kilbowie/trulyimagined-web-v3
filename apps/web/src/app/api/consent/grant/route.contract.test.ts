@@ -171,7 +171,8 @@ describe('POST /api/consent/grant - Contract Test', () => {
         requesterId: 'user-123',
         ipAddress: '192.168.1.1',
         userAgent: 'Mozilla/5.0',
-      })
+      }),
+      undefined
     );
   });
 });

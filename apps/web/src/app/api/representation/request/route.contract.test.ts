@@ -126,7 +126,8 @@ describe('POST /api/representation/request - Contract Test', () => {
       expect.objectContaining({
         actorId: 'actor-123',
         agentId: 'agent-123',
-      })
+      }),
+      undefined
     );
     expect(sendRepresentationRequestCreatedEmail).toHaveBeenCalled();
     expect(writeAuditLog).toHaveBeenCalledWith(
