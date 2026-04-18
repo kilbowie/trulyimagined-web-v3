@@ -381,6 +381,7 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
     - `scripts/` — new production validation script covering Connect + deals + subscriptions
   - **2026-04-16 progress:**
     - Added `scripts/validate-stripe-production.mjs` with `preflight` mode (safe env + webhook liveness checks) and `live` mode (Stripe test-mode validation flow).
+    - Updated validator to accept `STRIPE_TEST_SECRET_KEY` as an alternative to `STRIPE_SECRET_KEY` for live-mode execution in production test-mode runs.
     - Added package scripts:
       - `pnpm check:stripe-production`
       - `pnpm check:stripe-production:live`
@@ -392,7 +393,12 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
       - identity session creation
       - optional `stripe_events` webhook evidence check when `TI_DATABASE_URL` is set
       - optional HDICR `/identity/verify-confirmed` reachability check when HDICR/Auth0 M2M env vars are set
+    - Latest live evidence captured in `runlogs/stripe-015-live-validation-20260416-020647.log`:
+      - PASS: required env vars present (16)
+      - PASS: webhook endpoint liveness (`/api/webhooks/stripe`)
+      - FAIL: Stripe Connect account creation blocked with `POST /v1/accounts` 400 (`you can only create new accounts if you've signed up for Connect`)
   - **Remaining to complete STRIPE-015:**
+    - Enable Stripe Connect on the target Stripe account used for production test-mode validation.
     - Execute `pnpm check:stripe-production:live` against deployed test environment with real test-mode credentials and capture run output.
     - Perform one full end-to-end verify-confirmed sync using a real TI test user (not synthetic probe payload).
 
@@ -400,14 +406,14 @@ _Depends on Phase E approval. Validates complete implementation and prepares for
 
 ## Phase Gate Checklist
 
-| Phase                        | Items                                                                     | Status       | Gate Condition                                    |
-| ---------------------------- | ------------------------------------------------------------------------- | ------------ | ------------------------------------------------- |
-| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review               |
-| **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review               |
-| **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review               |
-| **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review               |
-| **E — HDICR Cleanup**        | STRIPE-007 ✅, STRIPE-012 ✅                                              | 2/2 complete | Complete — ready for Phase F hardening            |
-| **F — Hardening**            | STRIPE-014 ✅, STRIPE-015                                                 | 1/2 complete | In progress — proceed with production validation   |
+| Phase                        | Items                                                                     | Status       | Gate Condition                                   |
+| ---------------------------- | ------------------------------------------------------------------------- | ------------ | ------------------------------------------------ |
+| **A — Contract Alignment**   | STRIPE-001 ✅, STRIPE-002 ✅, STRIPE-008 ✅, STRIPE-011 ✅, STRIPE-013 ✅ | 5/5 complete | Complete — ready for Phase B review              |
+| **B — Connect Platform**     | STRIPE-003 ✅, STRIPE-004 ✅                                              | 2/2 complete | Complete — ready for Phase C review              |
+| **C — Marketplace Payments** | STRIPE-005 ✅, STRIPE-006 ✅                                              | 2/2 complete | Complete — ready for Phase D review              |
+| **D — Subscriptions**        | STRIPE-009 ✅, STRIPE-010 ✅, STRIPE-016 ✅                               | 3/3 complete | Complete — ready for Phase E review              |
+| **E — HDICR Cleanup**        | STRIPE-007 ✅, STRIPE-012 ✅                                              | 2/2 complete | Complete — ready for Phase F hardening           |
+| **F — Hardening**            | STRIPE-014 ✅, STRIPE-015                                                 | 1/2 complete | In progress — proceed with production validation |
 
 **Total progress: 13 / 16 items complete**
 

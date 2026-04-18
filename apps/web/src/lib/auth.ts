@@ -1,16 +1,37 @@
 import { auth0 } from '@/lib/auth0';
+import { IS_MOCK_AUTH, MOCK_COOKIE_NAME, getMockUserByEmail, getMockRoles } from '@/lib/mock-auth';
 
 async function getQuery() {
   const { query } = await import('@/lib/db');
   return query;
 }
 
+// ---------------------------------------------------------------------------
+// Mock auth helpers (dev only)
+// ---------------------------------------------------------------------------
+
+async function getMockSession() {
+  if (!IS_MOCK_AUTH) return null;
+  const { cookies } = await import('next/headers');
+  const jar = await cookies();
+  const email = jar.get(MOCK_COOKIE_NAME)?.value;
+  if (!email) return null;
+  return getMockUserByEmail(email);
+}
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
 /**
  * Get the current user session (server-side only)
- *
- * @returns User session or null if not authenticated
  */
 export async function getCurrentUser() {
+  if (IS_MOCK_AUTH) {
+    const mockUser = await getMockSession();
+    return mockUser ?? null;
+  }
+
   try {
     const session = await auth0.getSession();
     return session?.user || null;
@@ -21,11 +42,17 @@ export async function getCurrentUser() {
 }
 
 /**
- * Get user roles from PostgreSQL database
- *
- * @returns Array of role names
+ * Get user roles.
+ * Mock mode: derived from the mock user definition.
+ * Production: queried from PostgreSQL.
  */
 export async function getUserRoles(): Promise<string[]> {
+  if (IS_MOCK_AUTH) {
+    const mockUser = await getMockSession();
+    if (!mockUser) return [];
+    return getMockRoles(mockUser.email);
+  }
+
   const user = await getCurrentUser();
   if (!user) return [];
 
@@ -46,11 +73,24 @@ export async function getUserRoles(): Promise<string[]> {
 }
 
 /**
- * Get user profile from PostgreSQL database
- *
- * @returns User profile or null
+ * Get user profile from PostgreSQL database.
+ * Mock mode: returns a synthesised profile object.
  */
 export async function getUserProfile() {
+  if (IS_MOCK_AUTH) {
+    const mockUser = await getMockSession();
+    if (!mockUser) return null;
+    return {
+      auth0_user_id: mockUser.sub,
+      email: mockUser.email,
+      display_name: mockUser.name,
+      role: mockUser.role,
+      verification_status: 'fully-verified',
+      verification_level: 'HIGH',
+      assurance_level: 'HIGH',
+    };
+  }
+
   const user = await getCurrentUser();
   if (!user) return null;
 
@@ -111,7 +151,7 @@ export async function requireAuth() {
  */
 export async function requireRole(allowedRoles: string[]) {
   const user = await requireAuth();
-  const userRoles = await getUserRoles(); // Now queries PostgreSQL
+  const userRoles = await getUserRoles();
 
   const hasRequiredRole = userRoles.some((role: string) => allowedRoles.includes(role));
 
@@ -141,9 +181,11 @@ export interface AgentTeamMembership {
 
 /**
  * Returns the active agency team membership for the current user, or null.
- * Used to grant agent-level page access to invited team members.
+ * Mock mode: always returns null (no team memberships in test data).
  */
 export async function getAgentTeamMembership(): Promise<AgentTeamMembership | null> {
+  if (IS_MOCK_AUTH) return null;
+
   const user = await getCurrentUser();
   if (!user) return null;
 

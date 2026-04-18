@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:trulyimagined.com)",
+      "WebSearch",
+      "Bash(pnpm --filter @trulyimagined/web type-check)",
+      "Bash(pnpm --filter @trulyimagined/web dev)"
+    ]
+  }
+}

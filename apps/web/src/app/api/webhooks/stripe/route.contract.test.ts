@@ -204,12 +204,13 @@ describe('POST /api/webhooks/stripe - Contract Test', () => {
   });
 
   it('acknowledges subscription.created events and persists subscription state in deferred handling', async () => {
-    const setImmediateSpy = vi
-      .spyOn(global, 'setImmediate')
-      .mockImplementation(((callback: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-        void callback(...args);
-        return 0 as unknown as NodeJS.Immediate;
-      }) as typeof setImmediate);
+    const setImmediateSpy = vi.spyOn(global, 'setImmediate').mockImplementation(((
+      callback: (...args: unknown[]) => unknown,
+      ...args: unknown[]
+    ) => {
+      void callback(...args);
+      return 0 as unknown as NodeJS.Immediate;
+    }) as typeof setImmediate);
 
     mockConstructEvent.mockReturnValue({
       id: 'evt_sub_created_1',
@@ -287,12 +288,13 @@ describe('POST /api/webhooks/stripe - Contract Test', () => {
   });
 
   it('treats payment_intent.succeeded as idempotent when the deal is already settled', async () => {
-    const setImmediateSpy = vi
-      .spyOn(global, 'setImmediate')
-      .mockImplementation(((callback: (...args: unknown[]) => unknown, ...args: unknown[]) => {
-        void callback(...args);
-        return 0 as unknown as NodeJS.Immediate;
-      }) as typeof setImmediate);
+    const setImmediateSpy = vi.spyOn(global, 'setImmediate').mockImplementation(((
+      callback: (...args: unknown[]) => unknown,
+      ...args: unknown[]
+    ) => {
+      void callback(...args);
+      return 0 as unknown as NodeJS.Immediate;
+    }) as typeof setImmediate);
 
     mockConstructEvent.mockReturnValue({
       id: 'evt_pi_succeeded_1',
@@ -339,10 +341,7 @@ describe('POST /api/webhooks/stripe - Contract Test', () => {
 
     expect(response.status).toBe(200);
     expect(data).toEqual({ received: true });
-    expect(mockQueryTi).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE deals'),
-      ['pi_123']
-    );
+    expect(mockQueryTi).toHaveBeenCalledWith(expect.stringContaining('UPDATE deals'), ['pi_123']);
     expect(mockQueryTi).not.toHaveBeenCalledWith(
       expect.stringContaining('INSERT INTO audit_log'),
       expect.any(Array)

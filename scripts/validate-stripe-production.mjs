@@ -40,18 +40,14 @@ const priceEnvKeys = [
   'STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY',
 ];
 
-const requiredEnv = [
-  'STRIPE_CONNECT_RETURN_URL',
-  'STRIPE_CONNECT_REFRESH_URL',
-  ...priceEnvKeys,
-];
+const requiredEnv = ['STRIPE_CONNECT_RETURN_URL', 'STRIPE_CONNECT_REFRESH_URL', ...priceEnvKeys];
 
 if (!appBaseUrl) {
   requiredEnv.push('APP_BASE_URL or AUTH0_BASE_URL');
 }
 
 if (isLiveMode) {
-  requiredEnv.push('STRIPE_SECRET_KEY');
+  requiredEnv.push('STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY');
 }
 
 const results = {
@@ -96,9 +92,20 @@ function getMissingEnvKeys() {
     if (key === 'APP_BASE_URL or AUTH0_BASE_URL') {
       return !appBaseUrl;
     }
+    if (key === 'STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY') {
+      const live = process.env.STRIPE_SECRET_KEY;
+      const test = process.env.STRIPE_TEST_SECRET_KEY;
+      return !String(live || '').trim() && !String(test || '').trim();
+    }
     const value = process.env[key];
     return !value || !String(value).trim();
   });
+}
+
+function resolveStripeSecretKey() {
+  const live = String(process.env.STRIPE_SECRET_KEY || '').trim();
+  const test = String(process.env.STRIPE_TEST_SECRET_KEY || '').trim();
+  return live || test || null;
 }
 
 async function fetchText(url, init) {
@@ -108,9 +115,9 @@ async function fetchText(url, init) {
 }
 
 async function stripeRequest(method, pathName, bodyParams) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const secretKey = resolveStripeSecretKey();
   if (!secretKey) {
-    throw new Error('STRIPE_SECRET_KEY is required for live mode');
+    throw new Error('STRIPE_SECRET_KEY or STRIPE_TEST_SECRET_KEY is required for live mode');
   }
 
   const url = `https://api.stripe.com${pathName}`;
@@ -180,7 +187,9 @@ async function checkWebhookEndpointLiveness() {
 
     logFail(`webhook endpoint unexpected status ${response.status}: ${body.slice(0, 180)}`);
   } catch (error) {
-    logFail(`webhook endpoint probe failed: ${error instanceof Error ? error.message : String(error)}`);
+    logFail(
+      `webhook endpoint probe failed: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -265,13 +274,17 @@ async function runLiveStripeValidation() {
       if (count > 0) {
         logPass(`observed ${count} recent identity webhook event(s) in stripe_events`);
       } else {
-        logWarn('no recent identity webhook events found in stripe_events; verify dashboard webhook subscriptions');
+        logWarn(
+          'no recent identity webhook events found in stripe_events; verify dashboard webhook subscriptions'
+        );
       }
     } finally {
       await pool.end();
     }
   } else {
-    logWarn('TI_DATABASE_URL not set; skipping webhook delivery verification against stripe_events');
+    logWarn(
+      'TI_DATABASE_URL not set; skipping webhook delivery verification against stripe_events'
+    );
   }
 
   const hasHdicrEnv =
@@ -282,7 +295,9 @@ async function runLiveStripeValidation() {
     process.env.AUTH0_M2M_AUDIENCE;
 
   if (!hasHdicrEnv) {
-    logWarn('HDICR auth/client env vars missing; skipping verify-confirmed sync reachability check');
+    logWarn(
+      'HDICR auth/client env vars missing; skipping verify-confirmed sync reachability check'
+    );
     return;
   }
 
@@ -322,7 +337,9 @@ async function runLiveStripeValidation() {
 
   if (syncProbe.status >= 500) {
     const body = await syncProbe.text();
-    throw new Error(`HDICR verify-confirmed probe failed (${syncProbe.status}): ${body.slice(0, 200)}`);
+    throw new Error(
+      `HDICR verify-confirmed probe failed (${syncProbe.status}): ${body.slice(0, 200)}`
+    );
   }
 
   logPass(`HDICR verify-confirmed endpoint reachable (${syncProbe.status})`);
@@ -337,6 +354,15 @@ async function runLiveStripeValidation() {
 
 async function main() {
   console.log('[stripe-prod-validation] Mode:', isLiveMode ? 'live' : 'preflight');
+
+  if (isLiveMode) {
+    const usingTestKey =
+      !String(process.env.STRIPE_SECRET_KEY || '').trim() &&
+      String(process.env.STRIPE_TEST_SECRET_KEY || '').trim();
+    if (usingTestKey) {
+      logWarn('live mode is using STRIPE_TEST_SECRET_KEY in place of STRIPE_SECRET_KEY');
+    }
+  }
 
   const missing = getMissingEnvKeys();
   if (missing.length > 0) {

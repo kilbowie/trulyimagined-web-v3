@@ -442,12 +442,12 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
   return (
     <div
       className={cn(
-        'flex h-screen flex-col border-r bg-slate-950 text-white transition-all duration-200',
+        'flex h-screen flex-col border-r bg-[hsl(222,47%,8%)] text-white transition-all duration-200',
         isCollapsed ? 'w-20' : 'w-64'
       )}
     >
       {/* Logo/Brand */}
-      <div className="relative flex h-16 items-center justify-center border-b border-slate-800 px-4">
+      <div className="relative flex h-16 items-center justify-center border-b border-zinc-800 px-4">
         <Link href="/" className="flex items-center justify-center">
           <img
             src="/logo.svg"
@@ -458,7 +458,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
         <button
           type="button"
           onClick={handleSidebarToggle}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-slate-800 border border-slate-700 rounded-full p-1 text-slate-300 hover:text-white hover:bg-slate-700"
+          className="absolute -right-3 top-1/2 -translate-y-1/2 bg-zinc-800 border border-zinc-700 rounded-full p-1 text-zinc-300 hover:text-white hover:bg-zinc-700"
           aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
@@ -489,8 +489,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                     'flex items-center rounded-lg px-3 py-2 text-sm transition-colors',
                     isCollapsed ? 'justify-center' : 'gap-3',
                     isActive
-                      ? 'bg-slate-800 text-white'
-                      : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                      ? 'bg-blue-900/30 text-white border-l-2 border-yellow-400'
+                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                   )}
                   title={item.title}
                 >
@@ -513,7 +513,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
                   return (
                     <div key={group.groupTitle} className="space-y-1">
-                      <div className="border-t border-slate-800" />
+                      <div className="border-t border-zinc-800" />
                       {visibleItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = pathname === item.href;
@@ -526,8 +526,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                             className={cn(
                               'flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors relative',
                               isActive
-                                ? 'bg-slate-800 text-white'
-                                : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                                ? 'bg-blue-900/30 text-white border-l-2 border-yellow-400'
+                                : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                             )}
                             title={item.title}
                           >
@@ -558,10 +558,10 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                         'border-b-0',
                         ['Representation', 'Consent', 'Identity', 'Licensing'].includes(
                           group.groupTitle
-                        ) && 'mt-2 pt-2 border-t border-slate-800'
+                        ) && 'mt-2 pt-2 border-t border-zinc-800'
                       )}
                     >
-                      <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wider hover:no-underline hover:text-slate-400">
+                      <AccordionTrigger className="px-3 py-2 text-xs font-semibold text-zinc-500 uppercase tracking-wider hover:no-underline hover:text-zinc-400">
                         {group.groupTitle}
                       </AccordionTrigger>
                       <AccordionContent className="pb-2">
@@ -578,8 +578,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                                 className={cn(
                                   'flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors',
                                   isActive
-                                    ? 'bg-slate-800 text-white'
-                                    : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                                    ? 'bg-blue-900/30 text-white border-l-2 border-yellow-400'
+                                    : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                                 )}
                               >
                                 <Icon className="h-4 w-4" />
@@ -609,7 +609,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
           <>
             {!isCollapsed && (
               <div className="pt-6 pb-2">
-                <h3 className="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <h3 className="px-3 text-xs font-semibold text-zinc-500 uppercase tracking-wider">
                   Additional
                 </h3>
               </div>
@@ -635,8 +635,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                           isCollapsed ? 'justify-center' : 'gap-3',
                           item.comingSoon && 'opacity-50 cursor-not-allowed',
                           isActive
-                            ? 'bg-slate-800 text-white'
-                            : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+                            ? 'bg-blue-900/30 text-white border-l-2 border-yellow-400'
+                            : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
                         )}
                         {...(item.comingSoon && { onClick: (e) => e.preventDefault() })}
                         title={item.title}
@@ -644,7 +644,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                         <Icon className="h-4 w-4" />
                         {!isCollapsed && <span className="flex-1">{item.title}</span>}
                         {!isCollapsed && item.comingSoon && (
-                          <Badge variant="outline" className="text-xs border-slate-700">
+                          <Badge variant="outline" className="text-xs border-zinc-700">
                             Soon
                           </Badge>
                         )}
@@ -658,7 +658,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
       </nav>
 
       {/* Support Link - Always visible at bottom */}
-      <div className="border-t border-slate-800 p-4">
+      <div className="border-t border-zinc-800 p-4">
         <Link
           href="/dashboard/support"
           onClick={() => triggerDashboardTransition('/dashboard/support')}
@@ -666,8 +666,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
             'flex items-center rounded-lg px-3 py-2 text-sm transition-colors relative',
             isCollapsed ? 'justify-center' : 'gap-3',
             pathname?.startsWith('/dashboard/support')
-              ? 'bg-slate-800 text-white'
-              : 'text-slate-400 hover:bg-slate-900 hover:text-white'
+              ? 'bg-blue-900/30 text-white border-l-2 border-yellow-400'
+              : 'text-zinc-400 hover:bg-zinc-900 hover:text-white'
           )}
           title="Support"
         >
@@ -680,33 +680,33 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
       </div>
 
       {/* User Info at Bottom */}
-      <div className="border-t border-slate-800 p-4">
+      <div className="border-t border-zinc-800 p-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               className={cn(
-                'group flex items-center w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-700',
+                'group flex items-center w-full rounded-lg px-3 py-2 text-sm transition-colors hover:bg-zinc-900 focus:outline-none focus:ring-2 focus:ring-zinc-700',
                 isCollapsed ? 'justify-center' : 'gap-3'
               )}
             >
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800">
-                <UserCircle className="h-5 w-5 text-slate-400" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800">
+                <UserCircle className="h-5 w-5 text-zinc-400" />
               </div>
               {!isCollapsed && (
                 <>
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium truncate text-white">{userName || 'User'}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-zinc-500">
                       {roles.length > 0 ? roles.join(', ') : 'No roles'}
                     </p>
                   </div>
-                  <MoreVertical className="h-4 w-4 text-slate-500 group-hover:text-slate-300 transition-colors" />
+                  <MoreVertical className="h-4 w-4 text-zinc-500 group-hover:text-zinc-300 transition-colors" />
                 </>
               )}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-56 bg-slate-900 border-slate-800"
+            className="w-56 bg-zinc-900 border-zinc-800"
             align="end"
             side="top"
             sideOffset={8}
@@ -714,7 +714,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
             <DropdownMenuItem asChild>
               <Link
                 href="/dashboard/account/settings"
-                className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+                className="flex items-center gap-2 cursor-pointer text-white hover:bg-zinc-800"
               >
                 <Settings className="h-4 w-4" />
                 <span>Account</span>
@@ -724,7 +724,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
             <DropdownMenuItem asChild>
               <Link
                 href="/dashboard/account/billing"
-                className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+                className="flex items-center gap-2 cursor-pointer text-white hover:bg-zinc-800"
               >
                 <CreditCard className="h-4 w-4" />
                 <span>Billing &amp; Payments</span>
@@ -733,7 +733,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
             <DropdownMenuItem
               onClick={() => setFeedbackDialogOpen(true)}
-              className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+              className="flex items-center gap-2 cursor-pointer text-white hover:bg-zinc-800"
             >
               <MessageCircle className="h-4 w-4" />
               <span>Feedback</span>
@@ -741,7 +741,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
             <DropdownMenuItem
               onClick={() => setThemeDialogOpen(true)}
-              className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+              className="flex items-center gap-2 cursor-pointer text-white hover:bg-zinc-800"
             >
               <Monitor className="h-4 w-4" />
               <span>Theme</span>
@@ -750,19 +750,19 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
             <DropdownMenuItem asChild>
               <Link
                 href="/"
-                className="flex items-center gap-2 cursor-pointer text-white hover:bg-slate-800"
+                className="flex items-center gap-2 cursor-pointer text-white hover:bg-zinc-800"
               >
                 <ExternalLink className="h-4 w-4" />
                 <span>Home Page</span>
               </Link>
             </DropdownMenuItem>
 
-            <DropdownMenuSeparator className="bg-slate-800" />
+            <DropdownMenuSeparator className="bg-zinc-800" />
 
             <DropdownMenuItem asChild>
               <a
                 href="/auth/logout"
-                className="flex items-center gap-2 cursor-pointer text-red-400 hover:bg-slate-800 hover:text-red-300"
+                className="flex items-center gap-2 cursor-pointer text-red-400 hover:bg-zinc-800 hover:text-red-300"
               >
                 <LogOut className="h-4 w-4" />
                 <span>Log Out</span>
@@ -774,10 +774,10 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
       {/* Feedback Dialog */}
       <Dialog open={feedbackDialogOpen} onOpenChange={setFeedbackDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-md">
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-md">
           <DialogHeader>
             <DialogTitle>Send Feedback</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-zinc-400">
               Help us improve your experience. Select a topic and share your thoughts.
             </DialogDescription>
           </DialogHeader>
@@ -785,17 +785,17 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
           <div className="space-y-4 py-4">
             {/* Topic Selector */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Topic</label>
+              <label className="text-sm font-medium text-zinc-300">Topic</label>
               <Select value={feedbackTopic} onValueChange={setFeedbackTopic}>
-                <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700 text-white">
+                <SelectContent className="bg-zinc-800 border-zinc-700 text-white">
                   {feedbackTopics.map((topic) => (
                     <SelectItem
                       key={topic}
                       value={topic}
-                      className="hover:bg-slate-700 focus:bg-slate-700"
+                      className="hover:bg-zinc-700 focus:bg-zinc-700"
                     >
                       {topic}
                     </SelectItem>
@@ -806,18 +806,18 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
             {/* Feedback Text */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">Your Feedback</label>
+              <label className="text-sm font-medium text-zinc-300">Your Feedback</label>
               <Textarea
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
                 placeholder="Tell us what you think..."
-                className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 min-h-[100px]"
+                className="bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500 min-h-[100px]"
               />
             </div>
 
             {/* Emoji Reactions */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-300">How do you feel?</label>
+              <label className="text-sm font-medium text-zinc-300">How do you feel?</label>
               <div className="flex gap-2">
                 {[
                   { icon: Angry, value: 'angry', color: 'text-red-600', label: 'Angry' },
@@ -835,8 +835,8 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                     className={cn(
                       'p-2 rounded-lg border transition-all',
                       selectedEmoji === value
-                        ? 'bg-slate-700 border-slate-600 scale-110'
-                        : 'bg-slate-800 border-slate-700 hover:bg-slate-750'
+                        ? 'bg-zinc-700 border-zinc-600 scale-110'
+                        : 'bg-zinc-800 border-zinc-700 hover:bg-zinc-750'
                     )}
                   >
                     <Icon className={cn('h-5 w-5', color)} />
@@ -871,7 +871,7 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
                 setFeedbackSuccess(false);
               }}
               disabled={feedbackSubmitting}
-              className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-zinc-800 border-zinc-700 text-white hover:bg-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </Button>
@@ -893,10 +893,10 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
 
       {/* Theme Dialog */}
       <Dialog open={themeDialogOpen} onOpenChange={setThemeDialogOpen}>
-        <DialogContent className="bg-slate-900 border-slate-800 text-white max-w-sm">
+        <DialogContent className="bg-zinc-900 border-zinc-800 text-white max-w-sm">
           <DialogHeader>
             <DialogTitle>Choose Theme</DialogTitle>
-            <DialogDescription className="text-slate-400">
+            <DialogDescription className="text-zinc-400">
               Select your preferred theme for the application.
             </DialogDescription>
           </DialogHeader>
@@ -910,14 +910,14 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
               className={cn(
                 'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
                 theme === 'light'
-                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
-                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                  ? 'bg-zinc-800 border-yellow-400 ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-950'
+                  : 'bg-zinc-800 border-zinc-700 hover:border-zinc-600'
               )}
             >
               <Sun className="h-5 w-5 text-yellow-400" />
               <div className="flex-1 text-left">
                 <p className="font-medium">Light</p>
-                <p className="text-xs text-slate-400">Bright and clear interface</p>
+                <p className="text-xs text-zinc-400">Bright and clear interface</p>
               </div>
               {theme === 'light' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>
@@ -930,14 +930,14 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
               className={cn(
                 'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
                 theme === 'dark'
-                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
-                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                  ? 'bg-zinc-800 border-yellow-400 ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-950'
+                  : 'bg-zinc-800 border-zinc-700 hover:border-zinc-600'
               )}
             >
               <Moon className="h-5 w-5 text-blue-400" />
               <div className="flex-1 text-left">
                 <p className="font-medium">Dark</p>
-                <p className="text-xs text-slate-400">Easy on the eyes</p>
+                <p className="text-xs text-zinc-400">Easy on the eyes</p>
               </div>
               {theme === 'dark' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>
@@ -950,14 +950,14 @@ export function DashboardSidebar({ userName, roles = [], agentTeamMember }: Side
               className={cn(
                 'w-full flex items-center gap-3 p-4 rounded-lg border transition-all',
                 theme === 'system'
-                  ? 'bg-slate-800 border-blue-500 ring-2 ring-blue-500 ring-offset-2 ring-offset-slate-900'
-                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                  ? 'bg-zinc-800 border-yellow-400 ring-2 ring-blue-500 ring-offset-2 ring-offset-zinc-950'
+                  : 'bg-zinc-800 border-zinc-700 hover:border-zinc-600'
               )}
             >
-              <Monitor className="h-5 w-5 text-slate-400" />
+              <Monitor className="h-5 w-5 text-zinc-400" />
               <div className="flex-1 text-left">
                 <p className="font-medium">System</p>
-                <p className="text-xs text-slate-400">Match your device settings</p>
+                <p className="text-xs text-zinc-400">Match your device settings</p>
               </div>
               {theme === 'system' && <div className="h-2 w-2 rounded-full bg-blue-500" />}
             </button>

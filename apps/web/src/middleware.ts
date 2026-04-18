@@ -84,9 +84,17 @@ function shouldBypassRateLimit(pathname: string): boolean {
   return RATE_LIMIT_BYPASS_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
+const IS_MOCK_AUTH = process.env.NEXT_PUBLIC_MOCK_AUTH === 'true';
+
 export async function middleware(request: NextRequest) {
   try {
     const { pathname } = request.nextUrl;
+
+    // In mock auth mode, bypass Auth0 entirely. The mock login page and
+    // cookie-based session system handle auth instead.
+    if (IS_MOCK_AUTH) {
+      return NextResponse.next();
+    }
 
     // Rate limiting — applied before auth to block floods early
     if (!shouldBypassRateLimit(pathname)) {
