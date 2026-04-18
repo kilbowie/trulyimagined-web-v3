@@ -1623,8 +1623,9 @@ async function delay(ms: number): Promise<void> {
  * Renews the local subscription record period and keeps entitlements in sync.
  */
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
+  const rawSubscription = invoice.parent?.subscription_details?.subscription;
   const subscriptionId =
-    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+    typeof rawSubscription === 'string' ? rawSubscription : rawSubscription?.id;
 
   if (!subscriptionId) {
     console.warn('[STRIPE WEBHOOK] invoice.payment_succeeded missing subscription id', {
@@ -1677,8 +1678,9 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<v
  * Dunning messaging is handled separately via WS2-05.
  */
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
+  const rawSubscription = invoice.parent?.subscription_details?.subscription;
   const subscriptionId =
-    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+    typeof rawSubscription === 'string' ? rawSubscription : rawSubscription?.id;
 
   if (!subscriptionId) {
     console.warn('[STRIPE WEBHOOK] invoice.payment_failed missing subscription id', {

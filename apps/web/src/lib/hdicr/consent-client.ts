@@ -157,7 +157,7 @@ export async function grantConsent(input: ConsentGrantInput, correlationId?: str
   });
 }
 
-export async function revokeConsent(input: ConsentRevokeInput, correlationId?: string, correlationId?: string) {
+export async function revokeConsent(input: ConsentRevokeInput, correlationId?: string) {
   return invokeConsentRemote<{
     notFound: boolean;
     record: Record<string, unknown> | null;

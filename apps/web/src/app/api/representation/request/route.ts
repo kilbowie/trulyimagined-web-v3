@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     const createdRequest = await createRepresentationRequest({
       actorId: actor.id,
       agentId: agent.id,
-      message: payload.message,
+      message: validation.data.message,
     }, correlationId);
 
     if (invitationCodeRecord) {
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
             actorId: actor.id,
             agentId: agent.id,
             invitationCodeUsed: Boolean(invitationCodeRecord),
-            messageIncluded: Boolean(payload.message?.trim()),
+            messageIncluded: Boolean(validation.data.message?.trim()),
           },
         });
       } catch (auditError) {
