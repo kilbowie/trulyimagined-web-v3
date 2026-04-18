@@ -143,6 +143,8 @@ export async function POST(request: NextRequest) {
       case 'charge.dispute.created':
       case 'payment_intent.succeeded':
       case 'payment_intent.payment_failed':
+      case 'invoice.payment_succeeded':
+      case 'invoice.payment_failed':
       case 'customer.subscription.created':
       case 'customer.subscription.updated':
       case 'customer.subscription.deleted':
@@ -172,6 +174,12 @@ export async function POST(request: NextRequest) {
                 break;
               case 'payment_intent.payment_failed':
                 await handlePaymentIntentFailed(capturedEvent.data.object as Stripe.PaymentIntent);
+                break;
+              case 'invoice.payment_succeeded':
+                await handleInvoicePaymentSucceeded(capturedEvent.data.object as Stripe.Invoice);
+                break;
+              case 'invoice.payment_failed':
+                await handleInvoicePaymentFailed(capturedEvent.data.object as Stripe.Invoice);
                 break;
               case 'customer.subscription.created':
                 await handleSubscriptionCreated(capturedEvent.data.object as Stripe.Subscription);
@@ -203,7 +211,6 @@ export async function POST(request: NextRequest) {
       // ===== EXPLICITLY DEFERRED =====
       // Acknowledged with 200 but no processing yet
       case 'identity.verification_session.created':
-      case 'invoice.payment_failed':
         console.log('[STRIPE WEBHOOK] Event acknowledged but handling deferred:', event.type);
         break;
 
@@ -1609,4 +1616,107 @@ async function insertWebhookAuditEntry(params: {
 
 async function delay(ms: number): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Handle successful invoice payment.
+ * Renews the local subscription record period and keeps entitlements in sync.
+ */
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice): Promise<void> {
+  const subscriptionId =
+    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+
+  if (!subscriptionId) {
+    console.warn('[STRIPE WEBHOOK] invoice.payment_succeeded missing subscription id', {
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
+  // Retrieve the latest subscription state from Stripe to ensure period_end is accurate.
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+  const userProfileId =
+    subscription.metadata?.user_profile_id ??
+    (await resolveUserProfileIdFromSubscriptionId(subscriptionId)) ??
+    null;
+
+  if (!userProfileId) {
+    console.warn('[STRIPE WEBHOOK] invoice.payment_succeeded could not resolve user_profile_id', {
+      subscriptionId,
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
+  const periodEndEpoch = deriveSubscriptionPeriodEndEpoch(subscription);
+
+  await queryTi(
+    `UPDATE user_subscriptions
+     SET status = $2,
+         current_period_end = CASE WHEN $3::bigint IS NULL THEN current_period_end
+                                   ELSE to_timestamp($3::bigint) END,
+         updated_at = NOW()
+     WHERE stripe_subscription_id = $1`,
+    [subscriptionId, subscription.status, periodEndEpoch]
+  );
+
+  await syncSubscriptionEntitlements(userProfileId);
+
+  console.log('[STRIPE WEBHOOK] invoice.payment_succeeded subscription period renewed', {
+    subscriptionId,
+    userProfileId,
+    invoiceId: invoice.id,
+    periodEnd: periodEndEpoch ? new Date(periodEndEpoch * 1000).toISOString() : null,
+  });
+}
+
+/**
+ * Handle failed invoice payment.
+ * Updates subscription status (which may move to past_due) and syncs entitlements.
+ * Dunning messaging is handled separately via WS2-05.
+ */
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
+  const subscriptionId =
+    typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
+
+  if (!subscriptionId) {
+    console.warn('[STRIPE WEBHOOK] invoice.payment_failed missing subscription id', {
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
+  // Retrieve current subscription status from Stripe (may be past_due after failed payment).
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+
+  const userProfileId =
+    subscription.metadata?.user_profile_id ??
+    (await resolveUserProfileIdFromSubscriptionId(subscriptionId)) ??
+    null;
+
+  if (!userProfileId) {
+    console.warn('[STRIPE WEBHOOK] invoice.payment_failed could not resolve user_profile_id', {
+      subscriptionId,
+      invoiceId: invoice.id,
+    });
+    return;
+  }
+
+  await queryTi(
+    `UPDATE user_subscriptions
+     SET status = $2,
+         updated_at = NOW()
+     WHERE stripe_subscription_id = $1`,
+    [subscriptionId, subscription.status]
+  );
+
+  await syncSubscriptionEntitlements(userProfileId);
+
+  console.log('[STRIPE WEBHOOK] invoice.payment_failed subscription status updated', {
+    subscriptionId,
+    userProfileId,
+    invoiceId: invoice.id,
+    newStatus: subscription.status,
+  });
 }
