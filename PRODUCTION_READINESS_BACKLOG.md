@@ -107,9 +107,9 @@ These decisions are fixed and should be treated as non-negotiable implementation
 | ------ | -------- | ------ | ------------------------------------------------------------------------------ | ---------- |
 | WS1-01 | P0       | TODO   | Replace `rejectUnauthorized: false` with validated RDS TLS configuration       | TI         |
 | WS1-02 | P0       | TODO   | Add Stripe webhook event deduplication store and processing guard              | TI         |
-| WS1-03 | P0       | TODO   | Extend webhook to handle subscription lifecycle events                         | TI         |
-| WS1-04 | P0       | TODO   | Verify fail-closed behavior when HDICR is unavailable                          | TI         |
-| WS1-05 | P0       | TODO   | Add correlation ID propagation across TI -> HDICR requests and error responses | TI + HDICR |
+| WS1-03 | P0       | DONE   | Extend webhook to handle subscription lifecycle events                         | TI         |
+| WS1-04 | P0       | DONE   | Verify fail-closed behavior when HDICR is unavailable                          | TI         |
+| WS1-05 | P0       | DONE   | Add correlation ID propagation across TI -> HDICR requests and error responses | TI + HDICR |
 
 #### WS1-01 Acceptance Criteria
 
@@ -140,7 +140,7 @@ These decisions are fixed and should be treated as non-negotiable implementation
 
 | ID     | Priority | Status | Item                                                                 | Repo |
 | ------ | -------- | ------ | -------------------------------------------------------------------- | ---- |
-| WS2-01 | P1       | TODO   | Replace simplified 3-plan billing model with launch tier model       | TI   |
+| WS2-01 | P1       | DONE   | Replace simplified 3-plan billing model with launch tier model       | TI   |
 | WS2-02 | P1       | TODO   | Add all required `STRIPE_PRICE_*` environment variables and env docs | TI   |
 | WS2-03 | P1       | TODO   | Implement subscription access provisioning and revocation model      | TI   |
 | WS2-04 | P1       | TODO   | Implement agency seat allocation and enforcement                     | TI   |
