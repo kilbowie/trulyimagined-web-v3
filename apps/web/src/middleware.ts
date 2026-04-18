@@ -25,17 +25,26 @@ import { NextResponse } from 'next/server';
 //
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 let lastCleanup = Date.now();
+
+// Stripe webhooks are intentionally excluded from IP-based rate limiting.
+// Security is enforced via HMAC signature verification in the route handler.
+// Rate limiting would risk blocking legitimate Stripe retry deliveries.
 const RATE_LIMIT_BYPASS_PREFIXES = ['/api/webhooks/stripe'];
 
 // Limits per route category (requests per window)
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
   '/auth/login': { max: 10, windowMs: 60_000 }, // 10/min — brute force protection
   '/api/auth/callback': { max: 20, windowMs: 60_000 }, // 20/min — OAuth callbacks
+  '/api/billing/checkout': { max: 5, windowMs: 60_000 }, // 5/min — checkout session creation
+  '/api/billing/portal': { max: 5, windowMs: 60_000 }, // 5/min — billing portal creation
+  '/api/stripe/connect': { max: 5, windowMs: 60_000 }, // 5/min — Connect onboarding/creation
+  '/api/stripe/deals': { max: 10, windowMs: 60_000 }, // 10/min — deal payment initiation
   '/api/consent/grant': { max: 10, windowMs: 60_000 }, // 10/min — consent writes
   '/api/consent/revoke': { max: 10, windowMs: 60_000 },
   '/api/credentials/issue': { max: 10, windowMs: 60_000 },
   '/api/identity/link': { max: 15, windowMs: 60_000 },
   '/api/verification': { max: 10, windowMs: 60_000 },
+  '/api/admin': { max: 30, windowMs: 60_000 }, // 30/min — admin operations
   '/api': { max: 100, windowMs: 60_000 }, // 100/min — general API
   '/': { max: 300, windowMs: 60_000 }, // 300/min — page routes
 };
