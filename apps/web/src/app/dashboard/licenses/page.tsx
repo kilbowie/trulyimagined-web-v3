@@ -1,239 +1,260 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-type License = {
+interface License {
   id: string;
   actor_id: string;
-  api_client_id: string;
-  api_client_name: string;
-  consent_ledger_id: string;
-  license_type: string;
-  granted_permissions_snapshot: Record<string, unknown>;
-  status: 'active' | 'revoked' | 'expired' | 'suspended';
-  revocation_reason?: string;
-  issued_at: string;
+  requester_name: string;
+  requester_email: string;
+  requester_organization?: string;
+  project_name: string;
+  project_description: string;
+  usage_type: string;
+  intended_use: string;
+  duration_start?: string;
+  duration_end?: string;
+  compensation_offered?: string;
+  compensation_currency: string;
+  status: 'pending' | 'approved' | 'rejected' | 'active' | 'expired' | 'revoked';
+  requested_at: string;
+  reviewed_at?: string;
+  reviewer_notes?: string;
+  approved_by?: string;
+  rejected_reason?: string;
+  issued_at?: string;
   expires_at?: string;
   revoked_at?: string;
-  revoked_by?: string;
+  revocation_reason?: string;
+  granted_permissions_snapshot?: Record<string, unknown>;
   usage_count: number;
-  first_used_at?: string;
   last_used_at?: string;
-};
+}
 
-type LicenseStats = {
+interface LicenseStats {
   total: number;
+  pending: number;
+  approved: number;
   active: number;
-  revoked: number;
   expired: number;
-  suspended: number;
-};
+  revoked: number;
+}
 
-export default function LicenseTrackerPage() {
+export default function LicensesPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [licenses, setLicenses] = useState<License[]>([]);
-  const [stats, setStats] = useState<LicenseStats>({
-    total: 0,
-    active: 0,
-    revoked: 0,
-    expired: 0,
-    suspended: 0,
-  });
-  const [activeFilter, setActiveFilter] = useState<string>('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    loadLicenses();
-  }, [activeFilter]);
+    fetchLicenses();
+  }, []);
 
-  const loadLicenses = async () => {
+  const fetchLicenses = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError('');
 
-      const url =
-        activeFilter === 'all'
-          ? '/api/licenses/actor'
-          : `/api/licenses/actor?status=${activeFilter}`;
+      const response = await fetch('/api/licenses/actor?limit=100', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
 
-      const res = await fetch(url);
+      const data = await response.json();
 
-      if (!res.ok) {
-        throw new Error('Failed to load licenses');
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch licenses');
       }
 
-      const data = await res.json();
-      setLicenses(data.licenses);
-      setStats(data.stats);
+      setLicenses(data.data?.licenses || []);
     } catch (err) {
+      console.error('[LICENSES_PAGE] Error fetching licenses:', err);
       setError(err instanceof Error ? err.message : 'Failed to load licenses');
     } finally {
       setLoading(false);
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const stats: LicenseStats = useMemo(() => {
+    return {
+      total: licenses.length,
+      pending: licenses.filter((l) => l.status === 'pending').length,
+      approved: licenses.filter((l) => l.status === 'approved').length,
+      active: licenses.filter((l) => l.status === 'active').length,
+      expired: licenses.filter((l) => l.status === 'expired').length,
+      revoked: licenses.filter((l) => l.status === 'revoked').length,
+    };
+  }, [licenses]);
+
+  const getStatusBadgeClass = (status: License['status']) => {
     switch (status) {
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
+      case 'approved':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300';
       case 'active':
-        return 'text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 border-emerald-500/30';
-      case 'revoked':
-        return 'text-red-700 dark:text-red-300 bg-red-500/10 border-red-500/30';
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'expired':
-        return 'text-amber-700 dark:text-amber-300 bg-amber-500/10 border-amber-500/30';
-      case 'suspended':
-        return 'text-orange-700 dark:text-orange-300 bg-orange-500/10 border-orange-500/30';
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900/30 dark:text-gray-300';
+      case 'revoked':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
+      case 'rejected':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
       default:
-        return 'text-muted-foreground bg-muted border-border';
+        return 'bg-muted text-muted-foreground';
     }
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center px-4 py-8">
-        <div className="rounded-xl border border-border bg-card px-6 py-5 text-center text-base text-foreground md:text-lg">
-          Loading licenses...
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="px-4 py-6 md:px-6 md:py-8">
-      <div className="mx-auto w-full max-w-7xl">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-background to-slate-100 dark:from-slate-950 dark:via-background dark:to-slate-900">
+      <div className="mx-auto max-w-7xl px-6 py-20">
         {/* Header */}
         <div className="mb-8">
           <button
             onClick={() => router.push('/dashboard')}
-            className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-primary transition-colors hover:text-primary/80 md:text-base"
+            className="mb-4 text-sm text-primary hover:text-primary/80"
           >
             ← Back to Dashboard
           </button>
-          <h1 className="mb-2 text-2xl font-bold text-foreground md:text-4xl">License Tracker</h1>
-          <p className="max-w-3xl text-sm text-muted-foreground md:text-base">
-            Monitor and manage licenses granted to API clients for your data and content.
+
+          <h1 className="mb-2 text-3xl font-bold text-foreground">License Management</h1>
+          <p className="text-muted-foreground">
+            Manage licenses granted for your digital likeness and voice
           </p>
         </div>
 
-        {/* Error Message */}
+        {/* Stats Cards */}
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-6">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
+            <div className="text-sm text-muted-foreground">Total</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-yellow-600">{stats.pending}</div>
+            <div className="text-sm text-muted-foreground">Pending</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-blue-600">{stats.approved}</div>
+            <div className="text-sm text-muted-foreground">Approved</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
+            <div className="text-sm text-muted-foreground">Active</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-gray-600">{stats.expired}</div>
+            <div className="text-sm text-muted-foreground">Expired</div>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="text-2xl font-bold text-red-600">{stats.revoked}</div>
+            <div className="text-sm text-muted-foreground">Revoked</div>
+          </div>
+        </div>
+
+        {/* Error State */}
         {error && (
-          <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive md:text-base">
+          <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 p-4 text-red-700 dark:text-red-300">
             {error}
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
-          <div className="rounded-xl border border-border bg-card p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-foreground md:text-3xl">{stats.total}</div>
-            <div className="text-xs text-muted-foreground md:text-sm">Total Licenses</div>
+        {/* Loading State */}
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
           </div>
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-emerald-700 dark:text-emerald-300 md:text-3xl">
-              {stats.active}
-            </div>
-            <div className="text-xs text-emerald-700/90 dark:text-emerald-300 md:text-sm">
-              Active
-            </div>
-          </div>
-          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-red-700 dark:text-red-300 md:text-3xl">
-              {stats.revoked}
-            </div>
-            <div className="text-xs text-red-700/90 dark:text-red-300 md:text-sm">Revoked</div>
-          </div>
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-amber-700 dark:text-amber-300 md:text-3xl">
-              {stats.expired}
-            </div>
-            <div className="text-xs text-amber-700/90 dark:text-amber-300 md:text-sm">Expired</div>
-          </div>
-          <div className="rounded-xl border border-orange-500/30 bg-orange-500/10 p-4 md:p-5">
-            <div className="mb-1 text-2xl font-bold text-orange-700 dark:text-orange-300 md:text-3xl">
-              {stats.suspended}
-            </div>
-            <div className="text-xs text-orange-700/90 dark:text-orange-300 md:text-sm">
-              Suspended
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="mb-6 flex flex-wrap gap-2">
-          {['all', 'active', 'revoked', 'expired', 'suspended'].map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setActiveFilter(filter)}
-              className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-colors md:px-4 ${
-                activeFilter === filter
-                  ? 'border-primary bg-primary text-primary-foreground'
-                  : 'border-border bg-card text-foreground hover:bg-muted'
-              }`}
-            >
-              {filter.charAt(0).toUpperCase() + filter.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Licenses List */}
-        {licenses.length === 0 ? (
-          <div className="rounded-xl border border-border bg-card p-8 text-center md:p-12">
-            <p className="text-lg font-semibold text-foreground">No licenses found.</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Licenses will appear here when API clients request access to your data.
+        ) : licenses.length === 0 ? (
+          /* Empty State */
+          <div className="rounded-xl border border-border bg-card p-12 text-center">
+            <div className="mb-4 text-4xl">📜</div>
+            <h3 className="mb-2 text-xl font-semibold text-foreground">No Licenses Yet</h3>
+            <p className="text-muted-foreground">
+              You haven&apos;t granted any licenses for your digital likeness yet.
             </p>
           </div>
         ) : (
+          /* License List */
           <div className="space-y-4">
             {licenses.map((license) => (
               <div
                 key={license.id}
-                className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 md:p-6"
+                className="rounded-xl border border-border bg-card p-6 transition-shadow hover:shadow-lg"
               >
-                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                {/* License Header */}
+                <div className="mb-4 flex flex-wrap items-start justify-between gap-4">
                   <div>
-                    <h3 className="mb-1 text-lg font-bold text-foreground md:text-xl">
-                      {license.api_client_name}
+                    <h3 className="mb-1 text-lg font-semibold text-foreground">
+                      {license.project_name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Type: <span className="text-foreground">{license.license_type}</span>
+                      Requested by {license.requester_name}
+                      {license.requester_organization && ` (${license.requester_organization})`}
                     </p>
                   </div>
                   <span
-                    className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold md:text-sm ${getStatusColor(license.status)}`}
+                    className={`rounded-full px-3 py-1 text-sm font-medium capitalize ${getStatusBadgeClass(license.status)}`}
                   >
-                    {license.status.toUpperCase()}
+                    {license.status}
                   </span>
                 </div>
 
-                <div className="mb-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
+                {/* License Details */}
+                <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                   <div>
-                    <div className="text-muted-foreground">Issued</div>
-                    <div className="text-foreground">{formatDate(license.issued_at)}</div>
+                    <div className="text-muted-foreground">Usage Type</div>
+                    <div className="text-foreground capitalize">{license.usage_type.replace('_', ' ')}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Expires</div>
-                    <div className="text-foreground">{formatDate(license.expires_at)}</div>
+                    <div className="text-muted-foreground">Compensation</div>
+                    <div className="text-foreground">
+                      {license.compensation_offered
+                        ? `${license.compensation_currency} ${license.compensation_offered}`
+                        : 'Not specified'}
+                    </div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Usage Count</div>
-                    <div className="text-foreground">{license.usage_count}</div>
+                    <div className="text-muted-foreground">Requested</div>
+                    <div className="text-foreground">{formatDate(license.requested_at)}</div>
                   </div>
                   <div>
-                    <div className="text-muted-foreground">Last Used</div>
-                    <div className="text-foreground">{formatDate(license.last_used_at)}</div>
+                    <div className="text-muted-foreground">Status Updated</div>
+                    <div className="text-foreground">{formatDate(license.reviewed_at || license.issued_at)}</div>
                   </div>
                 </div>
+
+                {/* Active License Metadata */}
+                {(license.status === 'active' || license.status === 'expired') && (
+                  <div className="mt-4 grid grid-cols-2 gap-4 border-t border-border pt-4 text-sm md:grid-cols-4">
+                    <div>
+                      <div className="text-muted-foreground">Issued</div>
+                      <div className="text-foreground">{formatDate(license.issued_at)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Expires</div>
+                      <div className="text-foreground">{formatDate(license.expires_at)}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Usage Count</div>
+                      <div className="text-foreground">{license.usage_count}</div>
+                    </div>
+                    <div>
+                      <div className="text-muted-foreground">Last Used</div>
+                      <div className="text-foreground">{formatDate(license.last_used_at)}</div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Permissions Snapshot */}
                 <details className="group">
@@ -258,16 +279,19 @@ export default function LicenseTrackerPage() {
 
                 {/* Actions */}
                 {license.status === 'active' && (
-                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
                     <button
-                      onClick={() => {
-                        // TODO: Implement revoke functionality
-                        alert('Revoke license functionality coming soon');
-                      }}
-                      className="w-full rounded-lg bg-destructive px-4 py-2 text-sm font-semibold text-destructive-foreground transition-colors hover:bg-destructive/90 sm:w-auto"
+                      type="button"
+                      disabled
+                      aria-disabled="true"
+                      className="w-full cursor-not-allowed rounded-lg bg-destructive/60 px-4 py-2 text-sm font-semibold text-destructive-foreground opacity-70 sm:w-auto"
+                      title="Manual revocation flow is not in launch scope."
                     >
-                      Revoke License
+                      Revoke License (Post-Launch)
                     </button>
+                    <p className="text-xs text-muted-foreground">
+                      Manual revocation is intentionally deferred from launch scope and is tracked for the next delivery phase.
+                    </p>
                   </div>
                 )}
               </div>

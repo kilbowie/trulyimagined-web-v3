@@ -143,7 +143,7 @@ These decisions are fixed and should be treated as non-negotiable implementation
 | WS2-01 | P1       | DONE   | Replace simplified 3-plan billing model with launch tier model       | TI   |
 | WS2-02 | P1       | TODO   | Add all required `STRIPE_PRICE_*` environment variables and env docs | TI   |
 | WS2-03 | P1       | DONE   | Implement subscription access provisioning and revocation model      | TI   |
-| WS2-04 | P1       | TODO   | Implement agency seat allocation and enforcement                     | TI   |
+| WS2-04 | P1       | DONE   | Implement agency seat allocation and enforcement                     | TI   |
 | WS2-05 | P2       | TODO   | Add dunning and billing-failure user messaging                       | TI   |
 
 #### WS2 Launch Scope Decision
