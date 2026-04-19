@@ -107,24 +107,24 @@ Dates: 2026-05-18 → 2026-05-29 | Milestone: M3
 
 | Week | Item   | Task                                                                                   | Owner Role      | Status | Depends On     | Effort   |
 | ---- | ------ | -------------------------------------------------------------------------------------- | --------------- | ------ | -------------- | -------- |
-| W5   | WS9-02 | Build `/pricing` route with profile-type tier comparison layout                        | Full-stack / FE | TODO   | WS9-01         | 3–5 days |
-| W5   | WS6-01 | Add invitation code management UI for agents                                           | Full-stack / FE | TODO   | —              | 1–2 days |
-| W6   | WS9-03 | Implement Bank of England FX fetch, currency detection, USD/GBP toggle, annual pricing | Full-stack / FE | TODO   | WS9-02, WS9-01 | 5–7 days |
-| W6   | WS9-04 | Add pricing correctness tests — tier display, locale defaulting, FX conversion, toggle | QA / Full-stack | TODO   | WS9-03         | 2–3 days |
-| W6   | WS6-02 | Add minimal admin licence dashboard                                                    | Full-stack / FE | TODO   | —              | 2–3 days |
+| W5   | WS9-02 | Build `/pricing` route with profile-type tier comparison layout                        | Full-stack / FE | DONE   | WS9-01         | 3–5 days |
+| W5   | WS6-01 | Add invitation code management UI for agents                                           | Full-stack / FE | DONE   | —              | 1–2 days |
+| W6   | WS9-03 | Implement Bank of England FX fetch, currency detection, USD/GBP toggle, annual pricing | Full-stack / FE | DONE   | WS9-02, WS9-01 | 5–7 days |
+| W6   | WS9-04 | Add pricing correctness tests — tier display, locale defaulting, FX conversion, toggle | QA / Full-stack | DONE   | WS9-03         | 2–3 days |
+| W6   | WS6-02 | Add minimal admin licence dashboard                                                    | Full-stack / FE | DONE   | —              | 2–3 days |
 
 **M3 Gate Check (2026-05-29):**
 
-- [ ] `/pricing` is publicly accessible
-- [ ] Actor, Agency, and Studio tiers shown side by side per profile type
-- [ ] UK visitors default to GBP using detection order: `x-vercel-ip-country` → `cf-ipcountry` → locale → profile country
-- [ ] Non-UK visitors default to USD
-- [ ] Manual USD/GBP toggle works and persists across session and return visits
-- [ ] GBP values are exact two-decimal conversions from Bank of England daily rate
-- [ ] Daily FX refresh operates with last-known-good fallback on provider failure
-- [ ] Annual pricing renders correctly in both currencies
-- [ ] No tier is marked Available unless it is purchasable in Stripe production
-- [ ] UI discloses that GBP is converted from USD where settlement is USD
+- [x] `/pricing` is publicly accessible
+- [x] Actor, Agency, and Studio tiers shown side by side per profile type
+- [x] UK visitors default to GBP using detection order: `x-vercel-ip-country` → `cf-ipcountry` → locale → profile country
+- [x] Non-UK visitors default to USD
+- [x] Manual USD/GBP toggle works and persists across session and return visits
+- [x] GBP values are exact two-decimal conversions from Bank of England daily rate
+- [x] Daily FX refresh operates with last-known-good fallback on provider failure
+- [x] Annual pricing renders correctly in both currencies
+- [x] No tier is marked Available unless it is purchasable in Stripe production
+- [x] UI discloses that GBP is converted from USD where settlement is USD
 
 ---
 
@@ -183,23 +183,23 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 
 | Week | Item   | Task                                                                        | Owner Role      | Status | Depends On     | Effort   |
 | ---- | ------ | --------------------------------------------------------------------------- | --------------- | ------ | -------------- | -------- |
-| W11  | WS3-01 | Design and implement `stripe_accounts` storage model                        | Full-stack / BE | TODO   | WS4-05         | 1–2 days |
-| W11  | WS3-02 | Create Express connected account onboarding flow                            | Full-stack      | TODO   | WS3-01         | 4–5 days |
+| W11  | WS3-01 | Design and implement `stripe_accounts` storage model                        | Full-stack / BE | DONE   | WS4-05         | 1–2 days |
+| W11  | WS3-02 | Create Express connected account onboarding flow                            | Full-stack      | DONE   | WS3-01         | 4–5 days |
 | W11  | WS7-03 | Replace ad hoc console logging with structured logs (TI + HDICR)            | Platform        | TODO   | —              | 2–3 days |
-| W12  | WS3-03 | Handle Connect webhook events and onboarding state transitions              | Full-stack / BE | TODO   | WS3-02, WS1-02 | 3–4 days |
+| W12  | WS3-03 | Handle Connect webhook events and onboarding state transitions              | Full-stack / BE | DONE   | WS3-02, WS1-02 | 3–4 days |
 | W12  | WS3-04 | Implement payout and transfer audit logging                                 | Full-stack / BE | TODO   | WS3-03         | 2–3 days |
 | W12  | WS3-05 | Add manual intervention flow for payout failures and reversed transfers     | Full-stack      | TODO   | WS3-04         | 2–3 days |
 | W12  | WS8-01 | Normalize TI env template — add `RESEND_API_KEY`, Sentry DSN, Connect URLs  | Platform        | TODO   | WS3-02         | 1 day    |
-| W12  | WS8-02 | Review HDICR template envs; remove unused Stripe webhook secret if not used | Platform        | TODO   | —              | 0.5 days |
+| W12  | WS8-02 | Review HDICR template envs; remove unused Stripe webhook secret if not used | Platform        | DONE   | —              | 0.5 days |
 | W12  | WS8-03 | Finalize canonical domain and env key names across repos and docs           | Platform        | TODO   | WS8-01, WS8-02 | 1 day    |
 | W12  | WS7-05 | Verify Sentry coverage for handled and unhandled failures                   | Platform        | TODO   | —              | 1 day    |
 | W12  | WS7-07 | Confirm no secrets or secret-like values leak in logs or error bodies       | Platform        | TODO   | WS7-03         | 1 day    |
 
 **M6 Gate Check (2026-07-10):**
 
-- [ ] Actor and agency payout recipients can initiate Stripe Connect onboarding end to end
-- [ ] Onboarding state persists in `stripe_accounts`; return and refresh URLs are correct
-- [ ] `account.updated`, `transfer.*`, and `payout.failed` webhook events handled and state-transitioned
+- [x] Actor and agency payout recipients can initiate Stripe Connect onboarding end to end
+- [x] Onboarding state persists in `stripe_accounts`; return and refresh URLs are correct
+- [x] `account.updated`, `transfer.*`, and `payout.failed` webhook events handled and state-transitioned
 - [ ] Payout audit log exists and is complete
 - [ ] Manual intervention flow for payout failures is operable
 - [ ] `.env.example` and HDICR env template are accurate and complete

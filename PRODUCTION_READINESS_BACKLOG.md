@@ -105,8 +105,8 @@ These decisions are fixed and should be treated as non-negotiable implementation
 
 | ID     | Priority | Status | Item                                                                           | Repo       |
 | ------ | -------- | ------ | ------------------------------------------------------------------------------ | ---------- |
-| WS1-01 | P0       | TODO   | Replace `rejectUnauthorized: false` with validated RDS TLS configuration       | TI         |
-| WS1-02 | P0       | TODO   | Add Stripe webhook event deduplication store and processing guard              | TI         |
+| WS1-01 | P0       | DONE   | Replace `rejectUnauthorized: false` with validated RDS TLS configuration       | TI         |
+| WS1-02 | P0       | DONE   | Add Stripe webhook event deduplication store and processing guard              | TI         |
 | WS1-03 | P0       | DONE   | Extend webhook to handle subscription lifecycle events                         | TI         |
 | WS1-04 | P0       | DONE   | Verify fail-closed behavior when HDICR is unavailable                          | TI         |
 | WS1-05 | P0       | DONE   | Add correlation ID propagation across TI -> HDICR requests and error responses | TI + HDICR |
@@ -141,7 +141,7 @@ These decisions are fixed and should be treated as non-negotiable implementation
 | ID     | Priority | Status | Item                                                                 | Repo |
 | ------ | -------- | ------ | -------------------------------------------------------------------- | ---- |
 | WS2-01 | P1       | DONE   | Replace simplified 3-plan billing model with launch tier model       | TI   |
-| WS2-02 | P1       | TODO   | Add all required `STRIPE_PRICE_*` environment variables and env docs | TI   |
+| WS2-02 | P1       | DONE   | Add all required `STRIPE_PRICE_*` environment variables and env docs | TI   |
 | WS2-03 | P1       | DONE   | Implement subscription access provisioning and revocation model      | TI   |
 | WS2-04 | P1       | DONE   | Implement agency seat allocation and enforcement                     | TI   |
 | WS2-05 | P2       | TODO   | Add dunning and billing-failure user messaging                       | TI   |
@@ -174,9 +174,9 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                                  | Repo |
 | ------ | -------- | ------ | --------------------------------------------------------------------- | ---- |
-| WS3-01 | P1       | TODO   | Design and implement `stripe_accounts` storage model                  | TI   |
-| WS3-02 | P1       | TODO   | Create Express connected account onboarding flow                      | TI   |
-| WS3-03 | P1       | TODO   | Handle Connect webhook events and onboarding state transitions        | TI   |
+| WS3-01 | P1       | DONE   | Design and implement `stripe_accounts` storage model                  | TI   |
+| WS3-02 | P1       | DONE   | Create Express connected account onboarding flow                      | TI   |
+| WS3-03 | P1       | DONE   | Handle Connect webhook events and onboarding state transitions        | TI   |
 | WS3-04 | P1       | TODO   | Implement payout and transfer audit logging                           | TI   |
 | WS3-05 | P1       | TODO   | Add manual intervention flow for payout failures / reversed transfers | TI   |
 
@@ -286,8 +286,8 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                               | Repo |
 | ------ | -------- | ------ | ------------------------------------------------------------------ | ---- |
-| WS6-01 | P2       | TODO   | Add invitation code management UI for agents                       | TI   |
-| WS6-02 | P2       | TODO   | Add admin licence dashboard                                        | TI   |
+| WS6-01 | P2       | DONE   | Add invitation code management UI for agents                               | TI   |
+| WS6-02 | P2       | DONE   | Add admin licence dashboard                                        | TI   |
 | WS6-03 | P2       | TODO   | Add payouts / earnings dashboard for actor and agency roles        | TI   |
 | WS6-04 | P2       | TODO   | Add refund processing UI if refunds are in launch scope            | TI   |
 | WS6-05 | P2       | DONE   | Make launch-scope gaps explicit in UI instead of leaving dead ends | TI   |
@@ -326,7 +326,7 @@ Implementation implication:
 | ID     | Priority | Status | Item                                                                              | Repo       |
 | ------ | -------- | ------ | --------------------------------------------------------------------------------- | ---------- |
 | WS8-01 | P1       | TODO   | Normalize TI env template to actual required runtime variables                    | TI         |
-| WS8-02 | P1       | TODO   | Review HDICR template envs and remove unnecessary Stripe webhook secret if unused | HDICR      |
+| WS8-02 | P1       | DONE   | Review HDICR template envs and remove unnecessary Stripe webhook secret if unused | HDICR      |
 | WS8-03 | P1       | TODO   | Finalize canonical domain and env key names across repos and docs                 | TI + HDICR |
 | WS8-04 | P2       | TODO   | Verify Vercel preview and production configuration parity                         | TI         |
 | WS8-05 | P2       | TODO   | Verify SAM template, ACM, API Gateway, IAM, alarms, and log groups in AWS         | HDICR      |
@@ -344,9 +344,9 @@ Implementation implication:
 | ID     | Priority | Status | Item                                                                                                | Repo |
 | ------ | -------- | ------ | --------------------------------------------------------------------------------------------------- | ---- |
 | WS9-01 | P1       | DONE   | Define launch pricing catalog for Actor, Agency, and Studio profile types and tier metadata         | TI   |
-| WS9-02 | P1       | TODO   | Build public Pricing page with side-by-side tier comparison by profile type                         | TI   |
-| WS9-03 | P1       | TODO   | Implement currency behavior: default USD, default GBP for UK users, and explicit USD/GBP toggle     | TI   |
-| WS9-04 | P2       | TODO   | Add pricing correctness tests, locale tests, and content-governance checks for publicly shown plans | TI   |
+| WS9-02 | P1       | DONE   | Build public Pricing page with side-by-side tier comparison by profile type                         | TI   |
+| WS9-03 | P1       | DONE   | Implement currency behavior: default USD, default GBP for UK users, and explicit USD/GBP toggle     | TI   |
+| WS9-04 | P2       | DONE   | Add pricing correctness tests, locale tests, and content-governance checks for publicly shown plans | TI   |
 
 #### WS9-01 Acceptance Criteria
 
