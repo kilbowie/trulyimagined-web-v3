@@ -134,12 +134,18 @@ Dates: 2026-06-01 → 2026-06-12 | Milestone: M4
 
 | Week | Item   | Task                                                         | Owner Role      | Status | Depends On     | Effort   |
 | ---- | ------ | ------------------------------------------------------------ | --------------- | ------ | -------------- | -------- |
-| W7   | WS4-01 | Add studio profile domain model, routes, and minimal UI      | Full-stack      | TODO   | —              | 3–4 days |
-| W7   | WS4-02 | Add project domain model, routes, and minimal UI             | Full-stack      | TODO   | WS4-01         | 3–4 days |
+| W7   | WS4-01 | Add studio profile domain model, routes, and minimal UI      | Full-stack      | DONE   | —              | 3–4 days |
+| W7   | WS4-02 | Add project domain model, routes, and minimal UI             | Full-stack      | DONE   | WS4-01         | 3–4 days |
 | W7   | WS4-04 | Add deal templates and commercial terms model                | Full-stack / BE | TODO   | WS4-01         | 2–3 days |
 | W8   | WS4-05 | Add `deals` table and deal creation workflow                 | Full-stack / BE | TODO   | WS4-02, WS4-04 | 3–5 days |
 | W8   | WS4-06 | Add deal approval and rejection workflow with audit trail    | Full-stack / BE | TODO   | WS4-05         | 2–3 days |
 | W8   | WS4-07 | Implement platform fee calculation with threshold unit tests | Full-stack / BE | TODO   | WS4-05         | 2–3 days |
+
+**Progress Update (2026-04-19):**
+
+- WS4-01 delivered in TI repo (`ae2491e`): `studios` migration + API + dashboard UI.
+- WS4-02 delivered in TI repo (`a77cab5`): `projects` migration + API + dashboard UI.
+- Validation on latest implementation pass: `pnpm type-check` ✓ and `pnpm test` ✓ (191/191 tests).
 
 **M4 Gate Check (2026-06-12):**
 

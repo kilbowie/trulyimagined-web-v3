@@ -207,8 +207,8 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                              | Repo |
 | ------ | -------- | ------ | ------------------------------------------------- | ---- |
-| WS4-01 | P1       | TODO   | Add studio profile domain model, routes, and UI   | TI   |
-| WS4-02 | P1       | TODO   | Add project domain model, routes, and UI          | TI   |
+| WS4-01 | P1       | DONE   | Add studio profile domain model, routes, and UI   | TI   |
+| WS4-02 | P1       | DONE   | Add project domain model, routes, and UI          | TI   |
 | WS4-03 | P1       | TODO   | Add job board / casting-open discovery flow       | TI   |
 | WS4-04 | P1       | TODO   | Add deal templates and commercial terms model     | TI   |
 | WS4-05 | P1       | TODO   | Add deals table and deal creation workflow        | TI   |
@@ -599,18 +599,18 @@ Use this section format when work begins on an item:
 - `Validation evidence:`
 - `Open risks:`
 
-## First 10 Tasks To Start Next
+## Next 10 Tasks From Current Stage
 
-1. Implement WS1-01 and remove unsafe DB TLS behavior.
-2. Implement WS1-02 and add webhook event idempotency storage.
-3. Implement WS1-03 for subscription lifecycle webhook coverage.
-4. Verify and enforce WS1-04 fail-closed behavior for TI -> HDICR outages.
-5. Implement WS1-05 correlation ID propagation end-to-end.
-6. Make the explicit launch-scope decision for WS2.
-7. Expand `billing.ts` and env contracts to the chosen launch tier set.
-8. Add rate limiting and route validation hardening from WS7-01 and WS7-02.
-9. Design the TI commercial schema additions from WS4.
-10. Decide whether HDICR should retain any Stripe secret usage, then close WS8-02.
+1. Implement WS4-04: add `deal_templates` schema and commercial terms model.
+2. Implement WS4-05: add `deals` schema and creation workflow with validation.
+3. Implement WS4-06: add deal approval/rejection workflow with auditable transitions.
+4. Implement WS4-07: implement platform-fee logic with boundary unit tests.
+5. Implement WS4-08: add PaymentIntent creation and deal payment-state wiring.
+6. Implement WS5-01: enforce HDICR consent gate for final deal approval.
+7. Implement WS5-02: mint TI licence records from approved + paid deals.
+8. Implement WS3-05: add manual intervention flow for payout failures/reversals.
+9. Implement WS2-05: add dunning and billing-failure user messaging.
+10. Implement WS7-04: add webhook lag/retry visibility for operations.
 
 ## Completion Definition
 
