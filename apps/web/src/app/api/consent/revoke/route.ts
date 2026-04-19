@@ -37,15 +37,18 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
     const correlationId = extractCorrelationId(request);
 
-    const revokeResult = await revokeConsent({
-      actorId,
-      consentId: consentId || undefined,
-      consentType: consentType || undefined,
-      projectId: projectId || undefined,
-      reason: reason || undefined,
-      ipAddress,
-      userAgent,
-    }, correlationId);
+    const revokeResult = await revokeConsent(
+      {
+        actorId,
+        consentId: consentId || undefined,
+        consentType: consentType || undefined,
+        projectId: projectId || undefined,
+        reason: reason || undefined,
+        ipAddress,
+        userAgent,
+      },
+      correlationId
+    );
 
     if (revokeResult.notFound) {
       return NextResponse.json({ error: 'Consent not found' }, { status: 404 });

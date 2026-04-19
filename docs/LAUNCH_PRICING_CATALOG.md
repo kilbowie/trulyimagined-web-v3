@@ -17,30 +17,30 @@ All plans support monthly and yearly billing intervals.
 
 ### Actor
 
-| Tier ID | Label | Billing model | Monthly env key | Yearly env key |
-| --- | --- | --- | --- | --- |
-| `actor_professional` | Actor Professional | Subscription | `STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY` | `STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY` |
+| Tier ID              | Label              | Billing model | Monthly env key                           | Yearly env key                           |
+| -------------------- | ------------------ | ------------- | ----------------------------------------- | ---------------------------------------- |
+| `actor_professional` | Actor Professional | Subscription  | `STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY` | `STRIPE_PRICE_ACTOR_PROFESSIONAL_YEARLY` |
 
 ### Agency
 
-| Tier ID | Label | Billing model | Monthly env key | Yearly env key |
-| --- | --- | --- | --- | --- |
-| `agency_independent` | Agency Independent | Subscription | `STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY` | `STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY` |
-| `agency_boutique` | Agency Boutique | Subscription | `STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY` | `STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY` |
-| `agency_sme` | Agency SME | Subscription | `STRIPE_PRICE_AGENCY_SME_MONTHLY` | `STRIPE_PRICE_AGENCY_SME_YEARLY` |
+| Tier ID              | Label              | Billing model | Monthly env key                           | Yearly env key                           |
+| -------------------- | ------------------ | ------------- | ----------------------------------------- | ---------------------------------------- |
+| `agency_independent` | Agency Independent | Subscription  | `STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY` | `STRIPE_PRICE_AGENCY_INDEPENDENT_YEARLY` |
+| `agency_boutique`    | Agency Boutique    | Subscription  | `STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY`    | `STRIPE_PRICE_AGENCY_BOUTIQUE_YEARLY`    |
+| `agency_sme`         | Agency SME         | Subscription  | `STRIPE_PRICE_AGENCY_SME_MONTHLY`         | `STRIPE_PRICE_AGENCY_SME_YEARLY`         |
 
 Agency seat expansion SKU:
 
-| SKU | Purpose | Env key |
-| --- | --- | --- |
+| SKU                | Purpose                                | Env key                          |
+| ------------------ | -------------------------------------- | -------------------------------- |
 | Agency seat add-on | Additional paid seats beyond base seat | `STRIPE_PRICE_AGENCY_SEAT_ADDON` |
 
 ### Studio / Enterprise
 
-| Tier ID | Label | Billing model | Monthly env key | Yearly env key |
-| --- | --- | --- | --- | --- |
-| `studio_indie` | Studio Indie | Subscription | `STRIPE_PRICE_STUDIO_INDIE_MONTHLY` | `STRIPE_PRICE_STUDIO_INDIE_YEARLY` |
-| `studio_midmarket` | Studio Midmarket | Subscription | `STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY` | `STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY` |
+| Tier ID            | Label            | Billing model | Monthly env key                         | Yearly env key                         |
+| ------------------ | ---------------- | ------------- | --------------------------------------- | -------------------------------------- |
+| `studio_indie`     | Studio Indie     | Subscription  | `STRIPE_PRICE_STUDIO_INDIE_MONTHLY`     | `STRIPE_PRICE_STUDIO_INDIE_YEARLY`     |
+| `studio_midmarket` | Studio Midmarket | Subscription  | `STRIPE_PRICE_STUDIO_MIDMARKET_MONTHLY` | `STRIPE_PRICE_STUDIO_MIDMARKET_YEARLY` |
 
 ## Role Availability
 

@@ -36,7 +36,16 @@ export async function POST(request: NextRequest) {
 
     const validation = await validateBody(request, IdentityLinkSchema);
     if (!validation.ok) return validation.response;
-    const { provider, providerUserId, providerType, verificationLevel, assuranceLevel, credentialData, metadata, expiresAt } = validation.data;
+    const {
+      provider,
+      providerUserId,
+      providerType,
+      verificationLevel,
+      assuranceLevel,
+      credentialData,
+      metadata,
+      expiresAt,
+    } = validation.data;
 
     const userId = await getUserProfileIdByAuth0UserId(session.user.sub);
     if (!userId) {
@@ -56,14 +65,17 @@ export async function POST(request: NextRequest) {
 
       // If exists but inactive, reactivate it
       if (!existing.is_active) {
-        await reactivateIdentityLink({
-          linkId: existing.id,
-          verificationLevel,
-          assuranceLevel,
-          credentialData,
-          metadata,
-          expiresAt,
-        }, correlationId);
+        await reactivateIdentityLink(
+          {
+            linkId: existing.id,
+            verificationLevel,
+            assuranceLevel,
+            credentialData,
+            metadata,
+            expiresAt,
+          },
+          correlationId
+        );
 
         console.log('[IDENTITY-LINK] Reactivated existing link:', {
           linkId: existing.id,
@@ -95,17 +107,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newLink = await createIdentityLink({
-      userProfileId: userId,
-      provider,
-      providerUserId,
-      providerType,
-      verificationLevel,
-      assuranceLevel,
-      credentialData,
-      metadata,
-      expiresAt,
-    }, correlationId);
+    const newLink = await createIdentityLink(
+      {
+        userProfileId: userId,
+        provider,
+        providerUserId,
+        providerType,
+        verificationLevel,
+        assuranceLevel,
+        credentialData,
+        metadata,
+        expiresAt,
+      },
+      correlationId
+    );
 
     console.log('[IDENTITY-LINK] Created new identity link:', {
       linkId: newLink.id,

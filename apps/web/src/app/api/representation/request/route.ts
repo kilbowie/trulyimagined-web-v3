@@ -123,11 +123,14 @@ export async function POST(request: NextRequest) {
 
     const correlationId = extractCorrelationId(request);
 
-    const createdRequest = await createRepresentationRequest({
-      actorId: actor.id,
-      agentId: agent.id,
-      message: validation.data.message,
-    }, correlationId);
+    const createdRequest = await createRepresentationRequest(
+      {
+        actorId: actor.id,
+        agentId: agent.id,
+        message: validation.data.message,
+      },
+      correlationId
+    );
 
     if (invitationCodeRecord) {
       const redeemed = await redeemInvitationCode({

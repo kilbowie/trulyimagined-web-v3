@@ -47,9 +47,8 @@ describe('agency-seat-limits', () => {
         rowCount: 1,
       });
 
-    const { assertAgencySeatCapacityForNextStatus, AgencySeatCapacityError } = await import(
-      '@/lib/agency-seat-limits'
-    );
+    const { assertAgencySeatCapacityForNextStatus, AgencySeatCapacityError } =
+      await import('@/lib/agency-seat-limits');
 
     await expect(
       assertAgencySeatCapacityForNextStatus({

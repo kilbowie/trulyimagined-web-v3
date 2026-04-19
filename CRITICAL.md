@@ -3,6 +3,7 @@
 **This repository (`trulyimagined-web-v3`) is a development planning workspace.**
 
 It is used for:
+
 - Designing, prototyping, and iterating on new features
 - Drafting architecture decisions, sprint plans, and documentation
 - Proof-of-concept code that informs production implementation
@@ -13,10 +14,10 @@ It is used for:
 
 All production-readiness changes — code, migrations, tests, config — must be applied to:
 
-| Repo | Path | Purpose |
-|------|------|---------|
-| **trulyimagined** | `C:\Users\adamr\OneDrive\Desktop\KilbowieConsulting\002-TrulyImagined\trulyimagined` | TrulyImagined web platform (Next.js, Stripe, Auth0) |
-| **hdicr** | `C:\Users\adamr\OneDrive\Desktop\KilbowieConsulting\002-TrulyImagined\hdicr` | HDICR consent/identity/licensing/representation services (Lambda) |
+| Repo              | Path                                                                                 | Purpose                                                           |
+| ----------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| **trulyimagined** | `C:\Users\adamr\OneDrive\Desktop\KilbowieConsulting\002-TrulyImagined\trulyimagined` | TrulyImagined web platform (Next.js, Stripe, Auth0)               |
+| **hdicr**         | `C:\Users\adamr\OneDrive\Desktop\KilbowieConsulting\002-TrulyImagined\hdicr`         | HDICR consent/identity/licensing/representation services (Lambda) |
 
 ---
 

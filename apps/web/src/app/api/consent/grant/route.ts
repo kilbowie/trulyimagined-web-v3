@@ -44,15 +44,18 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') || 'unknown';
     const correlationId = extractCorrelationId(request);
 
-    const consentRecord = await grantConsent({
-      actorId,
-      consentType,
-      scope,
-      requesterId: session.user.sub,
-      requesterType: session.user['https://trulyimagined.com/role'] || 'actor',
-      ipAddress,
-      userAgent,
-    }, correlationId);
+    const consentRecord = await grantConsent(
+      {
+        actorId,
+        consentType,
+        scope,
+        requesterId: session.user.sub,
+        requesterType: session.user['https://trulyimagined.com/role'] || 'actor',
+        ipAddress,
+        userAgent,
+      },
+      correlationId
+    );
 
     console.log('[CONSENT] Consent granted:', {
       id: consentRecord.id,

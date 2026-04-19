@@ -214,7 +214,9 @@ export default function LicensesPage() {
                 <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
                   <div>
                     <div className="text-muted-foreground">Usage Type</div>
-                    <div className="text-foreground capitalize">{license.usage_type.replace('_', ' ')}</div>
+                    <div className="text-foreground capitalize">
+                      {license.usage_type.replace('_', ' ')}
+                    </div>
                   </div>
                   <div>
                     <div className="text-muted-foreground">Compensation</div>
@@ -230,7 +232,9 @@ export default function LicensesPage() {
                   </div>
                   <div>
                     <div className="text-muted-foreground">Status Updated</div>
-                    <div className="text-foreground">{formatDate(license.reviewed_at || license.issued_at)}</div>
+                    <div className="text-foreground">
+                      {formatDate(license.reviewed_at || license.issued_at)}
+                    </div>
                   </div>
                 </div>
 
@@ -290,7 +294,8 @@ export default function LicensesPage() {
                       Revoke License (Post-Launch)
                     </button>
                     <p className="text-xs text-muted-foreground">
-                      Manual revocation is intentionally deferred from launch scope and is tracked for the next delivery phase.
+                      Manual revocation is intentionally deferred from launch scope and is tracked
+                      for the next delivery phase.
                     </p>
                   </div>
                 )}

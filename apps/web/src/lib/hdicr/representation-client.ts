@@ -72,11 +72,14 @@ export async function hasPendingRequest(actorId: string, agentId: string) {
   return Boolean(payload.pending);
 }
 
-export async function createRepresentationRequest(params: {
-  actorId: string;
-  agentId: string;
-  message?: string | null;
-}, correlationId?: string) {
+export async function createRepresentationRequest(
+  params: {
+    actorId: string;
+    agentId: string;
+    message?: string | null;
+  },
+  correlationId?: string
+) {
   const payload = await invokeRepresentationRemote<{ request?: Record<string, any> | null }>({
     path: '/v1/representation/request',
     method: 'POST',

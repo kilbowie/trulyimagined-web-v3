@@ -96,7 +96,11 @@ async function countOccupiedAgencySeats(
                      AND status = ANY($2::text[])`;
 
   const result = excludeMemberId
-    ? await queryTi(`${baseSql} AND id <> $3`, [agencyId, AGENCY_MEMBER_OCCUPYING_STATUSES, excludeMemberId])
+    ? await queryTi(`${baseSql} AND id <> $3`, [
+        agencyId,
+        AGENCY_MEMBER_OCCUPYING_STATUSES,
+        excludeMemberId,
+      ])
     : await queryTi(baseSql, [agencyId, AGENCY_MEMBER_OCCUPYING_STATUSES]);
 
   const occupiedSeats = Number(result.rows[0]?.occupied_seats ?? 0);

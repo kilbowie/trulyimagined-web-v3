@@ -100,14 +100,17 @@ export async function getIdentityLinkByProviderAndProviderUser(
   return null;
 }
 
-export async function reactivateIdentityLink(params: {
-  linkId: string;
-  verificationLevel?: string;
-  assuranceLevel?: string;
-  credentialData?: unknown;
-  metadata?: Record<string, unknown>;
-  expiresAt?: string;
-}, correlationId?: string) {
+export async function reactivateIdentityLink(
+  params: {
+    linkId: string;
+    verificationLevel?: string;
+    assuranceLevel?: string;
+    credentialData?: unknown;
+    metadata?: Record<string, unknown>;
+    expiresAt?: string;
+  },
+  correlationId?: string
+) {
   await invokeIdentityRemote<{ success?: boolean }>({
     path: '/v1/identity/link/reactivate',
     method: 'POST',
@@ -119,17 +122,20 @@ export async function reactivateIdentityLink(params: {
   return;
 }
 
-export async function createIdentityLink(params: {
-  userProfileId: string;
-  provider: string;
-  providerUserId: string;
-  providerType: string;
-  verificationLevel?: string;
-  assuranceLevel?: string;
-  credentialData?: unknown;
-  metadata?: Record<string, unknown>;
-  expiresAt?: string;
-}, correlationId?: string) {
+export async function createIdentityLink(
+  params: {
+    userProfileId: string;
+    provider: string;
+    providerUserId: string;
+    providerType: string;
+    verificationLevel?: string;
+    assuranceLevel?: string;
+    credentialData?: unknown;
+    metadata?: Record<string, unknown>;
+    expiresAt?: string;
+  },
+  correlationId?: string
+) {
   return invokeIdentityRemote<Record<string, unknown>>({
     path: '/v1/identity/link/create',
     method: 'POST',

@@ -40,7 +40,7 @@
 
 **Requirement**: `STRIPE_PRICE_*` env keys documented and aligned with tier model
 
-- **All Keys Defined**: 
+- **All Keys Defined**:
   - `STRIPE_PRICE_ACTOR_PROFESSIONAL_MONTHLY` / `_YEARLY`
   - `STRIPE_PRICE_AGENCY_INDEPENDENT_MONTHLY` / `_YEARLY`
   - `STRIPE_PRICE_AGENCY_BOUTIQUE_MONTHLY` / `_YEARLY`
@@ -106,7 +106,7 @@
 
 ### WS2-02: Environment Variables ✅
 
-- All STRIPE_PRICE_* keys documented in .env.example
+- All STRIPE*PRICE*\* keys documented in .env.example
 - Keys align with tier model (12 tier prices + 1 addon = 13 keys)
 - Ready for Vercel env var population
 - **Status**: Complete, no changes needed
@@ -136,14 +136,14 @@ No TypeScript errors, no lint warnings.
 
 ## M2 Gate Readiness Checklist
 
-| Item | Status | Evidence |
-|------|--------|----------|
-| Webhook event handling | ✅ DONE | WS1-03 handlers + contract tests + 167 tests pass |
-| Full tier catalog | ✅ DONE | billing.ts 6 tiers + pricing keys |
-| Env var documentation | ✅ DONE | .env.example all keys present |
-| Access provisioning/revocation | ✅ DONE | syncSubscriptionEntitlements + audit trail |
-| Pricing catalog model | ⚠️ N/A | Deferred to WS9-02 (non-blocking) |
-| UI dead ends removal | ⚠️ N/A | Deferred to WS6-05 (non-blocking) |
+| Item                           | Status  | Evidence                                          |
+| ------------------------------ | ------- | ------------------------------------------------- |
+| Webhook event handling         | ✅ DONE | WS1-03 handlers + contract tests + 167 tests pass |
+| Full tier catalog              | ✅ DONE | billing.ts 6 tiers + pricing keys                 |
+| Env var documentation          | ✅ DONE | .env.example all keys present                     |
+| Access provisioning/revocation | ✅ DONE | syncSubscriptionEntitlements + audit trail        |
+| Pricing catalog model          | ⚠️ N/A  | Deferred to WS9-02 (non-blocking)                 |
+| UI dead ends removal           | ⚠️ N/A  | Deferred to WS6-05 (non-blocking)                 |
 
 **Overall M2 Gate Status**: ✅ **READY FOR REVIEW** (4/4 blocking items complete, 2/2 non-blocking deferred)
 
@@ -152,16 +152,19 @@ No TypeScript errors, no lint warnings.
 ## Next Steps for Sprint Continuation
 
 ### Immediate (Before M2 Gate Review)
+
 1. ✅ Verify type-check passes (already done)
 2. ✅ Verify tests pass (all 167 passing)
 3. 📋 Create M2 gate review ticket for product/security review
 
 ### Sprint 2 Remaining Work (P2/Stretch Items)
+
 1. **WS2-04**: Agency seat allocation and enforcement
 2. **WS2-05**: Dunning and billing-failure user messaging
 3. **WS6-05**: UI dead ends removal/stubbing (if timeline permits)
 
 ### Sprint 3 Planning
+
 1. **WS9-01**: Pricing catalog definition (input for pricing page)
 2. **WS9-02**: Build `/pricing` route with tier comparison UI
 3. **WS3-01 through WS3-05**: Stripe Connect implementation
@@ -170,10 +173,10 @@ No TypeScript errors, no lint warnings.
 
 ## Commits This Session
 
-| Hash | Message |
-|------|---------|
+| Hash    | Message                                                                  |
+| ------- | ------------------------------------------------------------------------ |
 | 27f0ec9 | docs: mark Sprint 1 items (WS1-03/04/05) and pre-existing WS2-01 as DONE |
-| 87345af | docs: mark WS2-03 subscription provisioning/revocation as DONE |
+| 87345af | docs: mark WS2-03 subscription provisioning/revocation as DONE           |
 
 ---
 
