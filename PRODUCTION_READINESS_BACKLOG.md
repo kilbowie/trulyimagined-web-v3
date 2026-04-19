@@ -177,7 +177,7 @@ Implementation implication:
 | WS3-01 | P1       | DONE   | Design and implement `stripe_accounts` storage model                  | TI   |
 | WS3-02 | P1       | DONE   | Create Express connected account onboarding flow                      | TI   |
 | WS3-03 | P1       | DONE   | Handle Connect webhook events and onboarding state transitions        | TI   |
-| WS3-04 | P1       | TODO   | Implement payout and transfer audit logging                           | TI   |
+| WS3-04 | P1       | DONE   | Implement payout and transfer audit logging                           | TI   |
 | WS3-05 | P1       | TODO   | Add manual intervention flow for payout failures / reversed transfers | TI   |
 
 #### WS3 Dependencies

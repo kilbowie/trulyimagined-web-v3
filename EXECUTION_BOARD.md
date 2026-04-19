@@ -187,7 +187,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 | W11  | WS3-02 | Create Express connected account onboarding flow                            | Full-stack      | DONE   | WS3-01         | 4–5 days |
 | W11  | WS7-03 | Replace ad hoc console logging with structured logs (TI + HDICR)            | Platform        | TODO   | —              | 2–3 days |
 | W12  | WS3-03 | Handle Connect webhook events and onboarding state transitions              | Full-stack / BE | DONE   | WS3-02, WS1-02 | 3–4 days |
-| W12  | WS3-04 | Implement payout and transfer audit logging                                 | Full-stack / BE | TODO   | WS3-03         | 2–3 days |
+| W12  | WS3-04 | Implement payout and transfer audit logging                                 | Full-stack / BE | DONE   | WS3-03         | 2–3 days |
 | W12  | WS3-05 | Add manual intervention flow for payout failures and reversed transfers     | Full-stack      | TODO   | WS3-04         | 2–3 days |
 | W12  | WS8-01 | Normalize TI env template — add `RESEND_API_KEY`, Sentry DSN, Connect URLs  | Platform        | TODO   | WS3-02         | 1 day    |
 | W12  | WS8-02 | Review HDICR template envs; remove unused Stripe webhook secret if not used | Platform        | DONE   | —              | 0.5 days |
@@ -200,7 +200,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 - [x] Actor and agency payout recipients can initiate Stripe Connect onboarding end to end
 - [x] Onboarding state persists in `stripe_accounts`; return and refresh URLs are correct
 - [x] `account.updated`, `transfer.*`, and `payout.failed` webhook events handled and state-transitioned
-- [ ] Payout audit log exists and is complete
+- [x] Payout audit log exists and is complete
 - [ ] Manual intervention flow for payout failures is operable
 - [ ] `.env.example` and HDICR env template are accurate and complete
 - [ ] Structured logging is operational in both TI and HDICR; no raw `console.log` in critical paths
