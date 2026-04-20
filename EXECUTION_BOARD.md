@@ -179,7 +179,7 @@ Dates: 2026-06-15 → 2026-06-26 | Milestone: M5
 - [x] Approved and paid deals produce licence records with immutable consent reference
 - [x] `license_usage_log` ingestion path is hardened and observable
 - [x] Agency seat limits are enforced; team-member addition blocks at seat cap
-- [ ] Dunning and billing-failure messaging is in place (WS2-05)
+- [x] Dunning and billing-failure messaging is in place (WS2-05)
 
 ---
 

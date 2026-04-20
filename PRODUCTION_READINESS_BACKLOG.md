@@ -144,7 +144,7 @@ These decisions are fixed and should be treated as non-negotiable implementation
 | WS2-02 | P1       | DONE   | Add all required `STRIPE_PRICE_*` environment variables and env docs | TI   |
 | WS2-03 | P1       | DONE   | Implement subscription access provisioning and revocation model      | TI   |
 | WS2-04 | P1       | DONE   | Implement agency seat allocation and enforcement                     | TI   |
-| WS2-05 | P2       | TODO   | Add dunning and billing-failure user messaging                       | TI   |
+| WS2-05 | P2       | DONE   | Add dunning and billing-failure user messaging                       | TI   |
 
 #### WS2 Launch Scope Decision
 
@@ -609,7 +609,7 @@ Use this section format when work begins on an item:
 6. Implement WS5-01: enforce HDICR consent gate for final deal approval.
 7. Implement WS5-02: mint TI licence records from approved + paid deals.
 8. Implement WS3-05: add manual intervention flow for payout failures/reversals.
-9. Implement WS2-05: add dunning and billing-failure user messaging.
+9. [DONE] Implement WS2-05: add dunning and billing-failure user messaging.
 10. Implement WS7-04: add webhook lag/retry visibility for operations.
 
 ## Completion Definition
