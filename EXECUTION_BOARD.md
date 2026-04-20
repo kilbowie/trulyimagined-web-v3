@@ -168,8 +168,8 @@ Dates: 2026-06-15 → 2026-06-26 | Milestone: M5
 | W9   | WS4-08 | Implement PaymentIntent creation for deal payments               | Full-stack / BE | TODO   | WS4-07         | 3–4 days |
 | W9   | WS2-04 | Implement agency seat allocation and enforcement                 | Full-stack / BE | DONE   | WS2-03         | 2–3 days |
 | W10  | WS5-02 | Implement TI-side licence minting from approved and paid deals   | Full-stack / BE | TODO   | WS5-01, WS4-08 | 3–4 days |
-| W10  | WS5-03 | Verify and harden `license_usage_log` ingestion path             | Full-stack / BE | TODO   | WS5-02         | 2–3 days |
-| W10  | WS7-04 | Add webhook lag and retry visibility (operational observability) | Platform        | TODO   | WS1-02         | 1–2 days |
+| W10  | WS5-03 | Verify and harden `license_usage_log` ingestion path             | Full-stack / BE | DONE   | WS5-02         | 2–3 days |
+| W10  | WS7-04 | Add webhook lag and retry visibility (operational observability) | Platform        | DONE   | WS1-02         | 1–2 days |
 
 **M5 Gate Check (2026-06-26):**
 
@@ -177,7 +177,7 @@ Dates: 2026-06-15 → 2026-06-26 | Milestone: M5
 - [ ] Consent check failure returns a clear denial reason; TI surfaces it to the initiating party
 - [ ] Consent version at signing is locked onto the resulting licence record
 - [ ] Approved and paid deals produce licence records with immutable consent reference
-- [ ] `license_usage_log` ingestion path is hardened and observable
+- [x] `license_usage_log` ingestion path is hardened and observable
 - [ ] Agency seat limits are enforced; team-member addition blocks at seat cap
 - [ ] Dunning and billing-failure messaging is in place (WS2-05)
 

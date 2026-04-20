@@ -260,7 +260,7 @@ Implementation implication:
 | ------ | -------- | ------ | -------------------------------------------------------------------- | ---------- |
 | WS5-01 | P1       | TODO   | Wire TI deal approval to HDICR consent check                         | TI + HDICR |
 | WS5-02 | P1       | TODO   | Implement TI-side licence minting triggered from approved paid deals | TI         |
-| WS5-03 | P1       | TODO   | Verify and harden `license_usage_log` ingestion path                 | TI         |
+| WS5-03 | P1       | DONE   | Verify and harden `license_usage_log` ingestion path                 | TI         |
 | WS5-04 | P1       | TODO   | Add arbitration data model and workflow                              | TI + HDICR |
 | WS5-05 | P2       | TODO   | Implement consent-revocation conflict handling for active licences   | TI + HDICR |
 
@@ -304,7 +304,7 @@ Implementation implication:
 | WS7-01 | P1       | DONE   | Add rate limiting to payment, billing, webhook, and verification endpoints | TI         |
 | WS7-02 | P1       | DONE   | Standardize input validation across all state-changing routes              | TI + HDICR |
 | WS7-03 | P2       | TODO   | Replace ad hoc console logging with structured logs                        | TI + HDICR |
-| WS7-04 | P2       | TODO   | Add webhook lag and retry visibility                                       | TI         |
+| WS7-04 | P2       | DONE   | Add webhook lag and retry visibility                                       | TI         |
 | WS7-05 | P2       | TODO   | Verify Sentry coverage for both handled and unhandled failures             | TI         |
 | WS7-06 | P2       | TODO   | Document rollback strategy and incident runbooks                           | TI + HDICR |
 | WS7-07 | P2       | TODO   | Confirm no secrets or secret-like values leak in logs or error bodies      | TI + HDICR |
