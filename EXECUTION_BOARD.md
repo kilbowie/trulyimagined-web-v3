@@ -136,10 +136,10 @@ Dates: 2026-06-01 → 2026-06-12 | Milestone: M4
 | ---- | ------ | ------------------------------------------------------------ | --------------- | ------ | -------------- | -------- |
 | W7   | WS4-01 | Add studio profile domain model, routes, and minimal UI      | Full-stack      | DONE   | —              | 3–4 days |
 | W7   | WS4-02 | Add project domain model, routes, and minimal UI             | Full-stack      | DONE   | WS4-01         | 3–4 days |
-| W7   | WS4-04 | Add deal templates and commercial terms model                | Full-stack / BE | TODO   | WS4-01         | 2–3 days |
-| W8   | WS4-05 | Add `deals` table and deal creation workflow                 | Full-stack / BE | TODO   | WS4-02, WS4-04 | 3–5 days |
-| W8   | WS4-06 | Add deal approval and rejection workflow with audit trail    | Full-stack / BE | TODO   | WS4-05         | 2–3 days |
-| W8   | WS4-07 | Implement platform fee calculation with threshold unit tests | Full-stack / BE | TODO   | WS4-05         | 2–3 days |
+| W7   | WS4-04 | Add deal templates and commercial terms model                | Full-stack / BE | DONE   | WS4-01         | 2–3 days |
+| W8   | WS4-05 | Add `deals` table and deal creation workflow                 | Full-stack / BE | DONE   | WS4-02, WS4-04 | 3–5 days |
+| W8   | WS4-06 | Add deal approval and rejection workflow with audit trail    | Full-stack / BE | DONE   | WS4-05         | 2–3 days |
+| W8   | WS4-07 | Implement platform fee calculation with threshold unit tests | Full-stack / BE | DONE   | WS4-05         | 2–3 days |
 
 **Progress Update (2026-04-19):**
 
@@ -149,11 +149,11 @@ Dates: 2026-06-01 → 2026-06-12 | Milestone: M4
 
 **M4 Gate Check (2026-06-12):**
 
-- [ ] `studios`, `projects`, `deal_templates`, `deals` tables exist with migrations
-- [ ] Studio and project routes exist and are permission-gated
-- [ ] Deals capture all required fields (template, actor, agent, studio, consent version, payment status)
-- [ ] Deal status lifecycle is auditable with transition log
-- [ ] Platform fee calculation is correct at all threshold boundaries: 10k, 25k, 50k, 100k
+- [x] `studios`, `projects`, `deal_templates`, `deals` tables exist with migrations
+- [x] Studio and project routes exist and are permission-gated
+- [x] Deals capture all required fields (template, actor, agent, studio, consent version, payment status)
+- [x] Deal status lifecycle is auditable with transition log
+- [x] Platform fee calculation is correct at all threshold boundaries: 10k, 25k, 50k, 100k
 - [ ] Job board / casting-open discovery flow is accessible (WS4-03 deliverable or noted as deferred)
 
 ---
@@ -164,21 +164,21 @@ Dates: 2026-06-15 → 2026-06-26 | Milestone: M5
 
 | Week | Item   | Task                                                             | Owner Role      | Status | Depends On     | Effort   |
 | ---- | ------ | ---------------------------------------------------------------- | --------------- | ------ | -------------- | -------- |
-| W9   | WS5-01 | Wire TI deal approval to HDICR consent check                     | Full-stack / BE | TODO   | WS4-05, WS1-02 | 3–5 days |
-| W9   | WS4-08 | Implement PaymentIntent creation for deal payments               | Full-stack / BE | TODO   | WS4-07         | 3–4 days |
+| W9   | WS5-01 | Wire TI deal approval to HDICR consent check                     | Full-stack / BE | DONE   | WS4-05, WS1-02 | 3–5 days |
+| W9   | WS4-08 | Implement PaymentIntent creation for deal payments               | Full-stack / BE | DONE   | WS4-07         | 3–4 days |
 | W9   | WS2-04 | Implement agency seat allocation and enforcement                 | Full-stack / BE | DONE   | WS2-03         | 2–3 days |
-| W10  | WS5-02 | Implement TI-side licence minting from approved and paid deals   | Full-stack / BE | TODO   | WS5-01, WS4-08 | 3–4 days |
+| W10  | WS5-02 | Implement TI-side licence minting from approved and paid deals   | Full-stack / BE | DONE   | WS5-01, WS4-08 | 3–4 days |
 | W10  | WS5-03 | Verify and harden `license_usage_log` ingestion path             | Full-stack / BE | DONE   | WS5-02         | 2–3 days |
 | W10  | WS7-04 | Add webhook lag and retry visibility (operational observability) | Platform        | DONE   | WS1-02         | 1–2 days |
 
 **M5 Gate Check (2026-06-26):**
 
-- [ ] No deal can reach final approval without a successful HDICR consent check
-- [ ] Consent check failure returns a clear denial reason; TI surfaces it to the initiating party
-- [ ] Consent version at signing is locked onto the resulting licence record
-- [ ] Approved and paid deals produce licence records with immutable consent reference
+- [x] No deal can reach final approval without a successful HDICR consent check
+- [x] Consent check failure returns a clear denial reason; TI surfaces it to the initiating party
+- [x] Consent version at signing is locked onto the resulting licence record
+- [x] Approved and paid deals produce licence records with immutable consent reference
 - [x] `license_usage_log` ingestion path is hardened and observable
-- [ ] Agency seat limits are enforced; team-member addition blocks at seat cap
+- [x] Agency seat limits are enforced; team-member addition blocks at seat cap
 - [ ] Dunning and billing-failure messaging is in place (WS2-05)
 
 ---
@@ -194,7 +194,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 | W11  | WS7-03 | Replace ad hoc console logging with structured logs (TI + HDICR)            | Platform        | TODO   | —              | 2–3 days |
 | W12  | WS3-03 | Handle Connect webhook events and onboarding state transitions              | Full-stack / BE | DONE   | WS3-02, WS1-02 | 3–4 days |
 | W12  | WS3-04 | Implement payout and transfer audit logging                                 | Full-stack / BE | DONE   | WS3-03         | 2–3 days |
-| W12  | WS3-05 | Add manual intervention flow for payout failures and reversed transfers     | Full-stack      | TODO   | WS3-04         | 2–3 days |
+| W12  | WS3-05 | Add manual intervention flow for payout failures and reversed transfers     | Full-stack      | DONE   | WS3-04         | 2–3 days |
 | W12  | WS8-01 | Normalize TI env template — add `RESEND_API_KEY`, Sentry DSN, Connect URLs  | Platform        | TODO   | WS3-02         | 1 day    |
 | W12  | WS8-02 | Review HDICR template envs; remove unused Stripe webhook secret if not used | Platform        | DONE   | —              | 0.5 days |
 | W12  | WS8-03 | Finalize canonical domain and env key names across repos and docs           | Platform        | TODO   | WS8-01, WS8-02 | 1 day    |
@@ -207,7 +207,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 - [x] Onboarding state persists in `stripe_accounts`; return and refresh URLs are correct
 - [x] `account.updated`, `transfer.*`, and `payout.failed` webhook events handled and state-transitioned
 - [x] Payout audit log exists and is complete
-- [ ] Manual intervention flow for payout failures is operable
+- [x] Manual intervention flow for payout failures is operable
 - [ ] `.env.example` and HDICR env template are accurate and complete
 - [ ] Structured logging is operational in both TI and HDICR; no raw `console.log` in critical paths
 - [ ] No secrets leak in logs or error response bodies
@@ -221,7 +221,7 @@ Dates: 2026-07-13 → 2026-07-24 | Milestone: M7
 
 | Week | Item   | Task                                                                      | Owner Role      | Status | Depends On | Effort   |
 | ---- | ------ | ------------------------------------------------------------------------- | --------------- | ------ | ---------- | -------- |
-| W13  | WS5-04 | Add arbitration data model, workflow states, and admin UI                 | Full-stack      | TODO   | WS5-02     | 4–6 days |
+| W13  | WS5-04 | Add arbitration data model, workflow states, and admin UI                 | Full-stack      | DONE   | WS5-02     | 4–6 days |
 | W13  | WS6-03 | Add payouts / earnings dashboard for actor and agency roles               | Full-stack / FE | TODO   | WS3-04     | 3–4 days |
 | W13  | WS8-04 | Verify Vercel preview and production configuration parity                 | Platform        | TODO   | WS8-01     | 1 day    |
 | W14  | WS5-05 | Implement consent-revocation conflict handling for active licences        | Full-stack / BE | TODO   | WS5-04     | 3–4 days |
@@ -232,9 +232,9 @@ Dates: 2026-07-13 → 2026-07-24 | Milestone: M7
 
 **M7 Gate Check (2026-07-24):**
 
-- [ ] `arbitration_requests` table exists with states: `open`, `under_review`, `negotiation`, `resolved`, `expired`
-- [ ] Active-licence consent revocations can open arbitration records
-- [ ] Admin arbitration review and resolution UI is operational
+- [x] `arbitration_requests` table exists with states: `open`, `under_review`, `negotiation`, `resolved`, `expired`
+- [x] Active-licence consent revocations can open arbitration records
+- [x] Admin arbitration review and resolution UI is operational
 - [ ] Consent-revocation conflict handling for active licences is implemented and tested
 - [ ] Actor and agency earnings dashboard is usable
 - [ ] Rollback strategy and incident runbooks are documented

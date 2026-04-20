@@ -178,7 +178,7 @@ Implementation implication:
 | WS3-02 | P1       | DONE   | Create Express connected account onboarding flow                      | TI   |
 | WS3-03 | P1       | DONE   | Handle Connect webhook events and onboarding state transitions        | TI   |
 | WS3-04 | P1       | DONE   | Implement payout and transfer audit logging                           | TI   |
-| WS3-05 | P1       | TODO   | Add manual intervention flow for payout failures / reversed transfers | TI   |
+| WS3-05 | P1       | DONE   | Add manual intervention flow for payout failures / reversed transfers | TI   |
 
 #### WS3 Dependencies
 
@@ -210,11 +210,11 @@ Implementation implication:
 | WS4-01 | P1       | DONE   | Add studio profile domain model, routes, and UI   | TI   |
 | WS4-02 | P1       | DONE   | Add project domain model, routes, and UI          | TI   |
 | WS4-03 | P1       | TODO   | Add job board / casting-open discovery flow       | TI   |
-| WS4-04 | P1       | TODO   | Add deal templates and commercial terms model     | TI   |
-| WS4-05 | P1       | TODO   | Add deals table and deal creation workflow        | TI   |
-| WS4-06 | P1       | TODO   | Add deal approval / rejection workflow            | TI   |
-| WS4-07 | P1       | TODO   | Add platform fee calculation logic and unit tests | TI   |
-| WS4-08 | P1       | TODO   | Add PaymentIntent creation for deal payments      | TI   |
+| WS4-04 | P1       | DONE   | Add deal templates and commercial terms model     | TI   |
+| WS4-05 | P1       | DONE   | Add deals table and deal creation workflow        | TI   |
+| WS4-06 | P1       | DONE   | Add deal approval / rejection workflow            | TI   |
+| WS4-07 | P1       | DONE   | Add platform fee calculation logic and unit tests | TI   |
+| WS4-08 | P1       | DONE   | Add PaymentIntent creation for deal payments      | TI   |
 
 #### WS4 Required Data Model Additions
 
@@ -258,10 +258,10 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                                 | Repo       |
 | ------ | -------- | ------ | -------------------------------------------------------------------- | ---------- |
-| WS5-01 | P1       | TODO   | Wire TI deal approval to HDICR consent check                         | TI + HDICR |
-| WS5-02 | P1       | TODO   | Implement TI-side licence minting triggered from approved paid deals | TI         |
+| WS5-01 | P1       | DONE   | Wire TI deal approval to HDICR consent check                         | TI + HDICR |
+| WS5-02 | P1       | DONE   | Implement TI-side licence minting triggered from approved paid deals | TI         |
 | WS5-03 | P1       | DONE   | Verify and harden `license_usage_log` ingestion path                 | TI         |
-| WS5-04 | P1       | TODO   | Add arbitration data model and workflow                              | TI + HDICR |
+| WS5-04 | P1       | DONE   | Add arbitration data model and workflow                              | TI + HDICR |
 | WS5-05 | P2       | TODO   | Implement consent-revocation conflict handling for active licences   | TI + HDICR |
 
 #### WS5-01 Acceptance Criteria
@@ -286,7 +286,7 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                               | Repo |
 | ------ | -------- | ------ | ------------------------------------------------------------------ | ---- |
-| WS6-01 | P2       | DONE   | Add invitation code management UI for agents                               | TI   |
+| WS6-01 | P2       | DONE   | Add invitation code management UI for agents                       | TI   |
 | WS6-02 | P2       | DONE   | Add admin licence dashboard                                        | TI   |
 | WS6-03 | P2       | TODO   | Add payouts / earnings dashboard for actor and agency roles        | TI   |
 | WS6-04 | P2       | TODO   | Add refund processing UI if refunds are in launch scope            | TI   |
