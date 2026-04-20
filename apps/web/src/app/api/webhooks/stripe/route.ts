@@ -1402,11 +1402,68 @@ async function syncSubscriptionEntitlements(userProfileId: string): Promise<void
     [userProfileId, Array.from(ENTITLED_SUBSCRIPTION_STATUSES), Array.from(ENTITLEMENT_PLAN_KEYS)]
   );
 
-  const hasEntitlement = Boolean(entitlementResult.rows[0]?.has_entitlement);
+    // Mint license for actor on successful payment (WS5-02 Deal → License Activation)
+    try {
+      const licenseResult = await queryTi(
+        `INSERT INTO licenses (
+           id,
+           tenant_id,
+           actor_id,
+           deal_id,
+           license_type,
+           status,
+           issued_at,
+           expires_at,
+           created_at,
+           updated_at
+         )
+         VALUES (
+           uuid_generate_v4(),
+           'trulyimagined',
+           $1,
+           $2,
+           'deal_activation',
+           'active',
+           NOW(),
+           NOW() + INTERVAL '12 months',
+           NOW(),
+           NOW()
+         )
+         ON CONFLICT (deal_id) DO UPDATE
+         SET status = 'active',
+             issued_at = NOW(),
+             updated_at = NOW()
+         RETURNING id`,
+        [deal.actor_user_id, deal.id]
+      );
 
-  const updateResult = await queryTi(
-    `UPDATE user_profiles
-     SET is_pro = $2,
+      console.log('[STRIPE WEBHOOK] License minted for actor on payment success', {
+        dealId: deal.id,
+        paymentIntentId: paymentIntent.id,
+        licenseId: licenseResult.rows[0]?.id,
+      });
+    } catch (licenseError) {
+      console.error('[STRIPE WEBHOOK] License minting failed for deal', {
+        dealId: deal.id,
+        error: licenseError instanceof Error ? licenseError.message : String(licenseError),
+      });
+      // Do NOT throw — payment already settled. License creation failure is non-blocking audit trail.
+      await insertWebhookAuditEntry({
+        action: 'payment_intent.succeeded_license_mint_failed',
+        userProfileId: deal.actor_user_id,
+        resourceId: paymentIntent.id,
+        changes: {
+          deal_id: deal.id,
+          error: licenseError instanceof Error ? licenseError.message : String(licenseError),
+        },
+      });
+    }
+
+    console.log('[STRIPE WEBHOOK] Deal settled from payment_intent.succeeded', {
+      dealId: deal.id,
+      paymentIntentId: paymentIntent.id,
+    });
+  }
          updated_at = NOW()
      WHERE id = $1
      RETURNING id`,
