@@ -72,20 +72,21 @@ export async function GET(request: NextRequest) {
         // Aggregate transfer statuses
         const summary = {
           total: 0,
-          pending: 0,
-          paid: 0,
-          failed: 0,
+          successful: 0,
           reversed: 0,
           totalAmountCents: 0,
+          totalReversedCents: 0,
           transfers: transfers.data.slice(0, 10), // Latest 10 for preview
         };
 
         for (const transfer of transfers.data) {
           summary.total += 1;
-          if (transfer.status === 'pending') summary.pending += 1;
-          if (transfer.status === 'paid') summary.paid += 1;
-          if (transfer.status === 'failed') summary.failed += 1;
-          if (transfer.status === 'reversed') summary.reversed += 1;
+          if (transfer.reversed) {
+            summary.reversed += 1;
+            summary.totalReversedCents += transfer.amount_reversed ?? 0;
+          } else {
+            summary.successful += 1;
+          }
           summary.totalAmountCents += transfer.amount;
         }
 

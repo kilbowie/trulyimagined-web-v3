@@ -46,9 +46,11 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
          d.status,
          d.payment_status,
          d.payment_intent_id,
-         s.user_profile_id AS studio_user_profile_id
+         s.user_profile_id AS studio_user_profile_id,
+         up.auth0_user_id AS studio_auth0_user_id
        FROM deals d
        JOIN studios s ON s.id = d.studio_id
+       JOIN user_profiles up ON up.id = s.user_profile_id
        WHERE d.id = $1
          AND d.deleted_at IS NULL`,
       [dealId]
@@ -67,10 +69,11 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
       payment_status: string;
       payment_intent_id: string | null;
       studio_user_profile_id: string;
+      studio_auth0_user_id: string | null;
     };
 
     // Check authorization: requester must be studio owner or admin
-    if (!isAdmin && deal.studio_user_profile_id !== session.user.sub) {
+    if (!isAdmin && deal.studio_auth0_user_id !== session.user.sub) {
       return NextResponse.json(
         { error: 'Forbidden: Only studio owner or admin can refund deals' },
         { status: 403 }
@@ -175,7 +178,7 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
       ]
     );
 
-    log.info('deal_refund_success', {
+    log.log('deal_refund_success', {
       dealId: deal.id,
       refundId,
       licenseRevoked: (licenseRevoke.rowCount ?? 0) > 0,
