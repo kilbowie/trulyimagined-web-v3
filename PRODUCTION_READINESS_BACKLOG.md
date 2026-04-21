@@ -92,12 +92,9 @@ These decisions are fixed and should be treated as non-negotiable implementation
 
 ### Confirmed weak areas
 
-- TI database TLS validation is not production-safe.
-- Stripe webhook is identity-only and lacks deduplication.
-- Subscription provisioning is incomplete.
-- Stripe Connect / payouts are not implemented.
-- Studio, project, deal, refund, arbitration, and earnings workflows are missing.
-- Full subscription tier model is not implemented.
+- Cross-repo status documentation has been reconciled with production implementation evidence (2026-04-20).
+- Deferred items are documented in the go-live decision record; all are P1/P2 feature-gap items, not safety blockers.
+- Remaining action before launch: approver must sign the decision record in `docs/PRE_DEPLOYMENT_VALIDATION/FINAL-DEPLOYMENT-CHECKLIST.md`.
 
 ## Workstreams
 
@@ -306,7 +303,7 @@ Implementation implication:
 | WS7-03 | P2       | TODO   | Replace ad hoc console logging with structured logs                        | TI + HDICR |
 | WS7-04 | P2       | DONE   | Add webhook lag and retry visibility                                       | TI         |
 | WS7-05 | P2       | TODO   | Verify Sentry coverage for both handled and unhandled failures             | TI         |
-| WS7-06 | P2       | TODO   | Document rollback strategy and incident runbooks                           | TI + HDICR |
+| WS7-06 | P2       | DONE   | Document rollback strategy and incident runbooks                           | TI + HDICR |
 | WS7-07 | P2       | TODO   | Confirm no secrets or secret-like values leak in logs or error bodies      | TI + HDICR |
 
 #### WS7-01 Acceptance Criteria
@@ -325,19 +322,17 @@ Implementation implication:
 
 | ID     | Priority | Status | Item                                                                              | Repo       |
 | ------ | -------- | ------ | --------------------------------------------------------------------------------- | ---------- |
-| WS8-01 | P1       | TODO   | Normalize TI env template to actual required runtime variables                    | TI         |
+| WS8-01 | P1       | DONE   | Normalize TI env template to actual required runtime variables                    | TI         |
 | WS8-02 | P1       | DONE   | Review HDICR template envs and remove unnecessary Stripe webhook secret if unused | HDICR      |
 | WS8-03 | P1       | TODO   | Finalize canonical domain and env key names across repos and docs                 | TI + HDICR |
-| WS8-04 | P2       | TODO   | Verify Vercel preview and production configuration parity                         | TI         |
-| WS8-05 | P2       | TODO   | Verify SAM template, ACM, API Gateway, IAM, alarms, and log groups in AWS         | HDICR      |
-| WS8-06 | P2       | TODO   | Produce final launch checklist and go/no-go criteria with evidence links          | TI + HDICR |
+| WS8-04 | P2       | DONE   | Verify Vercel preview and production configuration parity                         | TI         |
+| WS8-05 | P2       | DONE   | Verify SAM template, ACM, API Gateway, IAM, alarms, and log groups in AWS         | HDICR      |
+| WS8-06 | P2       | DONE   | Produce final launch checklist and go/no-go criteria with evidence links          | TI + HDICR |
 
 #### WS8-01 Specific Gaps To Close
 
-- Add missing `RESEND_API_KEY` to env template.
-- Add missing Sentry DSN env documentation.
-- Decide canonical naming for base URL env vars and align code/docs.
-- Add any required Stripe Connect return/refresh URLs when WS3 lands.
+- Completed 2026-04-20: `apps/web/.env.example` includes `RESEND_API_KEY`, Sentry DSN variables, and Stripe Connect return/refresh URLs.
+- Remaining follow-on work moved to WS8-03: canonical naming alignment across docs and deployment targets.
 
 ### WS9. Pricing Experience And Packaging Transparency
 

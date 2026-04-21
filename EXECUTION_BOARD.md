@@ -195,7 +195,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 | W12  | WS3-03 | Handle Connect webhook events and onboarding state transitions              | Full-stack / BE | DONE   | WS3-02, WS1-02 | 3–4 days |
 | W12  | WS3-04 | Implement payout and transfer audit logging                                 | Full-stack / BE | DONE   | WS3-03         | 2–3 days |
 | W12  | WS3-05 | Add manual intervention flow for payout failures and reversed transfers     | Full-stack      | DONE   | WS3-04         | 2–3 days |
-| W12  | WS8-01 | Normalize TI env template — add `RESEND_API_KEY`, Sentry DSN, Connect URLs  | Platform        | TODO   | WS3-02         | 1 day    |
+| W12  | WS8-01 | Normalize TI env template — add `RESEND_API_KEY`, Sentry DSN, Connect URLs  | Platform        | DONE   | WS3-02         | 1 day    |
 | W12  | WS8-02 | Review HDICR template envs; remove unused Stripe webhook secret if not used | Platform        | DONE   | —              | 0.5 days |
 | W12  | WS8-03 | Finalize canonical domain and env key names across repos and docs           | Platform        | TODO   | WS8-01, WS8-02 | 1 day    |
 | W12  | WS7-05 | Verify Sentry coverage for handled and unhandled failures                   | Platform        | TODO   | —              | 1 day    |
@@ -208,7 +208,7 @@ Dates: 2026-06-29 → 2026-07-10 | Milestone: M6
 - [x] `account.updated`, `transfer.*`, and `payout.failed` webhook events handled and state-transitioned
 - [x] Payout audit log exists and is complete
 - [x] Manual intervention flow for payout failures is operable
-- [ ] `.env.example` and HDICR env template are accurate and complete
+- [x] `.env.example` and HDICR env template are accurate and complete
 - [ ] Structured logging is operational in both TI and HDICR; no raw `console.log` in critical paths
 - [ ] No secrets leak in logs or error response bodies
 - [ ] Sentry is configured and capturing both handled and unhandled failures
@@ -223,12 +223,12 @@ Dates: 2026-07-13 → 2026-07-24 | Milestone: M7
 | ---- | ------ | ------------------------------------------------------------------------- | --------------- | ------ | ---------- | -------- |
 | W13  | WS5-04 | Add arbitration data model, workflow states, and admin UI                 | Full-stack      | DONE   | WS5-02     | 4–6 days |
 | W13  | WS6-03 | Add payouts / earnings dashboard for actor and agency roles               | Full-stack / FE | TODO   | WS3-04     | 3–4 days |
-| W13  | WS8-04 | Verify Vercel preview and production configuration parity                 | Platform        | TODO   | WS8-01     | 1 day    |
+| W13  | WS8-04 | Verify Vercel preview and production configuration parity                 | Platform        | DONE   | WS8-01     | 1 day    |
 | W14  | WS5-05 | Implement consent-revocation conflict handling for active licences        | Full-stack / BE | TODO   | WS5-04     | 3–4 days |
 | W14  | WS6-04 | Add refund processing UI (if refunds are in launch scope)                 | Full-stack / FE | TODO   | WS5-04     | 1–2 days |
-| W14  | WS7-06 | Document rollback strategy and incident runbooks                          | Platform        | TODO   | WS8-03     | 1–2 days |
-| W14  | WS8-05 | Verify SAM template, ACM, API Gateway, IAM, alarms, and log groups in AWS | Platform        | TODO   | WS7-06     | 1–2 days |
-| W14  | WS8-06 | Produce go-live checklist with evidence links and pass/fail for each gate | Platform / Lead | TODO   | All M1–M6  | 2–3 days |
+| W14  | WS7-06 | Document rollback strategy and incident runbooks                          | Platform        | DONE   | WS8-03     | 1–2 days |
+| W14  | WS8-05 | Verify SAM template, ACM, API Gateway, IAM, alarms, and log groups in AWS | Platform        | DONE   | WS7-06     | 1–2 days |
+| W14  | WS8-06 | Produce go-live checklist with evidence links and pass/fail for each gate | Platform / Lead | DONE   | All M1–M6  | 2–3 days |
 
 **M7 Gate Check (2026-07-24):**
 
@@ -237,11 +237,11 @@ Dates: 2026-07-13 → 2026-07-24 | Milestone: M7
 - [x] Admin arbitration review and resolution UI is operational
 - [ ] Consent-revocation conflict handling for active licences is implemented and tested
 - [ ] Actor and agency earnings dashboard is usable
-- [ ] Rollback strategy and incident runbooks are documented
-- [ ] AWS infrastructure resources are verified against SAM template (HDICR)
-- [ ] Vercel preview and production environments are configuration-parity verified
-- [ ] Go-live evidence pack is complete with linked proof for every gate criterion
-- [ ] Launch / no-launch decision can be made from objective, documented evidence
+- [x] Rollback strategy and incident runbooks are documented
+- [x] AWS infrastructure resources are verified against SAM template (HDICR)
+- [x] Vercel preview and production environments are configuration-parity verified
+- [x] Go-live evidence pack is complete with linked proof for every gate criterion
+- [x] Launch / no-launch decision can be made from objective, documented evidence
 
 ---
 

@@ -23,17 +23,12 @@ export async function GET(request: NextRequest) {
     }
 
     if (!(await isAdmin())) {
-      return NextResponse.json(
-        { error: 'Forbidden: Admin role required' },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: 'Forbidden: Admin role required' }, { status: 403 });
     }
 
     const searchParams = request.nextUrl.searchParams;
     const limitParam = Number.parseInt(searchParams.get('limit') ?? '50', 10);
-    const limit = Number.isFinite(limitParam)
-      ? Math.min(Math.max(limitParam, 1), 200)
-      : 50;
+    const limit = Number.isFinite(limitParam) ? Math.min(Math.max(limitParam, 1), 200) : 50;
 
     // Get studio info for all Stripe Connect accounts
     const studioResult = await queryTi(
@@ -62,12 +57,10 @@ export async function GET(request: NextRequest) {
 
     for (const studio of studioResult.rows) {
       try {
-        const transfers = await stripe.transfers.list(
-          {
-            limit: 100,
-            destination: studio.stripe_account_id,
-          }
-        );
+        const transfers = await stripe.transfers.list({
+          limit: 100,
+          destination: studio.stripe_account_id,
+        });
 
         // Aggregate transfer statuses
         const summary = {
@@ -124,7 +117,10 @@ export async function GET(request: NextRequest) {
     const totals = {
       totalStudios: payoutSummary.length,
       totalTransfers: payoutSummary.reduce((sum, s) => sum + (s.transferSummary?.total ?? 0), 0),
-      totalPaidCents: payoutSummary.reduce((sum, s) => sum + (s.transferSummary?.totalAmountCents ?? 0), 0),
+      totalPaidCents: payoutSummary.reduce(
+        (sum, s) => sum + (s.transferSummary?.totalAmountCents ?? 0),
+        0
+      ),
       studiosWithPayoutsEnabled: payoutSummary.filter((s) => s.payoutsEnabled).length,
     };
 
@@ -137,9 +133,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('[ADMIN_PAYOUTS] GET error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

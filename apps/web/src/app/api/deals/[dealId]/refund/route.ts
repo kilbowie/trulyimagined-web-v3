@@ -24,7 +24,10 @@ interface RouteParams {
   params: Promise<{ dealId: string }>;
 }
 
-export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse<any>> {
+export async function POST(
+  request: NextRequest,
+  { params }: RouteParams
+): Promise<NextResponse<any>> {
   try {
     const session = await auth0.getSession();
     if (!session?.user) {
