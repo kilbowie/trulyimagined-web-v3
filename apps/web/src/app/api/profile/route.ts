@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth0 } from '@/lib/auth0';
+import { getUserProfile } from '@/lib/auth';
 import { query } from '@/lib/db';
 
 /**
@@ -16,10 +17,7 @@ export async function GET(_request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Query PostgreSQL user_profiles table
-    const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
-
-    const profile = result.rows[0] || null;
+    const profile = await getUserProfile();
 
     return NextResponse.json({
       profile,

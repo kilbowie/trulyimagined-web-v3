@@ -1,6 +1,52 @@
 import { auth0 } from '@/lib/auth0';
 import { query } from '@/lib/db';
 
+async function resolveUserProfileByAuth0Identity(user: Awaited<ReturnType<typeof getCurrentUser>>) {
+  if (!user) return null;
+
+  const directMatch = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [
+    user.sub,
+  ]);
+  if (directMatch.rows[0]) {
+    return directMatch.rows[0];
+  }
+
+  if (!user.email || user.email_verified !== true) {
+    return null;
+  }
+
+  const emailMatch = await query(
+    'SELECT * FROM user_profiles WHERE LOWER(email) = LOWER($1) LIMIT 2',
+    [user.email]
+  );
+
+  if (emailMatch.rows.length !== 1) {
+    if (emailMatch.rows.length > 1) {
+      console.error('[AUTH] Refusing to reconcile profile: duplicate email matches found', {
+        email: user.email,
+        count: emailMatch.rows.length,
+      });
+    }
+    return null;
+  }
+
+  const profile = emailMatch.rows[0];
+  const rebound = await query(
+    `UPDATE user_profiles
+        SET auth0_user_id = $1
+      WHERE id = $2
+      RETURNING *`,
+    [user.sub, profile.id]
+  );
+
+  console.log('[AUTH] Reconciled user_profiles.auth0_user_id from verified email match', {
+    email: user.email,
+    profileId: profile.id,
+  });
+
+  return rebound.rows[0] || profile;
+}
+
 /**
  * Get the current user session (server-side only)
  *
@@ -26,12 +72,10 @@ export async function getUserRoles(): Promise<string[]> {
   if (!user) return [];
 
   try {
-    const result = await query('SELECT role FROM user_profiles WHERE auth0_user_id = $1', [
-      user.sub,
-    ]);
+    const profile = await resolveUserProfileByAuth0Identity(user);
 
-    if (result.rows.length > 0 && result.rows[0].role) {
-      return [result.rows[0].role];
+    if (profile?.role) {
+      return [profile.role];
     }
     return [];
   } catch (error) {
@@ -50,8 +94,7 @@ export async function getUserProfile() {
   if (!user) return null;
 
   try {
-    const result = await query('SELECT * FROM user_profiles WHERE auth0_user_id = $1', [user.sub]);
-    return result.rows[0] || null;
+    return await resolveUserProfileByAuth0Identity(user);
   } catch (error) {
     console.error('[AUTH] Failed to get user profile:', error);
     return null;
